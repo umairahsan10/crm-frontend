@@ -1,0 +1,196 @@
+import React, { useState } from 'react';
+import DashboardCard from '../components/DashboardCard';
+import './DealsPage.css';
+
+interface Deal {
+  id: number;
+  title: string;
+  customer: string;
+  value: number;
+  stage: 'prospecting' | 'qualification' | 'proposal' | 'negotiation' | 'closed-won' | 'closed-lost';
+  probability: number;
+  expectedClose: string;
+  avatar: string;
+}
+
+const DealsPage: React.FC = () => {
+  const [deals] = useState<Deal[]>([
+    {
+      id: 1,
+      title: 'Enterprise Software License',
+      customer: 'Tech Solutions Inc',
+      value: 85000,
+      stage: 'negotiation',
+      probability: 75,
+      expectedClose: '2024-02-15',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face&auto=format'
+    },
+    {
+      id: 2,
+      title: 'Consulting Services',
+      customer: 'Global Corp',
+      value: 45000,
+      stage: 'proposal',
+      probability: 60,
+      expectedClose: '2024-02-28',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=64&h=64&fit=crop&crop=face&auto=format'
+    },
+    {
+      id: 3,
+      title: 'Annual Support Contract',
+      customer: 'Startup XYZ',
+      value: 25000,
+      stage: 'closed-won',
+      probability: 100,
+      expectedClose: '2024-01-20',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=64&h=64&fit=crop&crop=face&auto=format'
+    },
+    {
+      id: 4,
+      title: 'Custom Development',
+      customer: 'Innovate Co',
+      value: 120000,
+      stage: 'qualification',
+      probability: 40,
+      expectedClose: '2024-03-15',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop&crop=face&auto=format'
+    },
+    {
+      id: 5,
+      title: 'Training Program',
+      customer: 'Creative Agency',
+      value: 18000,
+      stage: 'closed-lost',
+      probability: 0,
+      expectedClose: '2024-01-10',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=face&auto=format'
+    },
+    {
+      id: 6,
+      title: 'Product Implementation',
+      customer: 'Digital Startup',
+      value: 65000,
+      stage: 'prospecting',
+      probability: 25,
+      expectedClose: '2024-04-01',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=64&h=64&fit=crop&crop=face&auto=format'
+    }
+  ]);
+
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case 'prospecting': return 'primary';
+      case 'qualification': return 'warning';
+      case 'proposal': return 'warning';
+      case 'negotiation': return 'success';
+      case 'closed-won': return 'success';
+      case 'closed-lost': return 'danger';
+      default: return '';
+    }
+  };
+
+  const getStageIcon = (stage: string) => {
+    switch (stage) {
+      case 'prospecting': return '🔍';
+      case 'qualification': return '✅';
+      case 'proposal': return '📄';
+      case 'negotiation': return '🤝';
+      case 'closed-won': return '💰';
+      case 'closed-lost': return '❌';
+      default: return '❓';
+    }
+  };
+
+  const totalDeals = deals.length;
+  const activeDeals = deals.filter(d => !d.stage.includes('closed')).length;
+  const wonDeals = deals.filter(d => d.stage === 'closed-won').length;
+  const totalValue = deals.reduce((sum, d) => sum + d.value, 0);
+  const weightedValue = deals.reduce((sum, d) => sum + (d.value * d.probability / 100), 0);
+
+  return (
+    <div className="deals-container">
+      <div className="page-header">
+        <h1>Deals Management</h1>
+        <p>Track your sales pipeline and manage deal opportunities</p>
+      </div>
+      
+      <div className="stats-grid">
+        <DashboardCard
+          title="Total Deals"
+          value={totalDeals.toString()}
+          subtitle="All time"
+          icon="🤝"
+          className="primary"
+        />
+        
+        <DashboardCard
+          title="Active Deals"
+          value={activeDeals.toString()}
+          subtitle="In pipeline"
+          icon="📊"
+          trend={{ value: 8.5, isPositive: true }}
+          className="warning"
+        />
+        
+        <DashboardCard
+          title="Won Deals"
+          value={wonDeals.toString()}
+          subtitle="This quarter"
+          icon="💰"
+          trend={{ value: 12.3, isPositive: true }}
+          className="success"
+        />
+        
+        <DashboardCard
+          title="Weighted Value"
+          value={`$${Math.round(weightedValue).toLocaleString()}`}
+          subtitle="Expected revenue"
+          icon="📈"
+          trend={{ value: 15.7, isPositive: true }}
+          className="danger"
+        />
+      </div>
+      
+      <div className="deals-section">
+        <div className="section-header">
+          <h2>Sales Pipeline</h2>
+          <button className="btn-add-deal">+ Add Deal</button>
+        </div>
+        
+        <div className="deals-grid">
+          {deals.map(deal => (
+            <DashboardCard
+              key={deal.id}
+              title={deal.title}
+              subtitle={deal.customer}
+              icon={getStageIcon(deal.stage)}
+              className={`deal-card ${getStageColor(deal.stage)}`}
+              onClick={() => console.log(`Viewing deal: ${deal.title}`)}
+            >
+              <div className="deal-details">
+                <div className="deal-header">
+                  <img 
+                    src={deal.avatar} 
+                    alt={deal.customer}
+                    className="deal-avatar"
+                  />
+                  <div className="deal-info">
+                    <p className="deal-customer">{deal.customer}</p>
+                    <div className="deal-meta">
+                      <span className="deal-value">${deal.value.toLocaleString()}</span>
+                      <span className="deal-probability">{deal.probability}%</span>
+                    </div>
+                    <small className="deal-stage">{deal.stage.replace('-', ' ')}</small>
+                  </div>
+                </div>
+                <small className="expected-close">Expected close: {deal.expectedClose}</small>
+              </div>
+            </DashboardCard>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DealsPage; 
