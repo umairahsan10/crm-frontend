@@ -1,0 +1,309 @@
+/* Login.module.css */
+
+.login-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.bluePanel {
+  width: 40%;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  position: relative;
+}
+
+.logo {
+  width: 300px;
+  height: auto;
+  margin-bottom: 40px;
+}
+
+.welcome-text {
+  text-align: center;
+  color: white;
+}
+
+.welcome-text h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.welcome-text p {
+  font-size: 1.1rem;
+  margin: 0;
+  opacity: 0.9;
+  font-family: 'Inter', sans-serif;
+}
+
+.formPanel {
+  width: 60%;
+  height: 100vh;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.form {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.form-header p {
+  color: #6b7280;
+  margin: 8px 0 0 0;
+  font-size: 0.9rem;
+}
+
+.headFont {
+  font-family: 'Inter', sans-serif;
+  color: #1f2937 !important;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+.error-message {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.form input {
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #ffffff;
+  color: #1f2937;
+  outline: none;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease;
+}
+
+.form input:focus {
+  border: 1px solid #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form input::placeholder {
+  color: #9ca3af;
+}
+
+.form button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 100%;
+  margin: 8px 0 0 0;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease;
+}
+
+.form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.form button:active {
+  transform: translateY(0);
+}
+
+.passwordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.passwordWrapper input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.togglePassword {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.togglePassword:hover {
+  color: #374151;
+}
+
+.demo-credentials {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.demo-credentials p {
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+}
+
+.demo-credentials ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: none;
+}
+
+.demo-credentials li {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 4px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.demo-credentials li:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .bluePanel {
+    width: 35%;
+  }
+  
+  .formPanel {
+    width: 65%;
+  }
+  
+  .logo {
+    width: 250px;
+  }
+  
+  .welcome-text h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+  }
+  
+  .bluePanel {
+    width: 100%;
+    height: 200px;
+    padding: 20px;
+  }
+  
+  .formPanel {
+    width: 100%;
+    height: calc(100vh - 200px);
+    padding: 20px;
+  }
+  
+  .logo {
+    width: 200px;
+    margin-bottom: 20px;
+  }
+  
+  .welcome-text h1 {
+    font-size: 1.5rem;
+  }
+  
+  .welcome-text p {
+    font-size: 1rem;
+  }
+  
+  .headFont {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .bluePanel {
+    height: 150px;
+    padding: 16px;
+  }
+  
+  .formPanel {
+    height: calc(100vh - 150px);
+    padding: 16px;
+  }
+  
+  .logo {
+    width: 150px;
+    margin-bottom: 16px;
+  }
+  
+  .welcome-text h1 {
+    font-size: 1.25rem;
+  }
+  
+  .welcome-text p {
+    font-size: 0.9rem;
+  }
+  
+  .form {
+    gap: 16px;
+  }
+  
+  .headFont {
+    font-size: 1.25rem;
+  }
+  
+  .demo-credentials {
+    padding: 12px;
+  }
+  
+  .demo-credentials li {
+    font-size: 0.7rem;
+  }
+}

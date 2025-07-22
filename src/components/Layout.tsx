@@ -10,14 +10,16 @@ interface LayoutProps {
   onNavigate?: (page: string) => void;
   activePage?: string;
   userRole?: UserRole;
+  onLogout?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ 
-  children, 
-  title, 
-  onNavigate, 
+const Layout: React.FC<LayoutProps> = ({
+  children,
+  title,
+  onNavigate,
   activePage = 'dashboard',
-  userRole = 'admin'
+  userRole = 'admin',
+  onLogout
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -33,15 +35,16 @@ const Layout: React.FC<LayoutProps> = ({
         onNavigate={onNavigate}
         activePage={activePage}
         userRole={userRole}
+        onLogout={onLogout}
       />
-      <Header
-        title={title}
-        onMenuToggle={toggleSidebar}
-        sidebarOpen={sidebarOpen}
-      />
-      <main className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        {children}
-      </main>
+      <div className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <Header
+          title={title}
+        />
+        <div className="content-area">
+          {children}
+        </div>
+      </div>
     </div>
   );
 };

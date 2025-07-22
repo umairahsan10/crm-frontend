@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Layout from './components/Layout';
 import DashboardCard from './components/DashboardCard';
+import Login from './pages/Login/Login';
 import type { UserRole } from './types';
 import { NAV_ITEMS } from './utils/constants';
 import './App.css';
@@ -10,23 +11,28 @@ import EmployeesPage from './pages/EmployeesPage';
 import AttendancePage from './pages/AttendancePage';
 
 // Import existing pages (to be replaced with new HR system pages)
-import CustomersPage from './pages/CustomersPage';
-import LeadsPage from './pages/LeadsPage';
 import DealsPage from './pages/DealsPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
-
-// TODO: Import remaining HR system pages when created
-// import PayrollPage from './pages/PayrollPage';
-// import SalesPage from './pages/SalesPage';
-// import FinancialPage from './pages/FinancialPage';
-// import ChargebacksPage from './pages/ChargebacksPage';
 
 type Page = 'dashboard' | 'employees' | 'attendance' | 'payroll' | 'sales' | 'financial' | 'chargebacks' | 'settings';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
+  const handleLogin = (role: string) => {
+    setUserRole(role as UserRole);
+    setIsLoggedIn(true);
+    setCurrentPage('dashboard');
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUserRole('admin');
+    setCurrentPage('dashboard');
+  };
 
   const handleCardClick = (cardType: string) => {
     console.log(`Clicked on ${cardType} card`);
@@ -167,12 +173,19 @@ function App() {
     return navItem ? navItem.label : 'Dashboard';
   };
 
+  // Show login page if not logged in
+  if (!isLoggedIn) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  // Show main application if logged in
   return (
     <Layout
       title={getPageTitle()}
       onNavigate={handleNavigation}
       activePage={currentPage}
       userRole={userRole}
+      onLogout={handleLogout}
     >
       {renderPage()}
     </Layout>
