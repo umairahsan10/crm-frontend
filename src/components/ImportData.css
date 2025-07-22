@@ -1,0 +1,67 @@
+.import-container {
+  padding: 0;
+  font-family: 'Open Sans', sans-serif;
+  color: #333;
+  width: 100%;
+  max-width: none;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+}
+
+.import-container h2 {
+  font-size: 20px;
+  margin-bottom: 0;
+  text-transform: uppercase;
+}
+
+.info-text {
+    margin-bottom: 10px;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset; /* optional: adds "..." if the text is too long */
+}
+
+.template-link {
+  color: #1a73e8;
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+.file-input {
+  display: block;
+  margin: 10px 0;
+}
+
+small {
+  display: block;
+  color: #777;
+  margin-bottom: 20px;
+}
+
+.radio-group label {
+  display: block;
+  margin: 5px 0;
+}
+
+.submit-button {
+  margin-top: 20px;
+  background: #1a73e8;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.submit-button:hover {
+  background-color: #1760c4;
+} 

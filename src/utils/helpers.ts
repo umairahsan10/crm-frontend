@@ -2,7 +2,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { DATE_FORMATS } from './constants';
 
 // Date Utilities
-export const formatDate = (date: string | Date, formatType: keyof typeof DATE_FORMATS = 'display'): string => {
+export const formatDate = (date: string | Date, formatType: keyof typeof DATE_FORMATS = 'short'): string => {
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     if (!isValid(dateObj)) return 'Invalid Date';

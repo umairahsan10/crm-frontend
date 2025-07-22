@@ -100,6 +100,7 @@ export const CHARGEBACK_STATUS = {
   team_lead_approved: { label: 'Team Lead Approved', color: 'info', icon: '👤' },
   admin_approved: { label: 'Admin Approved', color: 'success', icon: '✅' },
   rejected: { label: 'Rejected', color: 'danger', icon: '❌' },
+  completed: { label: 'Completed', color: 'info', icon: '💰' },
 };
 
 // Alert Severity Constants
@@ -111,160 +112,95 @@ export const ALERT_SEVERITY = {
 };
 
 // Chart Colors
-export const CHART_COLORS = {
-  primary: '#667eea',
-  secondary: '#764ba2',
-  success: '#10b981',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  info: '#3b82f6',
-  light: '#f8fafc',
-  dark: '#1e293b',
-};
+export const CHART_COLORS = [
+  '#667eea',
+  '#764ba2',
+  '#f093fb',
+  '#f5576c',
+  '#4facfe',
+  '#00f2fe',
+  '#43e97b',
+  '#38f9d7',
+  '#fa709a',
+  '#fee140',
+];
 
-// Table Constants
+// Table Page Sizes
 export const TABLE_PAGE_SIZES = [10, 25, 50, 100];
 
 // Date Formats
 export const DATE_FORMATS = {
-  display: 'MMM dd, yyyy',
-  input: 'yyyy-MM-dd',
-  time: 'HH:mm',
-  datetime: 'MMM dd, yyyy HH:mm',
-  month: 'MMMM yyyy',
+  short: 'MM/dd/yyyy',
+  long: 'MMMM dd, yyyy',
+  time: 'HH:mm:ss',
+  datetime: 'MM/dd/yyyy HH:mm',
+  iso: 'yyyy-MM-dd',
 };
 
 // Validation Rules
 export const VALIDATION_RULES = {
-  email: {
-    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: 'Please enter a valid email address',
-  },
-  phone: {
-    pattern: /^[\+]?[1-9][\d]{0,15}$/,
-    message: 'Please enter a valid phone number',
-  },
-  salary: {
-    min: 0,
-    message: 'Salary must be a positive number',
-  },
-  percentage: {
-    min: 0,
-    max: 100,
-    message: 'Percentage must be between 0 and 100',
-  },
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  phone: /^\+?[\d\s\-\(\)]{10,}$/,
+  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/,
+  url: /^https?:\/\/.+/,
 };
 
 // API Endpoints
 export const API_ENDPOINTS = {
-  // Auth
-  login: '/api/auth/login',
-  logout: '/api/auth/logout',
-  refresh: '/api/auth/refresh',
-  
-  // Users
-  users: '/api/users',
-  userProfile: '/api/users/profile',
-  
-  // Employees
   employees: '/api/employees',
-  departments: '/api/departments',
-  
-  // Attendance
   attendance: '/api/attendance',
-  attendanceLogs: '/api/attendance/logs',
-  
-  // Payroll
   payroll: '/api/payroll',
-  salaries: '/api/payroll/salaries',
-  deductions: '/api/payroll/deductions',
-  bonuses: '/api/payroll/bonuses',
-  
-  // Sales
   sales: '/api/sales',
-  targets: '/api/sales/targets',
-  
-  // Financial
   financial: '/api/financial',
-  chargebacks: '/api/financial/chargebacks',
-  
-  // Settings
+  chargebacks: '/api/chargebacks',
   settings: '/api/settings',
-  permissions: '/api/settings/permissions',
-  
-  // Alerts
-  alerts: '/api/alerts',
-  notifications: '/api/notifications',
+  auth: '/api/auth',
 };
 
-// Local Storage Keys
+// Storage Keys
 export const STORAGE_KEYS = {
-  authToken: 'auth_token',
-  refreshToken: 'refresh_token',
-  user: 'user',
-  theme: 'theme',
-  language: 'language',
-  sidebarState: 'sidebar_state',
+  user: 'hr_admin_user',
+  token: 'hr_admin_token',
+  theme: 'hr_admin_theme',
+  language: 'hr_admin_language',
+  sidebarState: 'hr_admin_sidebar',
 };
 
-// Theme Constants
+// Themes
 export const THEMES = {
   light: 'light',
   dark: 'dark',
-  system: 'system',
+  auto: 'auto',
 };
 
-// Language Constants
+// Languages
 export const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
   { code: 'es', name: 'Español', flag: '🇪🇸' },
   { code: 'fr', name: 'Français', flag: '🇫🇷' },
   { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'zh', name: '中文', flag: '🇨🇳' },
 ];
 
-// Permission Mappings
+// Role Permissions
 export const ROLE_PERMISSIONS = {
-  admin: [
-    'view_dashboard',
-    'manage_employees',
-    'view_attendance',
-    'manage_attendance',
-    'view_salary',
-    'manage_salary',
-    'view_sales',
-    'manage_sales',
-    'view_financial',
-    'manage_financial',
-    'approve_chargebacks',
-    'manage_settings',
-  ],
-  hr: [
-    'view_dashboard',
-    'manage_employees',
-    'view_attendance',
-    'manage_attendance',
-    'view_salary',
-    'manage_salary',
-  ],
-  accountant: [
-    'view_dashboard',
-    'view_financial',
-    'manage_financial',
-  ],
-  employee: [
-    'view_dashboard',
-  ],
+  admin: ['read', 'write', 'delete', 'manage_users', 'manage_roles', 'view_reports'],
+  hr: ['read', 'write', 'view_reports'],
+  accountant: ['read', 'write', 'view_reports'],
+  employee: ['read'],
 };
 
 // Default Settings
 export const DEFAULT_SETTINGS = {
-  companyName: 'Your Company',
-  timezone: 'UTC',
-  currency: 'USD',
+  theme: 'light',
+  language: 'en',
+  sidebarCollapsed: false,
+  notifications: true,
+  emailNotifications: true,
+  autoRefresh: 30000, // 30 seconds
+  pageSize: 25,
   dateFormat: 'MM/dd/yyyy',
   timeFormat: '12h',
-  language: 'en',
-  theme: 'light',
-  autoLogout: 30, // minutes
-  sessionTimeout: 8, // hours
+  currency: 'USD',
+  timezone: 'UTC',
 }; 

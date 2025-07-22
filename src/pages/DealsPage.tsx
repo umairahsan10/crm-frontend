@@ -101,10 +101,10 @@ const DealsPage: React.FC = () => {
     }
   };
 
+  // Calculate statistics
   const totalDeals = deals.length;
-  const activeDeals = deals.filter(d => !d.stage.includes('closed')).length;
-  const wonDeals = deals.filter(d => d.stage === 'closed-won').length;
-  const totalValue = deals.reduce((sum, d) => sum + d.value, 0);
+  const closedDeals = deals.filter(d => d.stage === 'closed-won' || d.stage === 'closed-lost').length;
+  const pendingDeals = deals.filter(d => d.stage !== 'closed-won' && d.stage !== 'closed-lost').length;
   const weightedValue = deals.reduce((sum, d) => sum + (d.value * d.probability / 100), 0);
 
   return (
@@ -125,7 +125,7 @@ const DealsPage: React.FC = () => {
         
         <DashboardCard
           title="Active Deals"
-          value={activeDeals.toString()}
+          value={pendingDeals.toString()}
           subtitle="In pipeline"
           icon="📊"
           trend={{ value: 8.5, isPositive: true }}
@@ -134,7 +134,7 @@ const DealsPage: React.FC = () => {
         
         <DashboardCard
           title="Won Deals"
-          value={wonDeals.toString()}
+          value={closedDeals.toString()}
           subtitle="This quarter"
           icon="💰"
           trend={{ value: 12.3, isPositive: true }}

@@ -106,10 +106,10 @@ const LeadsPage: React.FC = () => {
     }
   };
 
+  // Calculate statistics
   const totalLeads = leads.length;
   const newLeads = leads.filter(l => l.status === 'new').length;
   const qualifiedLeads = leads.filter(l => l.status === 'qualified').length;
-  const convertedLeads = leads.filter(l => l.status === 'converted').length;
   const totalValue = leads.reduce((sum, l) => sum + l.value, 0);
 
   return (
