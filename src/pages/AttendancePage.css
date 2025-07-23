@@ -65,8 +65,16 @@
 }
 
 .btn-mark-attendance {
-  background: #667eea;
+  background: #051650;
   color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(5, 22, 80, 0.2);
 }
 
 .btn-mark-attendance:hover {

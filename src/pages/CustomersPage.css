@@ -14,7 +14,7 @@
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #051650 0%, #0a2a6b 50%, #1a4a8a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -64,12 +64,12 @@
   transform: translateY(-50%);
   width: 4px;
   height: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #051650 0%, #0a2a6b 50%, #1a4a8a 100%);
   border-radius: 2px;
 }
 
 .btn-add-customer {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #051650 0%, #0a2a6b 50%, #1a4a8a 100%);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -78,7 +78,7 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 6px rgba(5, 22, 80, 0.2);
 }
 
 .btn-add-customer:hover {
