@@ -27,7 +27,7 @@
   flex: 1;
   padding: 1.5rem;
   overflow-y: auto;
-  height: calc(100vh - 70px);
+  height: calc(100vh - 80px); /* Updated from 70px to 80px to match new header height */
 }
 
 /* Responsive adjustments */
@@ -44,6 +44,6 @@
   
   .content-area {
     padding: 1rem;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 80px); /* Updated from 70px to 80px */
   }
 } 

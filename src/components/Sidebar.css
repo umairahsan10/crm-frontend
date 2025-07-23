@@ -5,9 +5,9 @@
   left: 0;
   height: 100vh;
   width: 70px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #051650 0%, #0a2a6b 50%, #1a4a8a 100%);
   color: white;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   z-index: 1000;
   overflow: visible;
   display: flex;
@@ -312,7 +312,7 @@
   top: 0;
   width: 0;
   height: 100%;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(5, 22, 80, 0.1);
   transition: width 0.3s ease;
 }
 
@@ -321,8 +321,8 @@
 }
 
 .profile-dropdown-item:hover {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
+  background: rgba(5, 22, 80, 0.1);
+  color: #051650;
   transform: translateX(4px);
 }
 
