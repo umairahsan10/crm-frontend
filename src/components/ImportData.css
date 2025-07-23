@@ -21,7 +21,7 @@
     white-space: nowrap;
     overflow: visible;
     text-overflow: unset; /* optional: adds "..." if the text is too long */
-}
+  }
 
 .template-link {
   color: #1a73e8;
