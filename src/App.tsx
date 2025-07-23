@@ -9,6 +9,7 @@ import './App.css';
 // Import new HR system pages
 import EmployeesPage from './pages/EmployeesPage';
 import AttendancePage from './pages/AttendancePage';
+import EmployeeForm from './components/EmployeeForm';
 
 // Import existing pages (to be replaced with new HR system pages)
 import DealsPage from './pages/DealsPage';
@@ -48,6 +49,7 @@ function App() {
   // Dashboard Page Content (temporary - will be replaced with DashboardPage component)
   const DashboardContent = () => (
     <div className="dashboard-container">
+      <EmployeeForm />
       <div className="page-header">
         <h1>Dashboard</h1>
         <p>Welcome to the HR & Admin Management System</p>

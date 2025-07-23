@@ -1,0 +1,140 @@
+.employee-form-modal {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0;
+  position: relative;
+}
+.employee-form-header {
+  padding: 18px 24px 10px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.employee-form {
+  padding: 24px;
+}
+.employee-form-section {
+  margin-bottom: 18px;
+}
+.employee-form-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+.employee-form-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.employee-form-field label {
+  font-size: 0.98rem;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.employee-form-field input,
+.employee-form-field select,
+.employee-form-field textarea {
+  padding: 7px 10px;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #fafbfc;
+  margin-bottom: 2px;
+  transition: border-color 0.2s ease;
+}
+.employee-form-field input:focus,
+.employee-form-field select:focus,
+.employee-form-field textarea:focus {
+  outline: none;
+  border-color: #1976d2;
+  background: #fff;
+}
+.employee-form-field input.error,
+.employee-form-field select.error,
+.employee-form-field textarea.error {
+  border-color: #d32f2f;
+  background: #fff5f5;
+}
+.employee-form-field textarea {
+  min-height: 48px;
+  resize: vertical;
+}
+.error-message {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: 2px;
+  font-weight: 500;
+  animation: fadeIn 0.2s ease-in;
+}
+
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.employee-form-advanced {
+  background: #f7fafd;
+  border-radius: 5px;
+  padding: 18px 18px 8px 18px;
+  margin-bottom: 18px;
+  border: 1px solid #e3e8ee;
+}
+.employee-form-advanced h4 {
+  margin: 0 0 10px 0;
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: #2d3a4a;
+}
+.employee-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+}
+.create-employee-btn {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, opacity 0.18s;
+}
+.create-employee-btn:hover:not(:disabled) {
+  background: #1256a3;
+}
+.create-employee-btn:disabled {
+  background: #bdbdbd;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.required {
+  color: #d32f2f;
+  margin-left: 2px;
+}
+.notification-field label {
+  display: block;
+  font-weight: 400;
+  font-size: 0.97rem;
+  margin-bottom: 4px;
+} 
