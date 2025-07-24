@@ -5,8 +5,6 @@ export const NAV_ITEMS = [
   { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance', roles: ['admin', 'hr'] },
   { id: 'payroll', label: 'Payroll', icon: '💰', path: '/payroll', roles: ['admin', 'hr'] },
   { id: 'sales', label: 'Sales', icon: '📈', path: '/sales', roles: ['admin'] },
-  { id: 'financial', label: 'Financial', icon: '💼', path: '/financial', roles: ['admin', 'accountant'] },
-  { id: 'chargebacks', label: 'Chargebacks', icon: '🔄', path: '/chargebacks', roles: ['admin'] },
   { id: 'settings', label: 'Settings', icon: '⚙️', path: '/settings', roles: ['admin'] },
 ];
 

@@ -1,0 +1,240 @@
+.table-container {
+  overflow-x: hidden; /* prevent horizontal scroll */
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.meetings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px; /* reduced base font size */
+}
+
+/* slightly smaller header text */
+.header-cell {
+  background: #f9fafb;
+  padding: 8px 12px; /* reduced padding */
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 11px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sort-icon {
+  color: #6b7280;
+}
+
+.actions-header {
+  text-align: center;
+}
+
+.even-row {
+  background: #ffffff;
+}
+
+.odd-row {
+  background: #f9fafb;
+}
+
+.meetings-table td {
+  padding: 6px 10px; /* even tighter rows */
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  font-size: 11px;
+}
+
+.subject-cell {
+  font-weight: 500;
+  max-width: 200px;
+}
+
+.accept-status {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.accepted {
+  background: #a4dba5; /* soft green */
+  color: #ffffff;
+}
+
+.pending {
+  background: #f6cfcf; /* soft red */
+  color: #b91c1c;
+}
+
+.actions-cell {
+  text-align: center;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.row-action-btn {
+  background: none;
+  border: 1px solid transparent;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #374151;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.row-action-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.row-action-btn svg {
+  display: block;
+}
+
+/* ------------------ Widget Styles ------------------ */
+
+/* Responsive 2-column grid that wraps gracefully */
+.widgets-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+/* Widget card matches light-grey screenshot background */
+.meetings-widget {
+  background: #f7f9fc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px; /* slightly smaller radius */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+  height: 100%;
+  min-height: 200px; /* reduced height */
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.meetings-widget:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Widget header shares same light-grey background */
+.widget-header {
+  background: #f7f9fc;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.widget-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px; /* smaller title */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.widget-icon {
+  font-size: 14px; /* smaller icon */
+}
+
+/* Pagination overrides within widget */
+.meetings-widget .data-table-pagination {
+  padding: 8px 12px; /* reduced padding */
+}
+
+/* even narrower STATUS column */
+.meetings-table th:nth-child(4),
+.accept-cell {
+  width: 60px;
+  text-align: center;
+}
+
+/* smaller status pill */
+.accept-status {
+  padding: 2px 6px;
+  font-size: 9px;
+}
+
+/* Pagination layout: info left, controls right */
+.meetings-widget .data-table-pagination {
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.meetings-widget .pagination-info {
+  font-size: 10px;
+  order: 0; /* ensure it stays left */
+  margin: 0 0 0 12px; /* 12px left margin for alignment */
+}
+
+/* Fallback single-column for very narrow screens */
+@media (max-width: 600px) {
+  .widgets-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark-mode overrides removed to maintain light styling regardless of system theme */ 
+.meetings-table th,
+.meetings-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+} 
+
+/* Start Date column narrower */
+.meetings-table th:nth-child(3),
+.meetings-table td:nth-child(3) {
+  width: 110px; /* adjust as needed */
+  text-align: center;
+} 
+
+/* Related To column narrower */
+.meetings-table th:nth-child(2),
+.meetings-table td:nth-child(2) {
+  width: 150px; /* adjust as needed */
+  text-align: left;
+} 
+
+/* Actions column tighter */
+.meetings-table th:last-child,
+.meetings-table td:last-child {
+  width: 60px;
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.row-actions {
+  justify-content: center;
+  gap: 4px;
+}
+
+@media (max-width: 1024px) {
+  /* lock column widths so table fits viewport without scrolling */
+  .meetings-table {
+    table-layout: fixed;
+  }
+} 
