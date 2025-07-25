@@ -75,6 +75,35 @@
   color: #b91c1c;
 }
 
+.employment-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.employment-badge.full-time {
+  background: #dbeafe; /* soft blue */
+  color: #1d4ed8;
+}
+
+.employment-badge.contract {
+  background: #fef3c7; /* soft yellow */
+  color: #d97706;
+}
+
+.employment-badge.part-time {
+  background: #d1fae5; /* soft green */
+  color: #059669;
+}
+
+.employment-badge.intern {
+  background: #f3e8ff; /* soft purple */
+  color: #7c3aed;
+}
+
 .actions-cell {
   text-align: center;
 }

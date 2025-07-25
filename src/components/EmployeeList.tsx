@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './MeetingsTable.css';
+import './EmployeeList.css';
 import Pagination from './Pagination';
 
 interface Meeting {
@@ -8,6 +8,10 @@ interface Meeting {
   relatedTo: string;
   startDate: string;
   accepted: boolean;
+  employmentType: string;
+  assignedTo: string;
+  department: string;
+  joiningDate: string;
 }
 
 interface MeetingsTableProps {
@@ -29,7 +33,7 @@ export const MeetingsTableBase: React.FC<MeetingsTableProps> = ({ meetings, onEd
           <tr>
             <th className="header-cell">
               <div className="header-content">
-                <span>Subject</span>
+                <span>Task Title</span>
                 <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m6 9 6 6 6-6"/>
                 </svg>
@@ -37,7 +41,7 @@ export const MeetingsTableBase: React.FC<MeetingsTableProps> = ({ meetings, onEd
             </th>
             <th className="header-cell">
               <div className="header-content">
-                <span>Related to</span>
+                <span>Project Name</span>
                 <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m6 9 6 6 6-6"/>
                 </svg>
@@ -45,7 +49,7 @@ export const MeetingsTableBase: React.FC<MeetingsTableProps> = ({ meetings, onEd
             </th>
             <th className="header-cell">
               <div className="header-content">
-                <span>Start Date</span>
+                <span>Due Date</span>
                 <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m6 9 6 6 6-6"/>
                 </svg>
@@ -53,7 +57,31 @@ export const MeetingsTableBase: React.FC<MeetingsTableProps> = ({ meetings, onEd
             </th>
             <th className="header-cell">
               <div className="header-content">
-                <span>Accept?</span>
+                <span>Employment Type</span>
+                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </div>
+            </th>
+            <th className="header-cell">
+              <div className="header-content">
+                <span>Assigned To</span>
+                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </div>
+            </th>
+            <th className="header-cell">
+              <div className="header-content">
+                <span>Department</span>
+                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </div>
+            </th>
+            <th className="header-cell">
+              <div className="header-content">
+                <span>Joining Date</span>
                 <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m6 9 6 6 6-6"/>
                 </svg>
@@ -68,11 +96,14 @@ export const MeetingsTableBase: React.FC<MeetingsTableProps> = ({ meetings, onEd
               <td className="subject-cell">{meeting.subject}</td>
               <td>{meeting.relatedTo}</td>
               <td>{formatDate(meeting.startDate)}</td>
-              <td className="accept-cell">
-                <span className={`accept-status ${meeting.accepted ? 'accepted' : 'pending'}`}>
-                  {meeting.accepted ? 'Accepted' : 'Pending'}
+              <td className="employment-type-cell">
+                <span className={`employment-badge ${meeting.employmentType.toLowerCase()}`}>
+                  {meeting.employmentType}
                 </span>
               </td>
+              <td>{meeting.assignedTo}</td>
+              <td>{meeting.department}</td>
+              <td>{formatDate(meeting.joiningDate)}</td>
               <td className="actions-cell">
                 <div className="row-actions">
                   <button 
@@ -156,11 +187,11 @@ export const MeetingsWidget: React.FC<MeetingsWidgetProps> = ({ title, icon, mee
 
 // Sample data retained from original widget
 const sampleMeetings: Meeting[] = [
-  { id: 1, subject: 'Demo', relatedTo: 'AtoZ Co Ltd', startDate: '02/27/2026 10:00 AM', accepted: true },
-  { id: 2, subject: 'Review needs', relatedTo: 'Tech Solutions Inc', startDate: '02/28/2026 02:00 PM', accepted: true },
-  { id: 3, subject: 'Introduce all players', relatedTo: 'Global Corp', startDate: '03/01/2026 11:30 AM', accepted: true },
-  { id: 4, subject: 'Introduce all players', relatedTo: 'Innovation Labs', startDate: '03/02/2026 09:00 AM', accepted: true },
-  { id: 5, subject: 'Discuss pricing', relatedTo: 'Enterprise Solutions', startDate: '03/03/2026 03:00 PM', accepted: true },
+  { id: 1, subject: 'Demo', relatedTo: 'AtoZ Co Ltd', startDate: '02/27/2026 10:00 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'John Doe', department: 'Sales', joiningDate: '01/15/2024' },
+  { id: 2, subject: 'Review needs', relatedTo: 'Tech Solutions Inc', startDate: '02/28/2026 02:00 PM', accepted: true, employmentType: 'Contract', assignedTo: 'Jane Smith', department: 'Engineering', joiningDate: '03/20/2024' },
+  { id: 3, subject: 'Introduce all players', relatedTo: 'Global Corp', startDate: '03/01/2026 11:30 AM', accepted: true, employmentType: 'Part-time', assignedTo: 'Mike Johnson', department: 'Marketing', joiningDate: '06/10/2024' },
+  { id: 4, subject: 'Introduce all players', relatedTo: 'Innovation Labs', startDate: '03/02/2026 09:00 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'Sarah Wilson', department: 'Product', joiningDate: '02/05/2024' },
+  { id: 5, subject: 'Discuss pricing', relatedTo: 'Enterprise Solutions', startDate: '03/03/2026 03:00 PM', accepted: true, employmentType: 'Intern', assignedTo: 'David Brown', department: 'Support', joiningDate: '08/15/2024' },
 ];
 
 export const MeetingsTableWidget: React.FC = () => (

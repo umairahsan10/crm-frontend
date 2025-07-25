@@ -1,9 +1,9 @@
 .employee-form-modal {
   background: #fff;
-  border-radius: 6px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
-  max-width: 800px;
-  margin: 40px auto;
+  border-radius: 0;
+  box-shadow: none;
+  max-width: none;
+  margin: 0;
   padding: 0;
   position: relative;
 }
@@ -23,7 +23,8 @@
   cursor: pointer;
 }
 .employee-form {
-  padding: 24px;
+  padding: 24px 24px 0 24px;
+  margin: 0;
 }
 .employee-form-section {
   margin-bottom: 18px;
@@ -107,7 +108,8 @@
 .employee-form-footer {
   display: flex;
   justify-content: flex-end;
-  padding-top: 10px;
+  padding: 18px 0 0 0;
+  margin: 0;
 }
 .create-employee-btn {
   background: #1976d2;

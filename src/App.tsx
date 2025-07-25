@@ -11,13 +11,14 @@ import EmployeesPage from './pages/EmployeesPage';
 import AttendancePage from './pages/AttendancePage';
 import EmployeeForm from './components/EmployeeForm';
 import DashboardPage from './pages/DashboardPage';
+import LeadsPage from './pages/LeadsPage';
 
 // Import existing pages (to be replaced with new HR system pages)
 import DealsPage from './pages/DealsPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 
-type Page = 'dashboard' | 'employees' | 'attendance' | 'payroll' | 'sales' | 'financial' | 'chargebacks' | 'settings';
+type Page = 'dashboard' | 'employees' | 'attendance' | 'payroll' | 'sales' | 'leads' | 'financial' | 'chargebacks' | 'settings';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -50,7 +51,6 @@ function App() {
   // Dashboard Page Content (temporary - will be replaced with DashboardPage component)
   const DashboardContent = () => (
     <div className="dashboard-container">
-      <EmployeeForm />
       <div className="page-header">
         <h1>Dashboard</h1>
         <p>Welcome to the HR & Admin Management System</p>
@@ -159,6 +159,8 @@ function App() {
         return <DealsPage />; // Temporary - replace with PayrollPage
       case 'sales':
         return <ReportsPage />; // Temporary - replace with SalesPage
+      case 'leads':
+        return <LeadsPage />;
       case 'financial':
         return <ReportsPage />; // Temporary - replace with FinancialPage
       case 'chargebacks':
