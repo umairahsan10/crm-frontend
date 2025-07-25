@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Sidebar from '../Sidebar/Sidebar';
-import Header from './Header';
+import Header from '../Header/Header';
 import type { UserRole } from '../../types';
 import './Layout.css';
 

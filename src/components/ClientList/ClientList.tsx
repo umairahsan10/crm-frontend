@@ -1,5 +1,5 @@
 import React from 'react';
-import DashboardCard from './DashboardCard';
+import DashboardCard from '../DashboardCard/DashboardCard';
 import './ClientList.css';
 
 interface Customer {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './EmployeeList.css';
-import Pagination from './Pagination';
+import Pagination from '../Pagination/Pagination';
 
 interface Meeting {
   id: number;
