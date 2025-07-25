@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import DashboardCard from '../components/DashboardCard';
+import DashboardCard from '../components/DashboardCard/DashboardCard';
 import './CustomersPage.css';
 
 interface Customer {

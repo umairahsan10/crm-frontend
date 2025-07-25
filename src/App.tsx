@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import Layout from './components/Layout';
-import DashboardCard from './components/DashboardCard';
+import Layout from './components/Layout/Layout';
+import DashboardCard from './components/DashboardCard/DashboardCard';
 import Login from './pages/Login/Login';
 import type { UserRole } from './types';
 import { NAV_ITEMS } from './utils/constants';
@@ -9,7 +9,7 @@ import './App.css';
 // Import new HR system pages
 import EmployeesPage from './pages/EmployeesPage';
 import AttendancePage from './pages/AttendancePage';
-import EmployeeForm from './components/EmployeeForm';
+import EmployeeForm from './components/HR/EmployeeForm/EmployeeForm';
 import DashboardPage from './pages/DashboardPage';
 
 // Import existing pages (to be replaced with new HR system pages)

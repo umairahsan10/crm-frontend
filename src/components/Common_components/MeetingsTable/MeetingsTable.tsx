@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './MeetingsTable.css';
-import Pagination from './Pagination';
+import Pagination from '../../Pagination';
 
 interface Meeting {
   id: number;

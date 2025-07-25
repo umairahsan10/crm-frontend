@@ -1,5 +1,5 @@
 import React from 'react';
-import DashboardCard from '../components/DashboardCard';
+import DashboardCard from '../components/DashboardCard/DashboardCard';
 import './ReportsPage.css';
 
 const ReportsPage: React.FC = () => {
