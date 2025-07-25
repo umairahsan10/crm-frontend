@@ -53,7 +53,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
 
   const [form, setForm] = useState<State>(initialState);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [saving, setSaving] = useState(false);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -70,13 +70,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
 
   // Check if all required fields in the main section are filled
   const mainSectionRequiredFields: (keyof State)[] = ['firstName', 'email', 'employeeType', 'employeeStatus', 'dateOfHire'];
-  const mainSectionFieldsFilled = mainSectionRequiredFields.every(field => form[field] && form[field].toString().trim() !== '');
 
-  // Check if there are any errors in the main section required fields
-  const mainSectionErrors = mainSectionRequiredFields.some(field => errors[field]);
 
-  // Check if form is valid (only main section fields for button state)
-  const isFormValid = mainSectionFieldsFilled && !mainSectionErrors;
 
   // Function to create readable form data content
   const createFormDataContent = (formData: State): string => {
@@ -289,7 +284,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
     if (Object.keys(newErrors).length > 0) return;
 
     // Continue submission logic...
-    setSaving(true);
     try {
       await appendToExistingFile();
       // Reset form and close modal on successful submission
@@ -300,8 +294,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
       onClose();
     } catch (error) {
       // Silently handle error - form will still reset
-    } finally {
-      setSaving(false);
     }
   };
 

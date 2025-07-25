@@ -35,9 +35,7 @@ function App() {
     setCurrentPage('dashboard');
   };
 
-  const handleCardClick = (cardType: string) => {
-    console.log(`Clicked on ${cardType} card`);
-  };
+
 
   const handleNavigation = (page: string) => {
     const validPages = NAV_ITEMS.map(item => item.id);

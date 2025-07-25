@@ -78,33 +78,13 @@ const DealsPage: React.FC = () => {
     }
   ]);
 
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'prospecting': return 'primary';
-      case 'qualification': return 'warning';
-      case 'proposal': return 'warning';
-      case 'negotiation': return 'success';
-      case 'closed-won': return 'success';
-      case 'closed-lost': return 'danger';
-      default: return '';
-    }
-  };
 
-  const getStageIcon = (stage: string) => {
-    switch (stage) {
-      case 'prospecting': return '🔍';
-      case 'qualification': return '✅';
-      case 'proposal': return '📄';
-      case 'negotiation': return '🤝';
-      case 'closed-won': return '💰';
-      case 'closed-lost': return '❌';
-      default: return '❓';
-    }
-  };
+
+
 
   // Calculate statistics
   const totalDeals = deals.length;
-  const closedDeals = deals.filter(d => d.stage === 'closed-won' || d.stage === 'closed-lost').length;
+
   const pendingDeals = deals.filter(d => d.stage !== 'closed-won' && d.stage !== 'closed-lost').length;
   const weightedValue = deals.reduce((sum, d) => sum + (d.value * d.probability / 100), 0);
 
