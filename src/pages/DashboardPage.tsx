@@ -13,7 +13,6 @@ import {
   RadialLinearScale,
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
-import { MeetingsTableWidget } from '../components/MeetingsTable';
 import './DashboardPage.css';
 
 // Register Chart.js components
@@ -202,11 +201,6 @@ const DashboardPage: React.FC = () => {
             <Doughnut data={employeeData} options={employeeChartOptions} />
           </div>
         </div>
-      </div>
-
-      {/* Data Table Section */}
-      <div className="table-section">
-        <MeetingsTableWidget />
       </div>
     </div>
   );

@@ -36,7 +36,11 @@ type State = typeof initialState;
 
 
 
-const EmployeeForm: React.FC = () => {
+interface EmployeeFormProps {
+  onClose: () => void;
+}
+
+const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
   const validateRequiredFields = (formData: Record<string, unknown>, requiredFields: string[]) => {
     const errors: Record<string, string> = {};
     requiredFields.forEach((field) => {
@@ -288,6 +292,12 @@ const EmployeeForm: React.FC = () => {
     setSaving(true);
     try {
       await appendToExistingFile();
+      // Reset form and close modal on successful submission
+      setForm(initialState);
+      setErrors({});
+      setTouched({});
+      setShowAdvanced(false);
+      onClose();
     } catch (error) {
       // Silently handle error - form will still reset
     } finally {
@@ -297,11 +307,7 @@ const EmployeeForm: React.FC = () => {
 
   return (
     <div className="employee-form-modal">
-      <div className="employee-form-header">
-        <span>New Employee</span>
-        <button className="close-btn" type="button">×</button>
-      </div>
-      <form className="employee-form" onSubmit={handleSubmit}>
+      <form id="employee-form" className="employee-form" onSubmit={handleSubmit}>
         <div className="employee-form-section">
           <div className="employee-form-row">
             <div className="employee-form-field">
@@ -563,11 +569,6 @@ const EmployeeForm: React.FC = () => {
             </div>
           </div>
         )}
-        <div className="employee-form-footer">
-          <button type="submit" className="create-employee-btn" disabled={!isFormValid || saving}>
-            {saving ? 'Saving...' : 'Create Employee'}
-          </button>
-        </div>
       </form>
     </div>
   );

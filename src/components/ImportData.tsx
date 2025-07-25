@@ -40,9 +40,8 @@ const ImportData: React.FC = () => {
     <div className="import-container">
       <h2>Step 1: Upload Import File</h2>
       <p className="info-text">
-      Import your customer, lead, or contact data by uploading a file from your device, or download our CRM template to format your data correctly.
+      Import your customer, lead, or contact data by uploading a file from your device.
       </p>
-      <a className="template-link" href="#">Download Import File Template</a>
 
       <form onSubmit={handleSubmit}>
         <label className="label">Select file:</label>

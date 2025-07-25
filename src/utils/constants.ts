@@ -5,6 +5,7 @@ export const NAV_ITEMS = [
   { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance', roles: ['admin', 'hr'] },
   { id: 'payroll', label: 'Payroll', icon: '💰', path: '/payroll', roles: ['admin', 'hr'] },
   { id: 'sales', label: 'Sales', icon: '📈', path: '/sales', roles: ['admin'] },
+  { id: 'leads', label: 'Leads', icon: '○', path: '/leads', roles: ['admin'] },
   { id: 'settings', label: 'Settings', icon: '⚙️', path: '/settings', roles: ['admin'] },
 ];
 
