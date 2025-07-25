@@ -1,5 +1,5 @@
 import React from 'react';
-import DashboardCard from '../components/DashboardCard';
+import DashboardCard from '../../components/DashboardCard';
 import './EmployeesPage.css';
 
 const EmployeesPage: React.FC = () => {
@@ -34,14 +34,6 @@ const EmployeesPage: React.FC = () => {
           change="0"
           changeType="neutral"
           icon="🏢"
-        />
-        <DashboardCard
-          title="Turnover Rate"
-          subtitle="This quarter"
-          value="2.3%"
-          change="-0.5%"
-          changeType="positive"
-          icon="📊"
         />
       </div>
 

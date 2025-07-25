@@ -1,0 +1,23 @@
+:root {
+  --bg-light: #ffffff;
+  --text-light: #1f2937;
+  --surface-light: #ffffff;
+  --border-light: #e5e7eb;
+}
+
+html.dark {
+  --bg-light: #0f172a;
+  --text-light: #e2e8f0;
+  --surface-light: #1e293b;
+  --border-light: #334155;
+}
+
+body {
+  background: var(--bg-light);
+  color: var(--text-light);
+}
+
+.card, .settings-card, .deal-card, .customer-card {
+  background: var(--surface-light);
+  border-color: var(--border-light);
+} 
