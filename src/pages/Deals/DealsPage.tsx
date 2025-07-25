@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import DashboardCard from '../components/DashboardCard';
+import DashboardCard from '../../components/DashboardCard';
 import './DealsPage.css';
+import ClientList from '../../components/ClientList';
 
 interface Deal {
   id: number;
@@ -107,6 +108,27 @@ const DealsPage: React.FC = () => {
   const pendingDeals = deals.filter(d => d.stage !== 'closed-won' && d.stage !== 'closed-lost').length;
   const weightedValue = deals.reduce((sum, d) => sum + (d.value * d.probability / 100), 0);
 
+  // Transform deals to clients for ClientList reuse
+  const stageToStatus: Record<string,string> = {
+    'prospecting': 'prospect',
+    'qualification': 'pending',
+    'proposal': 'review',
+    'negotiation': 'pending',
+    'closed-won': 'vip',
+    'closed-lost': 'inactive'
+  };
+
+  const clientData = deals.map(d => ({
+    id: d.id,
+    name: d.title,
+    email: '',
+    company: d.customer,
+    status: stageToStatus[d.stage] as any,
+    lastContact: d.expectedClose,
+    value: d.value,
+    avatar: d.avatar,
+  }));
+
   return (
     <div className="deals-container">
       <div className="page-header">
@@ -133,15 +155,6 @@ const DealsPage: React.FC = () => {
         />
         
         <DashboardCard
-          title="Won Deals"
-          value={closedDeals.toString()}
-          subtitle="This quarter"
-          icon="💰"
-          trend={{ value: 12.3, isPositive: true }}
-          className="success"
-        />
-        
-        <DashboardCard
           title="Weighted Value"
           value={`$${Math.round(weightedValue).toLocaleString()}`}
           subtitle="Expected revenue"
@@ -152,42 +165,9 @@ const DealsPage: React.FC = () => {
       </div>
       
       <div className="deals-section">
-        <div className="section-header">
-          <h2>Sales Pipeline</h2>
-          <button className="btn-add-deal">+ Add Deal</button>
-        </div>
+        {/* Section header removed as requested */}
         
-        <div className="deals-grid">
-          {deals.map(deal => (
-            <DashboardCard
-              key={deal.id}
-              title={deal.title}
-              subtitle={deal.customer}
-              icon={getStageIcon(deal.stage)}
-              className={`deal-card ${getStageColor(deal.stage)}`}
-              onClick={() => console.log(`Viewing deal: ${deal.title}`)}
-            >
-              <div className="deal-details">
-                <div className="deal-header">
-                  <img 
-                    src={deal.avatar} 
-                    alt={deal.customer}
-                    className="deal-avatar"
-                  />
-                  <div className="deal-info">
-                    <p className="deal-customer">{deal.customer}</p>
-                    <div className="deal-meta">
-                      <span className="deal-value">${deal.value.toLocaleString()}</span>
-                      <span className="deal-probability">{deal.probability}%</span>
-                    </div>
-                    <small className="deal-stage">{deal.stage.replace('-', ' ')}</small>
-                  </div>
-                </div>
-                <small className="expected-close">Expected close: {deal.expectedClose}</small>
-              </div>
-            </DashboardCard>
-          ))}
-        </div>
+        <ClientList customers={clientData} title="Client List" />
       </div>
     </div>
   );

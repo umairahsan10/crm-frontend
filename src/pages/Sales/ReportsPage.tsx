@@ -1,15 +1,17 @@
 import React from 'react';
-import DashboardCard from '../components/DashboardCard';
+import DashboardCard from '../../components/DashboardCard';
+import BarChart from '../../components/BarChart';
 import './ReportsPage.css';
 
 const ReportsPage: React.FC = () => {
   return (
     <div className="reports-container">
       <div className="page-header">
-        <h1>Reports & Analytics</h1>
+        <h1>Sales & Analytics</h1>
         <p>Comprehensive insights into your business performance</p>
       </div>
-      
+      <BarChart />
+
       <div className="stats-grid">
         <DashboardCard
           title="Revenue Growth"
@@ -37,15 +39,6 @@ const ReportsPage: React.FC = () => {
           trend={{ value: 2.1, isPositive: true }}
           className="warning"
         />
-        
-        <DashboardCard
-          title="Sales Velocity"
-          value="$45.2K"
-          subtitle="Per month"
-          icon="⚡"
-          trend={{ value: 8.7, isPositive: true }}
-          className="danger"
-        />
       </div>
       
       <div className="reports-section">
@@ -55,21 +48,6 @@ const ReportsPage: React.FC = () => {
         </div>
         
         <div className="reports-grid">
-          <DashboardCard
-            title="Monthly Revenue"
-            subtitle="Last 6 months"
-            className="report-card"
-          >
-            <div className="chart-placeholder">
-              <div className="chart-bar" style={{ height: '60%' }}></div>
-              <div className="chart-bar" style={{ height: '80%' }}></div>
-              <div className="chart-bar" style={{ height: '45%' }}></div>
-              <div className="chart-bar" style={{ height: '90%' }}></div>
-              <div className="chart-bar" style={{ height: '75%' }}></div>
-              <div className="chart-bar" style={{ height: '95%' }}></div>
-            </div>
-            <p className="chart-label">Revenue trend showing strong growth</p>
-          </DashboardCard>
           
           <DashboardCard
             title="Lead Sources"
@@ -92,31 +70,6 @@ const ReportsPage: React.FC = () => {
               <div className="source-item">
                 <span className="source-name">Other</span>
                 <span className="source-value">9%</span>
-              </div>
-            </div>
-          </DashboardCard>
-          
-          <DashboardCard
-            title="Sales Pipeline"
-            subtitle="Current stage distribution"
-            className="report-card"
-          >
-            <div className="pipeline-stages">
-              <div className="stage-item">
-                <span className="stage-name">Prospecting</span>
-                <span className="stage-count">12</span>
-              </div>
-              <div className="stage-item">
-                <span className="stage-name">Qualification</span>
-                <span className="stage-count">8</span>
-              </div>
-              <div className="stage-item">
-                <span className="stage-name">Proposal</span>
-                <span className="stage-count">5</span>
-              </div>
-              <div className="stage-item">
-                <span className="stage-name">Negotiation</span>
-                <span className="stage-count">3</span>
               </div>
             </div>
           </DashboardCard>

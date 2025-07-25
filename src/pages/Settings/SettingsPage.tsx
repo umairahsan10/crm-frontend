@@ -1,8 +1,11 @@
 import React from 'react';
-import DashboardCard from '../components/DashboardCard';
+import DashboardCard from '../../components/DashboardCard';
 import './SettingsPage.css';
+import { useTheme } from '../../context/ThemeContext';
 
 const SettingsPage: React.FC = () => {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="settings-container">
       <div className="page-header">
@@ -43,7 +46,7 @@ const SettingsPage: React.FC = () => {
         </DashboardCard>
         
         <DashboardCard
-          title="Notification Preferences"
+          title="Preferences"
           subtitle="Email and push notifications"
           className="settings-card"
         >
@@ -78,6 +81,16 @@ const SettingsPage: React.FC = () => {
                 <span className="toggle-slider"></span>
               </label>
             </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-label">Dark Mode</span>
+                <span className="setting-desc">Switch to dark theme</span>
+              </div>
+              <label className="toggle-switch">
+                <input type="checkbox" checked={theme==='dark'} onChange={toggleTheme} />
+                <span className="toggle-slider"></span>
+              </label>
+            </div>
           </div>
         </DashboardCard>
         
@@ -107,47 +120,6 @@ const SettingsPage: React.FC = () => {
                 <span className="security-desc">View recent login activity</span>
               </div>
               <button className="btn-view">View</button>
-            </div>
-          </div>
-        </DashboardCard>
-        
-        <DashboardCard
-          title="System Preferences"
-          subtitle="Interface and display settings"
-          className="settings-card"
-        >
-          <div className="system-settings">
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-label">Dark Mode</span>
-                <span className="setting-desc">Switch to dark theme</span>
-              </div>
-              <label className="toggle-switch">
-                <input type="checkbox" />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-label">Auto-refresh</span>
-                <span className="setting-desc">Automatically update data</span>
-              </div>
-              <label className="toggle-switch">
-                <input type="checkbox" defaultChecked />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-label">Language</span>
-                <span className="setting-desc">Choose your preferred language</span>
-              </div>
-              <select className="language-select">
-                <option>English</option>
-                <option>Spanish</option>
-                <option>French</option>
-                <option>German</option>
-              </select>
             </div>
           </div>
         </DashboardCard>

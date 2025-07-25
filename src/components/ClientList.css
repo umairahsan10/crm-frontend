@@ -1,0 +1,53 @@
+.customers-section {
+  margin-top: 24px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.customers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.customer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.customer-email {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.customer-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.customer-value {
+  font-weight: 600;
+  color: #051650;
+}
+
+.customer-status {
+  text-transform: capitalize;
+}
+
+.customer-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+}
+
+.status-badge.pending { background:#dbeafe; color:#1e3a8a; }
+.status-badge.vip { background:#fde68a; color:#92400e; }
+.status-badge.review { background:#e0f2fe; color:#0369a1; } 
