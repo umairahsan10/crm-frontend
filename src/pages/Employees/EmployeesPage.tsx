@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import EmployeeList from '../../components/EmployeeList';
-import EmployeeForm from '../../components/EmployeeForm';
+import EmployeeList from '../../components/EmployeeList/EmployeeList';
+import EmployeeForm from '../../components/EmployeeForm/EmployeeForm';
 import './EmployeesPage.css';
 
 const EmployeesPage: React.FC = () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import ImportData from '../../components/ImportData';
+import ImportData from '../../components/ImportData/ImportData';
 import './LeadsPage.css';
 
 const LeadsPage: React.FC = () => {

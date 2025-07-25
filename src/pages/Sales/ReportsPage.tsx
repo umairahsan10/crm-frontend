@@ -1,6 +1,6 @@
 import React from 'react';
-import DashboardCard from '../../components/DashboardCard';
-import BarChart from '../../components/BarChart';
+import DashboardCard from '../../components/DashboardCard/DashboardCard';
+import BarChart from '../../components/charts/BarChart/BarChart';
 import './ReportsPage.css';
 
 const ReportsPage: React.FC = () => {

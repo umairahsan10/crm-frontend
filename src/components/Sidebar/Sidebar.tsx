@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { NAV_ITEMS } from '../utils/constants';
-import type { UserRole } from '../types';
+import { NAV_ITEMS } from '../../utils/constants';
+import type { UserRole } from '../../types';
 import {
   AiOutlineDashboard,
   AiOutlineTeam,

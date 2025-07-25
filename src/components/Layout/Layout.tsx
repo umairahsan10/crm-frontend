@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Sidebar from './Sidebar';
+import Sidebar from '../Sidebar/Sidebar';
 import Header from './Header';
-import type { UserRole } from '../types';
+import type { UserRole } from '../../types';
 import './Layout.css';
 
 interface LayoutProps {

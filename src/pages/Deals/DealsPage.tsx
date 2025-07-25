@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import DashboardCard from '../../components/DashboardCard';
+import DashboardCard from '../../components/DashboardCard/DashboardCard';
 import './DealsPage.css';
-import ClientList from '../../components/ClientList';
+import ClientList from '../../components/ClientList/ClientList';
 
 interface Deal {
   id: number;

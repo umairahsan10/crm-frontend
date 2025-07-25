@@ -1,5 +1,5 @@
 import React from 'react';
-import AttendanceLog from '../../components/AttendanceLog';
+import AttendanceLog from '../../components/AttendanceLog/AttendanceLog';
 import './AttendancePage.css';
 
 const AttendancePage: React.FC = () => {
