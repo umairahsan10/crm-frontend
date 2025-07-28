@@ -1,5 +1,5 @@
 import React from 'react';
-import { ATTENDANCE_STATUS, SALARY_STATUS, SALES_STATUS, CHARGEBACK_STATUS, ALERT_SEVERITY } from '../../utils/constants';
+import { ATTENDANCE_STATUS, SALARY_STATUS, SALES_STATUS, CHARGEBACK_STATUS, ALERT_SEVERITY } from '../../../utils/constants';
 import './StatusBadge.css';
 
 interface StatusBadgeProps {
