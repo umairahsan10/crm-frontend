@@ -5,30 +5,93 @@ import './EmployeesPage.css';
 
 const EmployeesPage: React.FC = () => {
   // Sample employee data for the table
-  const employeeMeetings = [
-    { id: 1, subject: 'Client Demo Preparation', relatedTo: 'TechCorp CRM', startDate: '02/27/2026 10:00 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'Sarah Chen', department: 'Sales', joiningDate: '01/15/2024' },
-    { id: 2, subject: 'Database Migration', relatedTo: 'Legacy System Upgrade', startDate: '02/28/2026 02:00 PM', accepted: true, employmentType: 'Full-time', assignedTo: 'Mike Rodriguez', department: 'Engineering', joiningDate: '03/20/2024' },
-    { id: 3, subject: 'API Integration Testing', relatedTo: 'Payment Gateway', startDate: '03/01/2026 11:30 AM', accepted: true, employmentType: 'Contract', assignedTo: 'Alex Thompson', department: 'Engineering', joiningDate: '06/10/2024' },
-    { id: 4, subject: 'User Interface Redesign', relatedTo: 'Mobile App', startDate: '03/02/2026 09:00 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'Emily Davis', department: 'Design', joiningDate: '02/05/2024' },
-    { id: 5, subject: 'Security Audit', relatedTo: 'Data Protection', startDate: '03/03/2026 03:00 PM', accepted: true, employmentType: 'Full-time', assignedTo: 'David Kim', department: 'Security', joiningDate: '04/12/2024' },
-    { id: 6, subject: 'Performance Optimization', relatedTo: 'Search Functionality', startDate: '03/04/2026 01:00 PM', accepted: false, employmentType: 'Part-time', assignedTo: 'James Wilson', department: 'Engineering', joiningDate: '07/08/2024' },
-    { id: 7, subject: 'Bug Fix - Login Issue', relatedTo: 'Authentication System', startDate: '03/05/2026 10:30 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'Lisa Park', department: 'Engineering', joiningDate: '05/20/2024' },
-    { id: 8, subject: 'Feature Development', relatedTo: 'Reporting Dashboard', startDate: '03/06/2026 08:00 AM', accepted: false, employmentType: 'Contract', assignedTo: 'Robert Johnson', department: 'Product', joiningDate: '09/15/2024' },
-    { id: 9, subject: 'Code Review', relatedTo: 'User Management Module', startDate: '03/07/2026 02:00 PM', accepted: true, employmentType: 'Full-time', assignedTo: 'Maria Garcia', department: 'Engineering', joiningDate: '01/30/2024' },
-    { id: 10, subject: 'Deployment Planning', relatedTo: 'Production Release', startDate: '03/08/2026 11:00 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'Tom Anderson', department: 'DevOps', joiningDate: '03/10/2024' },
-    { id: 11, subject: 'Documentation Update', relatedTo: 'API Reference', startDate: '03/09/2026 09:30 AM', accepted: false, employmentType: 'Intern', assignedTo: 'Jennifer Lee', department: 'Technical Writing', joiningDate: '08/01/2024' },
-    { id: 12, subject: 'Customer Support Training', relatedTo: 'New Features', startDate: '03/10/2026 03:00 PM', accepted: true, employmentType: 'Full-time', assignedTo: 'Kevin O\'Brien', department: 'Support', joiningDate: '02/18/2024' },
-    { id: 13, subject: 'Database Backup Setup', relatedTo: 'Disaster Recovery', startDate: '03/11/2026 10:00 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'Rachel Green', department: 'DevOps', joiningDate: '04/05/2024' },
-    { id: 14, subject: 'Third-party Integration', relatedTo: 'Email Marketing Tool', startDate: '03/12/2026 01:30 PM', accepted: false, employmentType: 'Contract', assignedTo: 'Daniel Brown', department: 'Engineering', joiningDate: '10/12/2024' },
-    { id: 15, subject: 'Load Testing', relatedTo: 'Scalability Assessment', startDate: '03/13/2026 08:00 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'Amanda White', department: 'QA', joiningDate: '06/25/2024' },
+  const employees = [
+    { 
+      id: '1', 
+      name: 'Sarah', 
+      lastname: 'Chen',
+      email: 'sarah.chen@company.com', 
+      phone: '+1-555-0101', 
+      gender: 'female' as const, 
+      cnic: '12345-6789012-3', 
+      department: 'Sales', 
+      role_id: 'Sales Representative', 
+      manager: 'John Smith', 
+      team_lead: 'Jane Doe', 
+      address: '123 Main St, City, State', 
+      marital_status: 'single' as const, 
+      status: 'active' as const, 
+      start_date: '2024-01-15', 
+      mode_of_work: 'office' as const, 
+      dob: '1990-05-15', 
+      emergency_contact: '+1-555-0102', 
+      shift_start: '09:00', 
+      shift_end: '17:00', 
+      employment_type: 'full-time' as const, 
+      period_type: 'permanent' as const, 
+      created_at: '2024-01-15', 
+      updated_at: '2024-01-15', 
+      password_hash: 'hashed_password_here'
+    },
+    { 
+      id: '2', 
+      name: 'Mike', 
+      lastname: 'Rodriguez',
+      email: 'mike.rodriguez@company.com', 
+      phone: '+1-555-0103', 
+      gender: 'male' as const, 
+      cnic: '12345-6789013-4', 
+      department: 'Engineering', 
+      role_id: 'Software Engineer', 
+      manager: 'John Smith', 
+      team_lead: 'Jane Doe', 
+      address: '456 Oak Ave, City, State', 
+      marital_status: 'married' as const, 
+      status: 'active' as const, 
+      start_date: '2024-03-20', 
+      mode_of_work: 'hybrid' as const, 
+      remote_days_allowed: 2,
+      dob: '1988-12-10', 
+      emergency_contact: '+1-555-0104', 
+      shift_start: '08:00', 
+      shift_end: '16:00', 
+      employment_type: 'full-time' as const, 
+      period_type: 'permanent' as const, 
+      created_at: '2024-03-20', 
+      updated_at: '2024-03-20', 
+      password_hash: 'hashed_password_here'
+    },
+    { 
+      id: '3', 
+      name: 'Alex', 
+      lastname: 'Thompson',
+      email: 'alex.thompson@company.com', 
+      phone: '+1-555-0105', 
+      gender: 'male' as const, 
+      cnic: '12345-6789014-5', 
+      department: 'Engineering', 
+      role_id: 'Senior Developer', 
+      manager: 'John Smith', 
+      team_lead: 'Jane Doe', 
+      address: '789 Pine St, City, State', 
+      marital_status: 'single' as const, 
+      status: 'active' as const, 
+      start_date: '2024-06-10', 
+      mode_of_work: 'remote' as const, 
+      dob: '1992-08-22', 
+      emergency_contact: '+1-555-0106', 
+      shift_start: '10:00', 
+      shift_end: '18:00', 
+      employment_type: 'contract' as const, 
+      period_type: 'contract' as const, 
+      created_at: '2024-06-10', 
+      updated_at: '2024-06-10', 
+      password_hash: 'hashed_password_here'
+    }
   ];
 
-  const handleEdit = (id: number) => {
-    console.log('Edit employee meeting:', id);
-  };
-
-  const handleView = (id: number) => {
-    console.log('View employee meeting:', id);
+  const handleEdit = (employee: any) => {
+    console.log('Edit employee:', employee);
   };
 
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
@@ -53,9 +116,8 @@ const EmployeesPage: React.FC = () => {
           </button>
         </div>
         <EmployeeList 
-          meetings={employeeMeetings} 
+          employees={employees} 
           onEdit={handleEdit} 
-          onView={handleView} 
         />
       </div>
 
