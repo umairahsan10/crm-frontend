@@ -1,207 +1,463 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import './EmployeeList.css';
-import Pagination from '../Pagination/Pagination';
 
-interface Meeting {
-  id: number;
-  subject: string;
-  relatedTo: string;
-  startDate: string;
-  accepted: boolean;
-  employmentType: string;
-  assignedTo: string;
+export interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  gender: 'male' | 'female' | 'other';
+  cnic: string;
   department: string;
-  joiningDate: string;
+  role_id: string;
+  manager: string;
+  team_lead: string;
+  address: string;
+  marital_status: 'single' | 'married' | 'divorced' | 'widowed';
+  status: 'active' | 'inactive' | 'pending' | 'terminated';
+  start_date: string;
+  end_date?: string;
+  mode_of_work: 'office' | 'remote' | 'hybrid';
+  remote_days_allowed?: number;
+  dob: string;
+  emergency_contact: string;
+  shift_start: string;
+  shift_end: string;
+  employment_type: 'full-time' | 'part-time' | 'contract' | 'intern';
+  date_of_confirmation?: string;
+  period_type: 'permanent' | 'probation' | 'contract';
+  created_at: string;
+  updated_at: string;
+  password_hash: string;
+  bonus?: number;
+  [key: string]: any; // Allow additional custom fields
 }
 
-interface MeetingsTableProps {
-  meetings: Meeting[];
-  onEdit: (id: number) => void;
-  onView: (id: number) => void;
+export interface Column {
+  key: string;
+  label: string;
+  sortable?: boolean;
+  filterable?: boolean;
+  width?: string;
+  render?: (value: any, employee: Employee) => React.ReactNode;
 }
 
-const formatDate = (dt: string) => {
-  // Assumes format like "MM/DD/YYYY HH:MM AM" or ISO; splits at space to drop time
-  return dt.split(' ')[0];
-};
+export interface FilterOption {
+  key: string;
+  label: string;
+  value: string;
+}
 
-export const MeetingsTableBase: React.FC<MeetingsTableProps> = ({ meetings, onEdit, onView }) => {
-  return (
-    <div className="table-container">
-      <table className="meetings-table">
-        <thead>
-          <tr>
-            <th className="header-cell">
-              <div className="header-content">
-                <span>Task Title</span>
-                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </div>
-            </th>
-            <th className="header-cell">
-              <div className="header-content">
-                <span>Project Name</span>
-                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </div>
-            </th>
-            <th className="header-cell">
-              <div className="header-content">
-                <span>Due Date</span>
-                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </div>
-            </th>
-            <th className="header-cell">
-              <div className="header-content">
-                <span>Employment Type</span>
-                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </div>
-            </th>
-            <th className="header-cell">
-              <div className="header-content">
-                <span>Assigned To</span>
-                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </div>
-            </th>
-            <th className="header-cell">
-              <div className="header-content">
-                <span>Department</span>
-                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </div>
-            </th>
-            <th className="header-cell">
-              <div className="header-content">
-                <span>Joining Date</span>
-                <svg className="sort-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </div>
-            </th>
-            <th className="header-cell actions-header">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {meetings.map((meeting, index) => (
-            <tr key={meeting.id} className={index % 2 === 0 ? 'even-row' : 'odd-row'}>
-              <td className="subject-cell">{meeting.subject}</td>
-              <td>{meeting.relatedTo}</td>
-              <td>{formatDate(meeting.startDate)}</td>
-              <td className="employment-type-cell">
-                <span className={`employment-badge ${meeting.employmentType.toLowerCase()}`}>
-                  {meeting.employmentType}
-                </span>
-              </td>
-              <td>{meeting.assignedTo}</td>
-              <td>{meeting.department}</td>
-              <td>{formatDate(meeting.joiningDate)}</td>
-              <td className="actions-cell">
-                <div className="row-actions">
-                  <button 
-                    className="row-action-btn edit-btn"
-                    onClick={() => onEdit(meeting.id)}
-                    title="Edit"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                      <path d="m15 5 4 4"/>
-                    </svg>
-                  </button>
-                  <button 
-                    className="row-action-btn view-btn"
-                    onClick={() => onView(meeting.id)}
-                    title="View"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-// ---------------------------------------------
-// Widget component (moved from MeetingsWidget.tsx)
-// ---------------------------------------------
-
-interface MeetingsWidgetProps {
-  title: string;
-  icon: string;
-  meetings: Meeting[];
+export interface EmployeeListProps {
+  // Data props
+  employees: Employee[];
+  columns?: Column[];
+  
+  // Styling props
+  className?: string;
+  containerClassName?: string;
+  tableClassName?: string;
+  headerClassName?: string;
+  rowClassName?: string;
+  
+  // Configuration props
+  showSearch?: boolean;
+  showFilters?: boolean;
+  showPagination?: boolean;
   itemsPerPage?: number;
+  sortable?: boolean;
+  
+  // Filter options
+  departmentFilters?: FilterOption[];
+  statusFilters?: FilterOption[];
+  
+  // Callback props
+  onRowClick?: (employee: Employee) => void;
+  onEdit?: (employee: Employee) => void;
+  onDelete?: (employee: Employee) => void;
+  onStatusChange?: (employee: Employee, newStatus: string) => void;
+  
+  // Custom render props
+  renderActions?: (employee: Employee) => React.ReactNode;
+  renderStatus?: (status: string) => React.ReactNode;
+  
+  // Loading and empty states
+  loading?: boolean;
+  emptyMessage?: string;
 }
 
-export const MeetingsWidget: React.FC<MeetingsWidgetProps> = ({ title, icon, meetings, itemsPerPage = 5 }) => {
+const EmployeeList: React.FC<EmployeeListProps> = ({
+  employees,
+  columns = [],
+  className = '',
+  containerClassName = '',
+  tableClassName = '',
+  headerClassName = '',
+  rowClassName = '',
+  showSearch = true,
+  showFilters = true,
+  showPagination = true,
+  itemsPerPage = 10,
+  sortable = true,
+  departmentFilters = [],
+  statusFilters = [],
+  onRowClick,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  renderActions,
+  renderStatus,
+  loading = false,
+  emptyMessage = 'No employees found'
+}) => {
+  // State management
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [sortField, setSortField] = useState('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const totalPages = Math.ceil(meetings.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentMeetings = meetings.slice(startIndex, endIndex);
+  // Default columns if none provided
+  const defaultColumns: Column[] = [
+    { key: 'name', label: 'First Name', sortable: true, filterable: true, width: '120px' },
+    { key: 'lastname', label: 'Last Name', sortable: true, filterable: true, width: '120px' },
+    { key: 'email', label: 'Email', sortable: true, filterable: true, width: '180px' },
+    { key: 'phone', label: 'Phone', sortable: true, filterable: true, width: '130px' },
+    { key: 'gender', label: 'Gender', sortable: true, filterable: true, width: '80px' },
+    { key: 'cnic', label: 'CNIC', sortable: true, filterable: false, width: '140px' },
+    { key: 'department', label: 'Department', sortable: true, filterable: true, width: '120px' },
+    { key: 'role_id', label: 'Role', sortable: true, filterable: true, width: '100px' },
+    { key: 'manager', label: 'Manager', sortable: true, filterable: false, width: '100px' },
+    { key: 'team_lead', label: 'Team Lead', sortable: true, filterable: false, width: '100px' },
+    { key: 'address', label: 'Address', sortable: false, filterable: false, width: '200px' },
+    { key: 'marital_status', label: 'Marital Status', sortable: true, filterable: false, width: '120px' },
+    { key: 'status', label: 'Status', sortable: true, filterable: true, width: '100px' },
+    { key: 'start_date', label: 'Start Date', sortable: true, filterable: false, width: '100px' },
+    { key: 'end_date', label: 'End Date', sortable: true, filterable: false, width: '100px' },
+    { key: 'mode_of_work', label: 'Mode of Work', sortable: true, filterable: false, width: '120px' },
+    { key: 'remote_days_allowed', label: 'Remote Days', sortable: true, filterable: false, width: '100px' },
+    { key: 'dob', label: 'Date of Birth', sortable: true, filterable: false, width: '120px' },
+    { key: 'emergency_contact', label: 'Emergency Contact', sortable: false, filterable: false, width: '140px' },
+    { key: 'shift_start', label: 'Shift Start', sortable: true, filterable: false, width: '100px' },
+    { key: 'shift_end', label: 'Shift End', sortable: true, filterable: false, width: '100px' },
+    { key: 'employment_type', label: 'Employment Type', sortable: true, filterable: true, width: '120px' },
+    { key: 'date_of_confirmation', label: 'Confirmation Date', sortable: true, filterable: false, width: '140px' },
+    { key: 'period_type', label: 'Period Type', sortable: true, filterable: false, width: '100px' },
+    { key: 'created_at', label: 'Created At', sortable: true, filterable: false, width: '120px' },
+    { key: 'updated_at', label: 'Updated At', sortable: true, filterable: false, width: '120px' },
+    { key: 'password_hash', label: 'Password Hash', sortable: false, filterable: false, width: '150px' },
+    { key: 'bonus', label: 'Bonus', sortable: true, filterable: false, width: '80px' },
+    { key: 'actions', label: 'Actions', sortable: false, filterable: false, width: '120px' }
+  ];
 
-  const handlePageChange = (page: number) => setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-  const handleEdit = (id: number) => console.log('Edit meeting:', id);
-  const handleView = (id: number) => console.log('View meeting:', id);
+  const displayColumns = columns.length > 0 ? columns : defaultColumns;
+
+  // Filter and sort employees
+  const filteredAndSortedEmployees = useMemo(() => {
+    let filtered = employees.filter(employee => {
+      const matchesSearch = !searchTerm || 
+        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.gender.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.role_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.employment_type.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesDepartment = !selectedDepartment || employee.department === selectedDepartment;
+      const matchesStatus = !selectedStatus || employee.status === selectedStatus;
+      
+      return matchesSearch && matchesDepartment && matchesStatus;
+    });
+
+    // Sort employees
+    if (sortField && sortable) {
+      filtered.sort((a, b) => {
+        const aValue = a[sortField];
+        const bValue = b[sortField];
+        
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [employees, searchTerm, selectedDepartment, selectedStatus, sortField, sortDirection, sortable]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAndSortedEmployees.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedEmployees = showPagination 
+    ? filteredAndSortedEmployees.slice(startIndex, startIndex + itemsPerPage)
+    : filteredAndSortedEmployees;
+
+  // Handle sorting
+  const handleSort = (field: string) => {
+    if (!sortable) return;
+    
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Handle row click
+  const handleRowClick = (employee: Employee) => {
+    if (onRowClick) {
+      onRowClick(employee);
+    }
+  };
+
+  // Render cell content
+  const renderCell = (employee: Employee, column: Column) => {
+    const value = employee[column.key];
+    
+    if (column.render) {
+      return column.render(value, employee);
+    }
+
+    switch (column.key) {
+      case 'status':
+        return renderStatus ? renderStatus(value) : (
+          <span className={`status-badge status-${value}`}>
+            {value.charAt(0).toUpperCase() + value.slice(1)}
+          </span>
+        );
+      
+      case 'start_date':
+      case 'end_date':
+      case 'date_of_confirmation':
+      case 'created_at':
+      case 'updated_at':
+        return value ? new Date(value).toLocaleDateString() : '-';
+      
+      case 'employment_type':
+        return (
+          <span className={`employment-badge employment-${value.replace('-', '-')}`}>
+            {value.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+          </span>
+        );
+      
+      case 'phone':
+        return value || '-';
+      
+      case 'gender':
+        return value ? value.charAt(0).toUpperCase() + value.slice(1) : '-';
+      
+      case 'dob':
+        return value ? new Date(value).toLocaleDateString() : '-';
+      
+      case 'shift_start':
+      case 'shift_end':
+        return value || '-';
+      
+      case 'mode_of_work':
+        return value ? value.charAt(0).toUpperCase() + value.slice(1) : '-';
+      
+      case 'marital_status':
+        return value ? value.charAt(0).toUpperCase() + value.slice(1) : '-';
+      
+      case 'period_type':
+        return value ? value.charAt(0).toUpperCase() + value.slice(1) : '-';
+      
+      case 'bonus':
+        return value ? `$${value.toLocaleString()}` : '-';
+      
+      case 'password_hash':
+        return value ? '••••••••' : '-';
+      
+      case 'actions':
+        return renderActions ? renderActions(employee) : (
+          <div className="action-buttons">
+            {onEdit && (
+              <button 
+                className="action-btn edit-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(employee);
+                }}
+              >
+                Edit
+              </button>
+            )}
+            {onDelete && (
+              <button 
+                className="action-btn delete-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(employee);
+                }}
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        );
+      
+      default:
+        return value || '-';
+    }
+  };
+
+  // Reset filters
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedDepartment('');
+    setSelectedStatus('');
+    setSortField('');
+    setSortDirection('asc');
+    setCurrentPage(1);
+  };
+
+  if (loading) {
+    return (
+      <div className={`employee-list-container ${containerClassName}`}>
+        <div className="loading-spinner">Loading employees...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="meetings-widget">
-      <div className="widget-header">
-        <div className="widget-title">
-          <span className="widget-icon">{icon}</span>
-          <h3>{title}</h3>
+    <div className={`employee-list ${className}`}>
+      {/* Search and Filters */}
+      {(showSearch || showFilters) && (
+        <div className="employee-list-controls">
+          {showSearch && (
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
+          )}
+          
+          {showFilters && (
+            <div className="filters-container">
+              {departmentFilters.length > 0 && (
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All Departments</option>
+                  {departmentFilters.map(filter => (
+                    <option key={filter.value} value={filter.value}>
+                      {filter.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              
+              {statusFilters.length > 0 && (
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All Statuses</option>
+                  {statusFilters.map(filter => (
+                    <option key={filter.value} value={filter.value}>
+                      {filter.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              
+              <button onClick={resetFilters} className="reset-filters-btn">
+                Reset
+              </button>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Results count */}
+      <div className="results-count">
+        Showing {filteredAndSortedEmployees.length} of {employees.length} employees
       </div>
 
-      <MeetingsTableBase meetings={currentMeetings} onEdit={handleEdit} onView={handleView} />
+      {/* Employee Table */}
+      <div className={`employee-table-container ${containerClassName}`}>
+        <table className={`employee-table ${tableClassName}`}>
+          <thead className={headerClassName}>
+            <tr>
+              {displayColumns.map(column => (
+                <th
+                  key={column.key}
+                  className={`table-header ${column.sortable && sortable ? 'sortable' : ''}`}
+                  style={{ width: column.width }}
+                  onClick={() => column.sortable && handleSort(column.key)}
+                >
+                  {column.label}
+                  {column.sortable && sortable && sortField === column.key && (
+                    <span className="sort-indicator">
+                      {sortDirection === 'asc' ? ' ↑' : ' ↓'}
+                    </span>
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedEmployees.length > 0 ? (
+              paginatedEmployees.map(employee => (
+                <tr
+                  key={employee.id}
+                  className={`table-row ${rowClassName} ${onRowClick ? 'clickable' : ''}`}
+                  onClick={() => handleRowClick(employee)}
+                >
+                  {displayColumns.map(column => (
+                    <td key={column.key} className="table-cell">
+                      {renderCell(employee, column)}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={displayColumns.length} className="empty-message">
+                  {emptyMessage}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={meetings.length}
-        itemsPerPage={itemsPerPage}
-        onPageChange={handlePageChange}
-      />
+      {/* Pagination */}
+      {showPagination && totalPages > 1 && (
+        <div className="pagination">
+          <button
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className="pagination-btn"
+          >
+            Previous
+          </button>
+          
+          <span className="pagination-info">
+            Page {currentPage} of {totalPages}
+          </span>
+          
+          <button
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className="pagination-btn"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
-// ---------------------------------------------
-// Widget container (moved from MeetingsTableWidget.tsx)
-// ---------------------------------------------
-
-// Sample data retained from original widget
-const sampleMeetings: Meeting[] = [
-  { id: 1, subject: 'Demo', relatedTo: 'AtoZ Co Ltd', startDate: '02/27/2026 10:00 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'John Doe', department: 'Sales', joiningDate: '01/15/2024' },
-  { id: 2, subject: 'Review needs', relatedTo: 'Tech Solutions Inc', startDate: '02/28/2026 02:00 PM', accepted: true, employmentType: 'Contract', assignedTo: 'Jane Smith', department: 'Engineering', joiningDate: '03/20/2024' },
-  { id: 3, subject: 'Introduce all players', relatedTo: 'Global Corp', startDate: '03/01/2026 11:30 AM', accepted: true, employmentType: 'Part-time', assignedTo: 'Mike Johnson', department: 'Marketing', joiningDate: '06/10/2024' },
-  { id: 4, subject: 'Introduce all players', relatedTo: 'Innovation Labs', startDate: '03/02/2026 09:00 AM', accepted: true, employmentType: 'Full-time', assignedTo: 'Sarah Wilson', department: 'Product', joiningDate: '02/05/2024' },
-  { id: 5, subject: 'Discuss pricing', relatedTo: 'Enterprise Solutions', startDate: '03/03/2026 03:00 PM', accepted: true, employmentType: 'Intern', assignedTo: 'David Brown', department: 'Support', joiningDate: '08/15/2024' },
-];
-
-export const MeetingsTableWidget: React.FC = () => (
-  <div className="widgets-container">
-    <MeetingsWidget title="MY MEETINGS" icon="📅" meetings={sampleMeetings} itemsPerPage={5} />
-    <MeetingsWidget title="UPCOMING MEETINGS" icon="📋" meetings={sampleMeetings} itemsPerPage={5} />
-  </div>
-);
-
-// Keep original default export for backward compatibility (the raw table component)
-const MeetingsTable: React.FC<MeetingsTableProps> = MeetingsTableBase;
-
-export default MeetingsTable; 
+export default EmployeeList; 
