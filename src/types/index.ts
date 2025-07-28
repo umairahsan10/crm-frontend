@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 // User and Authentication Types
 export interface User {
   id: string;

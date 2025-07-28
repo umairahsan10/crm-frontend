@@ -81,10 +81,11 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const validatePhone = (phone: string): boolean => {
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+  const phoneRegex = /^[+]?([1-9][\d]{0,15})$/;
   return phoneRegex.test(phone.replace(/\s/g, ''));
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const validateRequired = (value: any): boolean => {
   if (typeof value === 'string') return value.trim().length > 0;
   if (typeof value === 'number') return !isNaN(value);
@@ -217,6 +218,7 @@ export const calculateSum = (numbers: number[]): number => {
 };
 
 // Debounce Utility
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -229,6 +231,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 };
 
 // Throttle Utility
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const throttle = <T extends (...args: any[]) => any>(
   func: T,
   limit: number
@@ -244,6 +247,7 @@ export const throttle = <T extends (...args: any[]) => any>(
 };
 
 // Error Handling
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handleError = (error: any): string => {
   if (typeof error === 'string') return error;
   if (error?.message) return error.message;

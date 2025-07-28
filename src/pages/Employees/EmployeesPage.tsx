@@ -90,6 +90,7 @@ const EmployeesPage: React.FC = () => {
     }
   ];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEdit = (employee: any) => {
     console.log('Edit employee:', employee);
   };
