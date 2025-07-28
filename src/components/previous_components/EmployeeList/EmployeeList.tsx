@@ -104,7 +104,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   onRowClick,
   onEdit,
   onDelete,
-  onStatusChange,
   renderActions,
   renderStatus,
   loading = false,
