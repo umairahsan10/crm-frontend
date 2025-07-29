@@ -1,0 +1,539 @@
+.notification {
+  position: fixed;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-width: 400px;
+  min-width: 300px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+/* Position variants */
+.notification--top-right {
+  top: 20px;
+  right: 20px;
+}
+
+.notification--top-left {
+  top: 20px;
+  left: 20px;
+}
+
+.notification--top-center {
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.notification--bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.notification--bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+.notification--bottom-center {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.notification--center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Type variants */
+.notification--success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.notification--error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.notification--warning {
+  background: #fffbeb;
+  border: 1px solid #fed7aa;
+  color: #d97706;
+}
+
+.notification--info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
+}
+
+/* Size variants */
+.notification--sm {
+  padding: 12px;
+  font-size: 13px;
+  max-width: 300px;
+  min-width: 250px;
+}
+
+.notification--md {
+  padding: 16px;
+  font-size: 14px;
+  max-width: 400px;
+  min-width: 300px;
+}
+
+.notification--lg {
+  padding: 20px;
+  font-size: 16px;
+  max-width: 500px;
+  min-width: 350px;
+}
+
+/* Icon styles */
+.notification__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 16px;
+}
+
+.notification--sm .notification__icon {
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+}
+
+.notification--lg .notification__icon {
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
+}
+
+/* Content styles */
+.notification__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification__title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: inherit;
+}
+
+.notification__message {
+  color: inherit;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.notification__message:not(:first-child) {
+  margin-top: 4px;
+}
+
+/* Close button */
+.notification__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  color: inherit;
+  font-size: 16px;
+  padding: 0;
+}
+
+.notification__close:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.notification--sm .notification__close {
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+}
+
+.notification--lg .notification__close {
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
+}
+
+/* Progress bar */
+.notification__progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 0 0 8px 8px;
+  transition: width linear;
+}
+
+.notification--success .notification__progress {
+  background: rgba(34, 197, 94, 0.3);
+}
+
+.notification--error .notification__progress {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.notification--warning .notification__progress {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+.notification--info .notification__progress {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+/* Animation variants */
+.notification--slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification--slide-in-left {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.notification--slide-in-top {
+  animation: slideInTop 0.3s ease-out;
+}
+
+.notification--slide-in-bottom {
+  animation: slideInBottom 0.3s ease-out;
+}
+
+.notification--slide-in-center {
+  animation: slideInCenter 0.3s ease-out;
+}
+
+.notification--fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.notification--bounce-in {
+  animation: bounceIn 0.5s ease-out;
+}
+
+.notification--zoom-in {
+  animation: zoomIn 0.3s ease-out;
+}
+
+/* Exit animations */
+.notification--slide-out-right {
+  animation: slideOutRight 0.3s ease-in;
+}
+
+.notification--slide-out-left {
+  animation: slideOutLeft 0.3s ease-in;
+}
+
+.notification--slide-out-top {
+  animation: slideOutTop 0.3s ease-in;
+}
+
+.notification--slide-out-bottom {
+  animation: slideOutBottom 0.3s ease-in;
+}
+
+.notification--slide-out-center {
+  animation: slideOutCenter 0.3s ease-in;
+}
+
+.notification--fade-out {
+  animation: fadeOut 0.3s ease-in;
+}
+
+.notification--bounce-out {
+  animation: bounceOut 0.5s ease-in;
+}
+
+.notification--zoom-out {
+  animation: zoomOut 0.3s ease-in;
+}
+
+/* Animation keyframes */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInTop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInCenter {
+  from {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutTop {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutBottom {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutCenter {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes bounceOut {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes zoomOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .notification {
+    max-width: calc(100vw - 40px);
+    min-width: auto;
+    margin: 0 20px;
+  }
+  
+  .notification--top-center,
+  .notification--bottom-center {
+    left: 20px;
+    right: 20px;
+    transform: none;
+  }
+  
+  .notification--center {
+    left: 20px;
+    right: 20px;
+    transform: translateY(-50%);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .notification--success {
+    background: #064e3b;
+    border-color: #059669;
+    color: #6ee7b7;
+  }
+  
+  .notification--error {
+    background: #450a0a;
+    border-color: #dc2626;
+    color: #fca5a5;
+  }
+  
+  .notification--warning {
+    background: #451a03;
+    border-color: #ea580c;
+    color: #fdba74;
+  }
+  
+  .notification--info {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+    color: #93c5fd;
+  }
+  
+  .notification__close:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .notification {
+    border-width: 2px;
+  }
+  
+  .notification__close {
+    border: 1px solid currentColor;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .notification {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .notification__progress {
+    transition: none !important;
+  }
+} 

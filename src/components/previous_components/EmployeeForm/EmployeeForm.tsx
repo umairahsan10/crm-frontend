@@ -175,6 +175,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
 
     try {
       // Try to open existing form-submission.txt file
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fileHandle = await (window as any).showOpenFilePicker({
         types: [{
           description: 'Text Files',
@@ -194,8 +195,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
       await writable.write(updatedContent);
       await writable.close();
       
-    } catch (error) {
+    } catch {
       // If form-submission.txt doesn't exist, create it with header
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fileHandle = await (window as any).showSaveFilePicker({
         suggestedName: 'form-submission.txt',
         types: [{
@@ -292,7 +294,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
       setTouched({});
       setShowAdvanced(false);
       onClose();
-    } catch (error) {
+    } catch {
       // Silently handle error - form will still reset
     }
   };

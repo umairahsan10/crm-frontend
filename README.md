@@ -35,8 +35,19 @@ A comprehensive React TypeScript application for managing employees, attendance,
 src/
 ├── components/
 │   ├── ui/                 # Reusable UI components
+
 │   │   ├── StatusBadge.tsx
 │   │   ├── Modal.tsx
+│   │   ├── Dropdown.tsx
+│   │   ├── Dropdown.css
+│   │   ├── Notification.tsx
+│   │   ├── Notification.css
+│   │   ├── Kanban.tsx
+│   │   ├── Kanban.css
+│   │   ├── Chart.tsx
+│   │   ├── Chart.css
+│   │   ├── ChatBox.tsx
+│   │   └── ChatBox.css
 │   │   └── ...
 │   ├── Layout.tsx          # Main layout wrapper
 │   ├── Sidebar.tsx         # Navigation sidebar
@@ -222,6 +233,66 @@ interface SalaryRecord {
 />
 ```
 
+### Dropdown
+```tsx
+<Dropdown
+  options={countries}
+  value={selectedCountry}
+  placeholder="Select a country..."
+  searchable={true}
+  onChange={handleChange}
+/>
+```
+
+### Notification
+```tsx
+<Notification
+  visible={isVisible}
+  type="success"
+  title="Success!"
+  message="Operation completed successfully."
+  position="top-right"
+  autoDismiss={true}
+  dismissTimeout={5000}
+  onClose={handleClose}
+/>
+```
+
+### Kanban Board
+```tsx
+<Kanban
+  board={board}
+  draggable={true}
+  allowAddCards={true}
+  allowDeleteCards={true}
+  onCardAdd={handleCardAdd}
+  onCardMove={handleCardMove}
+  onCardDelete={handleCardDelete}
+/>
+```
+
+### Chart Component
+```tsx
+<Chart
+  config={chartConfig}
+  title="Sales Data"
+  interactive={true}
+  showLegend={true}
+  onSend={handleSend}
+/>
+```
+
+### ChatBox Component
+```tsx
+<ChatBox
+  messages={messages}
+  currentUser={currentUser}
+  title="Team Chat"
+  onSend={handleSend}
+  onReceive={handleReceive}
+  allowFileUpload={true}
+/>
+```
 ### Modal
 ```tsx
 <Modal 

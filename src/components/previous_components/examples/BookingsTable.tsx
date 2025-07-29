@@ -63,28 +63,28 @@ const BookingsTable: React.FC = () => {
   const columns = [
     {
       key: 'customerName',
-      header: 'Customer Name',
+      label: 'Customer Name',
       sortable: true
     },
     {
       key: 'service',
-      header: 'Service',
+      label: 'Service',
       sortable: true
     },
     {
       key: 'date',
-      header: 'Date',
+      label: 'Date',
       sortable: true,
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
       key: 'time',
-      header: 'Time',
+      label: 'Time',
       sortable: true
     },
     {
       key: 'status',
-      header: 'Status',
+      label: 'Status',
       sortable: true,
       render: (value: string) => (
         <span className={`status-badge status-${value}`}>
@@ -94,7 +94,7 @@ const BookingsTable: React.FC = () => {
     },
     {
       key: 'amount',
-      header: 'Amount',
+      label: 'Amount',
       sortable: true,
       render: (value: number) => `$${value.toFixed(2)}`
     }
@@ -112,8 +112,7 @@ const BookingsTable: React.FC = () => {
         data={mockBookings}
         columns={columns}
         itemsPerPage={5}
-        searchable={true}
-        sortable={true}
+        showSearch={true}
         onRowClick={handleRowClick}
         className="bookings-table"
       />

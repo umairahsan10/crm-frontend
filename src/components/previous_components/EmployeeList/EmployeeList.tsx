@@ -30,6 +30,7 @@ export interface Employee {
   updated_at: string;
   password_hash: string;
   bonus?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any; // Allow additional custom fields
 }
 
@@ -39,6 +40,7 @@ export interface Column {
   sortable?: boolean;
   filterable?: boolean;
   width?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render?: (value: any, employee: Employee) => React.ReactNode;
 }
 
@@ -75,7 +77,6 @@ export interface EmployeeListProps {
   onRowClick?: (employee: Employee) => void;
   onEdit?: (employee: Employee) => void;
   onDelete?: (employee: Employee) => void;
-  onStatusChange?: (employee: Employee, newStatus: string) => void;
   
   // Custom render props
   renderActions?: (employee: Employee) => React.ReactNode;
@@ -154,7 +155,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   // Filter and sort employees
   const filteredAndSortedEmployees = useMemo(() => {
-    let filtered = employees.filter(employee => {
+    const filtered = employees.filter(employee => {
       const matchesSearch = !searchTerm || 
         employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
