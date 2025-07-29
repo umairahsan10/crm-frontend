@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import type { ModalProps } from '../../types';
+import type { ModalProps } from '../../../types';
 import './Modal.css';
 
 const Modal: React.FC<ModalProps> = ({

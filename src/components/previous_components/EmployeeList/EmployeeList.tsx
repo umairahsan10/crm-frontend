@@ -75,6 +75,7 @@ export interface EmployeeListProps {
   onRowClick?: (employee: Employee) => void;
   onEdit?: (employee: Employee) => void;
   onDelete?: (employee: Employee) => void;
+  onStatusChange?: (employee: Employee, newStatus: string) => void;
   
   // Custom render props
   renderActions?: (employee: Employee) => React.ReactNode;

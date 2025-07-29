@@ -1,5 +1,5 @@
 import React from 'react';
-import DashboardCard from '../../components/DashboardCard/DashboardCard';
+import DashboardCard from '../../components/previous_components/DashboardCard/DashboardCard';
 import './SettingsPage.css';
 import { useTheme } from '../../context/ThemeContext';
 
