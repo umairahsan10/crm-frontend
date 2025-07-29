@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { ChartConfig, ChartDataset, ChartDataPoint, ChartEvent } from '../components/previous_components/ui/Chart';
+import type { ChartConfig, ChartDataset, ChartDataPoint, ChartEvent } from '../components/common/Chart/Chart';
 
 export interface UseChartOptions {
   initialConfig?: ChartConfig;

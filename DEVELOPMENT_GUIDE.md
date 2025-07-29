@@ -10,7 +10,7 @@ This is a comprehensive HR & Admin Management System built with React TypeScript
 - **Type System**: Complete TypeScript interfaces for all data models
 - **Constants**: Centralized configuration and constants
 - **Utilities**: Helper functions for common operations
-- **UI Components**: Reusable components (StatusBadge, Modal, Dropdown, Notification, Kanban, Chart, ChatBox)
+- **UI Components**: Reusable components (StatusBadge, Modal, Dropdown, Notification, Kanban, Chart, ChatBox, FilterBar)
 - **Layout System**: Responsive sidebar and header
 - **Navigation**: Role-based navigation system
 - **Dashboard**: Functional dashboard with metrics and quick actions
