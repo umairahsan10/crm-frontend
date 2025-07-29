@@ -139,7 +139,7 @@ export const DATE_FORMATS = {
 // Validation Rules
 export const VALIDATION_RULES = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  phone: /^\+?[\d\s\-\(\)]{10,}$/,
+  phone: /^\+?[\d\s\-()]{10,}$/,
   password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/,
   url: /^https?:\/\/.+/,
 };

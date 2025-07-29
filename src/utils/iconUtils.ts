@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import React from 'react';
 import {
   AiOutlineDashboard,
@@ -16,6 +17,7 @@ import {
   AiOutlineEyeInvisible,
 } from 'react-icons/ai';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconMap: { [key: string]: React.ComponentType<any> } = {
   AiOutlineDashboard,
   AiOutlineTeam,
@@ -33,6 +35,7 @@ const iconMap: { [key: string]: React.ComponentType<any> } = {
   AiOutlineEyeInvisible,
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const renderIcon = (iconName: string, props?: any): React.ReactElement | null => {
   const IconComponent = iconMap[iconName];
   if (IconComponent) {
