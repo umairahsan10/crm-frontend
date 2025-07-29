@@ -47,7 +47,9 @@ src/
 │   │   ├── Chart.tsx
 │   │   ├── Chart.css
 │   │   ├── ChatBox.tsx
-│   │   └── ChatBox.css
+│   │   ├── ChatBox.css
+│   │   ├── FilterBar.tsx
+│   │   └── FilterBar.css
 │   │   └── ...
 │   ├── Layout.tsx          # Main layout wrapper
 │   ├── Sidebar.tsx         # Navigation sidebar
@@ -291,6 +293,20 @@ interface SalaryRecord {
   onSend={handleSend}
   onReceive={handleReceive}
   allowFileUpload={true}
+/>
+```
+
+### FilterBar Component
+```tsx
+<FilterBar
+  title="Product Filters"
+  filters={filterItems}
+  layout="horizontal"
+  theme="default"
+  showReset={true}
+  showSubmit={true}
+  onChange={handleFilterChange}
+  onSubmit={handleSubmit}
 />
 ```
 ### Modal

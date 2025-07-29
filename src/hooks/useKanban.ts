@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import type { KanbanBoard, KanbanCard, KanbanColumn, DropResult } from '../components/previous_components/ui/Kanban';
+import type { KanbanBoard, KanbanCard, KanbanColumn, DropResult } from '../components/common/KanbanBoard/Kanban';
 
 export interface UseKanbanOptions {
   initialBoard?: KanbanBoard;

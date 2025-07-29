@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { NotificationType, NotificationPosition, NotificationAnimation, NotificationExitAnimation } from '../components/previous_components/ui/Notification';
+import type { NotificationType, NotificationPosition, NotificationAnimation, NotificationExitAnimation } from '../components/common/Notification/Notification';
 
 export interface NotificationConfig {
   id?: string;

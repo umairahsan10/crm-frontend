@@ -1,5 +1,5 @@
 import React from 'react';
-import DataTable from '../ui/DataTable';
+import DataTable from '../../common/DataTable/DataTable';
 
 interface Booking {
   id: string;

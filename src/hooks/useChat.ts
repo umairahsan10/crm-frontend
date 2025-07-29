@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { ChatMessage, ChatUser } from '../components/previous_components/ui/ChatBox';
+import type { ChatMessage, ChatUser } from '../components/common/ChatBox/ChatBox';
 
 export interface UseChatOptions {
   initialMessages?: ChatMessage[];
