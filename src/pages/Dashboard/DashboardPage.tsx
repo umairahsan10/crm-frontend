@@ -40,6 +40,7 @@ const DashboardPage: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
   // Sales Performance Chart Data
   const salesData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],

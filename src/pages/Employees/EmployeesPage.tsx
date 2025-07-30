@@ -107,7 +107,9 @@ const EmployeesPage: React.FC = () => {
 
   return (
     <div className="employees-container">
-      <h1>Employee Management</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <h1>Employee Management</h1>
+      </div>
       
       <div className="table-with-button">
         <div className="table-button-container">

@@ -10,8 +10,6 @@ const AttendancePage: React.FC = () => {
         <p>Track employee attendance, manage schedules, and monitor time logs</p>
       </div>
 
-      {/* Stats grid removed as requested */}
-
       <AttendanceLog />
     </div>
   );

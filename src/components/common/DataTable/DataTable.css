@@ -136,6 +136,7 @@
   font-size: 0.875rem;
   color: var(--text-color, #374151);
   background: var(--background-color, #ffffff);
+  table-layout: fixed;
 }
 
 .data-table.bordered {
@@ -166,6 +167,8 @@
   border-bottom: 1px solid var(--border-color, #e5e7eb);
   white-space: nowrap;
   position: relative;
+  box-sizing: border-box;
+  vertical-align: middle;
 }
 
 .table-header-cell.sortable {
@@ -256,9 +259,10 @@
   border-bottom: 1px solid var(--border-color, #f3f4f6);
   vertical-align: middle;
   word-wrap: break-word;
-  max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .data-table.compact .table-cell {
