@@ -10,7 +10,7 @@ export interface KanbanCard {
   assignee?: string;
   dueDate?: string;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   [key: string]: any; // Allow additional custom properties
 }
 

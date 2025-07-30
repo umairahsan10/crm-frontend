@@ -3,29 +3,29 @@ import type { FilterItem } from '../components/common/FilterBar/FilterBar';
 
 export interface UseFilterBarOptions {
   filters: FilterItem[];
-  defaultValues?: Record<string, any>;
-  values?: Record<string, any>;
+  defaultValues?: Record<string, unknown>;
+  values?: Record<string, unknown>;
   controlled?: boolean;
   syncWithUrl?: boolean;
   urlParamPrefix?: string;
   autoSubmit?: boolean;
   debounceMs?: number;
-  onSubmit?: (values: Record<string, any>) => void;
+  onSubmit?: (values: Record<string, unknown>) => void;
 }
 
 export interface UseFilterBarReturn {
   // State
-  values: Record<string, any>;
-  setValues: (values: Record<string, any>) => void;
+  values: Record<string, unknown>;
+  setValues: (values: Record<string, unknown>) => void;
   
   // Actions
   reset: () => void;
   clear: () => void;
-  setFilter: (key: string, value: any) => void;
-  getFilter: (key: string) => any;
+  setFilter: (key: string, value: unknown) => void;
+  getFilter: (key: string) => unknown;
   
   // Computed
-  activeFilters: Record<string, any>;
+  activeFilters: Record<string, unknown>;
   activeFiltersCount: number;
   hasActiveFilters: boolean;
   isFilterActive: (key: string) => boolean;
@@ -33,7 +33,7 @@ export interface UseFilterBarReturn {
   // Utilities
   getFilterConfig: (key: string) => FilterItem | undefined;
   validateFilters: () => Record<string, string>;
-  transformValues: (values: Record<string, any>) => Record<string, any>;
+  transformValues: (values: Record<string, unknown>) => Record<string, unknown>;
   
   // URL sync
   syncToUrl: () => void;
@@ -52,14 +52,14 @@ export const useFilterBar = (options: UseFilterBarOptions): UseFilterBarReturn =
   } = options;
 
   // State management
-  const [internalValues, setInternalValues] = useState<Record<string, any>>(defaultValues);
+  const [internalValues, setInternalValues] = useState<Record<string, unknown>>(defaultValues);
   const [debounceTimer, setDebounceTimer] = useState<number | null>(null);
 
   // Use controlled or uncontrolled values
   const values = controlled ? (options.values || {}) : internalValues;
 
   // Set values (internal or external)
-  const setValues = useCallback((newValues: Record<string, any>) => {
+  const setValues = useCallback((newValues: Record<string, unknown>) => {
     if (!controlled) {
       setInternalValues(newValues);
     }
@@ -76,7 +76,7 @@ export const useFilterBar = (options: UseFilterBarOptions): UseFilterBarReturn =
   }, [setValues]);
 
   // Set individual filter value
-  const setFilter = useCallback((key: string, value: any) => {
+  const setFilter = useCallback((key: string, value: unknown) => {
     const filter = filters.find(f => f.key === key);
     if (!filter) return;
 
@@ -102,13 +102,13 @@ export const useFilterBar = (options: UseFilterBarOptions): UseFilterBarReturn =
   }, [values, filters, setValues, autoSubmit, debounceTimer, debounceMs, options]);
 
   // Get individual filter value
-  const getFilter = useCallback((key: string) => {
+  const getFilter = useCallback((key: string): unknown => {
     return values[key];
   }, [values]);
 
   // Get active filters (non-empty values)
   const activeFilters = useMemo(() => {
-    const active: Record<string, any> = {};
+    const active: Record<string, unknown> = {};
     Object.entries(values).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '' && 
           (Array.isArray(value) ? value.length > 0 : true)) {
@@ -158,8 +158,8 @@ export const useFilterBar = (options: UseFilterBarOptions): UseFilterBarReturn =
   }, [filters, values]);
 
   // Transform all values using filter transforms
-  const transformValues = useCallback((inputValues: Record<string, any>) => {
-    const transformed: Record<string, any> = {};
+  const transformValues = useCallback((inputValues: Record<string, unknown>) => {
+    const transformed: Record<string, unknown> = {};
     
     Object.entries(inputValues).forEach(([key, value]) => {
       const filter = filters.find(f => f.key === key);
@@ -197,7 +197,7 @@ export const useFilterBar = (options: UseFilterBarOptions): UseFilterBarReturn =
     if (!syncWithUrl) return;
     
     const urlParams = new URLSearchParams(window.location.search);
-    const urlValues: Record<string, any> = {};
+    const urlValues: Record<string, unknown> = {};
     
     filters.forEach(filter => {
       const paramKey = `${urlParamPrefix}${filter.key}`;

@@ -34,7 +34,7 @@ export type ValidationRule = {
   email?: boolean;
   url?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  custom?: (value: any, formData: Record<string, any>) => string | undefined;
+  custom?: (value: unknown, formData: Record<string, unknown>) => string | undefined;
 };
 
 // Field option for select/radio
@@ -76,7 +76,7 @@ export interface FieldConfig {
   customRender?: (props: FieldRenderProps) => ReactNodeType;
   dependencies?: string[]; // Fields this field depends on
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  conditional?: (formData: Record<string, any>) => boolean; // Show/hide based on other fields
+  conditional?: (formData: Record<string, unknown>) => boolean; // Show/hide based on other fields
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transform?: (value: any) => any; // Transform value before setting
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -121,9 +121,9 @@ export interface FormProps {
   // Core props
   fields: FieldConfig[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSubmit: (data: Record<string, any>, form: FormInstance) => void | Promise<void>;
+  onSubmit: (data: Record<string, unknown>, form: FormInstance) => void | Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  initialValues?: Record<string, any>;
+  initialValues?: Record<string, unknown>;
   
   // Form configuration
   layout?: FormLayout;
@@ -177,7 +177,7 @@ export interface FormProps {
   loadingText?: string;
   
   // Error handling
-  error?: string | null;
+  error?: string | undefined;
   showFormError?: boolean;
   
   // Accessibility
@@ -186,9 +186,9 @@ export interface FormProps {
   
   // Callbacks
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onChange?: (data: Record<string, any>, fieldName: string, value: any) => void;
+  onChange?: (data: Record<string, unknown>, fieldName: string, value: unknown) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onBlur?: (data: Record<string, any>, fieldName: string) => void;
+  onBlur?: (data: Record<string, unknown>, fieldName: string) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFocus?: (data: Record<string, any>, fieldName: string) => void;
   onValidationError?: (errors: Record<string, string>) => void;
