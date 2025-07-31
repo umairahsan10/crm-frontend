@@ -124,6 +124,8 @@ const EmployeesPage: React.FC = () => {
         />
       </div>
 
+
+
       {/* Employee Form Modal */}
       {showEmployeeForm && (
         <div className="modal-overlay" onClick={handleCloseEmployeeForm}>

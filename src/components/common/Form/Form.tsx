@@ -1,7 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { forwardRef, useState, useCallback, useMemo } from 'react';
-import type { ReactNode as ReactNodeType } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './Form.css';
 
 // Field types
@@ -20,69 +17,42 @@ export type FieldType =
   | 'checkbox' 
   | 'radio' 
   | 'file' 
-  | 'hidden' 
-  | 'custom';
+  | 'hidden';
 
-// Field validation types
-export type ValidationRule = {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: RegExp;
-  email?: boolean;
-  url?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  custom?: (value: unknown, formData: Record<string, unknown>) => string | undefined;
-};
+// Layout options
+export type FormLayout = 'vertical' | 'horizontal' | 'grid';
 
 // Field option for select/radio
 export interface FieldOption {
   value: string | number;
   label: string;
   disabled?: boolean;
-  group?: string;
 }
 
+// Validation function type
+export type ValidationFunction = (value: any, formData: Record<string, any>) => string | undefined;
+
 // Field configuration
-export interface FieldConfig {
+export interface FormField {
   name: string;
   type: FieldType;
   label?: string;
   placeholder?: string;
-  description?: string;
   required?: boolean;
   disabled?: boolean;
-  readonly?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   defaultValue?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value?: any;
   options?: FieldOption[];
-  validation?: ValidationRule;
+  validation?: ValidationFunction;
   className?: string;
   containerClassName?: string;
   labelClassName?: string;
   inputClassName?: string;
   errorClassName?: string;
-  descriptionClassName?: string;
   style?: React.CSSProperties;
   containerStyle?: React.CSSProperties;
   labelStyle?: React.CSSProperties;
   inputStyle?: React.CSSProperties;
   errorStyle?: React.CSSProperties;
-  descriptionStyle?: React.CSSProperties;
-  customRender?: (props: FieldRenderProps) => ReactNodeType;
-  dependencies?: string[]; // Fields this field depends on
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  conditional?: (formData: Record<string, unknown>) => boolean; // Show/hide based on other fields
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  transform?: (value: any) => any; // Transform value before setting
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  format?: (value: any) => any; // Format value for display
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parse?: (value: any) => any; // Parse value from display
   autoComplete?: string;
   autoFocus?: boolean;
   tabIndex?: number;
@@ -92,108 +62,38 @@ export interface FieldConfig {
   'aria-invalid'?: boolean;
 }
 
-// Field render props
-export interface FieldRenderProps {
-  field: FieldConfig;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any;
-  error: string | undefined;
-  touched: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onChange: (value: any) => void;
-  onBlur: () => void;
-  onFocus: () => void;
-  isDisabled: boolean;
-  isRequired: boolean;
-}
-
-// Form layout types
-export type FormLayout = 'vertical' | 'horizontal' | 'grid' | 'inline' | 'custom';
-
-// Form validation result
-export interface ValidationResult {
-  isValid: boolean;
-  errors: Record<string, string>;
-}
-
 // Form props
 export interface FormProps {
-  // Core props
-  fields: FieldConfig[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSubmit: (data: Record<string, unknown>, form: FormInstance) => void | Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  initialValues?: Record<string, unknown>;
-  
-  // Form configuration
+  fields: FormField[];
+  onSubmit: (data: Record<string, any>) => void | Promise<void>;
+  initialValues?: Record<string, any>;
   layout?: FormLayout;
   columns?: number; // For grid layout
   gap?: string; // For grid layout
-  
-  // Validation
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  validationSchema?: any; // Yup or Zod schema
-  validateOnChange?: boolean;
-  validateOnBlur?: boolean;
-  validateOnSubmit?: boolean;
-  
-  // Behavior
-  resetOnSubmit?: boolean;
-  clearOnSubmit?: boolean;
-  preventDefault?: boolean;
-  
-  // Styling
+  submitText?: string;
+  submitButtonProps?: React.ButtonHTMLAttributes<HTMLButtonElement>;
+  showSubmitButton?: boolean;
+  loading?: boolean;
+  loadingText?: string;
+  error?: string;
+  showFormError?: boolean;
   className?: string;
   containerClassName?: string;
   fieldGroupClassName?: string;
   style?: React.CSSProperties;
   containerStyle?: React.CSSProperties;
-  
-  // Custom CSS variables
-  customVars?: {
-    '--form-bg'?: string;
-    '--form-color'?: string;
-    '--form-border-color'?: string;
-    '--form-focus-color'?: string;
-    '--form-error-color'?: string;
-    '--form-success-color'?: string;
-    '--form-radius'?: string;
-    '--form-padding'?: string;
-    '--form-gap'?: string;
-  };
-  
-  // Header and footer
-  header?: ReactNodeType;
-  footer?: ReactNodeType;
-  
-  // Submit button
-  submitText?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  submitButtonProps?: any;
-  showSubmitButton?: boolean;
-  
-  // Loading state
-  loading?: boolean;
-  loadingText?: string;
-  
-  // Error handling
-  error?: string | undefined;
-  showFormError?: boolean;
-  
-  // Accessibility
-  'aria-label'?: string;
-  'aria-describedby'?: string;
-  
-  // Callbacks
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onChange?: (data: Record<string, unknown>, fieldName: string, value: unknown) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onBlur?: (data: Record<string, unknown>, fieldName: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  header?: React.ReactNode;
+  footer?: React.ReactNode;
+  onChange?: (data: Record<string, any>, fieldName: string, value: any) => void;
+  onBlur?: (data: Record<string, any>, fieldName: string) => void;
   onFocus?: (data: Record<string, any>, fieldName: string) => void;
   onValidationError?: (errors: Record<string, string>) => void;
-  
-  // Other props
+  validateOnChange?: boolean;
+  validateOnBlur?: boolean;
+  validateOnSubmit?: boolean;
+  resetOnSubmit?: boolean;
+  clearOnSubmit?: boolean;
+  preventDefault?: boolean;
   id?: string;
   name?: string;
   method?: 'get' | 'post';
@@ -203,60 +103,23 @@ export interface FormProps {
   noValidate?: boolean;
 }
 
-// Form instance for external control
-export interface FormInstance {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  values: Record<string, any>;
-  errors: Record<string, string>;
-  touched: Record<string, boolean>;
+// Form validation result
+export interface ValidationResult {
   isValid: boolean;
-  isSubmitting: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setValue: (name: string, value: any) => void;
-  setError: (name: string, error: string) => void;
-  setTouched: (name: string, touched: boolean) => void;
-  validate: () => Promise<ValidationResult>;
-  reset: () => void;
-  clear: () => void;
-  submit: () => void;
+  errors: Record<string, string>;
 }
 
 // Form component
-const Form = forwardRef<HTMLFormElement, FormProps>(({
+const Form: React.FC<FormProps> = ({
   // Core props
   fields,
   onSubmit,
   initialValues = {},
   
-  // Form configuration
+  // Layout
   layout = 'vertical',
   columns = 2,
   gap = '1rem',
-  
-  // Validation
-  validationSchema,
-  validateOnChange = false,
-  validateOnBlur = true,
-  validateOnSubmit = true,
-  
-  // Behavior
-  resetOnSubmit = false,
-  clearOnSubmit = false,
-  preventDefault = true,
-  
-  // Styling
-  className = '',
-  containerClassName = '',
-  fieldGroupClassName = '',
-  style,
-  containerStyle,
-  
-  // Custom CSS variables
-  customVars,
-  
-  // Header and footer
-  header,
-  footer,
   
   // Submit button
   submitText = 'Submit',
@@ -271,15 +134,32 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
   error: formError,
   showFormError = true,
   
-  // Accessibility
-  'aria-label': ariaLabel,
-  'aria-describedby': ariaDescribedby,
+  // Styling
+  className = '',
+  containerClassName = '',
+  fieldGroupClassName = '',
+  style,
+  containerStyle,
+  
+  // Header and footer
+  header,
+  footer,
   
   // Callbacks
   onChange: onFormChange,
   onBlur: onFormBlur,
   onFocus: onFormFocus,
   onValidationError,
+  
+  // Validation
+  validateOnChange = false,
+  validateOnBlur = true,
+  validateOnSubmit = true,
+  
+  // Behavior
+  resetOnSubmit = false,
+  clearOnSubmit = false,
+  preventDefault = true,
   
   // Other props
   id,
@@ -291,16 +171,15 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
   noValidate = false,
   
   ...restProps
-}, ref) => {
+}) => {
   // Form state
   const [values, setValues] = useState<Record<string, any>>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [_isValidating, setIsValidating] = useState(false);
 
   // Initialize values from field defaults
-  useMemo(() => {
+  useEffect(() => {
     const defaultValues = { ...initialValues };
     fields.forEach(field => {
       if (field.defaultValue !== undefined && defaultValues[field.name] === undefined) {
@@ -311,58 +190,29 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
   }, [initialValues, fields]);
 
   // Validation function
-  const validate = useCallback(async (): Promise<ValidationResult> => {
-    setIsValidating(true);
+  const validate = useCallback((): ValidationResult => {
     const newErrors: Record<string, string> = {};
 
-    try {
-      // Schema validation
-      if (validationSchema) {
-        try {
-          await validationSchema.validate(values, { abortEarly: false });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (validationError: any) {
-          if (validationError.inner) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            validationError.inner.forEach((err: any) => {
-              newErrors[err.path] = err.message;
-            });
-          } else {
-            newErrors[validationError.path] = validationError.message;
-          }
-        }
+    fields.forEach(field => {
+      const value = values[field.name];
+      const fieldError = validateField(field, value, values);
+      if (fieldError) {
+        newErrors[field.name] = fieldError;
       }
+    });
 
-      // Field-level validation
-      fields.forEach(field => {
-        const value = values[field.name];
-        const fieldError = validateField(field, value, values);
-        if (fieldError) {
-          newErrors[field.name] = fieldError;
-        }
-      });
-
-      setErrors(newErrors);
-      setIsValidating(false);
-      
-      return {
-        isValid: Object.keys(newErrors).length === 0,
-        errors: newErrors
-      };
-    } catch (error) {
-      setIsValidating(false);
-      throw error;
-    }
-  }, [validationSchema, values, fields]);
+    setErrors(newErrors);
+    
+    return {
+      isValid: Object.keys(newErrors).length === 0,
+      errors: newErrors
+    };
+  }, [values, fields]);
 
   // Field validation
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const validateField = useCallback((field: FieldConfig, value: any, formData: Record<string, any>): string | undefined => {
-    const rules = field.validation;
-    if (!rules) return undefined;
-
+  const validateField = useCallback((field: FormField, value: any, formData: Record<string, any>): string | undefined => {
     // Required validation
-    if (rules.required && (value === undefined || value === null || value === '')) {
+    if (field.required && (value === undefined || value === null || value === '')) {
       return `${field.label || field.name} is required`;
     }
 
@@ -371,14 +221,14 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
     }
 
     // Type-specific validations
-    if (field.type === 'email' && rules.email !== false) {
+    if (field.type === 'email') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
         return 'Please enter a valid email address';
       }
     }
 
-    if (field.type === 'url' && rules.url !== false) {
+    if (field.type === 'url') {
       try {
         new URL(value);
       } catch {
@@ -386,52 +236,26 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
       }
     }
 
-    // Length validations
-    if (rules.minLength && value.length < rules.minLength) {
-      return `${field.label || field.name} must be at least ${rules.minLength} characters`;
-    }
-
-    if (rules.maxLength && value.length > rules.maxLength) {
-      return `${field.label || field.name} must be no more than ${rules.maxLength} characters`;
-    }
-
-    // Numeric validations
     if (field.type === 'number') {
-      const numValue = Number(value);
-      if (rules.min !== undefined && numValue < rules.min) {
-        return `${field.label || field.name} must be at least ${rules.min}`;
+      if (isNaN(Number(value))) {
+        return 'Please enter a valid number';
       }
-      if (rules.max !== undefined && numValue > rules.max) {
-        return `${field.label || field.name} must be no more than ${rules.max}`;
-      }
-    }
-
-    // Pattern validation
-    if (rules.pattern && !rules.pattern.test(value)) {
-      return `${field.label || field.name} format is invalid`;
     }
 
     // Custom validation
-    if (rules.custom) {
-      return rules.custom(value, formData);
+    if (field.validation) {
+      return field.validation(value, formData);
     }
 
     return undefined;
   }, []);
 
   // Handle field change
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleFieldChange = useCallback((fieldName: string, value: any) => {
     const field = fields.find(f => f.name === fieldName);
     if (!field) return;
 
-    // Transform value if needed
-    let transformedValue = value;
-    if (field.transform) {
-      transformedValue = field.transform(value);
-    }
-
-    const newValues = { ...values, [fieldName]: transformedValue };
+    const newValues = { ...values, [fieldName]: value };
     setValues(newValues);
 
     // Mark as touched
@@ -439,7 +263,7 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
 
     // Validate on change
     if (validateOnChange) {
-      const fieldError = validateField(field, transformedValue, newValues);
+      const fieldError = validateField(field, value, newValues);
       setErrors(prev => ({
         ...prev,
         [fieldName]: fieldError || ''
@@ -447,7 +271,7 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
     }
 
     // Call onChange callback
-    onFormChange?.(newValues, fieldName, transformedValue);
+    onFormChange?.(newValues, fieldName, value);
   }, [values, fields, validateOnChange, validateField, onFormChange]);
 
   // Handle field blur
@@ -484,7 +308,7 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
     try {
       // Validate on submit
       if (validateOnSubmit) {
-        const validationResult = await validate();
+        const validationResult = validate();
         if (!validationResult.isValid) {
           onValidationError?.(validationResult.errors);
           setIsSubmitting(false);
@@ -493,28 +317,7 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
       }
 
       // Call onSubmit
-      await onSubmit(values, {
-        values,
-        errors,
-        touched,
-        isValid: Object.keys(errors).length === 0,
-        isSubmitting,
-        setValue: handleFieldChange,
-        setError: (name, error) => setErrors(prev => ({ ...prev, [name]: error })),
-        setTouched: (name, touched) => setTouched(prev => ({ ...prev, [name]: touched })),
-        validate,
-        reset: () => {
-          setValues(initialValues);
-          setErrors({});
-          setTouched({});
-        },
-        clear: () => {
-          setValues({});
-          setErrors({});
-          setTouched({});
-        },
-        submit: () => handleSubmit(event as any),
-      });
+      await onSubmit(values);
 
       // Reset or clear form
       if (resetOnSubmit) {
@@ -537,10 +340,6 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
     validate,
     onSubmit,
     values,
-    errors,
-    touched,
-    isSubmitting,
-    handleFieldChange,
     onValidationError,
     resetOnSubmit,
     clearOnSubmit,
@@ -548,42 +347,12 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
   ]);
 
   // Render field
-  const renderField = useCallback((field: FieldConfig): ReactNodeType => {
+  const renderField = useCallback((field: FormField): React.ReactNode => {
     const value = values[field.name];
     const error = errors[field.name];
     const isTouched = touched[field.name] || false;
     const isDisabled = field.disabled || loading;
     const isRequired = field.required || false;
-
-    // Check conditional rendering
-    if (field.conditional && !field.conditional(values)) {
-      return null;
-    }
-
-    const fieldProps: FieldRenderProps = {
-      field,
-      value,
-      error,
-      touched: isTouched,
-      onChange: (val) => handleFieldChange(field.name, val),
-      onBlur: () => handleFieldBlur(field.name),
-      onFocus: () => handleFieldFocus(field.name),
-      isDisabled,
-      isRequired,
-    };
-
-    // Custom render
-    if (field.customRender) {
-      return field.customRender(fieldProps);
-    }
-
-    // Default render based on field type
-    return renderFieldByType(fieldProps);
-  }, [values, errors, touched, loading, handleFieldChange, handleFieldBlur, handleFieldFocus]);
-
-  // Render field by type
-  const renderFieldByType = useCallback((props: FieldRenderProps): ReactNodeType => {
-    const { field, value, error, touched, onChange, onBlur, onFocus, isDisabled, isRequired } = props;
 
     const commonProps = {
       id: field.name,
@@ -591,13 +360,13 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
       value: value || '',
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const newValue = field.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
-        onChange(newValue);
+        handleFieldChange(field.name, newValue);
       },
-      onBlur,
-      onFocus,
+      onBlur: () => handleFieldBlur(field.name),
+      onFocus: () => handleFieldFocus(field.name),
       disabled: isDisabled,
       required: isRequired,
-      className: `form-field form-field--${field.type} ${field.inputClassName || ''} ${error && touched ? 'form-field--error' : ''}`,
+      className: `form-field form-field--${field.type} ${field.inputClassName || ''} ${error && isTouched ? 'form-field--error' : ''}`,
       style: field.inputStyle,
       autoComplete: field.autoComplete,
       autoFocus: field.autoFocus,
@@ -605,8 +374,7 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
       'aria-label': field['aria-label'],
       'aria-describedby': field['aria-describedby'],
       'aria-required': isRequired,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      'aria-invalid': (error && touched) as any,
+      'aria-invalid': (error && isTouched) as any,
     };
 
     switch (field.type) {
@@ -694,7 +462,7 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
           />
         );
     }
-  }, []);
+  }, [values, errors, touched, loading, handleFieldChange, handleFieldBlur, handleFieldFocus]);
 
   // Form classes
   const formClasses = [
@@ -717,7 +485,6 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
   // Form styles
   const formStyles: React.CSSProperties = {
     ...style,
-    ...customVars,
   };
 
   const containerStyles: React.CSSProperties = {
@@ -734,12 +501,9 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
 
   return (
     <form
-      ref={ref}
       className={formClasses}
       style={formStyles}
       onSubmit={handleSubmit}
-      aria-label={ariaLabel}
-      aria-describedby={ariaDescribedby}
       id={id}
       name={name}
       method={method}
@@ -787,16 +551,6 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
               {/* Field */}
               {renderField(field)}
 
-              {/* Description */}
-              {field.description && (
-                <div
-                  className={`form-description ${field.descriptionClassName || ''}`}
-                  style={field.descriptionStyle}
-                >
-                  {field.description}
-                </div>
-              )}
-
               {/* Error */}
               {errors[field.name] && touched[field.name] && (
                 <div
@@ -833,8 +587,6 @@ const Form = forwardRef<HTMLFormElement, FormProps>(({
       </div>
     </form>
   );
-});
-
-Form.displayName = 'Form';
+};
 
 export default Form; 

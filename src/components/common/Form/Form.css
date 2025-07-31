@@ -142,26 +142,20 @@
   gap: var(--form-gap);
 }
 
-.form--inline .form-field-group {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+.form--grid .form-field-group {
+  grid-template-columns: repeat(2, 1fr);
 }
 
-.form--inline .form-field-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.form--grid.form--grid-1 .form-field-group {
+  grid-template-columns: 1fr;
 }
 
-.form--inline .form-label {
-  margin: 0;
-  white-space: nowrap;
+.form--grid.form--grid-3 .form-field-group {
+  grid-template-columns: repeat(3, 1fr);
 }
 
-.form--custom .form-field-group {
-  display: block;
+.form--grid.form--grid-4 .form-field-group {
+  grid-template-columns: repeat(4, 1fr);
 }
 
 /* Form Field Container */
@@ -184,14 +178,6 @@
 .form-required {
   color: var(--form-error-color);
   margin-left: 0.25rem;
-}
-
-/* Form Description */
-.form-description {
-  color: #6b7280;
-  font-size: var(--form-font-size-sm);
-  margin: var(--form-description-margin);
-  line-height: 1.4;
 }
 
 /* Form Field Error */
@@ -395,37 +381,6 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Form Field Icons */
-.form-field--with-icon {
-  padding-left: 2.5rem;
-}
-
-.form-field-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #6b7280;
-  pointer-events: none;
-}
-
-.form-field--with-icon:focus + .form-field-icon {
-  color: var(--form-focus-color);
-}
-
-/* Form Field Groups */
-.form-field-group--inline {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.form-field-group--stacked {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .form--horizontal .form-field-group {
@@ -438,20 +393,6 @@
   
   .form--grid .form-field-group {
     grid-template-columns: 1fr;
-  }
-  
-  .form--inline .form-field-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .form--inline .form-field-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .form--inline .form-label {
-    white-space: normal;
   }
   
   .form-submit {
@@ -515,10 +456,6 @@
   
   .form-field--filled:focus {
     background: #374151;
-  }
-  
-  .form-description {
-    color: #9ca3af;
   }
   
   .form-submit-button {

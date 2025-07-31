@@ -43,6 +43,16 @@ export interface PaginationConfig {
   totalPages: number;
 }
 
+// Row action interface
+export interface RowAction<T = DataItem> {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: (item: T, index: number) => void;
+  className?: string;
+  variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'success';
+  disabled?: boolean | ((item: T) => boolean);
+}
+
 // DataTable props interface
 export interface DataTableProps<T = DataItem> {
   // Data props
@@ -544,7 +554,7 @@ function DataTable<T extends DataItem = DataItem>({
 
       {/* Table */}
       <div className={`data-table-wrapper ${className}`}>
-        <table 
+        <table
           className={`data-table ${tableClassName} ${bordered ? 'bordered' : ''} ${compact ? 'compact' : ''}`}
           aria-label={ariaLabel}
         >
@@ -609,7 +619,12 @@ function DataTable<T extends DataItem = DataItem>({
                   <td
                     key={column.key}
                     className={`table-cell ${cellClassName} ${column.className || ''}`}
-                    style={{ textAlign: column.align || 'left' }}
+                    style={{
+                      width: column.width,
+                      minWidth: column.minWidth,
+                      maxWidth: column.maxWidth,
+                      textAlign: column.align || 'left'
+                    }}
                   >
                     {renderCell(item, column, index)}
                   </td>

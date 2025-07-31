@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Header.css';
+import SearchBar from '../SearchBar/SearchBar';
 
 interface HeaderProps {
   title: string;
@@ -32,21 +33,14 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
         <h1 className="page-title">{title}</h1>
       </div>
 
-      <div className="header-right">
-        <div className="search-container">
-          <div className="search-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
-          </div>
-          <input
-            type="text"
-            placeholder="Search..."
-            className="search-input"
-          />
-        </div>
+      <div className="header-center">
+        <SearchBar 
+          placeholder="Search..."
+          onSearch={(value) => console.log('Search:', value)}
+        />
+      </div>
 
+      <div className="header-right">
         <div className="notification-dropdown">
           <button 
             className="notification-btn" 

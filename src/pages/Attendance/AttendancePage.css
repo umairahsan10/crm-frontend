@@ -229,6 +229,52 @@
   margin-bottom: 20px;
 }
 
+/* Form header content */
+.form-header-content p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Attendance form container */
+.attendance-form-container {
+  padding: 0;
+}
+
+/* Attendance form fields */
+.attendance-form-fields {
+  gap: 20px;
+}
+
+/* Custom submit button styling */
+.attendance-submit-button {
+  background: linear-gradient(135deg, #051650 0%, #0a2a6b 50%, #1a4a8a 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 6px rgba(5, 22, 80, 0.2) !important;
+  width: 100% !important;
+  min-height: 48px !important;
+}
+
+.attendance-submit-button:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3) !important;
+  background: linear-gradient(135deg, #0a2a6b 0%, #1a4a8a 50%, #2563eb 100%) !important;
+}
+
+.attendance-submit-button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
 .attendance-form .form-label {
   font-weight: 600;
   color: #374151;
