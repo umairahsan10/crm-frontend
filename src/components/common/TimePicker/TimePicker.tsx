@@ -173,10 +173,10 @@ const TimePicker: React.FC<TimePickerProps> = ({
   closeOnSelect = true,
   showValidation = true,
   allowManualInput = true,
-  showFormatHint = false,
-  showTimeZone: _showTimeZone = false,
-  timeZone: _timeZone = 'local',
-  size = 'md',
+          showFormatHint = false,
+        showTimeZone: _showTimeZone = false,
+        timeZone: _timeZone = 'local',
+        size = 'md',
   theme = 'light',
   variant = 'default',
   bordered = true,
@@ -264,7 +264,7 @@ const TimePicker: React.FC<TimePickerProps> = ({
   const formatTime = useCallback((time: Time): string => {
     if (!time) return '';
 
-    let { hours, minutes, seconds = 0, period } = time;
+                    let { hours, minutes, seconds = 0, period } = time;
 
     if (format === '12h') {
       // Convert 24h to 12h
@@ -340,9 +340,9 @@ const TimePicker: React.FC<TimePickerProps> = ({
     const options: Time[] = [];
     const totalMinutes = 24 * 60;
     
-    for (let minutes = 0; minutes < totalMinutes; minutes += step) {
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
+    for (let totalMins = 0; totalMins < totalMinutes; totalMins += step) {
+      const hours = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
       
       const time: Time = { hours, minutes: mins };
       

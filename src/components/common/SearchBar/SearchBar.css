@@ -44,7 +44,8 @@
 .search-bar__input {
   flex: 1;
   width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  height: 40px;
+  padding: 0 0.75rem 0 2.5rem;
   background: #ffffff;
   color: #374151;
   border: 1px solid #d1d5db;
@@ -55,6 +56,7 @@
   outline: none;
   transition: all 0.2s ease-in-out;
   appearance: none;
+  box-sizing: border-box;
 }
 
 .search-bar__input::placeholder {
@@ -126,8 +128,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.5rem;
-  height: 2.5rem;
+  min-width: 40px;
+  height: 40px;
   margin-left: 0.5rem;
   background: #3b82f6;
   color: #ffffff;
@@ -139,6 +141,7 @@
   transition: all 0.2s ease-in-out;
   text-decoration: none;
   user-select: none;
+  box-sizing: border-box;
 }
 
 .search-bar__search-button:hover {
@@ -181,18 +184,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 2rem;
-  height: 2rem;
+  min-width: 40px;
+  height: 40px;
   margin-left: 0.5rem;
   background: #f3f4f6;
   color: #6b7280;
   border: 1px solid #d1d5db;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   text-decoration: none;
   user-select: none;
+  box-sizing: border-box;
 }
 
 .search-bar__clear-button:hover {
@@ -293,8 +297,10 @@
 
 /* Size variants */
 .search-bar--sm .search-bar__input {
-  padding: 0.5rem 0.5rem 0.5rem 2rem;
+  height: 32px;
+  padding: 0 0.5rem 0 2rem;
   font-size: 0.75rem;
+  box-sizing: border-box;
 }
 
 .search-bar--sm .search-bar__search-icon {
@@ -307,9 +313,10 @@
 }
 
 .search-bar--sm .search-bar__search-button {
-  min-width: 2rem;
-  height: 2rem;
+  min-width: 32px;
+  height: 32px;
   font-size: 0.75rem;
+  box-sizing: border-box;
 }
 
 .search-bar--sm .search-bar__search-button svg {
@@ -318,9 +325,10 @@
 }
 
 .search-bar--sm .search-bar__clear-button {
-  min-width: 1.75rem;
-  height: 1.75rem;
+  min-width: 32px;
+  height: 32px;
   font-size: 0.75rem;
+  box-sizing: border-box;
 }
 
 .search-bar--sm .search-bar__clear-button svg {
@@ -329,8 +337,10 @@
 }
 
 .search-bar--lg .search-bar__input {
-  padding: 1rem 1rem 1rem 3rem;
+  height: 48px;
+  padding: 0 1rem 0 3rem;
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .search-bar--lg .search-bar__search-icon {
@@ -343,9 +353,10 @@
 }
 
 .search-bar--lg .search-bar__search-button {
-  min-width: 3rem;
-  height: 3rem;
+  min-width: 48px;
+  height: 48px;
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .search-bar--lg .search-bar__search-button svg {
@@ -354,9 +365,10 @@
 }
 
 .search-bar--lg .search-bar__clear-button {
-  min-width: 2.5rem;
-  height: 2.5rem;
+  min-width: 48px;
+  height: 48px;
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .search-bar--lg .search-bar__clear-button svg {
@@ -654,10 +666,13 @@
   .search-bar__clear-button {
     width: 100%;
     margin-left: 0;
+    height: 40px;
   }
   
   .search-bar__input {
+    height: 40px;
     padding-right: 0.75rem;
+    box-sizing: border-box;
   }
   
   .search-bar--loading .search-bar__input {
@@ -673,12 +688,16 @@
 
 @media (max-width: 480px) {
   .search-bar__input {
+    height: 36px;
     font-size: 0.875rem;
+    box-sizing: border-box;
   }
   
   .search-bar__search-button,
   .search-bar__clear-button {
+    height: 36px;
     font-size: 0.875rem;
+    box-sizing: border-box;
   }
   
   .search-bar__dropdown {

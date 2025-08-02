@@ -23,10 +23,10 @@ export interface ChatMessage {
     fileName?: string;
     fileType?: string;
     imageUrl?: string;
-    imageAlt?: string;
+            imageAlt?: string;
+        [key: string]: any;
+      };
     [key: string]: any;
-  };
-  [key: string]: any;
 }
 
 export interface ChatUser {
@@ -34,8 +34,8 @@ export interface ChatUser {
   name: string;
   avatar?: string;
   isOnline?: boolean;
-  lastSeen?: Date;
-  [key: string]: any;
+      lastSeen?: Date;
+    [key: string]: any;
 }
 
 // Size variants
@@ -48,7 +48,7 @@ export type ChatBoxTheme = 'default' | 'minimal' | 'dark';
 export interface ChatEvent {
   type: 'send' | 'receive' | 'typing' | 'scroll' | 'message-click' | 'file-upload';
   message?: ChatMessage;
-  data?: any;
+      data?: any;
 }
 
 // Props interface
@@ -117,8 +117,8 @@ export interface ChatBoxProps {
   'aria-label'?: string;
   'aria-describedby'?: string;
   
-  // Custom props
-  [key: string]: any;
+      // Custom props
+    [key: string]: any;
 }
 
 // Helper functions
@@ -160,11 +160,11 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   showTimestamps = true,
   showStatus = true,
   showHeader = true,
-  showInput = true,
-  placeholder = 'Type a message...',
-  sendButtonText = 'Send',
-  enterToSend = true,
-  maxMessageLength,
+          showInput = true,
+        placeholder = 'Type a message...',
+        sendButtonText = 'Send',
+        enterToSend = true,
+        maxMessageLength,
   allowFileUpload = false,
   allowedFileTypes = ['image/*', 'application/pdf', 'text/*'],
   maxFileSize = 10 * 1024 * 1024, // 10MB
@@ -179,9 +179,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   renderInput,
   renderEmpty,
   renderLoading,
-  onSend,
-  onReceive,
-  onTyping,
+          onSend,
+        onReceive,
+        onTyping,
   onScroll,
   onMessageClick,
   onFileUpload,

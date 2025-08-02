@@ -8,7 +8,7 @@ export interface DropdownOption {
   description?: string;
   icon?: React.ReactNode;
   disabled?: boolean;
-  [key: string]: any; // Allow additional custom properties
+          [key: string]: any; // Allow additional custom properties
 }
 
 // Size variants
@@ -76,8 +76,8 @@ export interface DropdownProps {
   'aria-label'?: string;
   'aria-describedby'?: string;
   
-  // Custom props
-  [key: string]: any;
+          // Custom props
+        [key: string]: any;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({
@@ -93,9 +93,9 @@ const Dropdown: React.FC<DropdownProps> = ({
   variant = 'outlined',
   position = 'down',
   searchable = false,
-  searchPlaceholder = 'Search...',
-  clearable = false,
-  multiple = false,
+          searchPlaceholder = 'Search...',
+        clearable = false,
+        multiple = false,
   maxHeight = 200,
   autoClose = true,
   loading = false,

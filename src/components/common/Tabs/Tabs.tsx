@@ -168,16 +168,16 @@ const Tabs: React.FC<TabsProps> = ({
   showBadges = false,
   showTooltips = false,
   keyboardNavigation = true,
-  focusManagement = true,
-  showFocusIndicators: _showFocusIndicators = true,
-  animate = true,
+          focusManagement = true,
+        showFocusIndicators: _showFocusIndicators = true,
+        animate = true,
   animationDuration = 200,
   bordered = false,
   shadowed = false,
   backgrounded = true,
-  showSeparators = false,
-  reorderable: _reorderable = false,
-  closable = false,
+          showSeparators = false,
+        reorderable: _reorderable = false,
+        closable = false,
   addable = false,
   maxTabs,
   minTabs = 1,
@@ -210,12 +210,12 @@ const Tabs: React.FC<TabsProps> = ({
 }) => {
   // State
   const [activeTab, setActiveTab] = useState<string>(() => {
-    if (controlled && propActiveTab) return propActiveTab;
-    if (defaultActiveTab) return defaultActiveTab;
-    return tabs.length > 0 ? tabs[0].id : '';
-  });
-  const [_focusedTab, setFocusedTab] = useState<string>('');
-  const [tabsState, setTabsState] = useState<TabItem[]>(tabs);
+            if (controlled && propActiveTab) return propActiveTab;
+        if (defaultActiveTab) return defaultActiveTab;
+        return tabs.length > 0 ? tabs[0].id : '';
+      });
+      const [focusedTab, setFocusedTab] = useState<string>('');
+      const [tabsState, setTabsState] = useState<TabItem[]>(tabs);
 
   // Refs
   const tabRefs = useRef<Record<string, HTMLButtonElement>>({});

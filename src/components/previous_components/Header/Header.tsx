@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './Header.css';
-import SearchBar from '../SearchBar/SearchBar';
+import SearchBar from '../../common/SearchBar/SearchBar';
 
 interface HeaderProps {
   title: string;

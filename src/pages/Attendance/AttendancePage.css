@@ -345,6 +345,101 @@
   }
 }
 
+/* Attendance DataTable Section */
+.attendance-section {
+  margin-bottom: 32px;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.section-header {
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.section-header p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.legacy-section {
+  margin-top: 32px;
+}
+
+/* Status Badge Styles for DataTable */
+.status-badge--present {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge--absent {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.status-badge--late {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge--half-day {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.text-muted {
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Attendance DataTable specific styles */
+.attendance-data-table {
+  margin-top: 16px;
+}
+
+/* Responsive adjustments for DataTable */
+@media (max-width: 768px) {
+  .attendance-section {
+    padding: 20px;
+  }
+  
+  .section-header {
+    margin-bottom: 20px;
+  }
+  
+  .section-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .section-header p {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .attendance-section {
+    padding: 16px;
+  }
+  
+  .section-header h2 {
+    font-size: 1rem;
+  }
+  
+  .section-header p {
+    font-size: 0.8rem;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .table-header,
@@ -390,6 +485,8 @@
     width: 100%;
     justify-content: space-between;
   }
+  
+
   
   .table-header,
   .table-row {
@@ -443,4 +540,6 @@
   .btn-mark-attendance, .btn-export {
     width: 100%;
   }
+  
+
 } 

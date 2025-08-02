@@ -7,7 +7,7 @@ export const formatDate = (date: string | Date, formatType: keyof typeof DATE_FO
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     if (!isValid(dateObj)) return 'Invalid Date';
     return format(dateObj, DATE_FORMATS[formatType]);
-  } catch (error) {
+          } catch (error) {
     return 'Invalid Date';
   }
 };

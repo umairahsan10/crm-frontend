@@ -1,5 +1,5 @@
-import React from 'react';
-import DataTable from '../../common/DataTable/DataTable';
+import React, { useState } from 'react';
+import DataTable, { Column, Action } from '../../common/DataTable/DataTable';
 
 interface Booking {
   id: string;
@@ -12,6 +12,10 @@ interface Booking {
 }
 
 const BookingsTable: React.FC = () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [searchTerm, setSearchTerm] = useState('');
+
   const mockBookings: Booking[] = [
     {
       id: '1',
@@ -60,7 +64,7 @@ const BookingsTable: React.FC = () => {
     }
   ];
 
-  const columns = [
+  const columns: Column<Booking>[] = [
     {
       key: 'customerName',
       label: 'Customer Name',
@@ -87,7 +91,7 @@ const BookingsTable: React.FC = () => {
       label: 'Status',
       sortable: true,
       render: (value: string) => (
-        <span className={`status-badge status-${value}`}>
+        <span className={`status-badge status-badge--${value}`}>
           {value.charAt(0).toUpperCase() + value.slice(1)}
         </span>
       )
@@ -100,9 +104,29 @@ const BookingsTable: React.FC = () => {
     }
   ];
 
+  const actions: Action<Booking>[] = [
+    {
+      label: 'Edit',
+      onClick: (booking) => {
+        console.log('Edit booking:', booking);
+      },
+      variant: 'primary'
+    },
+    {
+      label: 'Delete',
+      onClick: (booking) => {
+        console.log('Delete booking:', booking);
+      },
+      variant: 'danger'
+    }
+  ];
+
   const handleRowClick = (booking: Booking) => {
     console.log('Booking clicked:', booking);
-    // Handle booking selection
+  };
+
+  const handleSort = (key: string, direction: 'asc' | 'desc') => {
+    console.log('Sort by:', key, direction);
   };
 
   return (
@@ -111,10 +135,26 @@ const BookingsTable: React.FC = () => {
       <DataTable
         data={mockBookings}
         columns={columns}
-        itemsPerPage={5}
-        showSearch={true}
+        pagination={{
+          currentPage,
+          pageSize,
+          totalItems: mockBookings.length,
+          onPageChange: setCurrentPage,
+          onPageSizeChange: setPageSize,
+          pageSizeOptions: [5, 10, 25, 50]
+        }}
+        searchable={true}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchKeys={['customerName', 'service']}
         onRowClick={handleRowClick}
+        onSort={handleSort}
+        actions={actions}
+        striped={true}
+        hoverable={true}
+        bordered={true}
         className="bookings-table"
+        ariaLabel="Bookings data table"
       />
     </div>
   );

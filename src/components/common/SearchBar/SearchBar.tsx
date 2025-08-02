@@ -94,8 +94,8 @@ export interface SearchBarProps {
   onEnter?: (value: string) => void;
   /** Callback when escape key is pressed */
   onEscape?: () => void;
-  /** Callback when dropdown item is selected */
-  onDropdownSelect?: (item: any) => void;
+          /** Callback when dropdown item is selected */
+        onDropdownSelect?: (item: any) => void;
   
   // Accessibility props
   /** ARIA label */
@@ -118,8 +118,8 @@ export interface SearchBarProps {
   clearIcon?: React.ReactNode;
   /** Custom loading indicator */
   loadingIndicator?: React.ReactNode;
-  /** Custom render function for dropdown results */
-  renderDropdown?: (results: any[], isLoading: boolean, onSelect: (item: any) => void) => React.ReactNode;
+          /** Custom render function for dropdown results */
+        renderDropdown?: (results: any[], isLoading: boolean, onSelect: (item: any) => void) => React.ReactNode;
   /** Custom render function for no results */
   renderNoResults?: () => React.ReactNode;
   /** Custom render function for search button */
@@ -128,8 +128,8 @@ export interface SearchBarProps {
   renderClearButton?: (onClick: () => void, disabled: boolean) => React.ReactNode;
   
   // Dropdown props
-  /** Dropdown results */
-  dropdownResults?: any[];
+          /** Dropdown results */
+        dropdownResults?: any[];
   /** Whether dropdown is loading */
   dropdownLoading?: boolean;
   /** Whether dropdown is visible */
@@ -195,18 +195,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
   renderNoResults,
   renderSearchButton,
   renderClearButton,
-  dropdownResults = [],
-  dropdownLoading = false,
-  dropdownVisible = false,
-  dropdownMaxHeight: _dropdownMaxHeight = '300px',
-  highlightSearchTerm: _highlightSearchTerm = false,
-  searchTerm: _searchTerm
-}) => {
-  // State
-  const [inputValue, setInputValue] = useState(controlled ? value || '' : defaultValue);
-  const [isFocused, setIsFocused] = useState(false);
-  const [isDropdownVisible, setIsDropdownVisible] = useState(dropdownVisible);
-  const [_debouncedValue, setDebouncedValue] = useState('');
+          dropdownResults = [],
+        dropdownLoading = false,
+        dropdownVisible = false,
+        dropdownMaxHeight: _dropdownMaxHeight = '300px',
+        highlightSearchTerm: _highlightSearchTerm = false,
+        searchTerm: _searchTerm
+      }) => {
+        // State
+        const [inputValue, setInputValue] = useState(controlled ? value || '' : defaultValue);
+        const [isFocused, setIsFocused] = useState(false);
+        const [isDropdownVisible, setIsDropdownVisible] = useState(dropdownVisible);
+        const [_debouncedValue, setDebouncedValue] = useState('');
+
 
   // Refs
   const inputRef = useRef<HTMLInputElement>(null);

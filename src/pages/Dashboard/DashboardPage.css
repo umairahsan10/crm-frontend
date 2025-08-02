@@ -29,6 +29,8 @@
   font-weight: 500;
 }
 
+
+
 /* Charts Container - 2x2 Grid */
 .charts-container {
   display: grid;
@@ -119,6 +121,8 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
+
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .charts-container,
@@ -131,20 +135,24 @@
     height: 260px;
     min-height: 260px;
   }
+
+
 }
 
 @media (max-width: 768px) {
   .dashboard-page {
     padding: 16px;
   }
-  
+
   .page-header h1 {
     font-size: 2rem;
   }
-  
+
   .page-header p {
     font-size: 1rem;
   }
+  
+
   
   .chart-card {
     padding: 16px;
@@ -155,6 +163,8 @@
     height: 220px;
     min-height: 220px;
   }
+
+
 }
 
 @media (max-width: 480px) {
@@ -169,66 +179,9 @@
   }
 }
 
-/* Custom DataTable styles for dashboard */
-.dashboard-table .table-header {
-  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid #e2e8f0;
-}
 
-.dashboard-table .table-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 4px;
-}
 
-.dashboard-table .table-subtitle {
-  color: #64748b;
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-.dashboard-table .data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.dashboard-table .table-header-cell {
-  background: #f8fafc;
-  padding: 16px 24px;
-  text-align: left;
-  font-weight: 600;
-  color: #374151;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid #e5e7eb;
-  transition: background-color 0.2s ease;
-}
-
-.dashboard-table .table-cell {
-  padding: 16px 24px;
-  border-bottom: 1px solid #f3f4f6;
-  color: #374151;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-}
-
-.dashboard-table .clickable-row {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.dashboard-table .clickable-row:hover {
-  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-  transform: scale(1.01);
-}
-
-.dashboard-table .clickable-row:hover .table-cell {
-  color: #1e40af;
-  font-weight: 500;
-}
+/* Removed DataTable styles from dashboard */
 
 /* Animations */
 @keyframes fadeInUp {
