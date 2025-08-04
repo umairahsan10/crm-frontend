@@ -440,6 +440,177 @@
   }
 }
 
+/* AttendancePopUp Integration Styles */
+
+/* Action buttons section */
+.attendance-actions {
+  margin-bottom: 32px;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.8rem;
+}
+
+/* Role switcher */
+.role-switcher {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-switcher label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.role-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.role-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Pending submissions section */
+.pending-submissions {
+  margin-bottom: 32px;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.pending-submissions h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+}
+
+.submissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.submission-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.submission-item:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.submission-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.submission-date,
+.submission-time,
+.submission-duration {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.submission-status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.submission-status.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.submission-status.status-approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.submission-status.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.submission-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .table-header,
@@ -541,5 +712,59 @@
     width: 100%;
   }
   
-
+  /* AttendancePopUp mobile responsive styles */
+  .attendance-actions {
+    padding: 16px;
+  }
+  
+  .action-buttons {
+    gap: 8px;
+  }
+  
+  .role-switcher {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .role-switcher label {
+    text-align: center;
+  }
+  
+  .pending-submissions {
+    padding: 16px;
+  }
+  
+  .pending-submissions h3 {
+    font-size: 1.1rem;
+  }
+  
+  .submission-item {
+    padding: 12px;
+  }
+  
+  .submission-info {
+    gap: 6px;
+  }
+  
+  .submission-date,
+  .submission-time,
+  .submission-duration {
+    font-size: 0.8rem;
+  }
+  
+  .submission-status {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.8rem;
+  }
+  
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
 } 

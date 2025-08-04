@@ -1,224 +1,100 @@
 import React, { useState } from 'react';
-import DataTable from '../../components/common/DataTable/DataTable';
-import type { Column, Action } from '../../components/common/DataTable/DataTable';
 import AttendanceLog from '../../components/previous_components/AttendanceLog/AttendanceLog';
+import AttendancePopUp from '../../components/module-specific/AttendancePopUp/AttendancePopUp';
+import type { AttendanceData } from '../../components/module-specific/AttendancePopUp/AttendancePopUp';
 import './AttendancePage.css';
 
-interface AttendanceRecord {
-  id: string;
-  date: string;
-  employeeName: string;
-  checkInTime: string;
-  checkOutTime: string;
-  status: 'present' | 'absent' | 'late' | 'half-day';
-  department: string;
-  totalHours: string;
-}
-
 const AttendancePage: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
+  // State for popup management
+  const [isPopUpOpen, setIsPopUpOpen] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<'employee' | 'hr'>('employee');
+  const [attendanceData, setAttendanceData] = useState<AttendanceData>({
+    date: new Date().toISOString().split('T')[0],
+    time: '09:30',
+    lateDuration: '30 minutes',
+    reason: '',
+    status: 'pending'
+  });
 
-  // Mock attendance data
-  const attendanceData: AttendanceRecord[] = [
+  // Example attendance data for demonstration
+  const exampleAttendanceData: AttendanceData[] = [
     {
-      id: '1',
       date: '2024-01-15',
-      employeeName: 'John Smith',
-      checkInTime: '09:00 AM',
-      checkOutTime: '05:30 PM',
-      status: 'present',
-      department: 'Engineering',
-      totalHours: '8.5'
+      time: '09:30',
+      lateDuration: '30 minutes',
+      reason: 'Traffic was heavy due to construction on the highway',
+      status: 'pending',
+      submittedAt: '2024-01-15T09:35:00Z'
     },
     {
-      id: '2',
-      date: '2024-01-15',
-      employeeName: 'Sarah Johnson',
-      checkInTime: '08:45 AM',
-      checkOutTime: '05:15 PM',
-      status: 'present',
-      department: 'Marketing',
-      totalHours: '8.5'
+      date: '2024-01-14',
+      time: '08:45',
+      lateDuration: '15 minutes',
+      reason: 'Public transport was delayed',
+      status: 'approved',
+      submittedAt: '2024-01-14T08:50:00Z'
     },
     {
-      id: '3',
-      date: '2024-01-15',
-      employeeName: 'Mike Wilson',
-      checkInTime: '09:30 AM',
-      checkOutTime: '05:30 PM',
-      status: 'late',
-      department: 'Sales',
-      totalHours: '8.0'
-    },
-    {
-      id: '4',
-      date: '2024-01-15',
-      employeeName: 'Emily Davis',
-      checkInTime: '09:00 AM',
-      checkOutTime: '02:00 PM',
-      status: 'half-day',
-      department: 'HR',
-      totalHours: '5.0'
-    },
-    {
-      id: '5',
-      date: '2024-01-15',
-      employeeName: 'David Brown',
-      checkInTime: '--',
-      checkOutTime: '--',
-      status: 'absent',
-      department: 'Finance',
-      totalHours: '0.0'
-    },
-    {
-      id: '6',
-      date: '2024-01-16',
-      employeeName: 'John Smith',
-      checkInTime: '08:55 AM',
-      checkOutTime: '05:25 PM',
-      status: 'present',
-      department: 'Engineering',
-      totalHours: '8.5'
-    },
-    {
-      id: '7',
-      date: '2024-01-16',
-      employeeName: 'Sarah Johnson',
-      checkInTime: '09:00 AM',
-      checkOutTime: '05:30 PM',
-      status: 'present',
-      department: 'Marketing',
-      totalHours: '8.5'
-    },
-    {
-      id: '8',
-      date: '2024-01-16',
-      employeeName: 'Mike Wilson',
-      checkInTime: '08:30 AM',
-      checkOutTime: '05:00 PM',
-      status: 'present',
-      department: 'Sales',
-      totalHours: '8.5'
-    },
-    {
-      id: '9',
-      date: '2024-01-16',
-      employeeName: 'Emily Davis',
-      checkInTime: '09:00 AM',
-      checkOutTime: '05:30 PM',
-      status: 'present',
-      department: 'HR',
-      totalHours: '8.5'
-    },
-    {
-      id: '10',
-      date: '2024-01-16',
-      employeeName: 'David Brown',
-      checkInTime: '09:15 AM',
-      checkOutTime: '05:45 PM',
-      status: 'late',
-      department: 'Finance',
-      totalHours: '8.5'
-    },
-    {
-      id: '11',
-      date: '2024-01-17',
-      employeeName: 'John Smith',
-      checkInTime: '09:00 AM',
-      checkOutTime: '05:30 PM',
-      status: 'present',
-      department: 'Engineering',
-      totalHours: '8.5'
-    },
-    {
-      id: '12',
-      date: '2024-01-17',
-      employeeName: 'Sarah Johnson',
-      checkInTime: '--',
-      checkOutTime: '--',
-      status: 'absent',
-      department: 'Marketing',
-      totalHours: '0.0'
+      date: '2024-01-13',
+      time: '09:15',
+      lateDuration: '45 minutes',
+      reason: 'Car broke down on the way to work',
+      status: 'rejected',
+      submittedAt: '2024-01-13T09:20:00Z'
     }
   ];
 
-  const columns: Column<AttendanceRecord>[] = [
-    {
-      key: 'date',
-      label: 'Date',
-      sortable: true,
-      render: (value: string) => new Date(value).toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
-    },
-    {
-      key: 'employeeName',
-      label: 'Employee Name',
-      sortable: true
-    },
-    {
-      key: 'checkInTime',
-      label: 'Check-in Time',
-      sortable: true,
-      render: (value: string) => value === '--' ? <span className="text-muted">Not checked in</span> : value
-    },
-    {
-      key: 'checkOutTime',
-      label: 'Check-out Time',
-      sortable: true,
-      render: (value: string) => value === '--' ? <span className="text-muted">Not checked out</span> : value
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      sortable: true,
-      render: (value: string) => (
-        <span className={`status-badge status-badge--${value}`}>
-          {value.charAt(0).toUpperCase() + value.slice(1)}
-        </span>
-      )
-    },
-    {
-      key: 'department',
-      label: 'Department',
-      sortable: true
-    },
-    {
-      key: 'totalHours',
-      label: 'Total Hours',
-      sortable: true,
-      render: (value: string) => `${value}h`
-    }
-  ];
-
-  const actions: Action<AttendanceRecord>[] = [
-    {
-      label: 'Edit',
-      onClick: (record) => {
-        console.log('Edit attendance record:', record);
-      },
-      variant: 'primary'
-    },
-    {
-      label: 'Delete',
-      onClick: (record) => {
-        console.log('Delete attendance record:', record);
-      },
-      variant: 'danger'
-    }
-  ];
-
-  const handleRowClick = (record: AttendanceRecord) => {
-    console.log('Attendance record clicked:', record);
+  // Handle opening popup for employee submission
+  const handleOpenEmployeeSubmission = () => {
+    setCurrentUserRole('employee');
+    setAttendanceData({
+      date: new Date().toISOString().split('T')[0],
+      time: '09:30',
+      lateDuration: '30 minutes',
+      reason: '',
+      status: 'pending'
+    });
+    setIsPopUpOpen(true);
   };
 
-  const handleSort = (key: string, direction: 'asc' | 'desc') => {
-    console.log('Sort by:', key, direction);
+  // Handle opening popup for HR review
+  const handleOpenHRReview = (data: AttendanceData) => {
+    setCurrentUserRole('hr');
+    setAttendanceData(data);
+    setIsPopUpOpen(true);
+  };
+
+  // Handle form submission (Employee role)
+  const handleSubmitAttendance = async (data: AttendanceData) => {
+    console.log('Employee submitting attendance:', data);
+    // Here you would typically make an API call to save the attendance
+    // For now, we'll just simulate a successful submission
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsPopUpOpen(false);
+    // You could also update the attendance list here
+  };
+
+  // Handle approval (HR role)
+  const handleApproveAttendance = async (data: AttendanceData) => {
+    console.log('HR approving attendance:', data);
+    // Here you would typically make an API call to approve the attendance
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsPopUpOpen(false);
+    // You could also update the attendance list here
+  };
+
+  // Handle rejection (HR role)
+  const handleRejectAttendance = async (data: AttendanceData) => {
+    console.log('HR rejecting attendance:', data);
+    // Here you would typically make an API call to reject the attendance
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsPopUpOpen(false);
+    // You could also update the attendance list here
+  };
+
+  // Handle cancel
+  const handleCancel = () => {
+    setIsPopUpOpen(false);
   };
 
   return (
@@ -228,43 +104,84 @@ const AttendancePage: React.FC = () => {
         <p>Track employee attendance, manage schedules, and monitor time logs</p>
       </div>
 
-      {/* Attendance Records DataTable */}
-      <div className="attendance-section">
-        <div className="section-header">
-          <h2>Attendance Records</h2>
-          <p>View and manage employee attendance records</p>
+      {/* Action buttons */}
+      <div className="attendance-actions">
+        <div className="action-buttons">
+          <button 
+            className="btn btn-primary"
+            onClick={handleOpenEmployeeSubmission}
+          >
+            Submit Late Attendance
+          </button>
+          
+          <div className="role-switcher">
+            <label>Current Role:</label>
+            <select 
+              value={currentUserRole} 
+              onChange={(e) => setCurrentUserRole(e.target.value as 'employee' | 'hr')}
+              className="role-select"
+            >
+              <option value="employee">Employee</option>
+              <option value="hr">HR Manager</option>
+            </select>
+          </div>
         </div>
-        
-        <DataTable
-          data={attendanceData}
-          columns={columns}
-          pagination={{
-            currentPage,
-            pageSize,
-            totalItems: attendanceData.length,
-            onPageChange: setCurrentPage,
-            onPageSizeChange: setPageSize,
-            pageSizeOptions: [5, 10, 25, 50]
-          }}
-          searchable={true}
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-          searchKeys={['employeeName', 'department', 'status']}
-          onRowClick={handleRowClick}
-          onSort={handleSort}
-          actions={actions}
-          striped={true}
-          hoverable={true}
-          bordered={true}
-          className="attendance-data-table"
-          ariaLabel="Employee attendance records table"
-        />
       </div>
+
+      {/* Example attendance submissions for HR review */}
+      {currentUserRole === 'hr' && (
+        <div className="pending-submissions">
+          <h3>Pending Late Attendance Submissions</h3>
+          <div className="submissions-list">
+            {exampleAttendanceData.map((data, index) => (
+              <div key={index} className="submission-item">
+                <div className="submission-info">
+                  <span className="submission-date">{new Date(data.date).toLocaleDateString()}</span>
+                  <span className="submission-time">{data.time}</span>
+                  <span className="submission-duration">{data.lateDuration}</span>
+                  <span className={`submission-status status-${data.status}`}>
+                    {data.status}
+                  </span>
+                </div>
+                <div className="submission-actions">
+                  <button 
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => handleOpenHRReview(data)}
+                  >
+                    Review
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Legacy AttendanceLog component */}
       <div className="legacy-section">
         <AttendanceLog />
       </div>
+
+      {/* AttendancePopUp Component */}
+      <AttendancePopUp
+        isOpen={isPopUpOpen}
+        userRole={currentUserRole}
+        attendanceData={attendanceData}
+        employeeName={currentUserRole === 'hr' ? 'John Doe' : undefined}
+        onSubmit={handleSubmitAttendance}
+        onApprove={handleApproveAttendance}
+        onReject={handleRejectAttendance}
+        onCancel={handleCancel}
+        title={currentUserRole === 'employee' ? 'Submit Late Attendance' : 'Review Late Attendance'}
+        submitButtonText="Submit Report"
+        approveButtonText="Approve"
+        rejectButtonText="Reject"
+        cancelButtonText="Cancel"
+        reasonLabel={currentUserRole === 'employee' ? 'Reason for being late' : 'Submitted Reason'}
+        reasonPlaceholder="Please provide a detailed reason for your late arrival..."
+        size="md"
+        theme="light"
+      />
     </div>
   );
 };

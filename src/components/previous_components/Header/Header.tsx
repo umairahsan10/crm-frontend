@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import './Header.css';
-import SearchBar from '../../common/SearchBar/SearchBar';
 
 interface HeaderProps {
   title: string;
@@ -31,13 +30,6 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     <header className="header">
       <div className="header-left">
         <h1 className="page-title">{title}</h1>
-      </div>
-
-      <div className="header-center">
-        <SearchBar 
-          placeholder="Search..."
-          onSearch={(value) => console.log('Search:', value)}
-        />
       </div>
 
       <div className="header-right">

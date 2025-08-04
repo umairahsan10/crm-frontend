@@ -261,6 +261,11 @@
   height: 14px;
 }
 
+/* Ensure header-center has proper positioning for dropdown */
+.header-center {
+  position: relative;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .header {
@@ -273,11 +278,6 @@
 
   .header-center {
     margin: 0 1rem;
-  }
-
-  .header-center .search-bar {
-    width: 280px;
-    min-width: 250px;
   }
 
   .header-right {
@@ -296,11 +296,6 @@
 
   .header-center {
     margin: 0 0.5rem;
-  }
-
-  .header-center .search-bar {
-    width: 220px;
-    min-width: 200px;
   }
 
   .notification-btn,

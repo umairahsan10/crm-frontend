@@ -4,12 +4,11 @@ import EmployeeForm from '../../components/previous_components/EmployeeForm/Empl
 import './EmployeesPage.css';
 
 const EmployeesPage: React.FC = () => {
-  // Sample employee data for the table
+  // Sample employees data - in a real app, this would come from an API
   const employees = [
     { 
       id: '1', 
-      name: 'Sarah', 
-      lastname: 'Chen',
+      name: 'Sarah Chen',
       email: 'sarah.chen@company.com', 
       phone: '+1-555-0101', 
       gender: 'female' as const, 
@@ -35,8 +34,7 @@ const EmployeesPage: React.FC = () => {
     },
     { 
       id: '2', 
-      name: 'Mike', 
-      lastname: 'Rodriguez',
+      name: 'Mike Rodriguez',
       email: 'mike.rodriguez@company.com', 
       phone: '+1-555-0103', 
       gender: 'male' as const, 
@@ -63,8 +61,7 @@ const EmployeesPage: React.FC = () => {
     },
     { 
       id: '3', 
-      name: 'Alex', 
-      lastname: 'Thompson',
+      name: 'Alex Thompson',
       email: 'alex.thompson@company.com', 
       phone: '+1-555-0105', 
       gender: 'male' as const, 
