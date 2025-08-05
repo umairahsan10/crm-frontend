@@ -5,7 +5,6 @@ import {
   AiOutlineDashboard,
   AiOutlineTeam,
   AiOutlineCalendar,
-  AiOutlineDollar,
   AiOutlineBarChart,
   AiOutlineBank,
   AiOutlineReload,
@@ -71,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       case '📅':
         return <AiOutlineCalendar size={20} />;
       case '💰':
-        return <AiOutlineDollar size={20} />;
+        return <span>💰</span>;
       case '📈':
         return <AiOutlineBarChart size={20} />;
       case '💼':
@@ -80,6 +79,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         return <AiOutlineReload size={20} />;
       case '⚙️':
         return <AiOutlineSetting size={20} />;
+      case '○':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+        );
       default:
         return <span>{emoji}</span>;
     }

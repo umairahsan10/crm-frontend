@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import DataTable, { Column, Action } from '../../common/DataTable/DataTable';
+import DataTable from '../../common/DataTable/DataTable';
+
+// Define types locally since they're not exported from DataTable
+type Column<T> = {
+  header: string;
+  accessor: keyof T;
+  sortable?: boolean;
+  render?: (value: any, row: T) => React.ReactNode;
+};
 
 interface Booking {
   id: string;
@@ -12,9 +20,7 @@ interface Booking {
 }
 
 const BookingsTable: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [pageSize] = useState(5);
 
   const mockBookings: Booking[] = [
     {
@@ -66,29 +72,29 @@ const BookingsTable: React.FC = () => {
 
   const columns: Column<Booking>[] = [
     {
-      key: 'customerName',
-      label: 'Customer Name',
+      accessor: 'customerName',
+      header: 'Customer Name',
       sortable: true
     },
     {
-      key: 'service',
-      label: 'Service',
+      accessor: 'service',
+      header: 'Service',
       sortable: true
     },
     {
-      key: 'date',
-      label: 'Date',
+      accessor: 'date',
+      header: 'Date',
       sortable: true,
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
-      key: 'time',
-      label: 'Time',
+      accessor: 'time',
+      header: 'Time',
       sortable: true
     },
     {
-      key: 'status',
-      label: 'Status',
+      accessor: 'status',
+      header: 'Status',
       sortable: true,
       render: (value: string) => (
         <span className={`status-badge status-badge--${value}`}>
@@ -97,36 +103,15 @@ const BookingsTable: React.FC = () => {
       )
     },
     {
-      key: 'amount',
-      label: 'Amount',
+      accessor: 'amount',
+      header: 'Amount',
       sortable: true,
       render: (value: number) => `$${value.toFixed(2)}`
     }
   ];
 
-  const actions: Action<Booking>[] = [
-    {
-      label: 'Edit',
-      onClick: (booking) => {
-        console.log('Edit booking:', booking);
-      },
-      variant: 'primary'
-    },
-    {
-      label: 'Delete',
-      onClick: (booking) => {
-        console.log('Delete booking:', booking);
-      },
-      variant: 'danger'
-    }
-  ];
-
   const handleRowClick = (booking: Booking) => {
     console.log('Booking clicked:', booking);
-  };
-
-  const handleSort = (key: string, direction: 'asc' | 'desc') => {
-    console.log('Sort by:', key, direction);
   };
 
   return (
@@ -135,26 +120,13 @@ const BookingsTable: React.FC = () => {
       <DataTable
         data={mockBookings}
         columns={columns}
-        pagination={{
-          currentPage,
-          pageSize,
-          totalItems: mockBookings.length,
-          onPageChange: setCurrentPage,
-          onPageSizeChange: setPageSize,
-          pageSizeOptions: [5, 10, 25, 50]
-        }}
         searchable={true}
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        searchKeys={['customerName', 'service']}
+        sortable={true}
+        paginated={true}
+        rowsPerPage={pageSize}
         onRowClick={handleRowClick}
-        onSort={handleSort}
-        actions={actions}
-        striped={true}
-        hoverable={true}
-        bordered={true}
-        className="bookings-table"
-        ariaLabel="Bookings data table"
+        selectable={false}
+        emptyMessage="No bookings found"
       />
     </div>
   );

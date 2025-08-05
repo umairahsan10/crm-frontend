@@ -89,6 +89,47 @@
   color: var(--text-muted, #6c757d);
 }
 
+.no-results-message {
+  color: var(--warning-color, #dc3545);
+  font-weight: 500;
+}
+
+/* No Results Container */
+.no-results-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  background: var(--surface-color, #f8f9fa);
+  border-radius: 8px;
+  margin: 20px;
+}
+
+.no-results-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.no-results-text {
+  color: var(--text-muted, #6c757d);
+}
+
+.no-results-text strong {
+  display: block;
+  font-size: 18px;
+  color: var(--text-color, #333);
+  margin-bottom: 8px;
+}
+
+.no-results-text p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 /* Table Container */
 .employee-table-container {
   overflow-x: auto;

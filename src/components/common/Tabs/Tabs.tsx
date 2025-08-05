@@ -214,7 +214,6 @@ const Tabs: React.FC<TabsProps> = ({
         if (defaultActiveTab) return defaultActiveTab;
         return tabs.length > 0 ? tabs[0].id : '';
       });
-      const [focusedTab, setFocusedTab] = useState<string>('');
       const [tabsState, setTabsState] = useState<TabItem[]>(tabs);
 
   // Refs
@@ -271,7 +270,6 @@ const Tabs: React.FC<TabsProps> = ({
     const tab = tabsState.find(t => t.id === tabId);
     if (!tab) return;
 
-    setFocusedTab(tabId);
     onTabFocus?.(tabId, tab, event);
   }, [tabsState, onTabFocus]);
 
@@ -280,7 +278,6 @@ const Tabs: React.FC<TabsProps> = ({
     const tab = tabsState.find(t => t.id === tabId);
     if (!tab) return;
 
-    setFocusedTab('');
     onTabBlur?.(tabId, tab, event);
   }, [tabsState, onTabBlur]);
 

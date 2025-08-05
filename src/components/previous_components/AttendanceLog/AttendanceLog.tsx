@@ -141,7 +141,7 @@ const AttendanceLog: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {attendanceData.map((attendance, index) => {
+            {attendanceData.map((attendance) => {
               const employee = employees.find(emp => emp.id === attendance.employeeId);
               if (!employee) return null;
 

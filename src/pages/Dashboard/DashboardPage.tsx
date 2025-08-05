@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -30,16 +30,6 @@ ChartJS.register(
 );
 
 const DashboardPage: React.FC = () => {
-  const [chartsLoaded, setChartsLoaded] = useState(false);
-
-  useEffect(() => {
-    // Simulate chart loading
-    const timer = setTimeout(() => {
-      setChartsLoaded(true);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // Sales Performance Chart Data
   const salesData = {
@@ -192,13 +182,13 @@ const DashboardPage: React.FC = () => {
       {/* Charts Section */}
       <div className="charts-container">
         <div className="chart-card">
-          <div className={`chart-wrapper ${chartsLoaded ? 'loaded' : ''}`}>
+          <div className="chart-wrapper">
             <Line data={salesData} options={salesChartOptions} />
           </div>
         </div>
         
         <div className="chart-card">
-          <div className={`chart-wrapper ${chartsLoaded ? 'loaded' : ''}`}>
+          <div className="chart-wrapper">
             <Doughnut data={employeeData} options={employeeChartOptions} />
           </div>
         </div>

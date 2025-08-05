@@ -3,7 +3,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 1.5rem;  
-  height: 80px; /* Increased from 70px to 80px */
+  height: 80px;
   background: white;
   border-bottom: 1px solid #e5e7eb;
   position: sticky;
@@ -23,25 +23,10 @@
   font-weight: 600;
   color: #1f2937;
   margin: 0;
-  line-height: 1.2; /* Added line-height to prevent text cutoff */
+  line-height: 1.2;
   display: flex;
   align-items: center;
-  height: 100%; /* Ensure full height usage */
-}
-
-.header-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  margin: 0 2rem;
-}
-
-/* Search bar styling within header */
-.header-center .search-bar {
-  width: 350px;
-  max-width: 400px;
-  min-width: 300px;
+  height: 100%;
 }
 
 .header-right {
@@ -49,8 +34,6 @@
   align-items: center;
   gap: 1rem;
 }
-
-
 
 .notification-dropdown {
   position: relative;
@@ -261,11 +244,6 @@
   height: 14px;
 }
 
-/* Ensure header-center has proper positioning for dropdown */
-.header-center {
-  position: relative;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .header {
@@ -274,10 +252,6 @@
 
   .page-title {
     font-size: 1.25rem;
-  }
-
-  .header-center {
-    margin: 0 1rem;
   }
 
   .header-right {
@@ -294,19 +268,9 @@
     font-size: 1.125rem;
   }
 
-  .header-center {
-    margin: 0 0.5rem;
-  }
-
   .notification-btn,
   .user-btn {
     width: 36px;
     height: 36px;
-  }
-}
-
-@media (max-width: 360px) {
-  .header-center {
-    display: none;
   }
 } 
