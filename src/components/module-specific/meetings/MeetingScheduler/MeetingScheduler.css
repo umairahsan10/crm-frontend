@@ -1,3 +1,396 @@
+/* Meeting Scheduler Component Styles */
+
+/* Base Container */
 .meeting-scheduler {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.meeting-scheduler:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Title */
+.meeting-scheduler-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  padding: 1.5rem 1.5rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Form Container */
+.meeting-scheduler-form {
+  padding: 1.5rem;
+}
+
+/* Fields Container */
+.meeting-scheduler-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Row Layout for Side-by-Side Fields */
+.meeting-scheduler-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+/* Field Group */
+.meeting-scheduler-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Labels */
+.meeting-scheduler-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.meeting-scheduler-required {
+  color: #dc2626;
+  margin-left: 0.25rem;
+}
+
+/* Base Field Styles */
+.meeting-scheduler-field {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.meeting-scheduler-field:focus {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.meeting-scheduler-field:hover {
+  border-color: #cbd5e1;
+  background: white;
+}
+
+.meeting-scheduler-field:disabled {
+  background: #f1f5f9;
+  color: #6b7280;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Error State */
+.meeting-scheduler-field--error {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 1px #dc2626;
+}
+
+.meeting-scheduler-field--error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Textarea Specific Styles */
+.meeting-scheduler-field[rows] {
+  min-height: 6rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* Select Specific Styles */
+.meeting-scheduler-field[data-field-type="select"] {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.meeting-scheduler-field[data-field-type="select"]:focus {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%233b82f6' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Remove default dropdown arrow for all browsers */
+.meeting-scheduler-field[data-field-type="select"]::-ms-expand {
+  display: none;
+}
+
+/* Select Options */
+.meeting-scheduler-field option {
+  background: white;
+  color: #1e293b;
+  padding: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.meeting-scheduler-field option:first-child {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.meeting-scheduler-field option:checked {
+  background: #3b82f6;
+  color: white;
+}
+
+.meeting-scheduler-field option:hover {
+  background: #f0f9ff;
+  color: #1e293b;
+}
+
+/* Date and Time Inputs */
+.meeting-scheduler-field[type="date"],
+.meeting-scheduler-field[type="time"] {
+  cursor: pointer;
+}
+
+/* Error Messages */
+.meeting-scheduler-error {
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  line-height: 1.4;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Submit Section */
+.meeting-scheduler-submit {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Submit Button */
+.meeting-scheduler-button {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+  min-width: 160px;
+  font-family: inherit;
+}
+
+.meeting-scheduler-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px -3px rgba(59, 130, 246, 0.3);
+}
+
+.meeting-scheduler-button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.meeting-scheduler-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .meeting-scheduler {
+    max-width: 100%;
+    margin: 0 1rem;
+    border-radius: 8px;
+  }
+
+  .meeting-scheduler-title {
+    font-size: 1.25rem;
+    padding: 1.25rem 1.25rem 0.75rem;
+  }
+
+  .meeting-scheduler-form {
+    padding: 1.25rem;
+  }
+
+  .meeting-scheduler-fields {
+    gap: 1rem;
+  }
+
+  .meeting-scheduler-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .meeting-scheduler-field {
+    min-height: 2.75rem;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .meeting-scheduler-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .meeting-scheduler {
+    margin: 0 0.5rem;
+    border-radius: 6px;
+  }
+
+  .meeting-scheduler-title {
+    font-size: 1.1rem;
+    padding: 1rem 1rem 0.5rem;
+  }
+
+  .meeting-scheduler-form {
+    padding: 1rem;
+  }
+
+  .meeting-scheduler-fields {
+    gap: 0.875rem;
+  }
+
+  .meeting-scheduler-field {
+    min-height: 2.5rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 16px;
+  }
+
+  .meeting-scheduler-label {
+    font-size: 0.8rem;
+  }
+
+  .meeting-scheduler-button {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
+    min-width: 120px;
+    min-height: 2.75rem;
+  }
+}
+
+/* Accessibility Improvements */
+.meeting-scheduler-field:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.meeting-scheduler-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .meeting-scheduler-field {
+    border-width: 2px;
+  }
   
+  .meeting-scheduler-field:focus {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .meeting-scheduler,
+  .meeting-scheduler-field,
+  .meeting-scheduler-button {
+    transition: none;
+  }
+  
+  .meeting-scheduler-error {
+    animation: none;
+  }
+}
+
+/* Custom scrollbar for textarea */
+.meeting-scheduler-field::-webkit-scrollbar {
+  width: 6px;
+}
+
+.meeting-scheduler-field::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.meeting-scheduler-field::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.meeting-scheduler-field::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Placeholder styling */
+.meeting-scheduler-field::placeholder {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Focus ring for better accessibility */
+.meeting-scheduler-field:focus {
+  outline: none;
+}
+
+.meeting-scheduler-field:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 } 

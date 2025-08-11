@@ -108,6 +108,8 @@ const EmployeesPage: React.FC = () => {
         <h1>Employee Management</h1>
       </div>
       
+
+      
       <div className="table-with-button">
         <div className="table-button-container">
           <h2 className="section-label">Employee List</h2>

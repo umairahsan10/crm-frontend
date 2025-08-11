@@ -101,7 +101,6 @@ function DataTable<T extends { id?: string | number }>({
       <table className="table">
         <thead>
           <tr>
-            {selectable && <th />}
             {columns.map((col) => (
               <th
                 key={String(col.accessor)}
@@ -121,7 +120,7 @@ function DataTable<T extends { id?: string | number }>({
         <tbody>
           {pagedData.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + (selectable ? 1 : 0)} className="empty">
+              <td colSpan={columns.length} className="empty">
                 {emptyMessage}
               </td>
             </tr>
@@ -132,16 +131,6 @@ function DataTable<T extends { id?: string | number }>({
                 onClick={() => onRowClick?.(row)}
                 className={onRowClick ? 'clickable' : ''}
               >
-                {selectable && (
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedRows.has(row.id!)}
-                      onChange={() => toggleSelect(row.id!)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </td>
-                )}
                 {columns.map((col) => (
                   <td key={String(col.accessor)}>
                     {col.render

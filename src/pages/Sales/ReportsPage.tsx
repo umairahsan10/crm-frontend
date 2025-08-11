@@ -4,6 +4,7 @@ import BarChart from '../../components/previous_components/charts/BarChart/BarCh
 import './ReportsPage.css';
 
 const ReportsPage: React.FC = () => {
+
   return (
     <div className="reports-container">
       <div className="page-header">
@@ -40,6 +41,8 @@ const ReportsPage: React.FC = () => {
           className="warning"
         />
       </div>
+
+
       
       <div className="reports-section">
         <div className="section-header">

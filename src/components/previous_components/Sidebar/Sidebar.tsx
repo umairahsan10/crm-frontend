@@ -70,7 +70,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       case '📅':
         return <AiOutlineCalendar size={20} />;
       case '💰':
-        return <span>💰</span>;
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        );
       case '📈':
         return <AiOutlineBarChart size={20} />;
       case '💼':
@@ -79,11 +84,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         return <AiOutlineReload size={20} />;
       case '⚙️':
         return <AiOutlineSetting size={20} />;
-      case '○':
+      case '⭕':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
+            <circle cx="12" cy="12" r="8"/>
           </svg>
         );
       default:
