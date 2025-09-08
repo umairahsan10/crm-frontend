@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import type { ReactNode } from 'react';
 import './Button.css';
 
-// Button variants
+// Button variants with predefined color schemes
 export type ButtonVariant = 
   | 'primary' 
   | 'secondary' 
@@ -27,53 +27,83 @@ export type IconPosition = 'left' | 'right' | 'only';
 // Button types
 export type ButtonType = 'button' | 'submit' | 'reset';
 
-// Button interface
+// Enhanced Button interface with focus on reusability
 export interface ButtonProps {
-  // Content props
-  children?: ReactNode;
+  // Core content props (prioritized for reusability)
+  /** Button text/label - can be used instead of children */
   text?: string;
+  /** Button content - can be used instead of text for complex content */
+  children?: ReactNode;
   
-  // Variant and styling props
+  // Core styling props (prioritized for reusability)
+  /** Button variant that determines the color scheme */
   variant?: ButtonVariant;
+  /** Button size */
   size?: ButtonSize;
+  /** Button shape */
   shape?: ButtonShape;
-  color?: string;
+  
+  // Core behavior props (prioritized for reusability)
+  /** Click handler function */
+  onClick?: (event: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => void;
+  
+  // Custom styling props (for page-specific customization)
+  /** Custom background color (overrides variant) */
   backgroundColor?: string;
-  borderColor?: string;
+  /** Custom text color (overrides variant) */
   textColor?: string;
+  /** Custom border color (overrides variant) */
+  borderColor?: string;
+  /** Custom color (legacy prop) */
+  color?: string;
   
   // Icon props
+  /** Icon element */
   icon?: ReactNode;
+  /** Icon position */
   iconPosition?: IconPosition;
+  /** Icon size in pixels */
   iconSize?: number;
+  /** Icon color */
   iconColor?: string;
   
   // State props
+  /** Loading state */
   loading?: boolean;
+  /** Disabled state */
   disabled?: boolean;
+  /** Active state */
   active?: boolean;
+  /** Full width */
   fullWidth?: boolean;
   
   // Behavior props
+  /** Button type */
   type?: ButtonType;
+  /** Link URL (renders as anchor if provided) */
   href?: string;
+  /** Link target */
   target?: string;
+  /** Download attribute */
   download?: boolean;
   
   // Event handlers
-  onClick?: (event: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => void;
   onMouseEnter?: (event: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => void;
   onMouseLeave?: (event: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => void;
   onFocus?: (event: React.FocusEvent<HTMLButtonElement | HTMLAnchorElement>) => void;
   onBlur?: (event: React.FocusEvent<HTMLButtonElement | HTMLAnchorElement>) => void;
   
   // Customization props
+  /** Custom CSS class */
   className?: string;
+  /** Custom inline styles */
   style?: React.CSSProperties;
+  /** Container CSS class */
   containerClassName?: string;
+  /** Container inline styles */
   containerStyle?: React.CSSProperties;
   
-  // Custom CSS variables
+  // Custom CSS variables for advanced styling
   customVars?: {
     '--button-bg'?: string;
     '--button-color'?: string;
@@ -125,20 +155,25 @@ export interface ButtonProps {
   value?: string;
 }
 
-// Button component
+// Enhanced Button component with improved reusability
 const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(({
-  // Content
-  children,
+  // Core content
   text,
+  children,
   
-  // Variant and styling
+  // Core styling
   variant = 'primary',
   size = 'md',
   shape = 'rounded',
-  color,
+  
+  // Core behavior
+  onClick,
+  
+  // Custom styling
   backgroundColor,
-  borderColor,
   textColor,
+  borderColor,
+  color,
   
   // Icons
   icon,
@@ -159,7 +194,6 @@ const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(({
   download,
   
   // Events
-  onClick,
   onMouseEnter,
   onMouseLeave,
   onFocus,
@@ -211,7 +245,7 @@ const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(({
   // Determine if this should render as a link
   const isLink = Boolean(href);
   
-  // Base classes
+  // Base classes with improved organization
   const baseClasses = [
     'btn',
     `btn--${variant}`,
@@ -232,16 +266,17 @@ const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(({
     containerClassName
   ].filter(Boolean).join(' ');
 
-  // Inline styles with custom variables
+  // Enhanced inline styles with custom variables
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const inlineStyles: any = {
     ...style,
     ...customVars,
     '--animation-duration': `${animationDuration}ms`,
-    ...(color && { '--button-color': color }),
+    // Custom styling takes precedence over variant
     ...(backgroundColor && { '--button-bg': backgroundColor }),
-    ...(borderColor && { '--button-border-color': borderColor }),
     ...(textColor && { '--button-color': textColor }),
+    ...(borderColor && { '--button-border-color': borderColor }),
+    ...(color && { '--button-color': color }),
     ...(iconColor && { '--icon-color': iconColor }),
     ...(loadingSpinnerColor && { '--spinner-color': loadingSpinnerColor })
   };
@@ -276,7 +311,7 @@ const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(({
     </svg>
   );
 
-  // Render content
+  // Enhanced content rendering with text prop support
   const renderContent = () => {
     if (loading) {
       return (
@@ -291,7 +326,8 @@ const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(({
       return icon;
     }
 
-    const content = children || text;
+    // Use text prop if provided, otherwise use children
+    const content = text || children;
     
     if (!icon) {
       return content;

@@ -207,6 +207,410 @@
   color: #1f2937;
 }
 
+/* Attendance Form Section */
+.attendance-form-section {
+  margin-bottom: 32px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  padding: 24px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.attendance-form {
+  padding: 0;
+}
+
+/* Form field spacing */
+.attendance-form .form-field-container {
+  margin-bottom: 20px;
+}
+
+/* Form header content */
+.form-header-content p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Attendance form container */
+.attendance-form-container {
+  padding: 0;
+}
+
+/* Attendance form fields */
+.attendance-form-fields {
+  gap: 20px;
+}
+
+/* Custom submit button styling */
+.attendance-submit-button {
+  background: linear-gradient(135deg, #051650 0%, #0a2a6b 50%, #1a4a8a 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 6px rgba(5, 22, 80, 0.2) !important;
+  width: 100% !important;
+  min-height: 48px !important;
+}
+
+.attendance-submit-button:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3) !important;
+  background: linear-gradient(135deg, #0a2a6b 0%, #1a4a8a 50%, #2563eb 100%) !important;
+}
+
+.attendance-submit-button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+.attendance-form .form-label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.attendance-form .form-field {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.attendance-form .form-field:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.attendance-form .form-field--error {
+  border-color: #ef4444;
+}
+
+.attendance-form .form-field-error {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.attendance-form .form-submit-button {
+  background: linear-gradient(135deg, #051650 0%, #0a2a6b 50%, #1a4a8a 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(5, 22, 80, 0.2);
+  width: 100%;
+}
+
+.attendance-form .form-submit-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
+}
+
+.attendance-form .form-submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .attendance-form-section {
+    max-width: 100%;
+    margin: 0 16px 32px 16px;
+    padding: 20px;
+  }
+  
+  .attendance-form .form-field {
+    padding: 10px 14px;
+  }
+}
+
+/* Attendance DataTable Section */
+.attendance-section {
+  margin-bottom: 32px;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.section-header {
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.section-header p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.legacy-section {
+  margin-top: 32px;
+}
+
+/* Status Badge Styles for DataTable */
+.status-badge--present {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge--absent {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.status-badge--late {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge--half-day {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.text-muted {
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Attendance DataTable specific styles */
+.attendance-data-table {
+  margin-top: 16px;
+}
+
+/* Responsive adjustments for DataTable */
+@media (max-width: 768px) {
+  .attendance-section {
+    padding: 20px;
+  }
+  
+  .section-header {
+    margin-bottom: 20px;
+  }
+  
+  .section-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .section-header p {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .attendance-section {
+    padding: 16px;
+  }
+  
+  .section-header h2 {
+    font-size: 1rem;
+  }
+  
+  .section-header p {
+    font-size: 0.8rem;
+  }
+}
+
+/* AttendancePopUp Integration Styles */
+
+/* Action buttons section */
+.attendance-actions {
+  margin-bottom: 32px;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.8rem;
+}
+
+/* Role switcher */
+.role-switcher {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-switcher label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.role-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.role-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Pending submissions section */
+.pending-submissions {
+  margin-bottom: 32px;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.pending-submissions h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+}
+
+.submissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.submission-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.submission-item:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.submission-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.submission-date,
+.submission-time,
+.submission-duration {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.submission-status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.submission-status.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.submission-status.status-approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.submission-status.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.submission-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .table-header,
@@ -252,6 +656,8 @@
     width: 100%;
     justify-content: space-between;
   }
+  
+
   
   .table-header,
   .table-row {
@@ -304,5 +710,61 @@
   
   .btn-mark-attendance, .btn-export {
     width: 100%;
+  }
+  
+  /* AttendancePopUp mobile responsive styles */
+  .attendance-actions {
+    padding: 16px;
+  }
+  
+  .action-buttons {
+    gap: 8px;
+  }
+  
+  .role-switcher {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .role-switcher label {
+    text-align: center;
+  }
+  
+  .pending-submissions {
+    padding: 16px;
+  }
+  
+  .pending-submissions h3 {
+    font-size: 1.1rem;
+  }
+  
+  .submission-item {
+    padding: 12px;
+  }
+  
+  .submission-info {
+    gap: 6px;
+  }
+  
+  .submission-date,
+  .submission-time,
+  .submission-duration {
+    font-size: 0.8rem;
+  }
+  
+  .submission-status {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.8rem;
+  }
+  
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.75rem;
   }
 } 

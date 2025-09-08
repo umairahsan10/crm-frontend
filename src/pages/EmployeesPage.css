@@ -1,0 +1,387 @@
+.employees-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.employees-container h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 24px 0;
+}
+
+.table-with-button {
+  position: relative;
+}
+
+.table-button-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-label {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  margin-top: 4px;
+}
+
+.page-header p {
+  font-size: 1.1rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.employees-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.btn-add-employee {
+  background: #051650;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(5, 22, 80, 0.2);
+}
+
+.btn-add-employee:hover {
+  background: #0a2a6b;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(5, 22, 80, 0.3);
+}
+
+.employees-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.employee-card {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.employee-card:hover {
+  background: #f1f5f9;
+  border-color: #051650;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.employee-avatar {
+  flex-shrink: 0;
+}
+
+.employee-avatar img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid #e5e7eb;
+}
+
+.employee-info {
+  flex: 1;
+}
+
+.employee-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+}
+
+.employee-role {
+  font-size: 0.9rem;
+  color: #051650;
+  font-weight: 500;
+  margin: 0 0 2px 0;
+}
+
+.employee-department {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0 0 2px 0;
+}
+
+.employee-email {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.employee-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.btn-edit, .btn-view {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-edit {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-edit:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.btn-view {
+  background: #051650;
+  color: white;
+}
+
+.btn-view:hover {
+  background: #0a2a6b;
+}
+
+.employee-filters input:focus {
+  outline: none;
+  border-color: #051650;
+  box-shadow: 0 0 0 3px rgba(5, 22, 80, 0.1);
+}
+
+.employee-actions .btn-edit {
+  background: #051650;
+  color: white;
+}
+
+.employee-actions .btn-delete {
+  background: #051650;
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .employees-container {
+    padding: 16px;
+  }
+  
+  .employees-container h1 {
+    font-size: 1.75rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  
+  .employees-section {
+    padding: 20px;
+  }
+  
+  .employees-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .employee-card {
+    padding: 16px;
+  }
+  
+  .employee-avatar img {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .employees-container {
+    padding: 12px;
+  }
+  
+  .employees-container h1 {
+    font-size: 1.5rem;
+  }
+  
+  .table-button-container {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .section-label {
+    font-size: 1.1rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .employees-section {
+    padding: 16px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .employee-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px;
+  }
+  
+  .employee-actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow: hidden;
+}
+
+  .modal-content {
+    width: 95vw;
+    max-width: 720px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    flex-shrink: 0;
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 18px 24px 10px 24px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+  }
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: white;
+    margin: 0;
+    padding: 0;
+  }
+
+  .modal-footer {
+    flex-shrink: 0;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .modal-footer .create-employee-btn {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, opacity 0.18s;
+  }
+
+  .modal-footer .create-employee-btn:hover:not(:disabled) {
+    background: #1256a3;
+  }
+
+  .modal-footer .create-employee-btn:disabled {
+    background: #bdbdbd;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive modal adjustments */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 5px;
+  }
+  
+  .modal-content {
+    width: 98vw;
+    max-width: none;
+    max-height: 95vh;
+  }
+} 

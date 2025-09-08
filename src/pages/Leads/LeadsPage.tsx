@@ -9,8 +9,11 @@ const LeadsPage: React.FC = () => {
         <h1>Lead Management</h1>
         <p>Import and manage your leads and prospects</p>
       </div>
-      
-      <ImportData />
+
+      {/* Import Data Section */}
+      <div className="import-section">
+        <ImportData />
+      </div>
     </div>
   );
 };

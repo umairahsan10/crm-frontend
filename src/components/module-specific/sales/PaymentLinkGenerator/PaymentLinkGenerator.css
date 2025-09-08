@@ -1,3 +1,677 @@
+/* Payment Link Generator Component Styles */
+
+/* CSS Variables for theming */
+:root {
+  --payment-link-primary-color: #3b82f6;
+  --payment-link-primary-hover: #2563eb;
+  --payment-link-success-color: #10b981;
+  --payment-link-error-color: #ef4444;
+  --payment-link-warning-color: #f59e0b;
+  --payment-link-text-primary: #1f2937;
+  --payment-link-text-secondary: #6b7280;
+  --payment-link-text-muted: #9ca3af;
+  --payment-link-border-color: #d1d5db;
+  --payment-link-border-focus: #3b82f6;
+  --payment-link-bg-primary: #ffffff;
+  --payment-link-bg-secondary: #f9fafb;
+  --payment-link-bg-error: #fef2f2;
+  --payment-link-bg-success: #f0fdf4;
+  --payment-link-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --payment-link-shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --payment-link-radius: 8px;
+  --payment-link-radius-sm: 6px;
+  --payment-link-transition: all 0.2s ease;
+}
+
+/* Base Container */
 .payment-link-generator {
-  
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--payment-link-bg-primary);
+  border-radius: var(--payment-link-radius);
+  box-shadow: var(--payment-link-shadow);
+  transition: var(--payment-link-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.payment-link-generator:hover {
+  box-shadow: var(--payment-link-shadow-hover);
+}
+
+/* Header */
+.payment-link-generator-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--payment-link-border-color);
+  background: var(--payment-link-bg-secondary);
+}
+
+.payment-link-generator-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--payment-link-text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.payment-link-generator-subtitle {
+  font-size: 0.875rem;
+  color: var(--payment-link-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Access Denied State */
+.payment-link-generator-access-denied {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--payment-link-text-secondary);
+}
+
+.access-denied-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.payment-link-generator-access-denied p {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+/* Error Banner */
+.payment-link-generator-error {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  margin: 1rem;
+  background: var(--payment-link-bg-error);
+  border: 1px solid #fecaca;
+  border-radius: var(--payment-link-radius-sm);
+  color: var(--payment-link-error-color);
+}
+
+.error-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-message {
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.error-details {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.error-retry-btn {
+  padding: 0.375rem 0.75rem;
+  background: var(--payment-link-error-color);
+  color: white;
+  border: none;
+  border-radius: var(--payment-link-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--payment-link-transition);
+}
+
+.error-retry-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* Success View */
+.payment-link-generator-success {
+  padding: 1.5rem;
+}
+
+.success-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.success-icon {
+  font-size: 1.5rem;
+}
+
+.success-header h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--payment-link-text-primary);
+  margin: 0;
+}
+
+.generated-link-section {
+  margin-bottom: 1.5rem;
+}
+
+.generated-link-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--payment-link-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.generated-link-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.generated-link-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid var(--payment-link-border-color);
+  border-radius: var(--payment-link-radius-sm);
+  font-size: 0.875rem;
+  color: var(--payment-link-text-primary);
+  background: var(--payment-link-bg-secondary);
+  cursor: text;
+}
+
+.copy-link-btn {
+  padding: 0.75rem 1rem;
+  background: var(--payment-link-primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--payment-link-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--payment-link-transition);
+  white-space: nowrap;
+}
+
+.copy-link-btn:hover {
+  background: var(--payment-link-primary-hover);
+  transform: translateY(-1px);
+}
+
+/* QR Code Section */
+.qr-code-section {
+  margin-bottom: 1.5rem;
+}
+
+.qr-code-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--payment-link-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--payment-link-bg-secondary);
+  border: 1px solid var(--payment-link-border-color);
+  border-radius: var(--payment-link-radius-sm);
+}
+
+.qr-code-svg {
+  border-radius: var(--payment-link-radius-sm);
+}
+
+/* Success Actions */
+.success-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.qr-toggle-btn,
+.generate-new-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--payment-link-border-color);
+  border-radius: var(--payment-link-radius-sm);
+  background: var(--payment-link-bg-primary);
+  color: var(--payment-link-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--payment-link-transition);
+}
+
+.qr-toggle-btn:hover,
+.generate-new-btn:hover {
+  background: var(--payment-link-bg-secondary);
+  border-color: var(--payment-link-text-muted);
+}
+
+.generate-new-btn {
+  background: var(--payment-link-success-color);
+  color: white;
+  border-color: var(--payment-link-success-color);
+}
+
+.generate-new-btn:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+/* Form */
+.payment-link-generator-form {
+  padding: 1.5rem;
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--payment-link-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.field-input {
+  padding: 0.75rem;
+  border: 1px solid var(--payment-link-border-color);
+  border-radius: var(--payment-link-radius-sm);
+  font-size: 0.875rem;
+  color: var(--payment-link-text-primary);
+  background: var(--payment-link-bg-primary);
+  transition: var(--payment-link-transition);
+  outline: none;
+}
+
+.field-input:focus {
+  border-color: var(--payment-link-border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.field-input:disabled {
+  background: var(--payment-link-bg-secondary);
+  color: var(--payment-link-text-muted);
+  cursor: not-allowed;
+}
+
+.field-input--error {
+  border-color: var(--payment-link-error-color);
+}
+
+.field-input--error:focus {
+  border-color: var(--payment-link-error-color);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.field-input--textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: var(--payment-link-error-color);
+  margin-top: 0.25rem;
+}
+
+/* Form Actions */
+.form-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-start;
+  position: relative;
+}
+
+.generate-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--payment-link-primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--payment-link-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--payment-link-transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 160px;
+  justify-content: center;
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: var(--payment-link-primary-hover);
+  transform: translateY(-1px);
+}
+
+.generate-btn:disabled {
+  background: var(--payment-link-text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.access-denied-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--payment-link-text-primary);
+  color: white;
+  font-size: 0.75rem;
+  border-radius: var(--payment-link-radius-sm);
+  white-space: nowrap;
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: var(--payment-link-transition);
+}
+
+.generate-btn:disabled:hover + .access-denied-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Size Variants */
+.payment-link-generator--small {
+  font-size: 0.875rem;
+}
+
+.payment-link-generator--small .payment-link-generator-title {
+  font-size: 1.125rem;
+}
+
+.payment-link-generator--small .payment-link-generator-subtitle {
+  font-size: 0.8rem;
+}
+
+.payment-link-generator--small .field-input {
+  padding: 0.625rem;
+  font-size: 0.8rem;
+}
+
+.payment-link-generator--small .generate-btn {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.8rem;
+}
+
+.payment-link-generator--large {
+  font-size: 1rem;
+}
+
+.payment-link-generator--large .payment-link-generator-title {
+  font-size: 1.5rem;
+}
+
+.payment-link-generator--large .payment-link-generator-subtitle {
+  font-size: 1rem;
+}
+
+.payment-link-generator--large .field-input {
+  padding: 0.875rem;
+  font-size: 1rem;
+}
+
+.payment-link-generator--large .generate-btn {
+  padding: 0.875rem 1.75rem;
+  font-size: 1rem;
+}
+
+/* Variant Styles */
+.payment-link-generator--minimal {
+  box-shadow: none;
+  border: 1px solid var(--payment-link-border-color);
+}
+
+.payment-link-generator--minimal:hover {
+  box-shadow: none;
+}
+
+.payment-link-generator--minimal .payment-link-generator-header {
+  background: transparent;
+  border-bottom: 1px solid var(--payment-link-border-color);
+}
+
+.payment-link-generator--detailed {
+  padding: 0;
+}
+
+.payment-link-generator--detailed .payment-link-generator-header {
+  padding: 2rem;
+}
+
+.payment-link-generator--detailed .payment-link-generator-form {
+  padding: 2rem;
+}
+
+.payment-link-generator--detailed .payment-link-generator-success {
+  padding: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .generated-link-input-group {
+    flex-direction: column;
+  }
+
+  .success-actions {
+    flex-direction: column;
+  }
+
+  .payment-link-generator-header {
+    padding: 1rem;
+  }
+
+  .payment-link-generator-form {
+    padding: 1rem;
+  }
+
+  .payment-link-generator-success {
+    padding: 1rem;
+  }
+
+  .payment-link-generator-title {
+    font-size: 1.125rem;
+  }
+
+  .payment-link-generator-subtitle {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-link-generator {
+    border-radius: 0;
+  }
+
+  .payment-link-generator-header {
+    padding: 0.75rem;
+  }
+
+  .payment-link-generator-form {
+    padding: 0.75rem;
+  }
+
+  .payment-link-generator-success {
+    padding: 0.75rem;
+  }
+
+  .field-input {
+    padding: 0.625rem;
+    font-size: 0.8rem;
+  }
+
+  .generate-btn {
+    padding: 0.625rem 1rem;
+    font-size: 0.8rem;
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+/* Accessibility Improvements */
+.payment-link-generator:focus-within {
+  outline: 2px solid var(--payment-link-border-focus);
+  outline-offset: 2px;
+}
+
+.field-input:focus,
+.generate-btn:focus,
+.copy-link-btn:focus,
+.error-retry-btn:focus,
+.qr-toggle-btn:focus,
+.generate-new-btn:focus {
+  outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .payment-link-generator {
+    border: 1px solid var(--payment-link-text-primary);
+  }
+
+  .field-input {
+    border: 1px solid var(--payment-link-text-primary);
+  }
+
+  .generate-btn,
+  .copy-link-btn,
+  .error-retry-btn {
+    border: 1px solid var(--payment-link-text-primary);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .payment-link-generator,
+  .field-input,
+  .generate-btn,
+  .copy-link-btn,
+  .error-retry-btn,
+  .qr-toggle-btn,
+  .generate-new-btn {
+    transition: none;
+  }
+
+  .payment-link-generator:hover,
+  .generate-btn:hover:not(:disabled),
+  .copy-link-btn:hover,
+  .error-retry-btn:hover,
+  .qr-toggle-btn:hover,
+  .generate-new-btn:hover {
+    transform: none;
+  }
+
+  .loading-spinner {
+    animation: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --payment-link-text-primary: #f9fafb;
+    --payment-link-text-secondary: #d1d5db;
+    --payment-link-text-muted: #9ca3af;
+    --payment-link-border-color: #4b5563;
+    --payment-link-bg-primary: #1f2937;
+    --payment-link-bg-secondary: #374151;
+    --payment-link-bg-error: #7f1d1d;
+    --payment-link-bg-success: #14532d;
+  }
+
+  .payment-link-generator {
+    background: var(--payment-link-bg-primary);
+  }
+
+  .field-input {
+    background: var(--payment-link-bg-secondary);
+    color: var(--payment-link-text-primary);
+  }
+
+  .field-input:disabled {
+    background: #111827;
+    color: var(--payment-link-text-muted);
+  }
+
+  .generated-link-input {
+    background: var(--payment-link-bg-secondary);
+    color: var(--payment-link-text-primary);
+  }
+
+  .qr-code-container {
+    background: var(--payment-link-bg-secondary);
+    border-color: var(--payment-link-border-color);
+  }
+
+  .qr-code-svg rect {
+    fill: var(--payment-link-bg-primary);
+    stroke: var(--payment-link-border-color);
+  }
+
+  .qr-code-svg text {
+    fill: var(--payment-link-text-secondary);
+  }
+}
+
+/* Print styles */
+@media print {
+  .payment-link-generator {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .generate-btn,
+  .copy-link-btn,
+  .error-retry-btn,
+  .qr-toggle-btn,
+  .generate-new-btn {
+    display: none;
+  }
+
+  .payment-link-generator-form {
+    display: none;
+  }
+
+  .payment-link-generator-success {
+    display: block;
+  }
 } 

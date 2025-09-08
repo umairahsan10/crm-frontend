@@ -1,3 +1,621 @@
+/* Task Status Selector Component Styles */
+
+/* Base Container */
 .task-status-selector {
-  
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: visible;
+}
+
+.task-status-selector:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+/* Header */
+.task-status-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.task-status-selector-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.task-status-selector-readonly {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Task Information */
+.task-status-selector-task-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.task-status-selector-task-info:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.task-info-main {
+  margin-bottom: 0.75rem;
+}
+
+.task-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+}
+
+.task-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.task-info-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.task-assigned,
+.task-priority,
+.task-due-date {
+  font-weight: 500;
+}
+
+/* Status Selector Container */
+.task-status-selector-container {
+  position: relative;
+  margin-bottom: 1rem;
+  overflow: visible;
+}
+
+/* Trigger Button */
+.task-status-selector-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.task-status-selector-trigger:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.task-status-selector-trigger:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.task-status-selector--editable .task-status-selector-trigger {
+  cursor: pointer;
+}
+
+.task-status-selector:not(.task-status-selector--editable) .task-status-selector-trigger {
+  cursor: default;
+  background: #f9fafb;
+  opacity: 0.8;
+}
+
+/* Status Display */
+.status-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.status-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Dropdown Arrow */
+.dropdown-arrow {
+  font-size: 0.75rem;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.task-status-selector--open .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Options */
+.task-status-selector-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  margin-top: 0.25rem;
+  max-height: 300px;
+  overflow-y: auto;
+  animation: slideDown 0.2s ease-out;
+  min-width: 200px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Status Options */
+.status-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+  position: relative;
+}
+
+.status-option:last-child {
+  border-bottom: none;
+}
+
+.status-option:hover {
+  background: #f8fafc;
+}
+
+.status-option--selected {
+  background: #eff6ff;
+  color: var(--status-color, #3b82f6);
+}
+
+.status-option--selected .status-option-text {
+  color: var(--status-color, #3b82f6);
+  font-weight: 600;
+}
+
+.status-option-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  width: 1.5rem;
+  text-align: center;
+}
+
+.status-option-text {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.status-option-check {
+  font-size: 0.875rem;
+  color: var(--status-color, #3b82f6);
+  font-weight: bold;
+}
+
+/* Role Restriction Notice */
+.task-status-selector-restriction {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.restriction-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.restriction-text {
+  font-size: 0.75rem;
+  color: #92400e;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Role Notice */
+.task-status-selector-role-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.role-notice-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.role-notice-text {
+  font-size: 0.75rem;
+  color: #0369a1;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Size Variants */
+.task-status-selector--small {
+  padding: 1rem;
+}
+
+.task-status-selector--small .task-status-selector-label {
+  font-size: 0.875rem;
+}
+
+.task-status-selector--small .task-title {
+  font-size: 1rem;
+}
+
+.task-status-selector--small .task-status-selector-trigger {
+  padding: 0.5rem 0.75rem;
+}
+
+.task-status-selector--small .status-icon {
+  font-size: 1rem;
+}
+
+.task-status-selector--small .status-text {
+  font-size: 0.8rem;
+}
+
+.task-status-selector--large {
+  padding: 2rem;
+}
+
+.task-status-selector--large .task-status-selector-label {
+  font-size: 1.125rem;
+}
+
+.task-status-selector--large .task-title {
+  font-size: 1.25rem;
+}
+
+.task-status-selector--large .task-status-selector-trigger {
+  padding: 1rem 1.25rem;
+}
+
+.task-status-selector--large .status-icon {
+  font-size: 1.5rem;
+}
+
+.task-status-selector--large .status-text {
+  font-size: 1rem;
+}
+
+/* Variant Styles */
+.task-status-selector--minimal {
+  padding: 1rem;
+  box-shadow: none;
+  border: 1px solid #e5e7eb;
+}
+
+.task-status-selector--minimal:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.task-status-selector--minimal .task-status-selector-task-info {
+  background: transparent;
+  border: none;
+  padding: 0.5rem 0;
+}
+
+.task-status-selector--detailed {
+  padding: 2rem;
+}
+
+.task-status-selector--detailed .task-status-selector-label {
+  font-size: 1.125rem;
+  margin-bottom: 0.75rem;
+}
+
+.task-status-selector--detailed .task-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.task-status-selector--detailed .task-description {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.task-status-selector--detailed .task-status-selector-trigger {
+  padding: 1rem 1.25rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .task-status-selector {
+    padding: 1.25rem;
+  }
+
+  .task-status-selector-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .task-info-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .task-status-selector-trigger {
+    padding: 0.75rem;
+  }
+
+  .status-display {
+    gap: 0.5rem;
+  }
+
+  .status-icon {
+    font-size: 1rem;
+  }
+
+  .status-text {
+    font-size: 0.8rem;
+  }
+
+  .task-status-selector-dropdown {
+    min-width: 180px;
+    max-width: calc(100vw - 2rem);
+    right: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-status-selector {
+    padding: 1rem;
+  }
+
+  .task-status-selector-label {
+    font-size: 0.875rem;
+  }
+
+  .task-title {
+    font-size: 1rem;
+  }
+
+  .task-description {
+    font-size: 0.8rem;
+  }
+
+  .task-status-selector-trigger {
+    padding: 0.625rem;
+  }
+
+  .status-option {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .status-option-icon {
+    font-size: 0.875rem;
+  }
+
+  .status-option-text {
+    font-size: 0.8rem;
+  }
+
+  .task-status-selector-dropdown {
+    min-width: 160px;
+    max-width: calc(100vw - 1rem);
+    right: auto;
+  }
+}
+
+/* Accessibility Improvements */
+.task-status-selector:focus-within {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.task-status-selector-trigger:focus {
+  outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .task-status-selector {
+    border: 1px solid #374151;
+  }
+
+  .task-status-selector-trigger {
+    border: 2px solid #374151;
+  }
+
+  .task-status-selector-dropdown {
+    border: 1px solid #374151;
+  }
+
+  .status-option {
+    border-bottom: 1px solid #374151;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .task-status-selector,
+  .task-status-selector-trigger,
+  .dropdown-arrow,
+  .status-option {
+    transition: none;
+  }
+
+  .task-status-selector-dropdown {
+    animation: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .task-status-selector {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+
+  .task-status-selector-label {
+    color: #f9fafb;
+  }
+
+  .task-status-selector-readonly {
+    background: #374151;
+    color: #9ca3af;
+  }
+
+  .task-status-selector-task-info {
+    background: #374151;
+    border-color: #4b5563;
+  }
+
+  .task-status-selector-task-info:hover {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+
+  .task-title {
+    color: #f9fafb;
+  }
+
+  .task-description {
+    color: #9ca3af;
+  }
+
+  .task-assigned,
+  .task-due-date {
+    color: #9ca3af;
+  }
+
+  .task-status-selector-trigger {
+    background: #374151;
+    border-color: #6b7280;
+    color: #f9fafb;
+  }
+
+  .task-status-selector-trigger:hover {
+    background: #4b5563;
+    border-color: #9ca3af;
+  }
+
+  .task-status-selector-trigger:focus {
+    border-color: #60a5fa;
+  }
+
+  .status-text {
+    color: #f9fafb;
+  }
+
+  .task-status-selector-dropdown {
+    background: #374151;
+    border-color: #4b5563;
+  }
+
+  .status-option {
+    border-bottom-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .status-option:hover {
+    background: #4b5563;
+  }
+
+  .status-option--selected {
+    background: #1e3a8a;
+  }
+
+  .status-option-text {
+    color: #f9fafb;
+  }
+
+  .task-status-selector-restriction {
+    background: #451a03;
+    border-color: #f59e0b;
+  }
+
+  .restriction-text {
+    color: #fbbf24;
+  }
+
+  .task-status-selector-role-notice {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+  }
+
+  .role-notice-text {
+    color: #93c5fd;
+  }
+}
+
+/* Print styles */
+@media print {
+  .task-status-selector {
+    box-shadow: none;
+    border: 1px solid #d1d5db;
+    break-inside: avoid;
+  }
+
+  .task-status-selector-dropdown {
+    display: none;
+  }
+
+  .task-status-selector-restriction,
+  .task-status-selector-role-notice {
+    display: none;
+  }
 } 

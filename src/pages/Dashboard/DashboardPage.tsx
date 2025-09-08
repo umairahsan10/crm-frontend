@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,6 +13,9 @@ import {
   RadialLinearScale,
 } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
+import PaymentLinkGenerator from '../../components/module-specific/sales/PaymentLinkGenerator/PaymentLinkGenerator';
+import type { UserRole, Lead } from '../../components/module-specific/sales/PaymentLinkGenerator/PaymentLinkGenerator';
+
 import './DashboardPage.css';
 
 // Register Chart.js components
@@ -30,16 +33,25 @@ ChartJS.register(
 );
 
 const DashboardPage: React.FC = () => {
-  const [chartsLoaded, setChartsLoaded] = useState(false);
+  // Sample user role for demonstration
+  const userRole: UserRole = 'Sales Manager';
 
-  useEffect(() => {
-    // Simulate chart loading
-    const timer = setTimeout(() => {
-      setChartsLoaded(true);
-    }, 500);
+  // Sample lead data
+  const [leadData] = useState<Lead>({
+    id: 'lead-001',
+    name: 'Acme Corporation',
+    email: 'contact@acme.com',
+    phone: '+1 (555) 123-4567'
+  });
 
-    return () => clearTimeout(timer);
-  }, []);
+  // Handle payment link generation
+  const handlePaymentLinkGenerated = (link: string) => {
+    console.log('Payment link generated:', link);
+    // Here you could show a notification, save to database, etc.
+  };
+
+
+
   // Sales Performance Chart Data
   const salesData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -191,17 +203,43 @@ const DashboardPage: React.FC = () => {
       {/* Charts Section */}
       <div className="charts-container">
         <div className="chart-card">
-          <div className={`chart-wrapper ${chartsLoaded ? 'loaded' : ''}`}>
+          <div className="chart-wrapper">
             <Line data={salesData} options={salesChartOptions} />
           </div>
         </div>
         
         <div className="chart-card">
-          <div className={`chart-wrapper ${chartsLoaded ? 'loaded' : ''}`}>
+          <div className="chart-wrapper">
             <Doughnut data={employeeData} options={employeeChartOptions} />
           </div>
         </div>
       </div>
+
+      {/* Payment Link Generator Section */}
+      <div className="payment-link-section">
+        <PaymentLinkGenerator
+          lead={leadData}
+          defaultAmount={1500}
+          currency="USD"
+          successUrl="https://example.com/payment-success"
+          cancelUrl="https://example.com/payment-cancel"
+          labels={{
+            title: "Generate Payment Link",
+            subtitle: "Create secure payment links for your clients",
+            generateButton: "Generate Payment Link"
+          }}
+          theme={{
+            variant: "default",
+            size: "medium"
+          }}
+          onGenerated={handlePaymentLinkGenerated}
+          userRole={userRole}
+          disabled={false}
+        />
+      </div>
+
+
+
     </div>
   );
 };

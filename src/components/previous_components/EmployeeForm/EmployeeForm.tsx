@@ -103,7 +103,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
       province: 'Province/State',
       postCode: 'Post Code/Zip Code',
       biography: 'Biography',
-      sendWelcome: 'Send Welcome Email'
+      sendWelcome: 'Send Welcome Email',
     };
 
     let content = 'EMPLOYEE FORM SUBMISSION\n';
@@ -239,11 +239,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
       ...prev,
       [name]: error
     }));
-
-
   };
-
-
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

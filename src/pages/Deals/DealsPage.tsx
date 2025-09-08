@@ -144,6 +144,8 @@ const DealsPage: React.FC = () => {
         />
       </div>
       
+
+      
       <div className="deals-section">
         {/* Section header removed as requested */}
         

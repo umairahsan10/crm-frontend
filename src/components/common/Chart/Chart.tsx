@@ -8,8 +8,8 @@ export interface ChartDataPoint {
   label: string;
   value: number;
   color?: string;
-  metadata?: Record<string, any>;
-  [key: string]: any;
+  metadata?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface ChartDataset {
@@ -20,8 +20,8 @@ export interface ChartDataset {
   borderColor?: string;
   fill?: boolean;
   tension?: number;
-  metadata?: Record<string, any>;
-  [key: string]: any;
+  metadata?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface ChartAxis {
@@ -32,7 +32,7 @@ export interface ChartAxis {
   format?: (value: number) => string;
   gridLines?: boolean;
   ticks?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ChartConfig {
@@ -52,9 +52,9 @@ export interface ChartConfig {
       x?: ChartAxis;
       y?: ChartAxis;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Size variants
@@ -70,7 +70,7 @@ export interface ChartEvent {
   dataIndex?: number;
   value?: number;
   label?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Props interface
@@ -121,7 +121,7 @@ export interface ChartProps {
   'aria-describedby'?: string;
   
   // Custom props
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Default color palette

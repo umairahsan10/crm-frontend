@@ -1,3 +1,4 @@
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 // User and Authentication Types
 export interface User {
@@ -228,7 +229,7 @@ export interface TableColumn<T> {
   key: keyof T;
   label: string;
   sortable?: boolean;
-  render?: (value: any, row: T) => React.ReactNode;
+          render?: (value: any, row: T) => React.ReactNode;
   width?: string;
 }
 

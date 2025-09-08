@@ -10,8 +10,8 @@ export interface KanbanCard {
   assignee?: string;
   dueDate?: string;
   tags?: string[];
-  metadata?: Record<string, any>;
-  [key: string]: any; // Allow additional custom properties
+          metadata?: Record<string, any>;
+        [key: string]: any; // Allow additional custom properties
 }
 
 export interface KanbanColumn {
@@ -21,8 +21,8 @@ export interface KanbanColumn {
   color?: string;
   maxCards?: number;
   allowAdd?: boolean;
-  allowDrop?: boolean;
-  [key: string]: any; // Allow additional custom properties
+          allowDrop?: boolean;
+        [key: string]: any; // Allow additional custom properties
 }
 
 export interface KanbanBoard {
@@ -108,8 +108,8 @@ export interface KanbanProps {
   'aria-label'?: string;
   'aria-describedby'?: string;
   
-  // Custom props
-  [key: string]: any;
+          // Custom props
+        [key: string]: any;
 }
 
 const Kanban: React.FC<KanbanProps> = ({
@@ -121,10 +121,10 @@ const Kanban: React.FC<KanbanProps> = ({
   emptyIcon = '📋',
   draggable = true,
   allowAddCards = true,
-  allowDeleteCards = true,
-  allowEditCards = true,
-  allowMoveColumns = false,
-  allowDeleteColumns = false,
+          allowDeleteCards = true,
+        allowEditCards = true,
+        allowMoveColumns = false,
+        allowDeleteColumns = false,
   className = '',
   style = {},
   columnClassName = '',
@@ -137,15 +137,17 @@ const Kanban: React.FC<KanbanProps> = ({
   renderAddCard,
   renderEmpty,
   renderLoading,
-  onCardAdd,
-  onCardUpdate,
-  onCardDelete,
-  onCardMove,
-  onColumnAdd,
-  onColumnUpdate,
-  onColumnDelete,
-  onColumnReorder,
-  onBoardUpdate,
+          onCardAdd,
+        onCardUpdate,
+        onCardDelete,
+          onCardMove,
+        onColumnAdd,
+        onColumnUpdate,
+        onColumnDelete,
+        onColumnReorder,
+        onBoardUpdate,
+
+
   'aria-label': ariaLabel,
   'aria-describedby': ariaDescribedBy,
   ...restProps

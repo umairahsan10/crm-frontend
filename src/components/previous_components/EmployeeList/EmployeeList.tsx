@@ -153,21 +153,62 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   const displayColumns = columns.length > 0 ? columns : defaultColumns;
 
+  // Safe search function
+  const safeSearch = (employee: Employee, searchTerm: string): boolean => {
+    if (!searchTerm || searchTerm.trim() === '') {
+      return true;
+    }
+
+    const searchLower = searchTerm.toLowerCase().trim().replace(/\s+/g, ' ');
+    
+    // Define searchable fields with safe access
+    const searchableFields = [
+      employee?.name,
+      employee?.lastname,
+      employee?.email,
+      employee?.phone,
+      employee?.gender,
+      employee?.role_id,
+      employee?.department,
+      employee?.employment_type,
+      employee?.manager,
+      employee?.team_lead,
+      employee?.address,
+      employee?.cnic
+    ];
+
+    // Check if any field contains the search term
+    return searchableFields.some(field => {
+      if (field == null || field === undefined) {
+        return false;
+      }
+      // Normalize field value: convert to string, lowercase, and normalize whitespace
+      const fieldValue = String(field).toLowerCase().replace(/\s+/g, ' ');
+      return fieldValue.includes(searchLower);
+    });
+  };
+
   // Filter and sort employees
   const filteredAndSortedEmployees = useMemo(() => {
+    if (!Array.isArray(employees)) {
+      return [];
+    }
+
     const filtered = employees.filter(employee => {
-      const matchesSearch = !searchTerm || 
-        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.gender.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.role_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.employment_type.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!employee || typeof employee !== 'object') {
+        return false;
+      }
+
+      // Search filter
+      const matchesSearch = safeSearch(employee, searchTerm);
       
-      const matchesDepartment = !selectedDepartment || employee.department === selectedDepartment;
-      const matchesStatus = !selectedStatus || employee.status === selectedStatus;
+      // Department filter
+      const matchesDepartment = !selectedDepartment || 
+        (employee?.department && employee.department === selectedDepartment);
+      
+      // Status filter
+      const matchesStatus = !selectedStatus || 
+        (employee?.status && employee.status === selectedStatus);
       
       return matchesSearch && matchesDepartment && matchesStatus;
     });
@@ -175,11 +216,20 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     // Sort employees
     if (sortField && sortable) {
       filtered.sort((a, b) => {
-        const aValue = a[sortField];
-        const bValue = b[sortField];
+        const aValue = a?.[sortField];
+        const bValue = b?.[sortField];
         
-        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return sortDirection === 'asc' ? -1 : 1;
+        if (bValue == null) return sortDirection === 'asc' ? 1 : -1;
+        
+        // Convert to strings for comparison
+        const aStr = String(aValue).toLowerCase();
+        const bStr = String(bValue).toLowerCase();
+        
+        if (aStr < bStr) return sortDirection === 'asc' ? -1 : 1;
+        if (aStr > bStr) return sortDirection === 'asc' ? 1 : -1;
         return 0;
       });
     }
@@ -215,7 +265,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   // Render cell content
   const renderCell = (employee: Employee, column: Column) => {
-    const value = employee[column.key];
+    const value = employee?.[column.key];
     
     if (column.render) {
       return column.render(value, employee);
@@ -224,8 +274,8 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     switch (column.key) {
       case 'status':
         return renderStatus ? renderStatus(value) : (
-          <span className={`status-badge status-${value}`}>
-            {value.charAt(0).toUpperCase() + value.slice(1)}
+          <span className={`status-badge status-${value || 'unknown'}`}>
+            {value ? value.charAt(0).toUpperCase() + value.slice(1) : 'Unknown'}
           </span>
         );
       
@@ -238,8 +288,8 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       
       case 'employment_type':
         return (
-          <span className={`employment-badge employment-${value.replace('-', '-')}`}>
-            {value.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+          <span className={`employment-badge employment-${(value || '').replace('-', '-')}`}>
+            {value ? value.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Unknown'}
           </span>
         );
       
@@ -266,7 +316,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
         return value ? value.charAt(0).toUpperCase() + value.slice(1) : '-';
       
       case 'bonus':
-        return value ? `$${value.toLocaleString()}` : '-';
+        return value ? `$${Number(value).toLocaleString()}` : '-';
       
       case 'password_hash':
         return value ? '••••••••' : '-';
@@ -381,7 +431,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
       {/* Results count */}
       <div className="results-count">
-        Showing {filteredAndSortedEmployees.length} of {employees.length} employees
+        Showing {filteredAndSortedEmployees.length} of {employees?.length || 0} employees
+        {searchTerm && filteredAndSortedEmployees.length === 0 && (
+          <span className="no-results-message"> - No results found for "{searchTerm}"</span>
+        )}
       </div>
 
       {/* Employee Table */}
@@ -410,7 +463,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             {paginatedEmployees.length > 0 ? (
               paginatedEmployees.map(employee => (
                 <tr
-                  key={employee.id}
+                  key={employee?.id || Math.random()}
                   className={`table-row ${rowClassName} ${onRowClick ? 'clickable' : ''}`}
                   onClick={() => handleRowClick(employee)}
                 >
@@ -424,7 +477,17 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             ) : (
               <tr>
                 <td colSpan={displayColumns.length} className="empty-message">
-                  {emptyMessage}
+                  {searchTerm ? (
+                    <div className="no-results-container">
+                      <div className="no-results-icon">🔍</div>
+                      <div className="no-results-text">
+                        <strong>No employees found matching "{searchTerm}"</strong>
+                        <p>Try adjusting your search terms or clearing the search to see all employees.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    emptyMessage
+                  )}
                 </td>
               </tr>
             )}

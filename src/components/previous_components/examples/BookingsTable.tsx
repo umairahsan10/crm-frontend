@@ -1,5 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DataTable from '../../common/DataTable/DataTable';
+
+// Define types locally since they're not exported from DataTable
+type Column<T> = {
+  header: string;
+  accessor: keyof T;
+  sortable?: boolean;
+  render?: (value: any, row: T) => React.ReactNode;
+};
 
 interface Booking {
   id: string;
@@ -12,6 +20,8 @@ interface Booking {
 }
 
 const BookingsTable: React.FC = () => {
+  const [pageSize] = useState(5);
+
   const mockBookings: Booking[] = [
     {
       id: '1',
@@ -60,41 +70,41 @@ const BookingsTable: React.FC = () => {
     }
   ];
 
-  const columns = [
+  const columns: Column<Booking>[] = [
     {
-      key: 'customerName',
-      label: 'Customer Name',
+      accessor: 'customerName',
+      header: 'Customer Name',
       sortable: true
     },
     {
-      key: 'service',
-      label: 'Service',
+      accessor: 'service',
+      header: 'Service',
       sortable: true
     },
     {
-      key: 'date',
-      label: 'Date',
+      accessor: 'date',
+      header: 'Date',
       sortable: true,
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
-      key: 'time',
-      label: 'Time',
+      accessor: 'time',
+      header: 'Time',
       sortable: true
     },
     {
-      key: 'status',
-      label: 'Status',
+      accessor: 'status',
+      header: 'Status',
       sortable: true,
       render: (value: string) => (
-        <span className={`status-badge status-${value}`}>
+        <span className={`status-badge status-badge--${value}`}>
           {value.charAt(0).toUpperCase() + value.slice(1)}
         </span>
       )
     },
     {
-      key: 'amount',
-      label: 'Amount',
+      accessor: 'amount',
+      header: 'Amount',
       sortable: true,
       render: (value: number) => `$${value.toFixed(2)}`
     }
@@ -102,7 +112,6 @@ const BookingsTable: React.FC = () => {
 
   const handleRowClick = (booking: Booking) => {
     console.log('Booking clicked:', booking);
-    // Handle booking selection
   };
 
   return (
@@ -111,10 +120,13 @@ const BookingsTable: React.FC = () => {
       <DataTable
         data={mockBookings}
         columns={columns}
-        itemsPerPage={5}
-        showSearch={true}
+        searchable={true}
+        sortable={true}
+        paginated={true}
+        rowsPerPage={pageSize}
         onRowClick={handleRowClick}
-        className="bookings-table"
+        selectable={false}
+        emptyMessage="No bookings found"
       />
     </div>
   );
