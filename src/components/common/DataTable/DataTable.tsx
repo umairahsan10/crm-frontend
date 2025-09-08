@@ -29,14 +29,14 @@ function DataTable<T extends { id?: string | number }>({
   paginated = false,
   rowsPerPage = 5,
   onRowClick,
-  selectable = false,
+  selectable: _selectable = false,
   emptyMessage = 'No data available',
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<keyof T | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRows, setSelectedRows] = useState<Set<string | number>>(new Set());
+  const [_selectedRows, _setSelectedRows] = useState<Set<string | number>>(new Set());
 
   const filteredData = useMemo(() => {
     let filtered = data;
@@ -78,13 +78,6 @@ function DataTable<T extends { id?: string | number }>({
     }
   };
 
-  const toggleSelect = (id: string | number) => {
-    setSelectedRows((prev) => {
-      const copy = new Set(prev);
-      copy.has(id) ? copy.delete(id) : copy.add(id);
-      return copy;
-    });
-  };
 
   return (
     <div className="container">

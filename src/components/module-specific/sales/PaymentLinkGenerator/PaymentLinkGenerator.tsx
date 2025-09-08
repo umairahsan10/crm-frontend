@@ -99,7 +99,7 @@ interface PaymentService {
 
 // Mock Payment Service Implementation
 class MockPaymentService implements PaymentService {
-  async createPaymentLink(data: PaymentLinkData): Promise<PaymentLinkResponse> {
+  async createPaymentLink(_data: PaymentLinkData): Promise<PaymentLinkResponse> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
@@ -115,25 +115,6 @@ class MockPaymentService implements PaymentService {
   }
 }
 
-// Real Payment Service Implementation
-class RealPaymentService implements PaymentService {
-  async createPaymentLink(data: PaymentLinkData): Promise<PaymentLinkResponse> {
-    const response = await fetch('/api/payments/create-link', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return response.json();
-  }
-}
 
 // Custom hook for payment link generation
 const usePaymentLink = () => {

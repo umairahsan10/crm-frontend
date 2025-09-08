@@ -51,7 +51,7 @@ const ProjectProgressBar: React.FC<ProjectProgressBarProps> = ({
   // State for editable mode
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(percentage);
-  const [isDragging, setIsDragging] = useState(false);
+  const [_isDragging, setIsDragging] = useState(false);
 
   // Check if user can edit based on role and editable prop
   const canEdit = editable && (userRole === 'Production Unit Head' || userRole === 'Team Lead');

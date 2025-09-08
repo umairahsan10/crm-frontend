@@ -53,7 +53,7 @@ const CommissionWithholdToggle: React.FC<CommissionWithholdToggleProps> = ({
   // Local state
   const [isWithholding, setIsWithholding] = useState(withholdStatus);
   const [amount, setAmount] = useState(deductionAmount);
-  const [isEditing, setIsEditing] = useState(false);
+  const [_isEditing, setIsEditing] = useState(false);
 
   // Determine if user can edit
   const canEdit = editable && (userRole === 'Admin' || userRole === 'Sales Manager');

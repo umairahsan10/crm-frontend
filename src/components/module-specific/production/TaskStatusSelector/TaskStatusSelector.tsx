@@ -51,7 +51,7 @@ const TaskStatusSelector: React.FC<TaskStatusSelectorProps> = ({
   currentStatus,
   taskDetails,
   label = 'Task Status',
-  placeholder = 'Select status',
+  placeholder: _placeholder = 'Select status',
   showTaskInfo = true,
   showPriority = true,
   userRole = 'Developer',
@@ -68,7 +68,7 @@ const TaskStatusSelector: React.FC<TaskStatusSelectorProps> = ({
   // Local state
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus>(currentStatus);
   const [isOpen, setIsOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [_isEditing, setIsEditing] = useState(false);
 
   // Default status options
   const defaultStatusOptions: TaskStatus[] = [

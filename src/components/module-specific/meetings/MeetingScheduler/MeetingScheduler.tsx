@@ -293,19 +293,6 @@ const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
     return placeholderMap[field] || '';
   };
 
-  // Get label for field
-  const getLabel = (field: keyof MeetingFormData): string => {
-    const labelMap = {
-      date: dateLabel,
-      time: timeLabel,
-      topic: topicLabel,
-      participants: participantsLabel,
-      project: projectLabel,
-      client: clientLabel,
-      meetingLink: meetingLinkLabel
-    };
-    return labelMap[field] || field;
-  };
 
   // Form classes
   const formClasses = [
