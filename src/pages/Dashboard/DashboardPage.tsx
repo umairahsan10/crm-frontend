@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,6 +16,9 @@ import {
 import { Line, Doughnut } from 'react-chartjs-2';
 import PaymentLinkGenerator from '../../components/module-specific/sales/PaymentLinkGenerator/PaymentLinkGenerator';
 import type { UserRole, Lead } from '../../components/module-specific/sales/PaymentLinkGenerator/PaymentLinkGenerator';
+import HRDashboard from './components/HRDashboard';
+import EmployeeDashboard from './components/EmployeeDashboard';
+import AccountantDashboard from './components/AccountantDashboard';
 
 import './DashboardPage.css';
 
@@ -33,7 +37,9 @@ ChartJS.register(
 );
 
 const DashboardPage: React.FC = () => {
-  // Sample user role for demonstration
+  const { user } = useAuth();
+  
+  // Sample user role for demonstration (fallback)
   const userRole: UserRole = 'Sales Manager';
 
   // Sample lead data
@@ -193,55 +199,87 @@ const DashboardPage: React.FC = () => {
     },
   };
 
-  return (
-    <div className="dashboard-page">
-      <div className="page-header">
-        <h1>Dashboard</h1>
-        <p>Welcome to the HR & Admin Management System</p>
-      </div>
+  // Role-based rendering
+  const renderDashboard = () => {
+    if (!user) {
+      return <div>Loading...</div>;
+    }
 
-      {/* Charts Section */}
-      <div className="charts-container">
-        <div className="chart-card">
-          <div className="chart-wrapper">
-            <Line data={salesData} options={salesChartOptions} />
+    switch (user.role) {
+      case 'admin':
+        return (
+          <div className="dashboard-page">
+            <div className="page-header">
+              <h1>Admin Dashboard</h1>
+              <p>Welcome to the HR & Admin Management System</p>
+            </div>
+            {/* Admin-specific content */}
+            <div className="charts-container">
+              <div className="chart-card">
+                <div className="chart-wrapper">
+                  <Line data={salesData} options={salesChartOptions} />
+                </div>
+              </div>
+              <div className="chart-card">
+                <div className="chart-wrapper">
+                  <Doughnut data={employeeData} options={employeeChartOptions} />
+                </div>
+              </div>
+            </div>
+            <div className="payment-link-section">
+              <PaymentLinkGenerator
+                lead={leadData}
+                defaultAmount={1500}
+                currency="USD"
+                successUrl="https://example.com/payment-success"
+                cancelUrl="https://example.com/payment-cancel"
+                labels={{
+                  title: "Generate Payment Link",
+                  subtitle: "Create secure payment links for your clients",
+                  generateButton: "Generate Payment Link"
+                }}
+                theme={{
+                  variant: "default",
+                  size: "medium"
+                }}
+                onGenerated={handlePaymentLinkGenerated}
+                userRole={userRole}
+                disabled={false}
+              />
+            </div>
           </div>
-        </div>
-        
-        <div className="chart-card">
-          <div className="chart-wrapper">
-            <Doughnut data={employeeData} options={employeeChartOptions} />
+        );
+      case 'hr':
+        return <HRDashboard />;
+      case 'accountant':
+        return <AccountantDashboard />;
+      case 'employee':
+        return <EmployeeDashboard />;
+      default:
+        return (
+          <div className="dashboard-page">
+            <div className="page-header">
+              <h1>Dashboard</h1>
+              <p>Welcome to the HR & Admin Management System</p>
+            </div>
+            <div className="charts-container">
+              <div className="chart-card">
+                <div className="chart-wrapper">
+                  <Line data={salesData} options={salesChartOptions} />
+                </div>
+              </div>
+              <div className="chart-card">
+                <div className="chart-wrapper">
+                  <Doughnut data={employeeData} options={employeeChartOptions} />
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        );
+    }
+  };
 
-      {/* Payment Link Generator Section */}
-      <div className="payment-link-section">
-        <PaymentLinkGenerator
-          lead={leadData}
-          defaultAmount={1500}
-          currency="USD"
-          successUrl="https://example.com/payment-success"
-          cancelUrl="https://example.com/payment-cancel"
-          labels={{
-            title: "Generate Payment Link",
-            subtitle: "Create secure payment links for your clients",
-            generateButton: "Generate Payment Link"
-          }}
-          theme={{
-            variant: "default",
-            size: "medium"
-          }}
-          onGenerated={handlePaymentLinkGenerated}
-          userRole={userRole}
-          disabled={false}
-        />
-      </div>
-
-
-
-    </div>
-  );
+  return renderDashboard();
 };
 
 export default DashboardPage; 

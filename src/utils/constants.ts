@@ -1,12 +1,12 @@
 // Navigation Constants
 export const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/', roles: ['admin', 'hr'] },
+  { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard', roles: ['admin', 'hr', 'accountant', 'employee'] },
   { id: 'employees', label: 'Employees', icon: '👥', path: '/employees', roles: ['admin', 'hr'] },
-  { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance', roles: ['admin', 'hr'] },
-  { id: 'deals', label: 'Deals', icon: '💼', path: '/deals', roles: ['admin', 'hr'] },
-  { id: 'sales', label: 'Sales', icon: '📈', path: '/sales', roles: ['admin'] },
-  { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads', roles: ['admin'] },
-  { id: 'settings', label: 'Settings', icon: '⚙️', path: '/settings', roles: ['admin'] },
+  { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance', roles: ['admin', 'hr', 'employee'] },
+  { id: 'deals', label: 'Deals', icon: '💼', path: '/deals', roles: ['admin', 'hr', 'employee'] },
+  { id: 'sales', label: 'Sales', icon: '📈', path: '/sales', roles: ['admin', 'hr'] },
+  { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads', roles: ['admin', 'hr'] },
+  // Profile and Settings are accessible through user dropdown, not main navigation
 ];
 
 // Department Constants

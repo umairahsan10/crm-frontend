@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import { NAV_ITEMS } from '../../../utils/constants';
 import type { UserRole } from '../../../types';
 import {
@@ -32,15 +34,30 @@ const Sidebar: React.FC<SidebarProps> = ({
   userRole = 'admin',
   onLogout
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+
   // Filter navigation items based on user role
   const filteredNavItems = NAV_ITEMS.filter(item => 
-    item.roles.includes(userRole)
+    item.roles.includes(user?.role || userRole)
   );
 
   const handleNavClick = (itemId: string) => {
+    const navItem = NAV_ITEMS.find(item => item.id === itemId);
+    if (navItem) {
+      navigate(navItem.path);
+    }
     if (onNavigate) {
       onNavigate(itemId);
     }
+  };
+
+  // Get current active page based on URL
+  const getCurrentActivePage = () => {
+    const currentPath = location.pathname;
+    const navItem = NAV_ITEMS.find(item => item.path === currentPath);
+    return navItem ? navItem.id : 'dashboard';
   };
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -53,10 +70,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     setProfileDropdownOpen(false);
     if (action === 'logout' && onLogout) {
       onLogout();
-    } else if (action === 'profile' && onNavigate) {
-      onNavigate('profile');
-    } else if (action === 'settings' && onNavigate) {
-      onNavigate('settings');
+    } else if (action === 'profile') {
+      navigate('/profile');
+    } else if (action === 'settings') {
+      navigate('/settings');
     }
   };
 
@@ -116,7 +133,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           {filteredNavItems.map((item) => (
             <li key={item.id}>
               <button
-                className={`nav-item ${activePage === item.id ? 'active' : ''}`}
+                className={`nav-item ${getCurrentActivePage() === item.id ? 'active' : ''}`}
                 onClick={() => handleNavClick(item.id)}
                 title={!isOpen ? item.label : undefined}
               >
@@ -137,8 +154,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
           {isOpen && (
             <div className="user-info">
-              <span className="user-name">John Doe</span>
-              <span className="user-role">{userRole}</span>
+              <span className="user-name">{user?.name || 'User'}</span>
+              <span className="user-role">{user?.role || userRole}</span>
             </div>
           )}
         </div>
@@ -152,13 +169,15 @@ const Sidebar: React.FC<SidebarProps> = ({
               <AiOutlineProfile size={16} />
               <span>Profile</span>
             </button>
-            <button
-              className="profile-dropdown-item"
-              onClick={() => handleProfileAction('settings')}
-            >
-              <AiOutlineSetting size={16} />
-              <span>Settings</span>
-            </button>
+            {(user?.role === 'admin' || userRole === 'admin') && (
+              <button
+                className="profile-dropdown-item"
+                onClick={() => handleProfileAction('settings')}
+              >
+                <AiOutlineSetting size={16} />
+                <span>Settings</span>
+              </button>
+            )}
             {onLogout && (
               <button
                 className="profile-dropdown-item"

@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import EmployeeList from '../../components/previous_components/EmployeeList/EmployeeList';
 import EmployeeForm from '../../components/previous_components/EmployeeForm/EmployeeForm';
 import './EmployeesPage.css';
 
 const EmployeesPage: React.FC = () => {
+  const { user } = useAuth();
+  
   // Sample employees data - in a real app, this would come from an API
   const employees = [
     { 
@@ -102,26 +105,70 @@ const EmployeesPage: React.FC = () => {
     setShowEmployeeForm(false);
   };
 
-  return (
-    <div className="employees-container">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <h1>Employee Management</h1>
-      </div>
-      
+  // Role-based rendering
+  const renderEmployees = () => {
+    if (!user) {
+      return <div>Loading...</div>;
+    }
 
-      
-      <div className="table-with-button">
-        <div className="table-button-container">
-          <h2 className="section-label">Employee List</h2>
-          <button className="btn-add-employee" onClick={handleAddEmployee}>
-            Add Employee
-          </button>
-        </div>
-        <EmployeeList 
-          employees={employees} 
-          onEdit={handleEdit} 
-        />
-      </div>
+    switch (user.role) {
+      case 'admin':
+        return (
+          <div className="employees-container">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h1>Admin Employee Management</h1>
+            </div>
+            <div className="table-with-button">
+              <div className="table-button-container">
+                <h2 className="section-label">Employee List</h2>
+                <button className="btn-add-employee" onClick={handleAddEmployee}>
+                  Add Employee
+                </button>
+              </div>
+              <EmployeeList 
+                employees={employees} 
+                onEdit={handleEdit} 
+              />
+            </div>
+          </div>
+        );
+      case 'hr':
+        return (
+          <div className="employees-container">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h1>HR Employee Management</h1>
+            </div>
+            <div className="table-with-button">
+              <div className="table-button-container">
+                <h2 className="section-label">Employee List</h2>
+                <button className="btn-add-employee" onClick={handleAddEmployee}>
+                  Add Employee
+                </button>
+              </div>
+              <EmployeeList 
+                employees={employees} 
+                onEdit={handleEdit} 
+              />
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="employees-container">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h1>Access Denied</h1>
+            </div>
+            <div className="access-denied">
+              <p>You don't have permission to access this page.</p>
+            </div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <>
+      {renderEmployees()}
 
 
 
@@ -144,7 +191,7 @@ const EmployeesPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

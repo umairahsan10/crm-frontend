@@ -1,31 +1,71 @@
 import { useState, type FormEvent, type JSX } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import "./Login.css";
 import logo from "../../assets/logo.png";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-// for commit
-interface LoginProps {
-  onLogin: (userRole: string) => void;
-}
+import type { User } from "../../types";
 
-export default function Login({ onLogin }: LoginProps): JSX.Element {
+export default function Login(): JSX.Element {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setError("");
 
     // Simple login logic - you can replace this with your actual authentication
+    let userData: User | null = null;
+
     if (email === "admin@company.com" && password === "admin123") {
-      onLogin("admin");
+      userData = {
+        id: "1",
+        name: "Admin User",
+        email: "admin@company.com",
+        role: "admin",
+        department: "Administration",
+        isActive: true,
+        lastLogin: new Date().toISOString(),
+      };
     } else if (email === "hr@company.com" && password === "hr123") {
-      onLogin("hr");
+      userData = {
+        id: "2",
+        name: "HR Manager",
+        email: "hr@company.com",
+        role: "hr",
+        department: "Human Resources",
+        isActive: true,
+        lastLogin: new Date().toISOString(),
+      };
     } else if (email === "accountant@company.com" && password === "acc123") {
-      onLogin("accountant");
+      userData = {
+        id: "3",
+        name: "Accountant",
+        email: "accountant@company.com",
+        role: "accountant",
+        department: "Finance",
+        isActive: true,
+        lastLogin: new Date().toISOString(),
+      };
     } else if (email === "employee@company.com" && password === "emp123") {
-      onLogin("employee");
+      userData = {
+        id: "4",
+        name: "Employee",
+        email: "employee@company.com",
+        role: "employee",
+        department: "Engineering",
+        isActive: true,
+        lastLogin: new Date().toISOString(),
+      };
+    }
+
+    if (userData) {
+      login(userData);
+      navigate("/dashboard");
     } else {
       setError("Invalid credentials. Please try again.");
     }

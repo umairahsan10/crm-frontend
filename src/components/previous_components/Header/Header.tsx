@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Header.css';
 
 interface HeaderProps {
@@ -6,6 +7,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ title }) => {
+  const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: 1, message: 'New employee John Smith added', time: '2 hours ago', unread: true, icon: '👤' },
@@ -72,7 +74,11 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
         </div>
 
         <div className="user-dropdown">
-          <button className="user-btn" aria-label="User menu">
+          <button 
+            className="user-btn" 
+            aria-label="User menu"
+            onClick={() => navigate('/profile')}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
