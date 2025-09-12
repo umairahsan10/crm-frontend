@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User } from '../types';
-import { logoutApi, verifyTokenApi } from '../apis/login';
+import { logoutApi } from '../apis/login';
 
 interface AuthContextProps {
   user: User | null;
