@@ -1,0 +1,98 @@
+.status-badge,
+.priority-badge,
+.category-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+  display: inline-block;
+}
+
+/* Status Badges */
+.status-badge.status-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge.status-inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.status-badge.status-pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-badge.status-in-progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-badge.status-completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge.status-approved {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge.status-rejected {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.status-badge.status-behind-schedule {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.status-badge.status-almost-done {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-badge.status-changes-requested {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* Priority Badges */
+.priority-badge.priority-high {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.priority-badge.priority-medium {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.priority-badge.priority-low {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.priority-badge.priority-critical {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+/* Category Badges */
+.category-badge.category-urgent {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.category-badge.category-normal {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.category-badge.category-low {
+  background: #dcfce7;
+  color: #16a34a;
+}

@@ -21,6 +21,23 @@ import ProductionDashboard from './pages/Dashboard/components/ProductionDashboar
 import MarketingDashboard from './pages/Dashboard/components/MarketingDashboard';
 import AccountantDashboard from './pages/Dashboard/components/AccountantDashboard';
 
+// Import admin-specific pages
+import ProjectsPage from './pages/Projects/ProjectsPage';
+import FinancePage from './pages/Finance/FinancePage';
+import HRManagementPage from './pages/HRManagement/HRManagementPage';
+import MarketingPage from './pages/Marketing/MarketingPage';
+import ProductionPage from './pages/Production/ProductionPage';
+import ClientsPage from './pages/Clients/ClientsPage';
+import AdminReportsPage from './pages/Reports/ReportsPage';
+import AnalyticsPage from './pages/Analytics/AnalyticsPage';
+import SystemLogsPage from './pages/SystemLogs/SystemLogsPage';
+import AuditTrailPage from './pages/AuditTrail/AuditTrailPage';
+import NotificationsPage from './pages/Notifications/NotificationsPage';
+import BackupPage from './pages/Backup/BackupPage';
+import IntegrationsPage from './pages/Integrations/IntegrationsPage';
+import SecurityPage from './pages/Security/SecurityPage';
+import MaintenancePage from './pages/Maintenance/MaintenancePage';
+
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn, isLoading } = useAuth();
@@ -137,6 +154,69 @@ function AppLayout() {
           path="/profile" 
           element={canAccessPage('profile') ? <div>Profile Page - Coming Soon</div> : <Navigate to="/login" replace />} 
         />
+        
+        {/* Admin-specific routes */}
+        <Route 
+          path="/projects" 
+          element={canAccessPage('projects') ? <ProjectsPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/finance" 
+          element={canAccessPage('finance') ? <FinancePage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/hr-management" 
+          element={canAccessPage('hr-management') ? <HRManagementPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/marketing" 
+          element={canAccessPage('marketing') ? <MarketingPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/production" 
+          element={canAccessPage('production') ? <ProductionPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/clients" 
+          element={canAccessPage('clients') ? <ClientsPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/reports" 
+          element={canAccessPage('reports') ? <AdminReportsPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/analytics" 
+          element={canAccessPage('analytics') ? <AnalyticsPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/system-logs" 
+          element={canAccessPage('system-logs') ? <SystemLogsPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/audit-trail" 
+          element={canAccessPage('audit-trail') ? <AuditTrailPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/notifications" 
+          element={canAccessPage('notifications') ? <NotificationsPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/backup" 
+          element={canAccessPage('backup') ? <BackupPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/integrations" 
+          element={canAccessPage('integrations') ? <IntegrationsPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/security" 
+          element={canAccessPage('security') ? <SecurityPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/maintenance" 
+          element={canAccessPage('maintenance') ? <MaintenancePage /> : <Navigate to="/login" replace />} 
+        />
+        
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Layout>

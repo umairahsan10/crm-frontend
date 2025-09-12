@@ -1,126 +1,228 @@
+import React from 'react';
+import {
+  DashboardContainer,
+  DashboardSection,
+  OverviewCards,
+  DataList,
+  StatusBadge,
+  MetricsGrid,
+  QuickActions,
+  OverviewCardData,
+  DataListItem,
+  MetricData,
+  ActionCategory
+} from '../../../components/dashboard';
 
 const SalesDashboard = () => {
-  const salesStats = [
-    { title: 'Total Sales', value: '$125,450', change: '+15%', changeType: 'positive' },
-    { title: 'New Leads', value: '89', change: '+23%', changeType: 'positive' },
-    { title: 'Conversion Rate', value: '12.5%', change: '+2.1%', changeType: 'positive' },
-    { title: 'Active Deals', value: '34', change: '+8', changeType: 'positive' },
+  // Sales Overview Data
+  const salesOverviewData: OverviewCardData[] = [
+    {
+      id: 'total-revenue',
+      title: 'Total Revenue',
+      value: '$245,678',
+      subtitle: 'This month',
+      change: { value: '+8.5%', type: 'positive' },
+      icon: {
+        type: 'svg',
+        content: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1',
+        color: 'green'
+      }
+    },
+    {
+      id: 'total-leads',
+      title: 'Total Leads',
+      value: '1,245',
+      subtitle: 'This quarter',
+      change: { value: '+156', type: 'positive' },
+      icon: {
+        type: 'svg',
+        content: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+        color: 'blue'
+      }
+    },
+    {
+      id: 'conversion-rate',
+      title: 'Conversion Rate',
+      value: '23.5%',
+      subtitle: 'Lead to customer',
+      change: { value: '+2.1%', type: 'positive' },
+      icon: {
+        type: 'svg',
+        content: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+        color: 'purple'
+      }
+    },
+    {
+      id: 'active-deals',
+      title: 'Active Deals',
+      value: '89',
+      subtitle: 'In pipeline',
+      change: { value: '+12', type: 'positive' },
+      icon: {
+        type: 'svg',
+        content: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+        color: 'orange'
+      }
+    }
   ];
 
-  const topPerformers = [
-    { name: 'Sarah Johnson', sales: '$45,200', deals: 12, rank: 1 },
-    { name: 'Mike Chen', sales: '$38,900', deals: 9, rank: 2 },
-    { name: 'Emily Davis', sales: '$32,100', deals: 8, rank: 3 },
-    { name: 'Alex Rodriguez', sales: '$28,500', deals: 7, rank: 4 },
+  // Recent Deals Data
+  const recentDealsData: DataListItem[] = [
+    {
+      id: 1,
+      client: 'TechCorp Inc.',
+      dealValue: '$45,000',
+      stage: 'Negotiation',
+      probability: 75,
+      closeDate: '2024-02-15',
+      salesRep: 'John Smith'
+    },
+    {
+      id: 2,
+      client: 'Global Solutions',
+      dealValue: '$32,000',
+      stage: 'Proposal',
+      probability: 60,
+      closeDate: '2024-02-28',
+      salesRep: 'Sarah Johnson'
+    },
+    {
+      id: 3,
+      client: 'StartupXYZ',
+      dealValue: '$18,500',
+      stage: 'Closed Won',
+      probability: 100,
+      closeDate: '2024-01-10',
+      salesRep: 'Mike Chen'
+    }
   ];
 
-  const recentDeals = [
-    { id: 1, client: 'TechCorp Inc.', value: '$15,000', stage: 'Proposal', closeDate: '2024-01-15' },
-    { id: 2, client: 'Global Solutions', value: '$8,500', stage: 'Negotiation', closeDate: '2024-01-20' },
-    { id: 3, client: 'StartupXYZ', value: '$22,000', stage: 'Contract', closeDate: '2024-01-25' },
-    { id: 4, client: 'Enterprise Ltd', value: '$35,000', stage: 'Discovery', closeDate: '2024-02-01' },
+  // Sales Metrics
+  const salesMetrics: MetricData[] = [
+    {
+      id: 'avg-deal-size',
+      label: 'Avg Deal Size',
+      value: '$28,500',
+      color: 'blue'
+    },
+    {
+      id: 'sales-cycle',
+      label: 'Sales Cycle',
+      value: '45 days',
+      color: 'orange'
+    },
+    {
+      id: 'win-rate',
+      label: 'Win Rate',
+      value: '34%',
+      color: 'green'
+    },
+    {
+      id: 'quota-achievement',
+      label: 'Quota Achievement',
+      value: '87%',
+      color: 'purple'
+    }
   ];
 
-  const monthlyTargets = [
-    { month: 'Jan', target: 100000, achieved: 125450, percentage: 125 },
-    { month: 'Feb', target: 110000, achieved: 0, percentage: 0 },
-    { month: 'Mar', target: 120000, achieved: 0, percentage: 0 },
+  // Quick Actions Data
+  const quickActionsData: ActionCategory[] = [
+    {
+      id: 'leads-deals',
+      title: 'Leads & Deals',
+      actions: [
+        {
+          id: 'add-lead',
+          label: 'Add Lead',
+          icon: '👤',
+          onClick: () => console.log('Add Lead'),
+          color: 'blue'
+        },
+        {
+          id: 'create-deal',
+          label: 'Create Deal',
+          icon: '💰',
+          onClick: () => console.log('Create Deal'),
+          color: 'green'
+        },
+        {
+          id: 'view-pipeline',
+          label: 'View Pipeline',
+          icon: '📊',
+          onClick: () => console.log('View Pipeline'),
+          color: 'purple'
+        }
+      ]
+    },
+    {
+      id: 'reports-analytics',
+      title: 'Reports & Analytics',
+      actions: [
+        {
+          id: 'sales-reports',
+          label: 'Sales Reports',
+          icon: '📈',
+          onClick: () => console.log('Sales Reports'),
+          color: 'orange'
+        },
+        {
+          id: 'performance-analytics',
+          label: 'Performance Analytics',
+          icon: '📋',
+          onClick: () => console.log('Performance Analytics'),
+          color: 'red'
+        }
+      ]
+    }
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Sales Dashboard</h2>
-        
-        {/* Sales Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {salesStats.map((stat, index) => (
-            <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
-              <h3 className="text-sm font-medium text-gray-600 mb-2">{stat.title}</h3>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
-                <span className="text-sm font-medium text-green-600">{stat.change}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Top Performers */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Top Performers This Month</h3>
-            <div className="space-y-3">
-              {topPerformers.map((performer) => (
-                <div key={performer.rank} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
-                      {performer.rank}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{performer.name}</p>
-                      <p className="text-sm text-gray-500">{performer.deals} deals</p>
-                    </div>
-                  </div>
-                  <span className="font-semibold text-green-600">{performer.sales}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Deals */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Recent Deals</h3>
-            <div className="space-y-3">
-              {recentDeals.map((deal) => (
-                <div key={deal.id} className="p-3 bg-white rounded-lg shadow-sm">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-medium text-gray-900">{deal.client}</h4>
-                    <span className="text-sm font-semibold text-green-600">{deal.value}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm text-gray-500">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      deal.stage === 'Contract' ? 'bg-green-100 text-green-800' :
-                      deal.stage === 'Proposal' ? 'bg-blue-100 text-blue-800' :
-                      deal.stage === 'Negotiation' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {deal.stage}
-                    </span>
-                    <span>Close: {deal.closeDate}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Monthly Targets */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Monthly Targets Progress</h3>
-          <div className="space-y-4">
-            {monthlyTargets.map((target, index) => (
-              <div key={index}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium text-gray-900">{target.month}</span>
-                  <span className="text-sm text-gray-500">
-                    ${target.achieved.toLocaleString()} / ${target.target.toLocaleString()}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(target.percentage, 100)}%` }}
-                  ></div>
-                </div>
-                <div className="text-right text-sm text-gray-500 mt-1">
-                  {target.percentage}% of target
+    <DashboardContainer
+      title="Sales Dashboard"
+      subtitle="Track your sales performance and manage leads effectively"
+    >
+      <OverviewCards data={salesOverviewData} />
+      
+      <DashboardSection
+        title="Recent Deals"
+        actions={{
+          primary: { label: 'Create Deal', onClick: () => console.log('Create Deal') },
+          secondary: { label: 'View All', onClick: () => console.log('View All Deals') }
+        }}
+      >
+        <DataList
+          data={recentDealsData}
+          renderItem={(deal) => (
+            <div className="deal-item">
+              <div className="deal-header">
+                <h4>{deal.client}</h4>
+                <div className="deal-badges">
+                  <StatusBadge status={deal.stage} type="status" />
+                  <span className="deal-probability">{deal.probability}%</span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+              <div className="deal-details">
+                <p><strong>Value:</strong> {deal.dealValue}</p>
+                <p><strong>Sales Rep:</strong> {deal.salesRep}</p>
+                <p><strong>Close Date:</strong> {deal.closeDate}</p>
+              </div>
+            </div>
+          )}
+        />
+      </DashboardSection>
+
+      <DashboardSection
+        title="Sales Performance"
+        actions={{
+          primary: { label: 'View Reports', onClick: () => console.log('View Reports') },
+          secondary: { label: 'Export Data', onClick: () => console.log('Export Data') }
+        }}
+      >
+        <MetricsGrid data={salesMetrics} columns={4} />
+      </DashboardSection>
+
+      <QuickActions categories={quickActionsData} />
+    </DashboardContainer>
   );
 };
 

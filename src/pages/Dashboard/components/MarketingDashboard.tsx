@@ -1,188 +1,248 @@
+import React from 'react';
+import {
+  DashboardContainer,
+  DashboardSection,
+  OverviewCards,
+  DataList,
+  StatusBadge,
+  MetricsGrid,
+  QuickActions,
+  OverviewCardData,
+  DataListItem,
+  MetricData,
+  ActionCategory
+} from '../../../components/dashboard';
 
 const MarketingDashboard = () => {
-  const marketingStats = [
-    { title: 'Campaign Reach', value: '45.2K', change: '+12%', changeType: 'positive' },
-    { title: 'Lead Generation', value: '234', change: '+18%', changeType: 'positive' },
-    { title: 'Conversion Rate', value: '8.7%', change: '+1.2%', changeType: 'positive' },
-    { title: 'Active Campaigns', value: '6', change: '+1', changeType: 'positive' },
+  // Marketing Overview Data
+  const marketingOverviewData: OverviewCardData[] = [
+    {
+      id: 'active-campaigns',
+      title: 'Active Campaigns',
+      value: '8',
+      subtitle: 'Currently running',
+      change: { value: '+2', type: 'positive' },
+      icon: {
+        type: 'svg',
+        content: 'M11 5.882V17.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
+        color: 'blue'
+      }
+    },
+    {
+      id: 'total-leads',
+      title: 'Total Leads',
+      value: '1,245',
+      subtitle: 'This quarter',
+      change: { value: '+156', type: 'positive' },
+      icon: {
+        type: 'svg',
+        content: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+        color: 'green'
+      }
+    },
+    {
+      id: 'conversion-rate',
+      title: 'Conversion Rate',
+      value: '23.5%',
+      subtitle: 'Lead to customer',
+      change: { value: '+2.1%', type: 'positive' },
+      icon: {
+        type: 'svg',
+        content: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+        color: 'purple'
+      }
+    },
+    {
+      id: 'roi',
+      title: 'ROI',
+      value: '340%',
+      subtitle: 'Return on investment',
+      change: { value: '+45%', type: 'positive' },
+      icon: {
+        type: 'svg',
+        content: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1',
+        color: 'orange'
+      }
+    }
   ];
 
-  const activeCampaigns = [
-    { name: 'Q1 Product Launch', budget: '$15,000', spent: '$8,500', reach: '12.5K', ctr: '3.2%', status: 'Active' },
-    { name: 'Social Media Boost', budget: '$5,000', spent: '$3,200', reach: '8.2K', ctr: '4.1%', status: 'Active' },
-    { name: 'Email Newsletter', budget: '$2,000', spent: '$1,800', reach: '15.3K', ctr: '2.8%', status: 'Active' },
-    { name: 'Google Ads Campaign', budget: '$10,000', spent: '$9,200', reach: '9.2K', ctr: '5.6%', status: 'Paused' },
+  // Campaign Data
+  const campaignData: DataListItem[] = [
+    {
+      id: 1,
+      name: 'Q1 Product Launch',
+      status: 'Active',
+      leads: 342,
+      conversion: 28.5,
+      budget: '$12,450',
+      budgetTotal: '$20,000',
+      progress: 62
+    },
+    {
+      id: 2,
+      name: 'Social Media Boost',
+      status: 'Active',
+      leads: 189,
+      conversion: 19.2,
+      budget: '$5,200',
+      budgetTotal: '$8,000',
+      progress: 65
+    },
+    {
+      id: 3,
+      name: 'Email Newsletter',
+      status: 'Completed',
+      leads: 156,
+      conversion: 31.4,
+      budget: '$3,800',
+      budgetTotal: '$4,000',
+      progress: 100
+    }
   ];
 
-  const leadSources = [
-    { source: 'Google Ads', leads: 89, conversion: 12.4, cost: '$2,400' },
-    { source: 'Social Media', leads: 67, conversion: 8.9, cost: '$1,800' },
-    { source: 'Email Marketing', leads: 45, conversion: 15.6, cost: '$800' },
-    { source: 'Content Marketing', leads: 33, conversion: 6.1, cost: '$1,200' },
+  // Lead Source Metrics
+  const leadSourceMetrics: MetricData[] = [
+    {
+      id: 'google-ads',
+      label: 'Google Ads',
+      value: '456 leads',
+      color: 'blue'
+    },
+    {
+      id: 'social-media',
+      label: 'Social Media',
+      value: '289 leads',
+      color: 'green'
+    },
+    {
+      id: 'email-marketing',
+      label: 'Email Marketing',
+      value: '234 leads',
+      color: 'purple'
+    },
+    {
+      id: 'organic-search',
+      label: 'Organic Search',
+      value: '198 leads',
+      color: 'orange'
+    }
   ];
 
-  const contentPerformance = [
-    { title: 'How to Choose the Right CRM', views: 2.4, engagement: 4.2, shares: 23, type: 'Blog Post' },
-    { title: 'Product Demo Video', views: 1.8, engagement: 3.8, shares: 45, type: 'Video' },
-    { title: 'Industry Report 2024', views: 3.1, engagement: 5.1, shares: 67, type: 'Report' },
-    { title: 'Customer Success Story', views: 1.2, engagement: 4.7, shares: 34, type: 'Case Study' },
-  ];
-
-  const upcomingEvents = [
-    { title: 'Webinar: Digital Marketing Trends', date: '2024-02-15', time: '2:00 PM', registrations: 156 },
-    { title: 'Product Launch Event', date: '2024-02-28', time: '6:00 PM', registrations: 89 },
-    { title: 'Industry Conference', date: '2024-03-10', time: '9:00 AM', registrations: 234 },
-    { title: 'Customer Meetup', date: '2024-03-20', time: '4:00 PM', registrations: 45 },
+  // Quick Actions Data
+  const quickActionsData: ActionCategory[] = [
+    {
+      id: 'campaign-management',
+      title: 'Campaign Management',
+      actions: [
+        {
+          id: 'create-campaign',
+          label: 'Create Campaign',
+          icon: '🚀',
+          onClick: () => console.log('Create Campaign'),
+          color: 'blue'
+        },
+        {
+          id: 'manage-campaigns',
+          label: 'Manage Campaigns',
+          icon: '📋',
+          onClick: () => console.log('Manage Campaigns'),
+          color: 'green'
+        },
+        {
+          id: 'campaign-analytics',
+          label: 'Campaign Analytics',
+          icon: '📊',
+          onClick: () => console.log('Campaign Analytics'),
+          color: 'purple'
+        }
+      ]
+    },
+    {
+      id: 'lead-management',
+      title: 'Lead Management',
+      actions: [
+        {
+          id: 'view-leads',
+          label: 'View Leads',
+          icon: '👥',
+          onClick: () => console.log('View Leads'),
+          color: 'orange'
+        },
+        {
+          id: 'lead-scoring',
+          label: 'Lead Scoring',
+          icon: '⭐',
+          onClick: () => console.log('Lead Scoring'),
+          color: 'red'
+        }
+      ]
+    }
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Marketing Dashboard</h2>
-        
-        {/* Marketing Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {marketingStats.map((stat, index) => (
-            <div key={index} className="bg-gradient-to-r from-pink-50 to-rose-50 p-6 rounded-lg border border-pink-200">
-              <h3 className="text-sm font-medium text-gray-600 mb-2">{stat.title}</h3>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
-                <span className="text-sm font-medium text-green-600">{stat.change}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Active Campaigns */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Active Campaigns</h3>
-            <div className="space-y-4">
-              {activeCampaigns.map((campaign, index) => (
-                <div key={index} className="p-4 bg-white rounded-lg shadow-sm">
-                  <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-medium text-gray-900">{campaign.name}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      campaign.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {campaign.status}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-500">Budget</p>
-                      <p className="font-medium">{campaign.budget}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Spent</p>
-                      <p className="font-medium">{campaign.spent}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Reach</p>
-                      <p className="font-medium">{campaign.reach}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">CTR</p>
-                      <p className="font-medium">{campaign.ctr}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-pink-500 to-rose-500 h-2 rounded-full"
-                        style={{ width: `${(parseInt(campaign.spent.replace(/[$,]/g, '')) / parseInt(campaign.budget.replace(/[$,]/g, ''))) * 100}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {Math.round((parseInt(campaign.spent.replace(/[$,]/g, '')) / parseInt(campaign.budget.replace(/[$,]/g, ''))) * 100)}% of budget used
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Lead Sources */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Lead Sources Performance</h3>
-            <div className="space-y-4">
-              {leadSources.map((source, index) => (
-                <div key={index} className="p-4 bg-white rounded-lg shadow-sm">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium text-gray-900">{source.source}</h4>
-                    <span className="text-sm font-semibold text-pink-600">{source.leads} leads</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-500">Conversion</p>
-                      <p className="font-medium">{source.conversion}%</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Cost</p>
-                      <p className="font-medium">{source.cost}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Content Performance */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Content Performance</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views (K)</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Engagement</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shares</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {contentPerformance.map((content, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{content.title}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        content.type === 'Blog Post' ? 'bg-blue-100 text-blue-800' :
-                        content.type === 'Video' ? 'bg-red-100 text-red-800' :
-                        content.type === 'Report' ? 'bg-green-100 text-green-800' :
-                        'bg-purple-100 text-purple-800'
-                      }`}>
-                        {content.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{content.views}K</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{content.engagement}%</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{content.shares}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Upcoming Events */}
-        <div>
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Upcoming Marketing Events</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {upcomingEvents.map((event, index) => (
-              <div key={index} className="p-4 bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg border border-pink-200">
-                <h4 className="font-medium text-gray-900 mb-2">{event.title}</h4>
-                <div className="flex justify-between items-center text-sm text-gray-600">
-                  <span>{event.date} at {event.time}</span>
-                  <span>{event.registrations} registrations</span>
+    <DashboardContainer
+      title="Marketing Dashboard"
+      subtitle="Campaign management, lead generation, and marketing analytics"
+    >
+      <OverviewCards data={marketingOverviewData} />
+      
+      <DashboardSection
+        title="Active Campaigns"
+        actions={{
+          primary: { label: 'Create Campaign', onClick: () => console.log('Create Campaign') },
+          secondary: { label: 'View All', onClick: () => console.log('View All Campaigns') }
+        }}
+      >
+        <DataList
+          data={campaignData}
+          renderItem={(campaign) => (
+            <div className="campaign-item">
+              <div className="campaign-header">
+                <h3>{campaign.name}</h3>
+                <div className="campaign-badges">
+                  <StatusBadge status={campaign.status} type="status" />
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+              <div className="campaign-metrics">
+                <div className="metric">
+                  <span className="metric-label">Leads Generated</span>
+                  <span className="metric-value">{campaign.leads}</span>
+                </div>
+                <div className="metric">
+                  <span className="metric-label">Conversion Rate</span>
+                  <span className="metric-value">{campaign.conversion}%</span>
+                </div>
+                <div className="metric">
+                  <span className="metric-label">Budget Used</span>
+                  <span className="metric-value">{campaign.budget} / {campaign.budgetTotal}</span>
+                </div>
+              </div>
+              <div className="campaign-progress">
+                <div className="progress-header">
+                  <span>Progress</span>
+                  <span>{campaign.progress}%</span>
+                </div>
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{width: `${campaign.progress}%`}}></div>
+                </div>
+              </div>
+            </div>
+          )}
+        />
+      </DashboardSection>
+
+      <DashboardSection
+        title="Lead Sources Performance"
+        actions={{
+          primary: { label: 'View Analytics', onClick: () => console.log('View Analytics') },
+          secondary: { label: 'Export Report', onClick: () => console.log('Export Report') }
+        }}
+      >
+        <MetricsGrid data={leadSourceMetrics} columns={4} />
+      </DashboardSection>
+
+      <QuickActions categories={quickActionsData} />
+    </DashboardContainer>
   );
 };
 
