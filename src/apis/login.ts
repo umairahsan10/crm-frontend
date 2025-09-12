@@ -1,0 +1,83 @@
+// API Base URL - Update this to match your backend URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  user: {
+    sub: number;
+    role: string;
+    type: 'admin' | 'employee';
+    department?: string;
+    permissions?: Record<string, boolean>;
+  };
+}
+
+export interface ApiError {
+  message: string;
+  status?: number;
+}
+
+export const loginApi = async (credentials: LoginRequest): Promise<LoginResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
+    }
+
+    const data: LoginResponse = await response.json();
+    return data;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred during login');
+  }
+};
+
+export const logoutApi = async (): Promise<void> => {
+  try {
+    const token = localStorage.getItem('crm_token');
+    if (!token) return;
+
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error('Logout API error:', error);
+    // Don't throw error for logout as it's not critical
+  }
+};
+
+export const verifyTokenApi = async (token: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return false;
+  }
+};
