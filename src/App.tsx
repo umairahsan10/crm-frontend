@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/previous_components/Layout/Layout';
 import Login from './pages/Login/Login';
-import { NAV_ITEMS } from './utils/constants';
 import './App.css';
 
 // Import existing page components
@@ -14,9 +13,30 @@ import ReportsPage from './pages/Sales/ReportsPage';
 import LeadsPage from './pages/Leads/LeadsPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 
+// Import dashboard components
+import AdminDashboard from './pages/Dashboard/components/AdminDashboard';
+import SalesDashboard from './pages/Dashboard/components/SalesDashboard';
+import HRDashboard from './pages/Dashboard/components/HRDashboard';
+import ProductionDashboard from './pages/Dashboard/components/ProductionDashboard';
+import MarketingDashboard from './pages/Dashboard/components/MarketingDashboard';
+import AccountantDashboard from './pages/Dashboard/components/AccountantDashboard';
+
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isLoading } = useAuth();
+  
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return isLoggedIn ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
@@ -46,14 +66,9 @@ function App() {
 function AppLayout() {
   const { user, logout, canAccessPage } = useAuth();
 
-  const handleNavigation = (page: string) => {
+  const handleNavigation = () => {
     // Navigation is now handled by React Router
     // This function can be used for programmatic navigation if needed
-  };
-
-  const getPageTitle = (pathname: string) => {
-    const navItem = NAV_ITEMS.find(item => item.path === pathname);
-    return navItem ? navItem.label : 'Dashboard';
   };
 
   return (
@@ -61,7 +76,7 @@ function AppLayout() {
       title="CRM Dashboard"
       onNavigate={handleNavigation}
       activePage="dashboard"
-      userRole={user?.role || 'employee'}
+      userRole={user?.role as any || 'employee'}
       onLogout={logout}
     >
       <Routes>
@@ -69,6 +84,30 @@ function AppLayout() {
         <Route 
           path="/dashboard" 
           element={canAccessPage('dashboard') ? <DashboardPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/dashboard/admin" 
+          element={canAccessPage('dashboard') ? <AdminDashboard /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/dashboard/sales" 
+          element={canAccessPage('dashboard') ? <SalesDashboard /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/dashboard/hr" 
+          element={canAccessPage('dashboard') ? <HRDashboard /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/dashboard/production" 
+          element={canAccessPage('dashboard') ? <ProductionDashboard /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/dashboard/marketing" 
+          element={canAccessPage('dashboard') ? <MarketingDashboard /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/dashboard/accountant" 
+          element={canAccessPage('dashboard') ? <AccountantDashboard /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/employees" 

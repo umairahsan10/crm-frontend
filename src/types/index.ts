@@ -3,16 +3,33 @@
 // User and Authentication Types
 export interface User {
   id: string;
-  name: string;
+  name?: string;
   email: string;
-  role: UserRole;
-  department: string;
+  role: string;
+  type: 'admin' | 'employee';
+  department?: string;
+  departmentId?: number;
   avatar?: string;
   isActive: boolean;
   lastLogin?: string;
+  permissions?: Record<string, boolean>;
 }
 
-export type UserRole = 'admin' | 'hr' | 'accountant' | 'employee';
+export type UserRole = 'admin' | 'hr' | 'accountant' | 'sales' | 'production' | 'marketing';
+
+// JWT Backend Response Types
+export interface JWTUser {
+  sub: number;
+  role: string;
+  type: 'admin' | 'employee';
+  department?: string;
+  permissions?: Record<string, boolean>;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  user: JWTUser;
+}
 
 // Employee Management Types
 export interface Employee {

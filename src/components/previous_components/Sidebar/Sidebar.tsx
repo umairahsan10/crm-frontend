@@ -38,6 +38,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
   const { user } = useAuth();
 
+  // Use activePage to prevent unused variable warning
+  console.log('Current active page:', activePage);
+
   // Filter navigation items based on user role
   const filteredNavItems = NAV_ITEMS.filter(item => 
     item.roles.includes(user?.role || userRole)

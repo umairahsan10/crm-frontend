@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { loginApi } from "../../apis/login";
 import "./Login.css";
 import logo from "../../assets/logo.png";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -11,63 +12,43 @@ export default function Login(): JSX.Element {
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const { login } = useAuth();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { login, getDashboardRoute } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
-    // Simple login logic - you can replace this with your actual authentication
-    let userData: User | null = null;
+    try {
+      // Call the login API
+      const response = await loginApi({ email, password });
+      
+      // Transform the JWT response to our User format
+      const userData: User = {
+        id: response.user.sub.toString(),
+        email: email,
+        role: response.user.role,
+        type: response.user.type,
+        department: response.user.department,
+        permissions: response.user.permissions,
+        isActive: true,
+        lastLogin: new Date().toISOString(),
+      };
 
-    if (email === "admin@company.com" && password === "admin123") {
-      userData = {
-        id: "1",
-        name: "Admin User",
-        email: "admin@company.com",
-        role: "admin",
-        department: "Administration",
-        isActive: true,
-        lastLogin: new Date().toISOString(),
-      };
-    } else if (email === "hr@company.com" && password === "hr123") {
-      userData = {
-        id: "2",
-        name: "HR Manager",
-        email: "hr@company.com",
-        role: "hr",
-        department: "Human Resources",
-        isActive: true,
-        lastLogin: new Date().toISOString(),
-      };
-    } else if (email === "accountant@company.com" && password === "acc123") {
-      userData = {
-        id: "3",
-        name: "Accountant",
-        email: "accountant@company.com",
-        role: "accountant",
-        department: "Finance",
-        isActive: true,
-        lastLogin: new Date().toISOString(),
-      };
-    } else if (email === "employee@company.com" && password === "emp123") {
-      userData = {
-        id: "4",
-        name: "Employee",
-        email: "employee@company.com",
-        role: "employee",
-        department: "Engineering",
-        isActive: true,
-        lastLogin: new Date().toISOString(),
-      };
-    }
-
-    if (userData) {
-      login(userData);
-      navigate("/dashboard");
-    } else {
-      setError("Invalid credentials. Please try again.");
+      // Login with the user data and token
+      login(userData, response.access_token);
+      
+      // Get the appropriate dashboard route based on user type and department
+      const dashboardRoute = getDashboardRoute();
+      navigate(dashboardRoute);
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(error instanceof Error ? error.message : "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -121,15 +102,16 @@ export default function Login(): JSX.Element {
             </div>
           </div>
 
-          <button type="submit">Sign In</button>
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Signing In..." : "Sign In"}
+          </button>
 
           <div className="demo-credentials">
-            <p>Demo Credentials:</p>
+            <p>Connect to your JWT backend:</p>
             <ul>
-              <li><strong>Admin:</strong> admin@company.com / admin123</li>
-              <li><strong>HR:</strong> hr@company.com / hr123</li>
-              <li><strong>Accountant:</strong> accountant@company.com / acc123</li>
-              <li><strong>Employee:</strong> employee@company.com / emp123</li>
+              <li>Make sure your backend is running on the configured API URL</li>
+              <li>Use valid credentials from your database</li>
+              <li>Check browser console for any API errors</li>
             </ul>
           </div>
         </form>
