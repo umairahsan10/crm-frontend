@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 // Import dashboard components
-import AdminDashboard from './components/AdminDashboard';
-import SalesDashboard from './components/SalesDashboard';
-import HRDashboard from './components/HRDashboard';
-import ProductionDashboard from './components/ProductionDashboard';
-import MarketingDashboard from './components/MarketingDashboard';
-import AccountantDashboard from './components/AccountantDashboard';
+import AdminDashboard from './subdashboards/AdminDashboard';
+import SalesDashboard from './subdashboards/SalesDashboard';
+import HRDashboard from './subdashboards/HRDashboard';
+import ProductionDashboard from './subdashboards/ProductionDashboard';
+import MarketingDashboard from './subdashboards/MarketingDashboard';
+import AccountantDashboard from './subdashboards/AccountantDashboard';
 
 import './DashboardPage.css';
 

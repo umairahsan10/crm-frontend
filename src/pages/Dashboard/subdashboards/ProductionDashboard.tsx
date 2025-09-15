@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   DashboardContainer,
   DashboardSection,
@@ -8,10 +7,10 @@ import {
   StatusBadge,
   MetricsGrid,
   QuickActions,
-  OverviewCardData,
-  DataListItem,
-  MetricData,
-  ActionCategory
+  type OverviewCardData,
+  type DataListItem,
+  type MetricData,
+  type ActionCategory
 } from '../../../components/dashboard';
 
 const ProductionDashboard = () => {

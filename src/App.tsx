@@ -14,12 +14,12 @@ import LeadsPage from './pages/Leads/LeadsPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 
 // Import dashboard components
-import AdminDashboard from './pages/Dashboard/components/AdminDashboard';
-import SalesDashboard from './pages/Dashboard/components/SalesDashboard';
-import HRDashboard from './pages/Dashboard/components/HRDashboard';
-import ProductionDashboard from './pages/Dashboard/components/ProductionDashboard';
-import MarketingDashboard from './pages/Dashboard/components/MarketingDashboard';
-import AccountantDashboard from './pages/Dashboard/components/AccountantDashboard';
+import AdminDashboard from './pages/Dashboard/subdashboards/AdminDashboard';
+import SalesDashboard from './pages/Dashboard/subdashboards/SalesDashboard';
+import HRDashboard from './pages/Dashboard/subdashboards/HRDashboard';
+import ProductionDashboard from './pages/Dashboard/subdashboards/ProductionDashboard';
+import MarketingDashboard from './pages/Dashboard/subdashboards/MarketingDashboard';
+import AccountantDashboard from './pages/Dashboard/subdashboards/AccountantDashboard';
 
 // Import admin-specific pages
 import ProjectsPage from './pages/Projects/ProjectsPage';
