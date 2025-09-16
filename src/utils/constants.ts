@@ -24,8 +24,9 @@ export const NAV_ITEMS = [
   { id: 'security', label: 'Security', icon: '🔒', path: '/security', roles: ['admin'] },
   { id: 'maintenance', label: 'Maintenance', icon: '⚙️', path: '/maintenance', roles: ['admin'] },
   { id: 'test', label: 'Test Page', icon: '🧪', path: '/test', roles: ['admin', 'hr', 'accountant', 'employee'] },
+  { id: 'profile', label: 'Profile', icon: '👤', path: '/profile', roles: ['admin', 'hr', 'accountant', 'sales', 'production', 'marketing', 'dep_manager', 'employee'] },
   
-  // Profile and Settings are accessible through user dropdown, not main navigation
+  // Settings are accessible through user dropdown, not main navigation
 ];
 
 // Department Constants

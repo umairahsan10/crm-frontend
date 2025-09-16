@@ -1,0 +1,145 @@
+/* Profile Page Styles */
+.profile-avatar-upload {
+  transition: all 0.3s ease;
+}
+
+.profile-avatar-upload:hover {
+  transform: scale(1.05);
+}
+
+.profile-form-section {
+  border-left: 3px solid #3b82f6;
+  padding-left: 1rem;
+}
+
+.profile-info-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.dark .profile-info-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Theme Toggle Animation */
+.theme-toggle {
+  transition: background-color 0.3s ease;
+}
+
+.theme-toggle-thumb {
+  transition: transform 0.3s ease;
+}
+
+/* Form Field Focus States */
+.profile-form-field:focus {
+  ring-color: #3b82f6;
+  border-color: transparent;
+}
+
+/* Loading States */
+.profile-loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error States */
+.profile-error-field {
+  border-color: #ef4444;
+  ring-color: #ef4444;
+}
+
+.profile-error-message {
+  color: #ef4444;
+}
+
+/* Success States */
+.profile-success-message {
+  color: #10b981;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark Mode Adjustments */
+.dark .profile-info-card {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.dark .profile-form-field {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+.dark .profile-form-field:focus {
+  background-color: #374151;
+  border-color: #3b82f6;
+}
+
+.dark .profile-section-title {
+  color: #f9fafb;
+}
+
+.dark .profile-section-subtitle {
+  color: #d1d5db;
+}
+
+/* Custom Scrollbar */
+.profile-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.dark .profile-scrollable {
+  scrollbar-color: #4a5568 #2d3748;
+}
+
+.profile-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.profile-scrollable::-webkit-scrollbar-track {
+  background: #f7fafc;
+}
+
+.dark .profile-scrollable::-webkit-scrollbar-track {
+  background: #2d3748;
+}
+
+.profile-scrollable::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.dark .profile-scrollable::-webkit-scrollbar-thumb {
+  background: #4a5568;
+}
+
+.profile-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+.dark .profile-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #718096;
+}

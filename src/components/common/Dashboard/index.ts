@@ -5,3 +5,7 @@ export { ActivityFeed } from './ActivityFeed';
 export { ChartWidget } from './ChartWidget';
 export { QuickAccess } from './QuickAccess';
 export { HRManagementWidget, HRRequests } from './HRSpecific';
+export { CommissionTracker, SalesPerformanceSummary, SalesLeadsPipeline, SalesTeamPerformance } from './SalesSpecific';
+export { CampaignOverview } from './MarketingSpecific';
+export { ProjectStatus } from './ProductionSpecific';
+export { FinancialOverview } from './AccountantSpecific';

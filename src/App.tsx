@@ -38,6 +38,7 @@ import IntegrationsPage from './pages/Integrations/IntegrationsPage';
 import SecurityPage from './pages/Security/SecurityPage';
 import MaintenancePage from './pages/Maintenance/MaintenancePage';
 import TestPage from './pages/test';
+import ProfilePage from './pages/Profile/ProfilePage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -154,7 +155,7 @@ function AppLayout() {
         />
         <Route 
           path="/profile" 
-          element={canAccessPage('profile') ? <div>Profile Page - Coming Soon</div> : <Navigate to="/login" replace />} 
+          element={canAccessPage('profile') ? <ProfilePage /> : <Navigate to="/login" replace />} 
         />
         
         {/* Admin-specific routes */}
