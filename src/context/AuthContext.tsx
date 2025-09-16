@@ -170,6 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Unknown department, returning /dashboard');
           return '/dashboard';
       }
+
     }
     
     console.log('Fallback, returning /dashboard');
@@ -199,3 +200,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

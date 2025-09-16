@@ -16,34 +16,39 @@ const DepartmentFilter: React.FC<DepartmentFilterProps> = ({
   const getButtonClasses = (isActive: boolean, department?: string) => {
     const baseClasses = `
       px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ease-in-out
-      border focus:outline-none focus:ring-1 focus:ring-offset-1
+      border focus:outline-none focus:ring-2 focus:ring-offset-1
       hover:scale-105 active:scale-95 cursor-pointer
-      flex-shrink-0 whitespace-nowrap relative overflow-hidden group
-      before:absolute before:inset-0 before:opacity-0 before:transition-all before:duration-500 before:ease-out
-      before:bg-gradient-to-r before:from-transparent before:via-white before:to-transparent
-      before:transform before:-skew-x-12 before:-translate-x-full
-      hover:before:opacity-30 hover:before:translate-x-full
-      after:absolute after:inset-0 after:rounded-full after:opacity-0 after:transition-all after:duration-300 after:ease-out
-      after:border after:border-transparent
-      hover:after:opacity-100 hover:after:border-white/20 hover:after:shadow-inner
+      flex-shrink-0 whitespace-nowrap flex items-center justify-center
     `;
 
     if (isActive) {
       const departmentColors = {
-        'sales': 'bg-gradient-to-r from-emerald-500 to-green-600 border-emerald-500 text-white shadow-emerald-200/50 ring-emerald-200/50 hover:from-emerald-600 hover:to-green-700 hover:border-emerald-400 hover:shadow-emerald-300/60 hover:ring-emerald-300/30',
-        'marketing': 'bg-gradient-to-r from-purple-500 to-pink-600 border-purple-500 text-white shadow-purple-200/50 ring-purple-200/50 hover:from-purple-600 hover:to-pink-700 hover:border-purple-400 hover:shadow-purple-300/60 hover:ring-purple-300/30',
-        'production': 'bg-gradient-to-r from-orange-500 to-red-600 border-orange-500 text-white shadow-orange-200/50 ring-orange-200/50 hover:from-orange-600 hover:to-red-700 hover:border-orange-400 hover:shadow-orange-300/60 hover:ring-orange-300/30',
-        'hr': 'bg-gradient-to-r from-pink-500 to-rose-600 border-pink-500 text-white shadow-pink-200/50 ring-pink-200/50 hover:from-pink-600 hover:to-rose-700 hover:border-pink-400 hover:shadow-pink-300/60 hover:ring-pink-300/30',
-        'accounting': 'bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-500 text-white shadow-cyan-200/50 ring-cyan-200/50 hover:from-cyan-600 hover:to-blue-700 hover:border-cyan-400 hover:shadow-cyan-300/60 hover:ring-cyan-300/30'
+        'sales': 'bg-green-500 border-green-500 text-white hover:bg-green-600 hover:border-green-600 shadow-lg shadow-green-200/50 focus:ring-green-500',
+        'marketing': 'bg-purple-500 border-purple-500 text-white hover:bg-purple-600 hover:border-purple-600 shadow-lg shadow-purple-200/50 focus:ring-purple-500',
+        'production': 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600 hover:border-orange-600 shadow-lg shadow-orange-200/50 focus:ring-orange-500',
+        'hr': 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600 hover:border-pink-600 shadow-lg shadow-pink-200/50 focus:ring-pink-500',
+        'accounting': 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600 hover:border-blue-600 shadow-lg shadow-blue-200/50 focus:ring-blue-500'
       };
 
       const activeClasses = department && departmentColors[department as keyof typeof departmentColors] 
         ? departmentColors[department as keyof typeof departmentColors]
-        : 'bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-600 text-white shadow-blue-200/50 ring-blue-200/50 hover:from-blue-700 hover:to-indigo-700 hover:border-blue-500 hover:shadow-blue-300/60 hover:ring-blue-300/30';
+        : 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600 hover:border-blue-600 shadow-lg shadow-blue-200/50 focus:ring-blue-500';
 
-      return `${baseClasses} ${activeClasses} transform scale-105 hover:scale-110 focus:ring-blue-500 focus-visible:ring-4 focus-visible:ring-blue-400/50 ring-2 hover:after:border-white/30 hover:after:ring-2 hover:after:ring-white/20`;
+      return `${baseClasses} ${activeClasses} transform scale-105 hover:scale-110`;
     } else {
-      return `${baseClasses} bg-white text-gray-600 border-gray-200 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:border-gray-300 hover:text-gray-800 focus:ring-gray-400 focus-visible:ring-4 focus-visible:ring-gray-400/50 shadow-sm hover:shadow-lg ring-1 ring-gray-100 hover:ring-2 hover:ring-gray-200 hover:border-gray-400 hover:shadow-md hover:after:border-gray-300/50 hover:after:ring-1 hover:after:ring-gray-200/50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-500 dark:hover:text-gray-100 dark:ring-gray-700 dark:hover:ring-gray-600 dark:hover:after:border-gray-400/30`;
+      const departmentColors = {
+        'sales': 'bg-white text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 hover:text-green-700 focus:ring-green-400',
+        'marketing': 'bg-white text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 focus:ring-purple-400',
+        'production': 'bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700 focus:ring-orange-400',
+        'hr': 'bg-white text-pink-600 border-pink-200 hover:bg-pink-50 hover:border-pink-300 hover:text-pink-700 focus:ring-pink-400',
+        'accounting': 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 focus:ring-blue-400'
+      };
+
+      const inactiveClasses = department && departmentColors[department as keyof typeof departmentColors] 
+        ? departmentColors[department as keyof typeof departmentColors]
+        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 focus:ring-gray-400';
+
+      return `${baseClasses} ${inactiveClasses} shadow-sm hover:shadow-md`;
     }
   };
 
@@ -55,19 +60,56 @@ const DepartmentFilter: React.FC<DepartmentFilterProps> = ({
           onClick={() => onDepartmentSelect(null)}
           className={getButtonClasses(selectedDepartment === null)}
         >
-          <span className="mr-1 text-xs">🏢</span>
+          <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
+          </svg>
           All
         </button>
         
         {/* Department Buttons */}
         {departments.map((department) => {
           const departmentClass = department.toLowerCase();
-          const departmentIcons: { [key: string]: string } = {
-            'sales': '💼',
-            'marketing': '📈',
-            'production': '⚙️',
-            'hr': '👥',
-            'accounting': '💰'
+          
+          const getDepartmentIcon = (dept: string) => {
+            switch (dept) {
+              case 'sales':
+                return (
+                  <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                );
+              case 'marketing':
+                return (
+                  <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                  </svg>
+                );
+              case 'production':
+                return (
+                  <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                  </svg>
+                );
+              case 'hr':
+                return (
+                  <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                  </svg>
+                );
+              case 'accounting':
+                return (
+                  <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                  </svg>
+                );
+              default:
+                return (
+                  <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
+                  </svg>
+                );
+            }
           };
           
           return (
@@ -76,7 +118,7 @@ const DepartmentFilter: React.FC<DepartmentFilterProps> = ({
               onClick={() => onDepartmentSelect(department)}
               className={getButtonClasses(selectedDepartment === department, departmentClass)}
             >
-              <span className="mr-1 text-xs">{departmentIcons[departmentClass] || '🏢'}</span>
+              {getDepartmentIcon(departmentClass)}
               {department}
             </button>
           );
