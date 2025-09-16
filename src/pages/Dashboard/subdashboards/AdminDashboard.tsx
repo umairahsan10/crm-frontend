@@ -1,348 +1,760 @@
-import {
-  DashboardContainer,
-  DashboardSection,
-  OverviewCards,
-  DataList,
-  StatusBadge,
-  QuickActions,
-  type OverviewCardData,
-  type DataListItem,
-  type ActionCategory
-} from '../../../components/dashboard';
+import React, { useState, useMemo } from 'react';
+import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
+import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
+import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
+import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
+import { QuickAccess } from '../../../components/common/Dashboard/QuickAccess';
+import { 
+  UserManagementWidget, 
+  DepartmentOverview, 
+  AdminDashboardLayout 
+} from '../../../components/common/Dashboard/AdminSpecific';
+import { PerformanceLeaderboard } from '../../../components/common/Leaderboard';
+import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
+import type { 
+  MetricData, 
+  ChartData, 
+  ActivityItem, 
+  QuickActionItem 
+} from '../../../types/dashboard';
 
-const AdminDashboard = () => {
-  // System Overview Data
-  const systemOverviewData: OverviewCardData[] = [
+const AdminDashboard: React.FC = () => {
+  // State for department filtering
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+
+  // Available departments
+  const departments = ['Sales', 'Marketing', 'Production', 'HR', 'Accounting'];
+
+  // Admin Dashboard Data
+  const overviewStats: MetricData[] = [
     {
-      id: 'total-users',
       title: 'Total Users',
       value: '120',
-      subtitle: 'Registered employees',
-      change: { value: '+12%', type: 'positive' },
-      icon: {
-        type: 'svg',
-        content: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z',
-        color: 'blue'
-      }
+      change: '+8 this month',
+      changeType: 'positive',
+      icon: '👥',
+      subtitle: 'Registered users'
     },
     {
-      id: 'active-today',
       title: 'Active Today',
       value: '95',
-      subtitle: 'Currently online',
-      change: { value: '+8%', type: 'positive' },
-      icon: {
-        type: 'svg',
-        content: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-        color: 'green'
-      }
+      change: '79% active rate',
+      changeType: 'positive',
+      icon: '🟢',
+      subtitle: 'Currently online'
     },
     {
-      id: 'departments',
       title: 'Departments',
       value: '5',
-      subtitle: 'Active departments',
-      change: { value: '+1', type: 'positive' },
-      icon: {
-        type: 'svg',
-        content: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
-        color: 'purple'
-      }
+      change: 'All operational',
+      changeType: 'positive',
+      icon: '🏢',
+      subtitle: 'Active departments'
     },
     {
-      id: 'system-health',
       title: 'System Health',
-      value: 'Excellent',
-      subtitle: 'Overall system status',
-      icon: {
-        type: 'svg',
-        content: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
-        color: 'green'
-      }
+      value: '99.9%',
+      change: '+0.1% uptime',
+      changeType: 'positive',
+      icon: '⚡',
+      subtitle: 'Server uptime'
     }
   ];
 
-  // Company Performance Data
-  const companyPerformanceData = {
-    monthlyRevenue: 45678,
-    departmentData: [
-      { name: 'Sales', employees: 45, revenue: 25000 },
-      { name: 'HR', employees: 12, revenue: 8000 },
-      { name: 'Production', employees: 67, revenue: 35000 },
-      { name: 'Marketing', employees: 18, revenue: 15000 },
-      { name: 'Accounts', employees: 14, revenue: 12000 }
-    ]
-  };
-
-  // Admin Requests Data
-  const adminRequestsData: DataListItem[] = [
+  const performanceMetrics: MetricData[] = [
     {
-      id: 1,
-      subject: 'Annual Leave Application',
-      description: 'Request for 2 weeks annual leave',
-      priority: 'Medium',
-      status: 'Pending',
-      requestedBy: 'John Doe',
-      department: 'Sales',
-      requestedOn: '2 hours ago'
+      title: 'Monthly Revenue',
+      value: '$180K',
+      change: '+12% from last month',
+      changeType: 'positive',
+      icon: '💰',
+      subtitle: 'This month'
     },
     {
-      id: 2,
-      subject: 'Promotion Request',
-      description: 'Request for role promotion to Senior Developer',
-      priority: 'High',
-      status: 'In Progress',
-      requestedBy: 'Jane Smith',
-      department: 'Production',
-      requestedOn: '1 day ago'
+      title: 'Employee Count',
+      value: '120',
+      change: '+8 new hires',
+      changeType: 'positive',
+      icon: '👤',
+      subtitle: 'Total employees'
     },
     {
-      id: 3,
-      subject: 'New Laptop Request',
-      description: 'Request for new development laptop',
-      priority: 'Low',
-      status: 'Pending',
-      requestedBy: 'Mike Johnson',
-      department: 'IT',
-      requestedOn: '3 days ago'
+      title: 'Total Tasks',
+      value: '245',
+      change: '189 completed',
+      changeType: 'positive',
+      icon: '📋',
+      subtitle: 'This month'
+    },
+    {
+      title: 'Completed Tasks',
+      value: '189',
+      change: '77% completion rate',
+      changeType: 'positive',
+      icon: '✅',
+      subtitle: 'Success rate'
+    },
+    {
+      title: 'In Progress',
+      value: '56',
+      change: '23% in progress',
+      changeType: 'neutral',
+      icon: '⏳',
+      subtitle: 'Pending tasks'
+    },
+    {
+      title: 'System Alerts',
+      value: '3',
+      change: '2 resolved today',
+      changeType: 'positive',
+      icon: '🚨',
+      subtitle: 'Active alerts'
     }
   ];
 
-  // Recent Activities Data
-  const recentActivitiesData: DataListItem[] = [
+
+  const activities: ActivityItem[] = [
     {
-      id: 1,
-      action: 'New employee registration',
-      user: 'John Doe',
+      id: '1',
+      title: 'New user registration',
+      description: 'John Smith joined as Sales Manager',
       time: '2 hours ago',
       type: 'success',
-      category: 'registration'
+      user: 'System'
     },
     {
-      id: 2,
-      action: 'Login issue reported',
-      user: 'Jane Smith',
+      id: '2',
+      title: 'System backup completed',
+      description: 'Daily backup completed successfully',
       time: '4 hours ago',
-      type: 'warning',
-      category: 'login'
+      type: 'info',
+      user: 'System'
     },
     {
-      id: 3,
-      action: 'System maintenance completed',
-      user: 'IT Team',
+      id: '3',
+      title: 'Policy update',
+      description: 'Holiday policy updated by HR',
       time: '6 hours ago',
+      type: 'info',
+      user: 'HR Admin'
+    },
+    {
+      id: '4',
+      title: 'Login issue resolved',
+      description: 'Fixed authentication problem for 3 users',
+      time: '8 hours ago',
       type: 'success',
-      category: 'system'
+      user: 'IT Support'
+    },
+    {
+      id: '5',
+      title: 'New department created',
+      description: 'R&D department added to system',
+      time: '1 day ago',
+      type: 'info',
+      user: 'Admin'
     }
   ];
 
-  // Quick Actions Data
-  const quickActionsData: ActionCategory[] = [
+  const quickActions: QuickActionItem[] = [
     {
-      id: 'user-management',
       title: 'User Management',
-      actions: [
-        {
-          id: 'create-user',
-          label: 'Create User',
-          icon: '👤',
-          onClick: () => console.log('Create User'),
-          color: 'blue'
-        },
-        {
-          id: 'manage-roles',
-          label: 'Manage Roles',
-          icon: '🔐',
-          onClick: () => console.log('Manage Roles'),
-          color: 'blue'
-        }
-      ]
+      description: 'Create User, Manage Roles',
+      icon: '👥',
+      href: '/admin/users',
+      color: 'bg-blue-100 text-blue-600'
     },
     {
-      id: 'company-settings',
       title: 'Company Settings',
-      actions: [
+      description: 'Holiday Management, Policy Updates',
+      icon: '⚙️',
+      href: '/admin/settings',
+      color: 'bg-green-100 text-green-600'
+    },
+    {
+      title: 'System Reports',
+      description: 'Access Logs, Audit Trail',
+      icon: '📊',
+      href: '/admin/reports',
+      color: 'bg-purple-100 text-purple-600'
+    },
+    {
+      title: 'Analytics',
+      description: 'Company Reports, Export Data',
+      icon: '📈',
+      href: '/admin/analytics',
+      color: 'bg-orange-100 text-orange-600'
+    }
+  ];
+
+  const userActivityData: ChartData[] = [
+    { name: 'Mon', value: 85 },
+    { name: 'Tue', value: 92 },
+    { name: 'Wed', value: 78 },
+    { name: 'Thu', value: 95 },
+    { name: 'Fri', value: 89 },
+    { name: 'Sat', value: 45 },
+    { name: 'Sun', value: 32 }
+  ];
+
+  const systemHealthMetrics: MetricData[] = [
+    {
+      title: 'System Status',
+      value: 'Healthy',
+      icon: '🟢',
+      changeType: 'positive',
+      change: 'All systems operational',
+      subtitle: 'Last checked: 2 min ago'
+    },
+    {
+      title: 'Server Uptime',
+      value: '99.9%',
+      icon: '⚡',
+      changeType: 'positive',
+      change: '+0.2% from last month',
+      subtitle: 'Last 30 days'
+    },
+    {
+      title: 'Response Time',
+      value: '120ms',
+      icon: '⚡',
+      changeType: 'positive',
+      change: '-15ms improvement',
+      subtitle: 'Average response'
+    },
+    {
+      title: 'Storage Used',
+      value: '68%',
+      icon: '💾',
+      changeType: 'neutral',
+      change: '2.4TB / 3.5TB',
+      subtitle: 'Available space'
+    }
+  ];
+
+  const performanceData = [
+    // Sales Department
+    {
+      id: '1',
+      name: 'Sarah Johnson',
+      avatar: 'SJ',
+      department: 'Sales',
+      role: 'Senior Sales Rep',
+      metrics: [
         {
-          id: 'holiday-management',
-          label: 'Holiday Management',
-          icon: '📅',
-          onClick: () => console.log('Holiday Management'),
-          color: 'green'
+          label: 'Leads Closed',
+          currentValue: 24,
+          targetValue: 20,
+          progress: 120,
+          status: 'exceeded' as const,
+          unit: 'leads'
         },
         {
-          id: 'policy-updates',
-          label: 'Policy Updates',
-          icon: '📋',
-          onClick: () => console.log('Policy Updates'),
-          color: 'green'
+          label: 'Sales Amount',
+          currentValue: 125000,
+          targetValue: 100000,
+          progress: 125,
+          status: 'exceeded' as const,
+          unit: '$'
+        },
+        {
+          label: 'Commission Earned',
+          currentValue: 12500,
+          targetValue: 10000,
+          progress: 125,
+          status: 'exceeded' as const,
+          unit: '$'
         }
       ]
     },
     {
-      id: 'system-reports',
-      title: 'System Reports',
-      actions: [
+      id: '2',
+      name: 'Mike Chen',
+      avatar: 'MC',
+      department: 'Sales',
+      role: 'Sales Rep',
+      metrics: [
         {
-          id: 'access-logs',
-          label: 'Access Logs',
-          icon: '📊',
-          onClick: () => console.log('Access Logs'),
-          color: 'purple'
+          label: 'Leads Closed',
+          currentValue: 18,
+          targetValue: 20,
+          progress: 90,
+          status: 'on-track' as const,
+          unit: 'leads'
         },
         {
-          id: 'audit-trail',
-          label: 'Audit Trail',
-          icon: '🔍',
-          onClick: () => console.log('Audit Trail'),
-          color: 'purple'
+          label: 'Sales Amount',
+          currentValue: 85000,
+          targetValue: 100000,
+          progress: 85,
+          status: 'on-track' as const,
+          unit: '$'
+        },
+        {
+          label: 'Commission Earned',
+          currentValue: 6800,
+          targetValue: 10000,
+          progress: 68,
+          status: 'below-target' as const,
+          unit: '$'
+        }
+      ]
+    },
+    // Marketing Department
+    {
+      id: '3',
+      name: 'Emma Wilson',
+      avatar: 'EW',
+      department: 'Marketing',
+      role: 'Marketing Specialist',
+      metrics: [
+        {
+          label: 'Campaigns Run',
+          currentValue: 8,
+          targetValue: 6,
+          progress: 133,
+          status: 'exceeded' as const,
+          unit: 'campaigns'
+        },
+        {
+          label: 'Lead Quality Score',
+          currentValue: 4.2,
+          targetValue: 4.0,
+          progress: 105,
+          status: 'exceeded' as const,
+          unit: '/5'
+        },
+        {
+          label: 'Lead Generation',
+          currentValue: 150,
+          targetValue: 120,
+          progress: 125,
+          status: 'exceeded' as const,
+          unit: 'leads'
+        }
+      ]
+    },
+    // Production Department
+    {
+      id: '4',
+      name: 'Alex Rodriguez',
+      avatar: 'AR',
+      department: 'Production',
+      role: 'Senior Developer',
+      metrics: [
+        {
+          label: 'Projects Completed',
+          currentValue: 12,
+          targetValue: 10,
+          progress: 120,
+          status: 'exceeded' as const,
+          unit: 'projects'
+        },
+        {
+          label: 'Code Quality Score',
+          currentValue: 4.5,
+          targetValue: 4.0,
+          progress: 112,
+          status: 'exceeded' as const,
+          unit: '/5'
+        },
+        {
+          label: 'Task Completion',
+          currentValue: 95,
+          targetValue: 90,
+          progress: 105,
+          status: 'exceeded' as const,
+          unit: '%'
+        }
+      ]
+    },
+    // HR Department
+    {
+      id: '5',
+      name: 'Lisa Thompson',
+      avatar: 'LT',
+      department: 'HR',
+      role: 'HR Manager',
+      metrics: [
+        {
+          label: 'Recruitments',
+          currentValue: 8,
+          targetValue: 6,
+          progress: 133,
+          status: 'exceeded' as const,
+          unit: 'hires'
+        },
+        {
+          label: 'Employee Satisfaction',
+          currentValue: 4.3,
+          targetValue: 4.0,
+          progress: 107,
+          status: 'exceeded' as const,
+          unit: '/5'
+        },
+        {
+          label: 'Request Processing',
+          currentValue: 45,
+          targetValue: 40,
+          progress: 112,
+          status: 'exceeded' as const,
+          unit: 'requests'
+        }
+      ]
+    },
+    // Accounting Department
+    {
+      id: '6',
+      name: 'David Kim',
+      avatar: 'DK',
+      department: 'Accounting',
+      role: 'Senior Accountant',
+      metrics: [
+        {
+          label: 'Invoices Processed',
+          currentValue: 180,
+          targetValue: 200,
+          progress: 90,
+          status: 'on-track' as const,
+          unit: 'invoices'
+        },
+        {
+          label: 'Accuracy Rate',
+          currentValue: 98.5,
+          targetValue: 95,
+          progress: 103,
+          status: 'exceeded' as const,
+          unit: '%'
+        },
+        {
+          label: 'Reports Generated',
+          currentValue: 15,
+          targetValue: 12,
+          progress: 125,
+          status: 'exceeded' as const,
+          unit: 'reports'
+        }
+      ]
+    },
+    // Additional Sales employees
+    {
+      id: '7',
+      name: 'Jennifer Lee',
+      avatar: 'JL',
+      department: 'Sales',
+      role: 'Sales Manager',
+      metrics: [
+        {
+          label: 'Leads Closed',
+          currentValue: 32,
+          targetValue: 25,
+          progress: 128,
+          status: 'exceeded' as const,
+          unit: 'leads'
+        },
+        {
+          label: 'Sales Amount',
+          currentValue: 180000,
+          targetValue: 150000,
+          progress: 120,
+          status: 'exceeded' as const,
+          unit: '$'
+        },
+        {
+          label: 'Commission Earned',
+          currentValue: 18000,
+          targetValue: 15000,
+          progress: 120,
+          status: 'exceeded' as const,
+          unit: '$'
+        }
+      ]
+    },
+    {
+      id: '8',
+      name: 'Robert Taylor',
+      avatar: 'RT',
+      department: 'Sales',
+      role: 'Sales Rep',
+      metrics: [
+        {
+          label: 'Leads Closed',
+          currentValue: 15,
+          targetValue: 20,
+          progress: 75,
+          status: 'below-target' as const,
+          unit: 'leads'
+        },
+        {
+          label: 'Sales Amount',
+          currentValue: 75000,
+          targetValue: 100000,
+          progress: 75,
+          status: 'below-target' as const,
+          unit: '$'
+        },
+        {
+          label: 'Commission Earned',
+          currentValue: 6000,
+          targetValue: 10000,
+          progress: 60,
+          status: 'below-target' as const,
+          unit: '$'
+        }
+      ]
+    },
+    // Additional Marketing employees
+    {
+      id: '9',
+      name: 'Sophie Martinez',
+      avatar: 'SM',
+      department: 'Marketing',
+      role: 'Marketing Manager',
+      metrics: [
+        {
+          label: 'Campaigns Run',
+          currentValue: 12,
+          targetValue: 8,
+          progress: 150,
+          status: 'exceeded' as const,
+          unit: 'campaigns'
+        },
+        {
+          label: 'Lead Quality Score',
+          currentValue: 4.6,
+          targetValue: 4.0,
+          progress: 115,
+          status: 'exceeded' as const,
+          unit: '/5'
+        },
+        {
+          label: 'Lead Generation',
+          currentValue: 200,
+          targetValue: 150,
+          progress: 133,
+          status: 'exceeded' as const,
+          unit: 'leads'
+        }
+      ]
+    },
+    // Additional Production employees
+    {
+      id: '10',
+      name: 'James Wilson',
+      avatar: 'JW',
+      department: 'Production',
+      role: 'Lead Developer',
+      metrics: [
+        {
+          label: 'Projects Completed',
+          currentValue: 15,
+          targetValue: 12,
+          progress: 125,
+          status: 'exceeded' as const,
+          unit: 'projects'
+        },
+        {
+          label: 'Code Quality Score',
+          currentValue: 4.8,
+          targetValue: 4.0,
+          progress: 120,
+          status: 'exceeded' as const,
+          unit: '/5'
+        },
+        {
+          label: 'Task Completion',
+          currentValue: 98,
+          targetValue: 90,
+          progress: 108,
+          status: 'exceeded' as const,
+          unit: '%'
+        }
+      ]
+    },
+    // Additional HR employees
+    {
+      id: '11',
+      name: 'Maria Garcia',
+      avatar: 'MG',
+      department: 'HR',
+      role: 'HR Specialist',
+      metrics: [
+        {
+          label: 'Recruitments',
+          currentValue: 5,
+          targetValue: 6,
+          progress: 83,
+          status: 'on-track' as const,
+          unit: 'hires'
+        },
+        {
+          label: 'Employee Satisfaction',
+          currentValue: 4.1,
+          targetValue: 4.0,
+          progress: 102,
+          status: 'exceeded' as const,
+          unit: '/5'
+        },
+        {
+          label: 'Request Processing',
+          currentValue: 35,
+          targetValue: 40,
+          progress: 87,
+          status: 'on-track' as const,
+          unit: 'requests'
+        }
+      ]
+    },
+    // Additional Accounting employees
+    {
+      id: '12',
+      name: 'Kevin Brown',
+      avatar: 'KB',
+      department: 'Accounting',
+      role: 'Accountant',
+      metrics: [
+        {
+          label: 'Invoices Processed',
+          currentValue: 220,
+          targetValue: 200,
+          progress: 110,
+          status: 'exceeded' as const,
+          unit: 'invoices'
+        },
+        {
+          label: 'Accuracy Rate',
+          currentValue: 99.2,
+          targetValue: 95,
+          progress: 104,
+          status: 'exceeded' as const,
+          unit: '%'
+        },
+        {
+          label: 'Reports Generated',
+          currentValue: 18,
+          targetValue: 12,
+          progress: 150,
+          status: 'exceeded' as const,
+          unit: 'reports'
         }
       ]
     }
   ];
+
+  // Filter performance data based on selected department
+  const filteredPerformanceData = useMemo(() => {
+    if (!selectedDepartment) {
+      return performanceData;
+    }
+    return performanceData.filter(member => member.department === selectedDepartment);
+  }, [selectedDepartment]);
+
+  // Get top 6 employees for the selected department
+  const topPerformers = useMemo(() => {
+    return filteredPerformanceData.slice(0, 6);
+  }, [filteredPerformanceData]);
 
   return (
-    <DashboardContainer
-      title="Admin Dashboard"
-      subtitle="Welcome back! Here's what's happening with your system today."
+    <AdminDashboardLayout 
+      title="Admin Dashboard" 
+      subtitle="System overview and management tools"
     >
-      <OverviewCards data={systemOverviewData} />
-      
-      <DashboardSection
-        title="Company Performance"
-        actions={{
-          primary: { label: 'View Reports', onClick: () => console.log('View Reports') },
-          secondary: { label: 'Export Data', onClick: () => console.log('Export Data') }
-        }}
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 rounded-xl border border-blue-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-3 bg-blue-500 rounded-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Monthly Revenue</h3>
-                  <p className="text-sm text-gray-600">Current month</p>
-                </div>
-              </div>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                +15%
-                </span>
-              </div>
-            <p className="text-3xl font-bold text-gray-900">${companyPerformanceData.monthlyRevenue.toLocaleString()}</p>
+      <div className="space-y-6">
+        {/* Overview Stats */}
+        <MetricGrid 
+          title="Overview Statistics"
+          metrics={overviewStats}
+          columns={4}
+          headerColor="from-blue-50 to-transparent"
+          headerGradient="from-blue-500 to-indigo-600"
+          cardSize="md"
+        />
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Left Column - Performance and Charts */}
+          <div className="xl:col-span-2 space-y-6">
+            <MetricGrid 
+              title="Company Performance" 
+              metrics={performanceMetrics}
+              columns={3}
+            />
+            
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartWidget 
+                title="User Activity (Last 7 Days)"
+                data={userActivityData}
+              type="line" 
+                height={250}
+              />
+              <DepartmentOverview />
         </div>
 
-          <div className="bg-white p-6 rounded-xl border border-gray-200">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900">Employee Distribution by Department</h3>
-            <div className="space-y-4">
-              {companyPerformanceData.departmentData.map((dept, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="font-medium text-gray-900">{dept.name}</span>
-          </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-gray-900">{dept.employees} employees</div>
-                    <div className="text-xs text-gray-600">${dept.revenue.toLocaleString()}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      </DashboardSection>
+            <MetricGrid 
+              title="System Health"
+              metrics={systemHealthMetrics}
+              columns={2}
+              headerColor="from-green-50 to-transparent"
+              headerGradient="from-green-500 to-emerald-600"
+              cardSize="sm"
+              cardClassName="border-0 shadow-none bg-gray-50"
+            />
 
-      <DashboardSection
-        title="Admin Requests"
-        actions={{
-          primary: { label: 'View All', onClick: () => console.log('View All Requests') },
-          secondary: { label: 'Create Request', onClick: () => console.log('Create Request') }
-        }}
-      >
-        <DataList
-          data={adminRequestsData}
-          renderItem={(request) => (
-            <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">{request.subject}</h4>
-                  <p className="text-gray-600 text-sm">{request.description}</p>
-                </div>
-                <div className="flex space-x-2 ml-4">
-                  <StatusBadge status={request.priority} type="priority" />
-                  <StatusBadge status={request.status} type="status" />
-                </div>
+            {/* Department Performance Leaderboard */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Department Performance Leaderboard
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Track and compare performance across departments
+                </p>
               </div>
-              
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-semibold text-white">
-                      {request.requestedBy.split(' ').map((n: string) => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{request.requestedBy}</p>
-                    <p className="text-xs text-gray-500">{request.department}</p>
-                  </div>
+              <div className="p-6">
+                <div className="mb-6">
+                  <DepartmentFilter
+                    departments={departments}
+                    selectedDepartment={selectedDepartment}
+                    onDepartmentSelect={setSelectedDepartment}
+                    className="mb-4"
+                  />
+                  {selectedDepartment && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span>Showing top performers from <strong>{selectedDepartment}</strong> department</span>
+                    </div>
+                  )}
                 </div>
-                <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                  {request.requestedOn}
-                </span>
+                <PerformanceLeaderboard 
+                  title={selectedDepartment ? `${selectedDepartment} Top Performers` : "All Departments Top Performers"}
+                  members={topPerformers}
+                  showDepartment={!selectedDepartment}
+                  showRole={true}
+                />
               </div>
             </div>
-          )}
-        />
-      </DashboardSection>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DashboardSection title="Recent System Activities">
-          <DataList
-            data={recentActivitiesData}
-            renderItem={(activity) => (
-              <div className="flex items-start space-x-4 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  activity.category === 'registration' ? 'bg-blue-100' :
-                  activity.category === 'login' ? 'bg-green-100' :
-                  activity.category === 'system' ? 'bg-purple-100' :
-                  activity.category === 'admin_request' ? 'bg-orange-100' : 'bg-gray-100'
-                }`}>
-                  <span className="text-lg">{
-                    activity.category === 'registration' ? '👤' :
-                    activity.category === 'login' ? '🔐' :
-                    activity.category === 'system' ? '⚙️' :
-                    activity.category === 'admin_request' ? '📋' : 'ℹ️'
-                  }</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 mb-1">{activity.action}</p>
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
-                    <div className="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-gray-600">
-                        {activity.user.split(' ').map((n: string) => n[0]).join('')}
-                      </span>
-                    </div>
-                    <span>{activity.user}</span>
-                    <span>•</span>
-                    <span>{activity.time}</span>
-                  </div>
-                </div>
-                <div className={`w-2 h-2 rounded-full ${
-                  activity.type === 'success' ? 'bg-green-500' :
-                  activity.type === 'warning' ? 'bg-yellow-500' :
-                  activity.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-                }`}></div>
-              </div>
-            )}
+          {/* Right Column - Actions and Activities */}
+          <div className="space-y-6">
+            <QuickActionCard 
+              title="Quick Actions" 
+              actions={quickActions}
+            />
+            
+          <ActivityFeed 
+              title="Recent System Activities" 
+            activities={activities} 
+            maxItems={5} 
           />
-        </DashboardSection>
+            
+            <UserManagementWidget />
 
-        <QuickActions categories={quickActionsData} />
-    </div>
-    </DashboardContainer>
+          <QuickAccess />
+        </div>
+          </div>
+        </div>
+    </AdminDashboardLayout>
   );
 };
 

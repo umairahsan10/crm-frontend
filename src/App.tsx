@@ -37,6 +37,7 @@ import BackupPage from './pages/Backup/BackupPage';
 import IntegrationsPage from './pages/Integrations/IntegrationsPage';
 import SecurityPage from './pages/Security/SecurityPage';
 import MaintenancePage from './pages/Maintenance/MaintenancePage';
+import TestPage from './pages/test';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -64,6 +65,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/test" element={<TestPage />} />
           <Route
             path="/*"
             element={

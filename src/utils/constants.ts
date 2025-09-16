@@ -23,6 +23,7 @@ export const NAV_ITEMS = [
   { id: 'integrations', label: 'Integrations', icon: '🔗', path: '/integrations', roles: ['admin'] },
   { id: 'security', label: 'Security', icon: '🔒', path: '/security', roles: ['admin'] },
   { id: 'maintenance', label: 'Maintenance', icon: '⚙️', path: '/maintenance', roles: ['admin'] },
+  { id: 'test', label: 'Test Page', icon: '🧪', path: '/test', roles: ['admin', 'hr', 'accountant', 'employee'] },
   
   // Profile and Settings are accessible through user dropdown, not main navigation
 ];

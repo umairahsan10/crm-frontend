@@ -153,6 +153,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         return <AiOutlineTool size={20} />;
       case '🔄':
         return <AiOutlineReload size={20} />;
+      case '🧪':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2h-4"/>
+            <path d="M9 11V7a2 2 0 012-2h2a2 2 0 012 2v4"/>
+            <path d="M9 7H7a2 2 0 00-2 2v2"/>
+            <path d="M15 7h2a2 2 0 012 2v2"/>
+          </svg>
+        );
       default:
         return <span>{emoji}</span>;
     }
