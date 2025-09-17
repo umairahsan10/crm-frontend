@@ -24,6 +24,38 @@ export interface ApiError {
 
 export const loginApi = async (credentials: LoginRequest): Promise<LoginResponse> => {
   try {
+    // Check for dummy credentials first
+    if (credentials.email === 'admin@gmail.com' && credentials.password === 'admin') {
+      // Return mock response for dummy credentials
+      const mockResponse: LoginResponse = {
+        access_token: 'dummy_jwt_token_for_admin',
+        user: {
+          sub: 1,
+          role: 'admin',
+          type: 'admin',
+          department: 'admin',
+          permissions: {
+            'read': true,
+            'write': true,
+            'delete': true,
+            'manage_users': true,
+            'manage_roles': true,
+            'view_reports': true,
+            'manage_settings': true,
+            'manage_employees': true,
+            'manage_attendance': true,
+            'manage_financial': true,
+            'manage_sales': true,
+            'manage_production': true,
+            'manage_marketing': true,
+            'approve_chargebacks': true,
+          }
+        }
+      };
+      return mockResponse;
+    }
+
+    // For other credentials, make actual API call
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
