@@ -22,7 +22,44 @@ export default function Login(): JSX.Element {
     setIsLoading(true);
 
     try {
-      // Call the login API
+      // Check for hardcoded admin credentials first
+      if (email === "admin@gmail.com" && password === "admin") {
+        // Create hardcoded admin user data
+        const adminUserData: User = {
+          id: "admin-001",
+          name: "System Administrator",
+          email: "admin@company.com",
+          role: "admin",
+          type: "admin",
+          isActive: true,
+          lastLogin: new Date().toISOString(),
+          permissions: {
+            read: true,
+            write: true,
+            delete: true,
+            manage_users: true,
+            manage_roles: true,
+            view_reports: true,
+            manage_settings: true,
+            manage_employees: true,
+            manage_attendance: true,
+            manage_sales: true,
+            manage_financial: true,
+            manage_production: true,
+            manage_marketing: true,
+          },
+        };
+
+        // Login with the hardcoded admin data and a dummy token
+        login(adminUserData, "hardcoded-admin-token");
+        
+        // Get the appropriate dashboard route (should be admin dashboard)
+        const dashboardRoute = getDashboardRoute();
+        navigate(dashboardRoute);
+        return;
+      }
+
+      // Call the login API for regular users
       const response = await loginApi({ email, password });
       
       // Transform the JWT response to our User format
@@ -107,12 +144,15 @@ export default function Login(): JSX.Element {
           </button>
 
           <div className="demo-credentials">
-            <p>Connect to your JWT backend:</p>
+            <p><strong>Demo Admin Access:</strong></p>
             <ul>
-              <li>Make sure your backend is running on the configured API URL</li>
-              <li>Use valid credentials from your database</li>
-              <li>Check browser console for any API errors</li>
+              <li><strong>Email:</strong> admin@gmail.com</li>
+              <li><strong>Password:</strong> admin</li>
+              <li>This will redirect to the admin dashboard without backend</li>
             </ul>
+            <p style={{ marginTop: '10px', fontSize: '0.9em', color: '#666' }}>
+              For regular users, connect to your JWT backend with valid credentials
+            </p>
           </div>
         </form>
       </div>
