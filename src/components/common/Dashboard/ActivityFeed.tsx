@@ -61,7 +61,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       </div>
       <div className="divide-y divide-gray-100">
         {displayActivities.map((activity, index) => {
-          const styles = getActivityStyles(activity.type);
+          const styles = getActivityStyles(activity.type || 'info');
           return (
             <div key={activity.id} className="p-6 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-transparent hover:shadow-sm transition-all duration-300 group">
               <div className="flex items-start gap-4">

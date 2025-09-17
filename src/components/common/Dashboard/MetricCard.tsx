@@ -18,16 +18,6 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     lg: 'p-8'
   };
 
-  const getChangeStyles = () => {
-    switch (metric.changeType) {
-      case 'positive': 
-        return 'text-success bg-success-light border border-success/20';
-      case 'negative': 
-        return 'text-danger bg-danger-light border border-danger/20';
-      default: 
-        return 'text-muted-foreground bg-muted border border-border';
-    }
-  };
 
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden cursor-pointer ${sizeClasses[size]} ${className}`}>

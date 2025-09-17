@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChartWidget } from '../ChartWidget';
 import { MetricCard } from '../MetricCard';
-import type { MetricData } from '../../../types/dashboard';
+import type { MetricData } from '../../../../types/dashboard';
 
 interface FinancialOverviewProps {
   className?: string;

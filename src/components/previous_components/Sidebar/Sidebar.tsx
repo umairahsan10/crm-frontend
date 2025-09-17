@@ -8,7 +8,6 @@ import {
   AiOutlineTeam,
   AiOutlineCalendar,
   AiOutlineBarChart,
-  AiOutlineBank,
   AiOutlineReload,
   AiOutlineSetting,
   AiOutlineUser,
