@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChartWidget } from '../ChartWidget';
+import { ChartWidget } from './ChartWidget';
 
 
 interface SalesLeadsPipelineProps {
