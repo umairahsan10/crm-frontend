@@ -707,7 +707,7 @@ const AdminDashboard: React.FC = () => {
                   Department Performance Leaderboard
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Track and compare performance across departments
+                  Track and Compare performance across departments
                 </p>
               </div>
               <div className="p-6">
