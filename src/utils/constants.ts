@@ -6,7 +6,27 @@ export const NAV_ITEMS = [
   { id: 'deals', label: 'Deals', icon: '💼', path: '/deals', roles: ['admin', 'hr', 'employee'] },
   { id: 'sales', label: 'Sales', icon: '📈', path: '/sales', roles: ['admin', 'hr'] },
   { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads', roles: ['admin', 'hr'] },
-  // Profile and Settings are accessible through user dropdown, not main navigation
+  
+  // Admin-specific pages
+  { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects', roles: ['admin'] },
+  { id: 'finance', label: 'Finance', icon: '💰', path: '/finance', roles: ['admin', 'accountant'] },
+  { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management', roles: ['admin', 'hr'] },
+  { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing', roles: ['admin', 'marketing'] },
+  { id: 'production', label: 'Production', icon: '🏭', path: '/production', roles: ['admin', 'production'] },
+  { id: 'clients', label: 'Clients', icon: '👤', path: '/clients', roles: ['admin', 'sales'] },
+  { id: 'reports', label: 'Reports', icon: '📊', path: '/reports', roles: ['admin'] },
+  { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics', roles: ['admin'] },
+  { id: 'system-logs', label: 'System Logs', icon: '📋', path: '/system-logs', roles: ['admin'] },
+  { id: 'audit-trail', label: 'Audit Trail', icon: '🔍', path: '/audit-trail', roles: ['admin'] },
+  { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/notifications', roles: ['admin'] },
+  { id: 'backup', label: 'Backup & Restore', icon: '💾', path: '/backup', roles: ['admin'] },
+  { id: 'integrations', label: 'Integrations', icon: '🔗', path: '/integrations', roles: ['admin'] },
+  { id: 'security', label: 'Security', icon: '🔒', path: '/security', roles: ['admin'] },
+  { id: 'maintenance', label: 'Maintenance', icon: '⚙️', path: '/maintenance', roles: ['admin'] },
+  { id: 'test', label: 'Test Page', icon: '🧪', path: '/test', roles: ['admin', 'hr', 'accountant', 'employee'] },
+  { id: 'profile', label: 'Profile', icon: '👤', path: '/profile', roles: ['admin', 'hr', 'accountant', 'sales', 'production', 'marketing', 'dep_manager', 'employee'] },
+  
+  // Settings are accessible through user dropdown, not main navigation
 ];
 
 // Department Constants

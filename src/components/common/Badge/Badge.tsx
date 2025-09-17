@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import './badge.css';
+import './Badge.css';
 
 // Types
 export type BadgeSize = 'sm' | 'md' | 'lg' | 'xl' | 'custom';

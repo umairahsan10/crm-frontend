@@ -111,6 +111,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'leads': ['admin', 'hr', 'sales', 'dep_manager'],
       'settings': ['admin'],
       'profile': ['admin', 'hr', 'accountant', 'employee', 'sales', 'production', 'marketing', 'dep_manager'],
+      
+      // Admin-specific pages
+      'projects': ['admin'],
+      'finance': ['admin', 'accountant'],
+      'hr-management': ['admin', 'hr'],
+      'marketing': ['admin', 'marketing'],
+      'production': ['admin', 'production'],
+      'clients': ['admin', 'sales'],
+      'reports': ['admin'],
+      'analytics': ['admin'],
+      'system-logs': ['admin'],
+      'audit-trail': ['admin'],
+      'notifications': ['admin'],
+      'backup': ['admin'],
+      'integrations': ['admin'],
+      'security': ['admin'],
+      'maintenance': ['admin'],
     };
 
     const canAccess = pagePermissions[pageId]?.includes(user.role) || false;
@@ -153,6 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Unknown department, returning /dashboard');
           return '/dashboard';
       }
+
     }
     
     console.log('Fallback, returning /dashboard');
@@ -182,3 +200,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

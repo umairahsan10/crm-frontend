@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import type { FilterItem } from '../components/common/FilterBar/FilterBar';
+import type { FilterItem } from '../components/common/unused_common/FilterBar/FilterBar';
 
 export interface UseFilterBarOptions {
   filters: FilterItem[];
