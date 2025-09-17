@@ -123,7 +123,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setFormData(prev => ({ ...prev, avatar: event.target.result as string }));
+          setFormData(prev => ({ ...prev, avatar: event.target!.result as string }));
         }
       };
       reader.readAsDataURL(file);
