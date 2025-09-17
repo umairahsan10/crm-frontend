@@ -107,12 +107,12 @@ export default function Login(): JSX.Element {
           </button>
 
           <div className="demo-credentials">
-            <p>Connect to your JWT backend:</p>
+            <p><strong>Demo Credentials:</strong></p>
             <ul>
-              <li>Make sure your backend is running on the configured API URL</li>
-              <li>Use valid credentials from your database</li>
-              <li>Check browser console for any API errors</li>
-            </ul>
+              <li><strong>Email:</strong> admin@gmail.com</li>
+              <li><strong>Password:</strong> admin</li>
+              <li>This will bypass login and redirect to admin dashboard</li>
+            </ul>           
           </div>
         </form>
       </div>
