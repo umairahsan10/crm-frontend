@@ -5,7 +5,6 @@ interface LeadDetailsDrawerProps {
   lead: Lead | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdateLead: (leadId: string, updates: Partial<Lead>) => void;
 }
 
 interface Comment {
@@ -28,28 +27,15 @@ interface TimelineEvent {
 const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
   lead,
   isOpen,
-  onClose,
-  onUpdateLead
+  onClose
 }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'timeline' | 'comments'>('details');
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Lead>>({});
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
 
   useEffect(() => {
     if (lead) {
-      // Convert assignedTo object to string for editing
-      const editData = {
-        ...lead,
-        assignedTo: lead.assignedTo 
-          ? (typeof lead.assignedTo === 'string' 
-              ? lead.assignedTo 
-              : `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`)
-          : ''
-      };
-      setEditForm(editData);
       // Mock data - in real app, fetch from API
       setComments([
         {
@@ -86,12 +72,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
     }
   }, [lead]);
 
-  const handleSave = () => {
-    if (lead) {
-      onUpdateLead(lead.id, editForm);
-      setIsEditing(false);
-    }
-  };
 
   const handleAddComment = () => {
     if (newComment.trim() && lead) {
@@ -149,12 +129,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
               </h2>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  {isEditing ? 'Cancel' : 'Edit'}
-                </button>
-                <button
                   onClick={onClose}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -196,11 +170,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                 {/* Contact Information */}
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Note:</strong> Contact information (name, email, phone, source) cannot be edited. Only status, type, assignment, and notes can be modified.
-                    </p>
-                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Name</label>
@@ -227,60 +196,13 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Status</label>
-                      {isEditing ? (
-                        <select
-                          value={editForm.status || ''}
-                          onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="new">New</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="completed">Completed</option>
-                          <option value="payment_link_generated">Payment Link Generated</option>
-                          <option value="failed">Failed</option>
-                          <option value="cracked">Cracked</option>
-                        </select>
-                      ) : (
-                        <div className="mt-1">
-                          {getStatusBadge(lead.status)}
-                        </div>
-                      )}
+                      <div className="mt-1">
+                        {getStatusBadge(lead.status)}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Type</label>
-                      {isEditing ? (
-                        <select
-                          value={editForm.type || ''}
-                          onChange={(e) => setEditForm({ ...editForm, type: e.target.value as any })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="warm">Warm</option>
-                          <option value="cold">Cold</option>
-                          <option value="upsell">Upsell</option>
-                          <option value="push">Push</option>
-                        </select>
-                      ) : (
-                        <p className="mt-1 text-sm text-gray-900">{lead.type}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Outcome</label>
-                      {isEditing ? (
-                        <select
-                          value={editForm.outcome || ''}
-                          onChange={(e) => setEditForm({ ...editForm, outcome: e.target.value as any })}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select Outcome</option>
-                          <option value="voice_mail">Voice Mail</option>
-                          <option value="interested">Interested</option>
-                          <option value="not_answered">Not Answered</option>
-                          <option value="busy">Busy</option>
-                          <option value="denied">Denied</option>
-                        </select>
-                      ) : (
-                        <p className="mt-1 text-sm text-gray-900">{lead.outcome || 'No outcome set'}</p>
-                      )}
+                      <p className="mt-1 text-sm text-gray-900">{lead.type}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Assigned To</label>
@@ -306,17 +228,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Notes</label>
-                      {isEditing ? (
-                        <textarea
-                          value={editForm.notes || ''}
-                          onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                          rows={3}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Add notes about this lead..."
-                        />
-                      ) : (
-                        <p className="mt-1 text-sm text-gray-900">{lead.notes || 'No notes available'}</p>
-                      )}
+                      <p className="mt-1 text-sm text-gray-900">{lead.notes || 'No notes available'}</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -441,25 +353,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
             )}
           </div>
 
-          {/* Footer */}
-          {isEditing && (
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

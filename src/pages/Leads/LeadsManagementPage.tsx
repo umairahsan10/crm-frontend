@@ -7,13 +7,12 @@ import LeadsStatistics from '../../components/leads/LeadsStatistics';
 import CreateLeadForm from '../../components/common/CreateLeadForm/CreateLeadForm';
 import { 
   getLeadsApi, 
-  updateLeadApi,
   bulkUpdateLeadsApi, 
   bulkDeleteLeadsApi, 
   getLeadsStatisticsApi, 
   getEmployeesApi 
 } from '../../apis/leads';
-import type { Lead, UpdateLeadRequest } from '../../types';
+import type { Lead } from '../../types';
 
 const LeadsManagementPage: React.FC = () => {
   // State management
@@ -246,80 +245,6 @@ const LeadsManagementPage: React.FC = () => {
     }
   };
 
-  const handleUpdateLead = async (leadId: string, updates: Partial<Lead>) => {
-    try {
-      // Check if any restricted fields are being updated
-      const restrictedFields = ['name', 'email', 'phone', 'source', 'assignedTo'];
-      const hasRestrictedFields = restrictedFields.some(field => updates[field as keyof Lead] !== undefined);
-      
-      if (hasRestrictedFields) {
-        setNotification({
-          type: 'error',
-          message: 'Contact information (name, email, phone, source) and assignment cannot be updated through this interface. Use the specific outcome/status update features.'
-        });
-        return;
-      }
-      
-      // Prepare update data according to backend API format
-      const updateData: UpdateLeadRequest = {};
-      
-      // Map frontend fields to backend API fields
-      if (updates.outcome !== undefined) {
-        updateData.outcome = updates.outcome;
-        // Comment is required when updating outcome
-        if (!updateData.comment) {
-          updateData.comment = `Outcome updated to ${updates.outcome}`;
-        }
-      }
-      
-      if (updates.status !== undefined) {
-        updateData.status = updates.status;
-        // Add a default comment for status updates
-        if (!updateData.comment) {
-          updateData.comment = `Status updated to ${updates.status}`;
-        }
-      }
-      
-      if (updates.type !== undefined) {
-        updateData.type = updates.type;
-        // Add a default comment for type updates
-        if (!updateData.comment) {
-          updateData.comment = `Type updated to ${updates.type}`;
-        }
-      }
-      
-      // Handle notes as comment (backend expects 'comment' field)
-      if (updates.notes !== undefined) {
-        updateData.comment = updates.notes;
-      }
-      
-      // Debug: Log the data being sent
-      console.log('Updating lead with data:', updateData);
-      
-      // Call the API to update the lead
-      const response = await updateLeadApi(leadId, updateData);
-      
-      if (response.success && response.data) {
-        // Update local state with the response from server
-        setLeads(prev => prev.map(lead => 
-          lead.id === leadId ? response.data! : lead
-        ));
-        
-        setNotification({
-          type: 'success',
-          message: 'Lead updated successfully'
-        });
-      } else {
-        throw new Error(response.message || 'Failed to update lead');
-      }
-    } catch (error) {
-      console.error('Error updating lead:', error);
-      setNotification({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to update lead'
-      });
-    }
-  };
 
   const handleLeadCreated = (newLead: Lead) => {
     setLeads(prev => [newLead, ...prev]);
@@ -418,7 +343,6 @@ const LeadsManagementPage: React.FC = () => {
           lead={selectedLead}
           isOpen={!!selectedLead}
           onClose={() => setSelectedLead(null)}
-          onUpdateLead={handleUpdateLead}
         />
 
         {/* Create Lead Modal */}

@@ -1,7 +1,7 @@
 // API Base URL - Update this to match your backend URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-import type { CreateLeadRequest, CreateLeadResponse, UpdateLeadRequest, Lead, ApiResponse } from '../types';
+import type { CreateLeadRequest, CreateLeadResponse, Lead, ApiResponse } from '../types';
 
 export interface ApiError {
   message: string;
@@ -230,40 +230,6 @@ export const getLeadByIdApi = async (leadId: string): Promise<ApiResponse<Lead>>
   }
 };
 
-// Update a lead
-export const updateLeadApi = async (leadId: string, leadData: UpdateLeadRequest): Promise<ApiResponse<Lead>> => {
-  try {
-    const token = localStorage.getItem('crm_token');
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    console.log('Sending update request to:', `${API_BASE_URL}/leads/${leadId}`);
-    console.log('Update payload:', leadData);
-    
-    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(leadData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update lead');
-    }
-
-    const data: ApiResponse<Lead> = await response.json();
-    return data;
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
-    throw new Error('An unexpected error occurred while updating the lead');
-  }
-};
 
 // Delete a lead
 export const deleteLeadApi = async (leadId: string): Promise<ApiResponse<void>> => {

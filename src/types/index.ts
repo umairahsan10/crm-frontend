@@ -291,7 +291,6 @@ export interface Lead {
   type?: LeadType;
   salesUnitId: number;
   status?: LeadStatus;
-  outcome?: LeadOutcome;
   createdAt: string;
   updatedAt: string;
   assignedTo?: string | { firstName: string; lastName: string };
@@ -301,7 +300,6 @@ export interface Lead {
 export type LeadSource = 'PPC' | 'Organic' | 'Referral' | 'Cold Call' | 'Email' | 'Social Media' | 'Website' | 'Trade Show' | 'Other';
 export type LeadType = 'warm' | 'cold' | 'upsell' | 'push';
 export type LeadStatus = 'new' | 'in_progress' | 'completed' | 'payment_link_generated' | 'failed' | 'cracked';
-export type LeadOutcome = 'voice_mail' | 'interested' | 'not_answered' | 'busy' | 'denied';
 
 export interface CreateLeadRequest {
   name: string;
@@ -312,19 +310,8 @@ export interface CreateLeadRequest {
   salesUnitId: number;
 }
 
-export interface UpdateLeadRequest {
-  outcome?: LeadOutcome;
-  status?: LeadStatus;
-  type?: LeadType;
-  comment?: string;
-  action?: 'push';
-  // Fields for cracked lead creation
-  totalAmount?: number;
-  industryId?: number;
-  description?: string;
-  totalPhases?: number;
-  currentPhase?: number;
-}
+
+export type LeadOutcome = "voice_mail" | "interested" | "not_answered" | "busy" | "denied";
 
 export interface CreateLeadResponse {
   success: boolean;
