@@ -198,7 +198,7 @@ const LeadsStatistics: React.FC<LeadsStatisticsProps> = ({ statistics, isLoading
             { stage: 'Qualified', count: statistics.byStatus.qualified || 0, color: 'bg-indigo-500' },
             { stage: 'Proposal', count: statistics.byStatus.proposal || 0, color: 'bg-orange-500' },
             { stage: 'Closed Won', count: statistics.byStatus['closed-won'] || 0, color: 'bg-green-500' }
-          ].map((stage, index) => {
+          ].map((stage) => {
             const maxCount = Math.max(...[
               statistics.byStatus.new || 0,
               statistics.byStatus.contacted || 0,

@@ -34,10 +34,9 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({
   // Lead type options
   const leadTypeOptions: LeadType[] = [
     'warm',
-    'hot',
     'cold',
-    'qualified',
-    'unqualified'
+    'upsell',
+    'push'
   ];
 
   // Static sales unit options (you can modify these as needed)
