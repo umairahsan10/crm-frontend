@@ -15,7 +15,7 @@ export interface User {
   permissions?: Record<string, boolean>;
 }
 
-export type UserRole = 'admin' | 'hr' | 'accountant' | 'sales' | 'production' | 'marketing';
+export type UserRole = 'admin' | 'dept_manager' | 'team_leads' | 'unit_head' | 'senior' | 'junior';
 
 // JWT Backend Response Types
 export interface JWTUser {

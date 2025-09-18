@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type JSX } from "react";
+import { useState, useEffect, type FormEvent, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { loginApi } from "../../apis/login";
@@ -13,8 +13,42 @@ export default function Login(): JSX.Element {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { login, getDashboardRoute } = useAuth();
+  const { login, getDashboardRoute, isLoggedIn, isLoading: authLoading, isInitialized } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && isLoggedIn) {
+      const dashboardRoute = getDashboardRoute();
+      navigate(dashboardRoute, { replace: true });
+    }
+  }, [isLoggedIn, authLoading, getDashboardRoute, navigate]);
+
+  // Always show loading while checking authentication or not initialized
+  if (authLoading || !isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen w-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">
+            {!isInitialized ? "Initializing..." : "Checking authentication..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // If logged in, show loading while redirecting
+  if (isLoggedIn) {
+    return (
+      <div className="flex items-center justify-center min-h-screen w-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

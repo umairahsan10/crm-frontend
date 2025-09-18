@@ -1,192 +1,300 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import EmployeeList from '../../components/previous_components/EmployeeList/EmployeeList';
 import EmployeeForm from '../../components/previous_components/EmployeeForm/EmployeeForm';
+import { 
+  getEmployeesApi, 
+  createEmployeeApi, 
+  updateEmployeeApi, 
+  deleteEmployeeApi,
+  type Employee,
+  type CreateEmployeeDto,
+  type UpdateEmployeeDto,
+  type GetEmployeesDto
+} from '../../apis/hr-employees';
+import Loading from '../../components/common/Loading/Loading';
 import './EmployeesPage.css';
 
 const EmployeesPage: React.FC = () => {
   const { user } = useAuth();
   
-  // Sample employees data - in a real app, this would come from an API
-  const employees = [
-    { 
-      id: '1', 
-      name: 'Sarah Chen',
-      email: 'sarah.chen@company.com', 
-      phone: '+1-555-0101', 
-      gender: 'female' as const, 
-      cnic: '12345-6789012-3', 
-      department: 'Sales', 
-      role_id: 'Sales Representative', 
-      manager: 'John Smith', 
-      team_lead: 'Jane Doe', 
-      address: '123 Main St, City, State', 
-      marital_status: 'single' as const, 
-      status: 'active' as const, 
-      start_date: '2024-01-15', 
-      mode_of_work: 'office' as const, 
-      dob: '1990-05-15', 
-      emergency_contact: '+1-555-0102', 
-      shift_start: '09:00', 
-      shift_end: '17:00', 
-      employment_type: 'full-time' as const, 
-      period_type: 'permanent' as const, 
-      created_at: '2024-01-15', 
-      updated_at: '2024-01-15', 
-      password_hash: 'hashed_password_here'
-    },
-    { 
-      id: '2', 
-      name: 'Mike Rodriguez',
-      email: 'mike.rodriguez@company.com', 
-      phone: '+1-555-0103', 
-      gender: 'male' as const, 
-      cnic: '12345-6789013-4', 
-      department: 'Engineering', 
-      role_id: 'Software Engineer', 
-      manager: 'John Smith', 
-      team_lead: 'Jane Doe', 
-      address: '456 Oak Ave, City, State', 
-      marital_status: 'married' as const, 
-      status: 'active' as const, 
-      start_date: '2024-03-20', 
-      mode_of_work: 'hybrid' as const, 
-      remote_days_allowed: 2,
-      dob: '1988-12-10', 
-      emergency_contact: '+1-555-0104', 
-      shift_start: '08:00', 
-      shift_end: '16:00', 
-      employment_type: 'full-time' as const, 
-      period_type: 'permanent' as const, 
-      created_at: '2024-03-20', 
-      updated_at: '2024-03-20', 
-      password_hash: 'hashed_password_here'
-    },
-    { 
-      id: '3', 
-      name: 'Alex Thompson',
-      email: 'alex.thompson@company.com', 
-      phone: '+1-555-0105', 
-      gender: 'male' as const, 
-      cnic: '12345-6789014-5', 
-      department: 'Engineering', 
-      role_id: 'Senior Developer', 
-      manager: 'John Smith', 
-      team_lead: 'Jane Doe', 
-      address: '789 Pine St, City, State', 
-      marital_status: 'single' as const, 
-      status: 'active' as const, 
-      start_date: '2024-06-10', 
-      mode_of_work: 'remote' as const, 
-      dob: '1992-08-22', 
-      emergency_contact: '+1-555-0106', 
-      shift_start: '10:00', 
-      shift_end: '18:00', 
-      employment_type: 'contract' as const, 
-      period_type: 'contract' as const, 
-      created_at: '2024-06-10', 
-      updated_at: '2024-06-10', 
-      password_hash: 'hashed_password_here'
-    }
-  ];
+  // State management
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showEmployeeForm, setShowEmployeeForm] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
+  const [filters, setFilters] = useState<GetEmployeesDto>({
+    page: 1,
+    limit: 10
+  });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Fetch employees from API
+  const fetchEmployees = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching employees with filters:', filters);
+      
+      const response = await getEmployeesApi(filters);
+      
+      if (response.success && response.data) {
+        setEmployees(response.data.employees);
+        setPagination({
+          page: response.data.page,
+          limit: response.data.limit,
+          total: response.data.total,
+          totalPages: response.data.totalPages
+        });
+      } else {
+        throw new Error('Failed to fetch employees');
+      }
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch employees');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  // Load employees on component mount and when filters change
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
+  // Handle employee operations
   const handleEdit = (employee: any) => {
-    console.log('Edit employee:', employee);
+    // Find the original employee from our state using the ID
+    const originalEmployee = employees.find(emp => emp.id.toString() === employee.id);
+    if (originalEmployee) {
+      console.log('Edit employee:', originalEmployee);
+      setEditingEmployee(originalEmployee);
+      setShowEmployeeForm(true);
+    }
   };
 
-  const [showEmployeeForm, setShowEmployeeForm] = useState(false);
-
   const handleAddEmployee = () => {
+    setEditingEmployee(null);
     setShowEmployeeForm(true);
   };
 
   const handleCloseEmployeeForm = () => {
     setShowEmployeeForm(false);
+    setEditingEmployee(null);
   };
 
-  // Role-based rendering
-  const renderEmployees = () => {
-    if (!user) {
-      return <div>Loading...</div>;
+  const handleSaveEmployee = async (employeeData: CreateEmployeeDto | UpdateEmployeeDto) => {
+    try {
+      if (editingEmployee) {
+        // Update existing employee
+        await updateEmployeeApi(editingEmployee.id, employeeData as UpdateEmployeeDto);
+        console.log('Employee updated successfully');
+      } else {
+        // Create new employee
+        await createEmployeeApi(employeeData as CreateEmployeeDto);
+        console.log('Employee created successfully');
+      }
+      
+      // Refresh the employee list
+      await fetchEmployees();
+      handleCloseEmployeeForm();
+    } catch (err) {
+      console.error('Error saving employee:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save employee');
     }
+  };
 
-    switch (user.role) {
-      case 'admin':
-        return (
-          <div className="employees-container">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h1>Admin Employee Management</h1>
-            </div>
-            <div className="table-with-button">
-              <div className="table-button-container">
-                <h2 className="section-label">Employee List</h2>
-                <button className="btn-add-employee" onClick={handleAddEmployee}>
-                  Add Employee
-                </button>
-              </div>
-              <EmployeeList 
-                employees={employees} 
-                onEdit={handleEdit} 
-              />
-            </div>
-          </div>
-        );
-      case 'hr':
-        return (
-          <div className="employees-container">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h1>HR Employee Management</h1>
-            </div>
-            <div className="table-with-button">
-              <div className="table-button-container">
-                <h2 className="section-label">Employee List</h2>
-                <button className="btn-add-employee" onClick={handleAddEmployee}>
-                  Add Employee
-                </button>
-              </div>
-              <EmployeeList 
-                employees={employees} 
-                onEdit={handleEdit} 
-              />
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div className="employees-container">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h1>Access Denied</h1>
-            </div>
-            <div className="access-denied">
-              <p>You don't have permission to access this page.</p>
-            </div>
-          </div>
-        );
+  const handleDeleteEmployee = async (employee: any) => {
+    const employeeId = parseInt(employee.id);
+    if (window.confirm('Are you sure you want to delete this employee?')) {
+      try {
+        await deleteEmployeeApi(employeeId);
+        console.log('Employee deleted successfully');
+        // Refresh the employee list
+        await fetchEmployees();
+      } catch (err) {
+        console.error('Error deleting employee:', err);
+        setError(err instanceof Error ? err.message : 'Failed to delete employee');
+      }
     }
+  };
+
+
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({ ...prev, page }));
+  };
+
+  // Check if user has access to employees page
+  const hasAccess = user && (
+    user.role === 'admin' || 
+    user.role === 'dept_manager' || 
+    user.role === 'team_leads' ||
+    (user.department && user.department.toLowerCase() === 'hr')
+  );
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <Loading
+          isLoading={true}
+          position="centered"
+          text="Loading employees..."
+          theme="light"
+          size="lg"
+          minHeight="100vh"
+        />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <svg className="mx-auto h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Error loading employees</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{error}</p>
+            <div className="mt-4">
+              <button
+                onClick={() => fetchEmployees()}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Access denied
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+            <svg className="mx-auto h-12 w-12 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Access Denied</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              You don't have permission to access the employees page. Only HR department employees and managers can view this page.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main content
+  const getPageTitle = () => {
+    if (user?.role === 'admin') return 'Admin Employee Management';
+    if (user?.department?.toLowerCase() === 'hr') return 'HR Employee Management';
+    return 'Employee Management';
   };
 
   return (
     <>
-      {renderEmployees()}
-
-
+      <div className="employees-container">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <h1>{getPageTitle()}</h1>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">
+              Total: {pagination.total} employees
+            </span>
+          </div>
+        </div>
+        
+        <div className="table-with-button">
+          <div className="table-button-container">
+            <h2 className="section-label">Employee List</h2>
+            <button className="btn-add-employee" onClick={handleAddEmployee}>
+              Add Employee
+            </button>
+          </div>
+          
+          <EmployeeList 
+            employees={employees.map(emp => ({
+              id: emp.id.toString(),
+              name: `${emp.firstName} ${emp.lastName}`,
+              email: emp.email,
+              phone: emp.phone || '',
+              gender: 'other' as const,
+              cnic: '',
+              department: emp.department.name,
+              role_id: emp.role.name,
+              manager: emp.manager ? `${emp.manager.firstName} ${emp.manager.lastName}` : '',
+              team_lead: emp.teamLead ? `${emp.teamLead.firstName} ${emp.teamLead.lastName}` : '',
+              address: emp.address || '',
+              marital_status: 'single' as const,
+              status: emp.isActive ? 'active' as const : 'inactive' as const,
+              start_date: emp.startDate,
+              mode_of_work: 'office' as const,
+              dob: '',
+              emergency_contact: '',
+              shift_start: emp.shiftStart || '09:00',
+              shift_end: emp.shiftEnd || '17:00',
+              employment_type: 'full-time' as const,
+              period_type: 'permanent' as const,
+              created_at: emp.createdAt,
+              updated_at: emp.updatedAt,
+              password_hash: ''
+            }))} 
+            onEdit={handleEdit}
+            onDelete={handleDeleteEmployee}
+          />
+          
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="pagination-container">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page <= 1}
+                className="pagination-btn"
+              >
+                Previous
+              </button>
+              <span className="pagination-info">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages}
+                className="pagination-btn"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Employee Form Modal */}
       {showEmployeeForm && (
         <div className="modal-overlay" onClick={handleCloseEmployeeForm}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <span>New Employee</span>
+              <span>{editingEmployee ? 'Edit Employee' : 'New Employee'}</span>
               <button className="close-btn" type="button" onClick={handleCloseEmployeeForm}>×</button>
             </div>
             <div className="modal-body">
-              <EmployeeForm onClose={handleCloseEmployeeForm} />
-            </div>
-            <div className="modal-footer">
-              <button type="submit" className="create-employee-btn" form="employee-form">
-                Create Employee
-              </button>
+              <EmployeeForm 
+                onClose={handleCloseEmployeeForm}
+                onSave={handleSaveEmployee}
+                employee={editingEmployee}
+              />
             </div>
           </div>
         </div>
