@@ -38,9 +38,11 @@ type State = typeof initialState;
 
 interface EmployeeFormProps {
   onClose: () => void;
+  onSave?: (employeeData: any) => void;
+  employee?: any;
 }
 
-const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
+const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: _employee }) => {
   const validateRequiredFields = (formData: Record<string, unknown>, requiredFields: string[]) => {
     const errors: Record<string, string> = {};
     requiredFields.forEach((field) => {
@@ -283,7 +285,11 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose }) => {
 
     // Continue submission logic...
     try {
-      await appendToExistingFile();
+      if (onSave) {
+        await onSave(form);
+      } else {
+        await appendToExistingFile();
+      }
       // Reset form and close modal on successful submission
       setForm(initialState);
       setErrors({});

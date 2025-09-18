@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import ProfileEditForm from './components/ProfileEditForm';
+import { getMyProfileApi } from '../../apis/profile';
+import { getMyAdminProfileApi } from '../../apis/admin';
+import Loading from '../../components/common/Loading/Loading';
 import './ProfilePage.css';
 
 interface ProfileData {
@@ -19,29 +22,128 @@ interface ProfileData {
 }
 
 const ProfilePage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
-  const [profileData, setProfileData] = useState<ProfileData>({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: '',
-    department: user?.department || '',
-    role: user?.role || '',
-    avatar: user?.avatar,
-    address: '',
-    employeeId: user?.id || '',
-    startDate: '',
-    manager: '',
-    theme: theme,
-  });
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const isFetchingRef = useRef(false);
+  
+  // Check if user can edit profiles (admin or HR department only)
+  const canEditProfile = hasPermission('manage_employees') || 
+    user?.role === 'admin' || 
+    (user?.department && user.department.toLowerCase().includes('hr'));
 
-  const handleSaveProfile = (updatedData: Partial<ProfileData>) => {
-    setProfileData(prev => ({ ...prev, ...updatedData }));
-    setIsEditing(false);
-    // Here you would typically make an API call to save the profile data
-    console.log('Profile saved:', updatedData);
+  // Fetch profile data from API
+  const fetchProfile = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (isFetchingRef.current) {
+      console.log('Profile fetch already in progress, skipping...');
+      return;
+    }
+    
+    let timeoutId: number | null = null;
+    
+    try {
+      isFetchingRef.current = true;
+      console.log('Starting profile fetch for user:', { userId: user?.id, userType: user?.type });
+      setLoading(true);
+      setError(null);
+      
+      // Set a timeout to prevent infinite loading
+      timeoutId = setTimeout(() => {
+        console.error('Profile fetch timeout - taking too long');
+        setError('Profile loading is taking too long. Please try again.');
+        setLoading(false);
+      }, 10000); // 10 second timeout
+      
+      let transformedData: ProfileData;
+      
+      // Check if user is admin or employee
+      if (user?.type === 'admin') {
+        // Fetch admin profile
+        const apiData = await getMyAdminProfileApi();
+        transformedData = {
+          name: `${apiData.firstName} ${apiData.lastName}`,
+          email: apiData.email,
+          phone: '', // Admin doesn't have phone in the API response
+          department: 'Admin', // Admin department
+          role: apiData.role,
+          avatar: '', // Admin doesn't have avatar in the API response
+          address: '', // Admin doesn't have address in the API response
+          employeeId: apiData.id.toString(),
+          startDate: '', // Admin doesn't have start date
+          manager: '', // Admin doesn't have manager
+          theme: theme,
+        };
+      } else {
+        // Fetch employee profile
+        const apiData = await getMyProfileApi();
+        transformedData = {
+          name: `${apiData.firstName} ${apiData.lastName}`,
+          email: apiData.email,
+          phone: apiData.phone || '',
+          department: apiData.department.name,
+          role: apiData.role.name,
+          avatar: apiData.avatar,
+          address: apiData.address || '',
+          employeeId: apiData.id.toString(),
+          startDate: apiData.startDate || '',
+          manager: apiData.manager ? `${apiData.manager.firstName} ${apiData.manager.lastName}` : '',
+          theme: theme,
+        };
+      }
+      
+      setProfileData(transformedData);
+      
+      // Clear timeout on success
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch profile');
+      
+      // Clear timeout on error
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    } finally {
+      setLoading(false);
+      isFetchingRef.current = false;
+    }
+  }, [user?.type, theme]);
+
+  useEffect(() => {
+    console.log('ProfilePage useEffect triggered:', { userId: user?.id, userType: user?.type, loading });
+    
+    // Reset loading state when component mounts
+    setLoading(true);
+    setError(null);
+    
+    if (user?.id) { // Only fetch if user is available
+      fetchProfile();
+    } else {
+      console.log('No user ID available, skipping profile fetch');
+      setLoading(false);
+    }
+  }, [user?.id, user?.type, theme]);
+
+  const handleSaveProfile = async (updatedData: Partial<ProfileData>) => {
+    try {
+      // Here you would typically make an API call to save the profile data
+      // await updateProfileApi(updatedData);
+      console.log('Profile saved:', updatedData);
+      
+      // For now, just update local state
+      setProfileData(prev => prev ? { ...prev, ...updatedData } : null);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      setError('Failed to save profile changes');
+    }
   };
 
   const handleSavePassword = (newPassword: string) => {
@@ -55,6 +157,58 @@ const ProfilePage: React.FC = () => {
     setIsEditing(false);
     setIsEditingPassword(false);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <Loading
+          isLoading={true}
+          position="centered"
+          text="Loading profile..."
+          theme={theme === 'dark' ? 'dark' : 'light'}
+          size="lg"
+          minHeight="100vh"
+        />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <svg className="mx-auto h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Error loading profile</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{error}</p>
+            <div className="mt-4">
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No profile data
+  if (!profileData) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-400">No profile data available</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 py-8">
@@ -102,18 +256,14 @@ const ProfilePage: React.FC = () => {
                     <span className="text-gray-600 dark:text-gray-400">Employee ID</span>
                     <span className="font-medium text-gray-900 dark:text-white">{profileData.employeeId}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Start Date</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {profileData.startDate || 'Not set'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Manager</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {profileData.manager || 'Not assigned'}
-                    </span>
-                  </div>
+                  {user?.type !== 'admin' && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Manager</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {profileData.manager || 'Not assigned'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -121,18 +271,29 @@ const ProfilePage: React.FC = () => {
               <div className="p-6 border-t border-gray-200 dark:border-gray-700 space-y-3">
                 {!isEditing ? (
                   <>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    >
-                      Edit Profile
-                    </button>
-                    <button
-                      onClick={() => setIsEditingPassword(true)}
-                      className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium"
-                    >
-                      Change Password
-                    </button>
+                    {canEditProfile && (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        Edit Profile
+                      </button>
+                    )}
+                    {canEditProfile && (
+                      <button
+                        onClick={() => setIsEditingPassword(true)}
+                        className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                      >
+                        Change Password
+                      </button>
+                    )}
+                    {!canEditProfile && (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Only Admin and HR can edit employee profiles
+                        </p>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <button
@@ -231,14 +392,18 @@ const ProfilePage: React.FC = () => {
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Email Address</dt>
                         <dd className="mt-1 text-sm text-gray-900 dark:text-white">{profileData.email}</dd>
                       </div>
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone Number</dt>
-                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">{profileData.phone || 'Not set'}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</dt>
-                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">{profileData.address || 'Not set'}</dd>
-                      </div>
+                      {user?.type !== 'admin' && (
+                        <>
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone Number</dt>
+                            <dd className="mt-1 text-sm text-gray-900 dark:text-white">{profileData.phone || 'Not set'}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</dt>
+                            <dd className="mt-1 text-sm text-gray-900 dark:text-white">{profileData.address || 'Not set'}</dd>
+                          </div>
+                        </>
+                      )}
                     </dl>
                   </div>
                 </div>
@@ -261,10 +426,6 @@ const ProfilePage: React.FC = () => {
                       <div>
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Employee ID</dt>
                         <dd className="mt-1 text-sm text-gray-900 dark:text-white">{profileData.employeeId}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Start Date</dt>
-                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">{profileData.startDate || 'Not set'}</dd>
                       </div>
                     </dl>
                   </div>

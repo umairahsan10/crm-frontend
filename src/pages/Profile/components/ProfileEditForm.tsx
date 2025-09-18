@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../../context/ThemeContext';
+import { useAuth } from '../../../context/AuthContext';
 
 interface ProfileData {
   name: string;
@@ -27,9 +28,18 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
   onCancel,
 }) => {
   const { theme, toggleTheme } = useTheme();
+  const { user, hasPermission } = useAuth();
   const [formData, setFormData] = useState<ProfileData>(profileData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Check if user can edit sensitive fields (admin or HR department only)
+  const canEditSensitiveFields = hasPermission('manage_employees') || 
+    user?.role === 'admin' || 
+    (user?.department && user.department.toLowerCase().includes('hr'));
+  
+  // Check if user is admin
+  const isAdmin = user?.type === 'admin';
 
   const departments = [
     'Sales',
@@ -43,12 +53,13 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
   ];
 
   const roles = [
-    'Admin',
-    'Manager',
-    'Team Lead',
-    'Senior Employee',
-    'Employee',
-    'Intern',
+    'admin',
+    'dep_manager',
+    'team_lead',
+    'unit_head',
+    'senior',
+    'employee',
+    'intern',
   ];
 
   const validateForm = (): boolean => {
@@ -137,6 +148,25 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Update your profile information and preferences
         </p>
+        {!canEditSensitiveFields && (
+          <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  Limited Edit Access
+                </h3>
+                <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+                  <p>You can only edit basic information. Sensitive fields like email, department, and role can only be changed by Admin or HR.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -200,29 +230,35 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
+              disabled={!canEditSensitiveFields}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                 errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
+              } ${!canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''}`}
               placeholder="Enter your email"
             />
+            {!canEditSensitiveFields && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Email can only be changed by Admin/HR</p>
+            )}
             {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
-              placeholder="Enter your phone number"
-            />
-            {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
-          </div>
+          {!isAdmin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder="Enter your phone number"
+              />
+              {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -239,19 +275,21 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
           </div>
         </div>
 
-        {/* Address */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Address
-          </label>
-          <textarea
-            value={formData.address || ''}
-            onChange={(e) => handleInputChange('address', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            placeholder="Enter your address"
-          />
-        </div>
+        {/* Address - Only for employees */}
+        {!isAdmin && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Address
+            </label>
+            <textarea
+              value={formData.address || ''}
+              onChange={(e) => handleInputChange('address', e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              placeholder="Enter your address"
+            />
+          </div>
+        )}
 
         {/* Work Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -262,9 +300,10 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             <select
               value={formData.department}
               onChange={(e) => handleInputChange('department', e.target.value)}
+              disabled={!canEditSensitiveFields}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                 errors.department ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
+              } ${!canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''}`}
             >
               <option value="">Select Department</option>
               {departments.map((dept) => (
@@ -273,6 +312,9 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
                 </option>
               ))}
             </select>
+            {!canEditSensitiveFields && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Department can only be changed by Admin/HR</p>
+            )}
             {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
           </div>
 
@@ -283,9 +325,10 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             <select
               value={formData.role}
               onChange={(e) => handleInputChange('role', e.target.value)}
+              disabled={!canEditSensitiveFields}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                 errors.role ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
+              } ${!canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''}`}
             >
               <option value="">Select Role</option>
               {roles.map((role) => (
@@ -294,6 +337,9 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
                 </option>
               ))}
             </select>
+            {!canEditSensitiveFields && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Role can only be changed by Admin/HR</p>
+            )}
             {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
           </div>
 
@@ -305,22 +351,36 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
               type="date"
               value={formData.startDate}
               onChange={(e) => handleInputChange('startDate', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              disabled={!canEditSensitiveFields}
+              className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                !canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''
+              }`}
             />
+            {!canEditSensitiveFields && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Start date can only be changed by Admin/HR</p>
+            )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Manager
-            </label>
-            <input
-              type="text"
-              value={formData.manager || ''}
-              onChange={(e) => handleInputChange('manager', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              placeholder="Enter manager name"
-            />
-          </div>
+          {!isAdmin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Manager
+              </label>
+              <input
+                type="text"
+                value={formData.manager || ''}
+                onChange={(e) => handleInputChange('manager', e.target.value)}
+                disabled={!canEditSensitiveFields}
+                className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  !canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''
+                }`}
+                placeholder="Enter manager name"
+              />
+              {!canEditSensitiveFields && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Manager can only be changed by Admin/HR</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Preferences */}
