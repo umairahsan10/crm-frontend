@@ -1,5 +1,5 @@
-/* Sidebar Container */
-.sidebar {
+/* Navbar Container */
+.navbar {
   position: fixed;
   top: 0;
   left: 0;
@@ -15,14 +15,14 @@
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.sidebar.open {
+.navbar.open {
   width: 250px;
   overflow: hidden;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
 }
 
-/* Sidebar Header */
-.sidebar-header {
+/* Navbar Header */
+.navbar-header {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -32,7 +32,7 @@
   flex-shrink: 0;
 }
 
-.sidebar-menu-toggle {
+.navbar-menu-toggle {
   background: none;
   border: none;
   color: white;
@@ -47,7 +47,7 @@
   overflow: hidden;
 }
 
-.sidebar-menu-toggle::before {
+.navbar-menu-toggle::before {
   content: '';
   position: absolute;
   top: 0;
@@ -58,32 +58,32 @@
   transition: left 0.5s;
 }
 
-.sidebar-menu-toggle:hover::before {
+.navbar-menu-toggle:hover::before {
   left: 100%;
 }
 
-.sidebar-menu-toggle:hover {
+.navbar-menu-toggle:hover {
   background: rgba(255, 255, 255, 0.15);
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.sidebar-menu-toggle:active {
+.navbar-menu-toggle:active {
   transform: scale(0.95);
 }
 
-.sidebar-menu-toggle svg {
+.navbar-menu-toggle svg {
   width: 20px;
   height: 20px;
   transition: transform 0.3s ease;
 }
 
-.sidebar-menu-toggle:hover svg {
+.navbar-menu-toggle:hover svg {
   transform: rotate(180deg);
 }
 
-/* Sidebar Navigation */
-.sidebar-nav {
+/* Navbar Navigation */
+.navbar-nav {
   flex: 1;
   padding: 1rem 0;
   overflow-y: auto;
@@ -145,7 +145,7 @@
   width: 100%;
 }
 
-.sidebar.closed .nav-item {
+.navbar.closed .nav-item {
   justify-content: center;
   padding: 0.75rem 0;
 }
@@ -166,14 +166,14 @@
   transition: opacity 0.3s ease;
 }
 
-.sidebar.closed .nav-label {
+.navbar.closed .nav-label {
   opacity: 0;
   width: 0;
   overflow: hidden;
 }
 
-/* Sidebar Footer */
-.sidebar-footer {
+/* Navbar Footer */
+.navbar-footer {
   flex-shrink: 0;
   position: relative;
 }
@@ -211,7 +211,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.sidebar.closed .user-profile {
+.navbar.closed .user-profile {
   justify-content: center;
 }
 
@@ -237,7 +237,7 @@
   flex: 1;
 }
 
-.sidebar.closed .user-info {
+.navbar.closed .user-info {
   opacity: 0;
   width: 0;
   overflow: hidden;
@@ -277,8 +277,8 @@
   backdrop-filter: blur(10px);
 }
 
-/* Profile dropdown when sidebar is closed */
-.sidebar.closed .profile-dropdown {
+/* Profile dropdown when navbar is closed */
+.navbar.closed .profile-dropdown {
   left: 0.5rem;
   right: auto;
   width: auto;
@@ -338,26 +338,26 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-/* Profile dropdown items when sidebar is closed */
-.sidebar.closed .profile-dropdown-item {
+/* Profile dropdown items when navbar is closed */
+.navbar.closed .profile-dropdown-item {
   justify-content: center;
   padding: 0.75rem;
   min-width: 48px;
   width: 48px;
 }
 
-.sidebar.closed .profile-dropdown-item span {
+.navbar.closed .profile-dropdown-item span {
   display: none;
 }
 
-/* Profile button padding when sidebar is closed */
-.sidebar.closed .user-profile {
+/* Profile button padding when navbar is closed */
+.navbar.closed .user-profile {
   padding: 0.3rem;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .sidebar {
+  .navbar {
     position: fixed;
     top: 0;
     left: 0;
@@ -367,23 +367,23 @@
     transition: transform 0.3s ease;
   }
   
-  .sidebar.open {
+  .navbar.open {
     width: 280px;
     transform: translateX(0);
   }
   
-  .sidebar.closed {
+  .navbar.closed {
     width: 280px;
     transform: translateX(-100%);
   }
   
   /* Hide desktop hamburger button on mobile */
-  .sidebar-menu-toggle {
+  .navbar-menu-toggle {
     display: none;
   }
   
   /* Mobile overlay */
-  .sidebar.open::before {
+  .navbar.open::before {
     content: '';
     position: fixed;
     top: 0;
@@ -394,4 +394,4 @@
     z-index: -1;
   }
   
-} 
+}

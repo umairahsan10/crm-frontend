@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { NAV_ITEMS } from '../../../utils/constants';
-import type { UserRole } from '../../../types';
 import {
   AiOutlineDashboard,
   AiOutlineTeam,
   AiOutlineCalendar,
   AiOutlineBarChart,
-  AiOutlineReload,
   AiOutlineSetting,
   AiOutlineUser,
   AiOutlineLogout,
@@ -25,39 +22,132 @@ import {
   AiOutlineLock,
   AiOutlineTool,
 } from 'react-icons/ai';
-import './Sidebar.css';
+import './Navbar.css';
 
-interface SidebarProps {
+interface NavbarProps {
   isOpen: boolean;
   onToggle: () => void;
   onNavigate?: (page: string) => void;
   activePage?: string;
-  userRole?: UserRole;
   onLogout?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ 
+const Navbar: React.FC<NavbarProps> = ({ 
   isOpen, 
   onToggle,
   onNavigate, 
-  activePage = 'dashboard',
-  userRole = 'admin',
   onLogout
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
 
-  // Use activePage to prevent unused variable warning
-  console.log('Current active page:', activePage);
+  // Get navigation items based on user type, role, and department
+  const getNavigationItems = () => {
+    if (!user) return [];
 
-  // Filter navigation items based on user role
-  const filteredNavItems = NAV_ITEMS.filter(item => 
-    item.roles.includes(user?.role || userRole)
-  );
+    const { type, department } = user;
+
+    // Admin sees all pages
+    if (type === 'admin') {
+      return [
+        { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
+        { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
+        { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
+        { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
+        { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
+        { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
+        { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects' },
+        { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
+        { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
+        { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing' },
+        { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
+        { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
+        { id: 'reports', label: 'Reports', icon: '📊', path: '/reports' },
+        { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics' },
+        { id: 'system-logs', label: 'System Logs', icon: '📋', path: '/system-logs' },
+        { id: 'audit-trail', label: 'Audit Trail', icon: '🔍', path: '/audit-trail' },
+        { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/notifications' },
+        { id: 'backup', label: 'Backup & Restore', icon: '💾', path: '/backup' },
+        { id: 'integrations', label: 'Integrations', icon: '🔗', path: '/integrations' },
+        { id: 'security', label: 'Security', icon: '🔒', path: '/security' },
+        { id: 'maintenance', label: 'Maintenance', icon: '⚙️', path: '/maintenance' },
+        { id: 'test', label: 'Test Page', icon: '🧪', path: '/test' },
+        { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
+      ];
+    }
+
+    // Employee navigation based on department
+    if (type === 'employee') {
+      const baseItems = [
+        { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
+        { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
+      ];
+
+      // Add department-specific items
+      switch (department?.toLowerCase()) {
+        case 'hr':
+          return [
+            ...baseItems,
+            { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
+            { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
+            { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
+            { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
+            { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
+            { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
+            { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
+            { id: 'chats', label: 'Chats', icon: '💬', path: '/chats' },
+          ];
+        
+        case 'sales':
+          return [
+            ...baseItems,
+            { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
+            { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
+            { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
+            { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
+            { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
+          ];
+        
+        case 'production':
+          return [
+            ...baseItems,
+            { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
+            { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
+          ];
+        
+        case 'marketing':
+          return [
+            ...baseItems,
+            { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing' },
+            { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
+          ];
+        
+        case 'finance':
+        case 'accounts':
+          return [
+            ...baseItems,
+            { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
+            { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
+          ];
+        
+        default:
+          // Default employee with no specific department
+          return [
+            ...baseItems,
+            { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
+            { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
+          ];
+      }
+    }
+
+    return [];
+  };
+
+  const navigationItems = getNavigationItems();
 
   const handleNavClick = (itemId: string) => {
-    const navItem = NAV_ITEMS.find(item => item.id === itemId);
+    const navItem = navigationItems.find(item => item.id === itemId);
     if (navItem) {
       navigate(navItem.path);
     }
@@ -69,7 +159,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   // Get current active page based on URL
   const getCurrentActivePage = () => {
     const currentPath = location.pathname;
-    const navItem = NAV_ITEMS.find(item => item.path === currentPath);
+    const navItem = navigationItems.find(item => item.path === currentPath);
     return navItem ? navItem.id : 'dashboard';
   };
 
@@ -120,7 +210,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             <line x1="15" y1="9" x2="15.01" y2="9"/>
           </svg>
         );
-      // Admin-specific icons
       case '🚀':
         return <AiOutlineProject size={20} />;
       case '👨‍💼':
@@ -150,8 +239,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         return <AiOutlineLock size={20} />;
       case '⚙️':
         return <AiOutlineTool size={20} />;
-      case '🔄':
-        return <AiOutlineReload size={20} />;
       case '🧪':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -161,18 +248,24 @@ const Sidebar: React.FC<SidebarProps> = ({
             <path d="M15 7h2a2 2 0 012 2v2"/>
           </svg>
         );
+      case '💬':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        );
       default:
         return <span>{emoji}</span>;
     }
   };
 
   return (
-    <div className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
-      <div className="sidebar-header">
+    <div className={`navbar ${isOpen ? 'open' : 'closed'}`}>
+      <div className="navbar-header">
         <button
-          className="sidebar-menu-toggle"
+          className="navbar-menu-toggle"
           onClick={onToggle}
-          aria-label="Toggle sidebar"
+          aria-label="Toggle navbar"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="3" y1="6" x2="21" y2="6"/>
@@ -182,9 +275,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="navbar-nav">
         <ul className="nav-list">
-          {filteredNavItems.map((item) => (
+          {navigationItems.map((item) => (
             <li key={item.id}>
               <button
                 className={`nav-item ${getCurrentActivePage() === item.id ? 'active' : ''}`}
@@ -201,7 +294,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </ul>
       </nav>
 
-      <div className="sidebar-footer">
+      <div className="navbar-footer">
         <div className="user-profile" onClick={handleProfileClick}>
           <div className="user-avatar">
             <AiOutlineUser size={16} />
@@ -209,7 +302,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           {isOpen && (
             <div className="user-info">
               <span className="user-name">{user?.name || 'User'}</span>
-              <span className="user-role">{user?.role || userRole}</span>
+              <span className="user-role">{user?.role || 'User'}</span>
             </div>
           )}
         </div>
@@ -224,7 +317,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <AiOutlineProfile size={16} />
               {isOpen && <span>Profile</span>}
             </button>
-            {(user?.role === 'admin' || userRole === 'admin') && (
+            {user?.type === 'admin' && (
               <button
                 className="profile-dropdown-item"
                 onClick={() => handleProfileAction('settings')}
@@ -251,4 +344,4 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 };
 
-export default Sidebar;
+export default Navbar;
