@@ -231,6 +231,14 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
   error?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export interface PaginatedResponse<T> {
@@ -271,4 +279,62 @@ export interface FormField {
     pattern?: string;
     message?: string;
   };
+}
+
+// Lead Management Types
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  source: LeadSource;
+  type?: LeadType;
+  salesUnitId: number;
+  status?: LeadStatus;
+  outcome?: LeadOutcome;
+  createdAt: string;
+  updatedAt: string;
+  assignedTo?: string | { firstName: string; lastName: string };
+  notes?: string;
+}
+
+export type LeadSource = 'PPC' | 'Organic' | 'Referral' | 'Cold Call' | 'Email' | 'Social Media' | 'Website' | 'Trade Show' | 'Other';
+export type LeadType = 'warm' | 'cold' | 'upsell' | 'push';
+export type LeadStatus = 'new' | 'in_progress' | 'completed' | 'payment_link_generated' | 'failed' | 'cracked';
+export type LeadOutcome = 'voice_mail' | 'interested' | 'not_answered' | 'busy' | 'denied';
+
+export interface CreateLeadRequest {
+  name: string;
+  email: string;
+  phone: string;
+  source: LeadSource;
+  type: LeadType;
+  salesUnitId: number;
+}
+
+export interface UpdateLeadRequest {
+  outcome?: LeadOutcome;
+  status?: LeadStatus;
+  type?: LeadType;
+  comment?: string;
+  action?: 'push';
+  // Fields for cracked lead creation
+  totalAmount?: number;
+  industryId?: number;
+  description?: string;
+  totalPhases?: number;
+  currentPhase?: number;
+}
+
+export interface CreateLeadResponse {
+  success: boolean;
+  data?: Lead;
+  message?: string;
+  error?: string;
+}
+
+export interface SalesUnit {
+  id: number;
+  name: string;
+  description?: string;
 } 

@@ -10,7 +10,7 @@ import EmployeesPage from './pages/Employees/EmployeesPage';
 import AttendancePage from './pages/Attendance/AttendancePage';
 import DealsPage from './pages/Deals/DealsPage';
 import ReportsPage from './pages/Sales/ReportsPage';
-import LeadsPage from './pages/Leads/LeadsPage';
+import LeadsManagementPage from './pages/Leads/LeadsManagementPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 
 // Import dashboard components
@@ -148,7 +148,7 @@ function AppLayout() {
         />
         <Route 
           path="/leads" 
-          element={canAccessPage('leads') ? <LeadsPage /> : <Navigate to="/login" replace />} 
+          element={canAccessPage('leads') ? <LeadsManagementPage /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/settings" 
@@ -160,7 +160,7 @@ function AppLayout() {
         />
         <Route 
           path="/chats" 
-          element={<ChatPage />} 
+          element={canAccessPage('chats') ? <ChatPage /> : <Navigate to="/login" replace />} 
         />
         
         {/* Admin-specific routes */}
