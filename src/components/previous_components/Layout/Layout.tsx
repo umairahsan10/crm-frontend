@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../Sidebar/Sidebar';
+import Navbar from '../../layout/Navbar/Navbar';
 import Header from '../Header/Header';
 import type { UserRole } from '../../../types';
 import './Layout.css';
@@ -18,14 +18,13 @@ const Layout: React.FC<LayoutProps> = ({
   title,
   onNavigate,
   activePage = 'dashboard',
-  userRole = 'admin',
   onLogout
 }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [navbarOpen, setNavbarOpen] = useState(true); // Start with navbar open
   const [isMobile, setIsMobile] = useState(false);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  const toggleNavbar = () => {
+    setNavbarOpen(!navbarOpen);
   };
 
   // Check if device is mobile
@@ -40,16 +39,16 @@ const Layout: React.FC<LayoutProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Close sidebar when clicking outside on mobile
+  // Close navbar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isMobile && sidebarOpen) {
+      if (isMobile && navbarOpen) {
         const target = event.target as HTMLElement;
-        const sidebar = document.querySelector('.sidebar');
+        const navbar = document.querySelector('.navbar');
         const mobileButton = document.querySelector('.mobile-nav-button');
         
-        if (sidebar && !sidebar.contains(target) && !mobileButton?.contains(target)) {
-          setSidebarOpen(false);
+        if (navbar && !navbar.contains(target) && !mobileButton?.contains(target)) {
+          setNavbarOpen(false);
         }
       }
     };
@@ -61,24 +60,23 @@ const Layout: React.FC<LayoutProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isMobile, sidebarOpen]);
+  }, [isMobile, navbarOpen]);
 
   return (
     <div className="layout">
-      <Sidebar
-        isOpen={sidebarOpen}
-        onToggle={toggleSidebar}
+      <Navbar
+        isOpen={navbarOpen}
+        onToggle={toggleNavbar}
         onNavigate={onNavigate}
         activePage={activePage}
-        userRole={userRole}
         onLogout={onLogout}
       />
-      <div className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <div className={`main-content ${navbarOpen ? 'navbar-open' : ''}`}>
         {/* Mobile Navigation Button */}
         {isMobile && (
           <button 
             className="mobile-nav-button"
-            onClick={toggleSidebar}
+            onClick={toggleNavbar}
             aria-label="Toggle navigation"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

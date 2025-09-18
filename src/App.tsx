@@ -39,6 +39,7 @@ import SecurityPage from './pages/Security/SecurityPage';
 import MaintenancePage from './pages/Maintenance/MaintenancePage';
 import TestPage from './pages/test';
 import ProfilePage from './pages/Profile/ProfilePage';
+import ChatPage from './pages/Chat/Chat';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -156,6 +157,10 @@ function AppLayout() {
         <Route 
           path="/profile" 
           element={canAccessPage('profile') ? <ProfilePage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/chats" 
+          element={<ChatPage />} 
         />
         
         {/* Admin-specific routes */}

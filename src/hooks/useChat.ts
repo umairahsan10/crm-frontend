@@ -1,305 +1,265 @@
-import { useState, useCallback, useEffect } from 'react';
-import type { ChatMessage, ChatUser } from '../components/common/ChatBox/ChatBox';
+import { useState, useEffect, useCallback } from 'react';
+import type { 
+  ProjectChat, 
+  ChatMessage, 
+  ChatParticipant, 
+  ChatUser, 
+  CreateChatData
+} from '../components/common/chat/types';
+import { mockChatData } from '../apis/chat';
 
-export interface UseChatOptions {
-  initialMessages?: ChatMessage[];
-  currentUser: ChatUser;
-  autoScroll?: boolean;
-  maxMessages?: number;
-  onMessageAdd?: (message: ChatMessage) => void;
-  onMessageUpdate?: (messageId: string, updates: Partial<ChatMessage>) => void;
-}
+// Custom hook for chat functionality
+export const useChat = (currentUser: ChatUser) => {
+  const [chats, setChats] = useState<ProjectChat[]>([]);
+  const [currentChat, setCurrentChat] = useState<ProjectChat | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [participants, setParticipants] = useState<ChatParticipant[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export interface UseChatReturn {
-  messages: ChatMessage[];
-  currentUser: ChatUser;
-  
-  // Message operations
-  addMessage: (message: Pick<ChatMessage, 'type' | 'content' | 'sender'> & Partial<Omit<ChatMessage, 'id' | 'timestamp' | 'type' | 'content' | 'sender'>>) => void;
-  updateMessage: (messageId: string, updates: Partial<ChatMessage>) => void;
-  deleteMessage: (messageId: string) => void;
-  clearMessages: () => void;
-  
-  // Message utilities
-  getMessage: (messageId: string) => ChatMessage | undefined;
-  getMessagesByUser: (userId: string) => ChatMessage[];
-  getMessagesByType: (type: ChatMessage['type']) => ChatMessage[];
-  getLastMessage: () => ChatMessage | undefined;
-  getUnreadCount: (userId?: string) => number;
-  
-  // User operations
-  addUser: (user: ChatUser) => void;
-  updateUser: (userId: string, updates: Partial<ChatUser>) => void;
-  removeUser: (userId: string) => void;
-  getUser: (userId: string) => ChatUser | undefined;
-  
-  // Chat utilities
-  getChatStats: () => {
-    totalMessages: number;
-    totalUsers: number;
-    messagesByType: Record<ChatMessage['type'], number>;
-    messagesByUser: Record<string, number>;
-    averageMessageLength: number;
-  };
-  
-  // Event handlers
-  handleSend: (content: string, type?: ChatMessage['type'], metadata?: ChatMessage['metadata']) => void;
-  handleReceive: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
-  handleSystemMessage: (content: string) => void;
-}
-
-export const useChat = (options: UseChatOptions): UseChatReturn => {
-  const { 
-    initialMessages = [], 
-    currentUser, 
-    autoScroll = true, 
-    maxMessages = 1000,
-    onMessageAdd,
-    onMessageUpdate
-  } = options;
-  
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-  const [users, setUsers] = useState<{ [key: string]: ChatUser }>({
-    [currentUser.id]: currentUser
-  });
-
-  // Helper function to generate unique message ID
-  const generateMessageId = useCallback(() => {
-    return `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Load chats on component mount
+  const loadChats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // For now, use mock data. Replace with actual API call when backend is ready
+      setChats(mockChatData.chats);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load chats');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Helper function to add message with auto-cleanup
-  const addMessageWithCleanup = useCallback((newMessage: ChatMessage) => {
-    setMessages(prev => {
-      const updated = [...prev, newMessage];
-      
-      // Remove old messages if exceeding maxMessages
-      if (updated.length > maxMessages) {
-        return updated.slice(-maxMessages);
+  // Select a chat
+  const selectChat = useCallback(async (chatId: number) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const chat = chats.find(c => c.id === chatId);
+      if (chat) {
+        setCurrentChat(chat);
+        setMessages(chat.chatMessages || []);
+        setParticipants(chat.chatParticipants || []);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to select chat');
+    } finally {
+      setLoading(false);
+    }
+  }, [chats]);
+
+  // Send a message
+  const sendMessage = useCallback(async (message: string) => {
+    if (!currentChat || !message.trim()) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Create new message object
+      const newMessage: ChatMessage = {
+        id: Date.now(), // Temporary ID
+        chatId: currentChat.id,
+        senderId: currentUser.id,
+        message: message.trim(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        sender: currentUser
+      };
       
-      return updated;
-    });
-    
-    if (onMessageAdd) {
-      onMessageAdd(newMessage);
+      // Add message to current messages
+      setMessages(prev => [...prev, newMessage]);
+      
+      // Update chat's last message
+      setCurrentChat(prev => prev ? {
+        ...prev,
+        updatedAt: new Date().toISOString(),
+        chatMessages: [...(prev.chatMessages || []), newMessage]
+      } : null);
+      
+      // Update chats list
+      setChats(prev => prev.map(chat => 
+        chat.id === currentChat.id 
+          ? { ...chat, updatedAt: new Date().toISOString() }
+          : chat
+      ));
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
+      setLoading(false);
     }
-  }, [maxMessages, onMessageAdd]);
+  }, [currentChat, currentUser]);
 
-  // Message operations
-  const addMessage = useCallback((message: Pick<ChatMessage, 'type' | 'content' | 'sender'> & Partial<Omit<ChatMessage, 'id' | 'timestamp' | 'type' | 'content' | 'sender'>>) => {
-    const newMessage: ChatMessage = {
-      type: message.type,
-      content: message.content,
-      sender: message.sender,
-      id: generateMessageId(),
-      timestamp: new Date(),
-      status: message.status || 'sent',
-      metadata: message.metadata
-    };
+  // Create a new chat
+  const createChat = useCallback(async (data: CreateChatData) => {
+    setLoading(true);
+    setError(null);
     
-    addMessageWithCleanup(newMessage);
-  }, [generateMessageId, addMessageWithCleanup]);
-
-  const updateMessage = useCallback((messageId: string, updates: Partial<ChatMessage>) => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg.id === messageId ? { ...msg, ...updates } : msg
-      )
-    );
-    
-    if (onMessageUpdate) {
-      onMessageUpdate(messageId, updates);
+    try {
+      // Create new chat object
+      const newChat: ProjectChat = {
+        id: Date.now(), // Temporary ID
+        projectId: data.projectId,
+        participants: data.participantIds.length + 1, // +1 for current user
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        project: data.projectId ? { id: data.projectId, description: 'Project', status: 'in_progress' } : undefined,
+        chatMessages: data.message ? [{
+          id: Date.now(),
+          chatId: Date.now(),
+          senderId: currentUser.id,
+          message: data.message,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          sender: currentUser
+        }] : [],
+        chatParticipants: [
+          {
+            id: Date.now(),
+            chatId: Date.now(),
+            employeeId: currentUser.id,
+            memberType: 'owner',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            employee: currentUser
+          }
+        ]
+      };
+      
+      setChats(prev => [newChat, ...prev]);
+      setCurrentChat(newChat);
+      setMessages(newChat.chatMessages || []);
+      setParticipants(newChat.chatParticipants || []);
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create chat');
+    } finally {
+      setLoading(false);
     }
-  }, [onMessageUpdate]);
+  }, [currentUser]);
 
-  const deleteMessage = useCallback((messageId: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== messageId));
-  }, []);
-
-  const clearMessages = useCallback(() => {
-    setMessages([]);
-  }, []);
-
-  // Message utilities
-  const getMessage = useCallback((messageId: string): ChatMessage | undefined => {
-    return messages.find(msg => msg.id === messageId);
-  }, [messages]);
-
-  const getMessagesByUser = useCallback((userId: string): ChatMessage[] => {
-    return messages.filter(msg => msg.sender.id === userId);
-  }, [messages]);
-
-  const getMessagesByType = useCallback((type: ChatMessage['type']): ChatMessage[] => {
-    return messages.filter(msg => msg.type === type);
-  }, [messages]);
-
-  const getLastMessage = useCallback((): ChatMessage | undefined => {
-    return messages[messages.length - 1];
-  }, [messages]);
-
-  const getUnreadCount = useCallback((userId?: string): number => {
-    if (!userId) return 0;
+  // Add participant to current chat
+  const addParticipant = useCallback(async (employeeId: number) => {
+    if (!currentChat) return;
     
-    return messages.filter(msg => 
-      msg.sender.id !== userId && 
-      msg.status !== 'read' && 
-      msg.type !== 'system'
-    ).length;
-  }, [messages]);
-
-  // User operations
-  const addUser = useCallback((user: ChatUser) => {
-    setUsers(prev => ({
-      ...prev,
-      [user.id]: user
-    }));
-  }, []);
-
-  const updateUser = useCallback((userId: string, updates: Partial<ChatUser>) => {
-    setUsers(prev => ({
-      ...prev,
-      [userId]: { ...prev[userId], ...updates }
-    }));
-  }, []);
-
-  const removeUser = useCallback((userId: string) => {
-    setUsers(prev => {
-      const newUsers = { ...prev };
-      delete newUsers[userId];
-      return newUsers;
-    });
-  }, []);
-
-  const getUser = useCallback((userId: string): ChatUser | undefined => {
-    return users[userId];
-  }, [users]);
-
-  // Chat utilities
-  const getChatStats = useCallback(() => {
-    const totalMessages = messages.length;
-    const totalUsers = Object.keys(users).length;
+    setLoading(true);
+    setError(null);
     
-    const messagesByType = messages.reduce((acc, msg) => {
-      acc[msg.type] = (acc[msg.type] || 0) + 1;
-      return acc;
-    }, {} as Record<ChatMessage['type'], number>);
+    try {
+      // Find employee from mock data
+      const employee = mockChatData.users.find(u => u.id === employeeId);
+      if (!employee) throw new Error('Employee not found');
+      
+      const newParticipant: ChatParticipant = {
+        id: Date.now(),
+        chatId: currentChat.id,
+        employeeId: employeeId,
+        memberType: 'participant',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        employee: employee
+      };
+      
+      setParticipants(prev => [...prev, newParticipant]);
+      
+      // Update current chat
+      setCurrentChat(prev => prev ? {
+        ...prev,
+        participants: (prev.participants || 0) + 1,
+        chatParticipants: [...(prev.chatParticipants || []), newParticipant]
+      } : null);
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add participant');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentChat]);
+
+  // Remove participant from current chat
+  const removeParticipant = useCallback(async (participantId: number) => {
+    if (!currentChat) return;
     
-    const messagesByUser = messages.reduce((acc, msg) => {
-      acc[msg.sender.id] = (acc[msg.sender.id] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    setLoading(true);
+    setError(null);
     
-    const averageMessageLength = messages.length > 0 
-      ? messages.reduce((sum, msg) => sum + msg.content.length, 0) / messages.length
-      : 0;
+    try {
+      setParticipants(prev => prev.filter(p => p.id !== participantId));
+      
+      // Update current chat
+      setCurrentChat(prev => prev ? {
+        ...prev,
+        participants: Math.max(0, (prev.participants || 0) - 1),
+        chatParticipants: (prev.chatParticipants || []).filter(p => p.id !== participantId)
+      } : null);
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove participant');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentChat]);
+
+  // Transfer chat to another employee
+  const transferChat = useCallback(async (toEmployeeId: number) => {
+    if (!currentChat) return;
     
-    return {
-      totalMessages,
-      totalUsers,
-      messagesByType,
-      messagesByUser,
-      averageMessageLength
-    };
-  }, [messages, users]);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Find employee from mock data
+      const employee = mockChatData.users.find(u => u.id === toEmployeeId);
+      if (!employee) throw new Error('Employee not found');
+      
+      // Update current chat
+      setCurrentChat(prev => prev ? {
+        ...prev,
+        transferredTo: toEmployeeId,
+        transferredToEmployee: employee,
+        updatedAt: new Date().toISOString()
+      } : null);
+      
+      // Update chats list
+      setChats(prev => prev.map(chat => 
+        chat.id === currentChat.id 
+          ? { 
+              ...chat, 
+              transferredTo: toEmployeeId,
+              transferredToEmployee: employee,
+              updatedAt: new Date().toISOString() 
+            }
+          : chat
+      ));
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to transfer chat');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentChat]);
 
-  // Event handlers
-  const handleSend = useCallback((
-    content: string, 
-    type: ChatMessage['type'] = 'text', 
-    metadata?: ChatMessage['metadata']
-  ) => {
-    addMessage({
-      type,
-      content,
-      sender: currentUser,
-      status: 'sending',
-      metadata
-    });
-  }, [addMessage, currentUser]);
-
-  const handleReceive = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
-    addMessage({
-      type: message.type,
-      content: message.content,
-      sender: message.sender,
-      status: 'delivered',
-      metadata: message.metadata
-    });
-  }, [addMessage]);
-
-  const handleSystemMessage = useCallback((content: string) => {
-    addMessage({
-      type: 'system',
-      content,
-      sender: {
-        id: 'system',
-        name: 'System',
-        isOnline: false
-      },
-      status: 'sent'
-    });
-  }, [addMessage]);
-
-  // Auto-scroll effect
+  // Load chats on mount
   useEffect(() => {
-    if (autoScroll && messages.length > 0) {
-      // This would typically scroll to the bottom of the chat
-      // Implementation depends on the chat component
-    }
-  }, [autoScroll, messages]);
+    loadChats();
+  }, [loadChats]);
 
   return {
+    chats,
+    currentChat,
     messages,
-    currentUser,
-    
-    // Message operations
-    addMessage,
-    updateMessage,
-    deleteMessage,
-    clearMessages,
-    
-    // Message utilities
-    getMessage,
-    getMessagesByUser,
-    getMessagesByType,
-    getLastMessage,
-    getUnreadCount,
-    
-    // User operations
-    addUser,
-    updateUser,
-    removeUser,
-    getUser,
-    
-    // Chat utilities
-    getChatStats,
-    
-    // Event handlers
-    handleSend,
-    handleReceive,
-    handleSystemMessage
+    participants,
+    loading,
+    error,
+    selectChat,
+    sendMessage,
+    createChat,
+    addParticipant,
+    removeParticipant,
+    transferChat
   };
 };
-
-// Convenience hooks for common chat types
-export const useTeamChat = (options: Omit<UseChatOptions, 'currentUser'> & { currentUser: ChatUser }) => {
-  return useChat({
-    ...options,
-    maxMessages: 500
-  });
-};
-
-export const useSupportChat = (options: Omit<UseChatOptions, 'currentUser'> & { currentUser: ChatUser }) => {
-  return useChat({
-    ...options,
-    maxMessages: 200
-  });
-};
-
-export const useMinimalChat = (options: Omit<UseChatOptions, 'currentUser'> & { currentUser: ChatUser }) => {
-  return useChat({
-    ...options,
-    maxMessages: 100
-  });
-}; 

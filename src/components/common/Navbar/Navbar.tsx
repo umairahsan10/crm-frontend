@@ -1,5 +1,3 @@
-// PREVIOUS NAVBAR - COMMENTED OUT (NOT USED)
-/*
 import React from 'react';
 import './Navbar.css';
 
@@ -41,5 +39,4 @@ const Navbar: React.FC<NavbarProps> = ({ title = "CRM Dashboard" }) => {
   );
 };
 
-export default Navbar;
-*/ 
+export default Navbar; 
