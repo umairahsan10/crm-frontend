@@ -103,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const parsedUser = JSON.parse(userData);
         
         // Set user and login state immediately
+        console.log('Session validation - setting user:', parsedUser);
         setUser(parsedUser);
         setIsLoggedIn(true);
         
@@ -225,6 +226,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = (userData: User, token: string) => {
+    console.log('Login called with userData:', userData);
+    console.log('Login called with token:', token);
     setUser(userData);
     setIsLoggedIn(true);
     setAuthCookies(token, JSON.stringify(userData));
@@ -245,24 +248,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const hasPermission = (permission: string): boolean => {
-    if (!user) return false;
+    if (!user) {
+      console.log('hasPermission: No user found');
+      return false;
+    }
     
-    // Check if user has specific permission in their permissions object
+    console.log('hasPermission check:', {
+      permission,
+      userRole: user.role,
+      userPermissions: user.permissions,
+      userType: user.type,
+      fullUserObject: user
+    });
+    
+    // Use ONLY backend permissions - no frontend role-based fallbacks
     if (user.permissions && user.permissions[permission] !== undefined) {
+      console.log('hasPermission: Found in user.permissions:', user.permissions[permission]);
       return user.permissions[permission];
     }
     
-    // Fallback to role-based permissions - Updated to match actual database roles
-    const rolePermissions: Record<string, string[]> = {
-      admin: ['read', 'write', 'delete', 'manage_users', 'manage_roles', 'view_reports', 'manage_settings'],
-      dept_manager: ['read', 'write', 'view_reports', 'manage_employees', 'manage_attendance', 'manage_department'],
-      team_leads: ['read', 'write', 'view_reports', 'manage_team', 'approve_requests'],
-      unit_head: ['read', 'write', 'view_reports', 'manage_unit'],
-      senior: ['read', 'write', 'view_reports'],
-      junior: ['read', 'view_own_data'],
-    };
-
-    return rolePermissions[user.role]?.includes(permission) || false;
+    // Handle permission mapping for backend compatibility
+    // Backend uses employee_add_permission for both create and delete operations
+    if (permission === 'employee_edit_permission') {
+      // Update operations only require HR department access (no specific permission)
+      console.log('hasPermission: employee_edit_permission mapped to department access');
+      return user.department === 'HR' || user.role === 'admin';
+    }
+    
+    if (permission === 'employee_delete_permission') {
+      // Delete operations use employee_add_permission in backend
+      console.log('hasPermission: employee_delete_permission mapped to employee_add_permission');
+      return user.permissions?.employee_add_permission || false;
+    }
+    
+    // If permission not found in backend permissions, return false
+    console.log('hasPermission: Permission not found in backend permissions, returning false');
+    return false;
   };
 
   const canAccessPage = (pageId: string): boolean => {
