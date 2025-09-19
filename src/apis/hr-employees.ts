@@ -20,62 +20,23 @@ import { apiGetJson, apiPostJson, apiPutJson, apiPatchJson, apiDeleteJson, ApiEr
 // API Base URL - Update this to match your backend URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// HR Employee Management Types
+// HR Employee Management Types - Updated to match backend exactly
 export interface Employee {
   id: number;
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
-  address?: string;
-  avatar?: string;
-  startDate: string;
-  department: {
-    id: number;
-    name: string;
-  };
-  role: {
-    id: number;
-    name: string;
-  };
-  manager?: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  teamLead?: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  salary?: number;
-  bonus?: number;
-  shiftStart?: string;
-  shiftEnd?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Backend Employee format (what we actually receive from API)
-export interface BackendEmployee {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  address?: string;
   gender?: string;
   cnic?: string;
   departmentId: number;
   roleId: number;
   managerId?: number;
   teamLeadId?: number;
+  address?: string;
   maritalStatus?: boolean;
   status: string;
-  startDate?: string;
+  startDate: string;
   endDate?: string;
   modeOfWork?: string;
   remoteDaysAllowed?: number;
@@ -86,24 +47,18 @@ export interface BackendEmployee {
   employmentType?: string;
   dateOfConfirmation?: string;
   periodType?: string;
+  bonus?: number;
   createdAt: string;
   updatedAt: string;
-  passwordHash: string;
-  bonus?: number;
   department: {
     id: number;
     name: string;
     description?: string;
-    managerId?: number;
-    createdAt: string;
-    updatedAt: string;
   };
   role: {
     id: number;
     name: string;
     description?: string;
-    createdAt: string;
-    updatedAt: string;
   };
   manager?: {
     id: number;
@@ -124,14 +79,28 @@ export interface CreateEmployeeDto {
   lastName: string;
   email: string;
   phone?: string;
-  address?: string;
+  gender?: string;
+  cnic?: string;
   departmentId: number;
   roleId: number;
   managerId?: number;
   teamLeadId?: number;
-  salary?: number;
+  address?: string;
+  maritalStatus?: boolean;
+  status?: string;
+  startDate: string;
+  endDate?: string;
+  modeOfWork?: string;
+  remoteDaysAllowed?: number;
+  dob?: string;
+  emergencyContact?: string;
   shiftStart?: string;
   shiftEnd?: string;
+  employmentType?: string;
+  dateOfConfirmation?: string;
+  periodType?: string;
+  passwordHash?: string;
+  bonus?: number;
 }
 
 export interface UpdateEmployeeDto {
@@ -139,14 +108,27 @@ export interface UpdateEmployeeDto {
   lastName?: string;
   email?: string;
   phone?: string;
-  address?: string;
+  gender?: string;
+  cnic?: string;
   departmentId?: number;
   roleId?: number;
   managerId?: number;
   teamLeadId?: number;
-  salary?: number;
+  address?: string;
+  maritalStatus?: boolean;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  modeOfWork?: string;
+  remoteDaysAllowed?: number;
+  dob?: string;
+  emergencyContact?: string;
   shiftStart?: string;
   shiftEnd?: string;
+  employmentType?: string;
+  dateOfConfirmation?: string;
+  periodType?: string;
+  bonus?: number;
 }
 
 export interface UpdateBonusDto {
@@ -154,8 +136,8 @@ export interface UpdateBonusDto {
 }
 
 export interface UpdateShiftDto {
-  shiftStart: string;
-  shiftEnd: string;
+  shift_start: string;
+  shift_end: string;
 }
 
 export interface TerminateEmployeeDto {
@@ -164,81 +146,139 @@ export interface TerminateEmployeeDto {
   description?: string;
 }
 
+// Updated to match backend query parameters exactly
 export interface GetEmployeesDto {
   page?: number;
   limit?: number;
   search?: string;
-  department?: string;
-  role?: string;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  departmentId?: number;
+  roleId?: number;
+  status?: string;
+  employmentType?: string;
+  modeOfWork?: string;
 }
 
 export interface EmployeeResponseDto {
-  success: boolean;
-  data: Employee;
-  message: string;
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  gender?: string;
+  cnic?: string;
+  departmentId: number;
+  roleId: number;
+  managerId?: number;
+  teamLeadId?: number;
+  address?: string;
+  maritalStatus?: boolean;
+  status: string;
+  startDate: string;
+  endDate?: string;
+  modeOfWork?: string;
+  remoteDaysAllowed?: number;
+  dob?: string;
+  emergencyContact?: string;
+  shiftStart?: string;
+  shiftEnd?: string;
+  employmentType?: string;
+  dateOfConfirmation?: string;
+  periodType?: string;
+  bonus?: number;
+  createdAt: string;
+  updatedAt: string;
+  department: {
+    id: number;
+    name: string;
+    description?: string;
+  };
+  role: {
+    id: number;
+    name: string;
+    description?: string;
+  };
+  manager?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  teamLead?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 export interface EmployeesListResponseDto {
-  success: boolean;
-  data: {
-    employees: Employee[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-  message: string;
-}
-
-// Backend response format (what we actually receive)
-export interface BackendEmployeesResponse {
-  employees: BackendEmployee[];
+  employees: Employee[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-// Helper function to transform backend employee to frontend employee format
-const transformBackendEmployee = (backendEmployee: BackendEmployee): Employee => {
-  return {
-    id: backendEmployee.id,
-    firstName: backendEmployee.firstName,
-    lastName: backendEmployee.lastName,
-    email: backendEmployee.email,
-    phone: backendEmployee.phone,
-    address: backendEmployee.address,
-    startDate: backendEmployee.startDate || '',
-    department: {
-      id: backendEmployee.department.id,
-      name: backendEmployee.department.name
-    },
-    role: {
-      id: backendEmployee.role.id,
-      name: backendEmployee.role.name
-    },
-    manager: backendEmployee.manager ? {
-      id: backendEmployee.manager.id,
-      firstName: backendEmployee.manager.firstName,
-      lastName: backendEmployee.manager.lastName,
-      email: backendEmployee.manager.email
-    } : undefined,
-    teamLead: backendEmployee.teamLead ? {
-      id: backendEmployee.teamLead.id,
-      firstName: backendEmployee.teamLead.firstName,
-      lastName: backendEmployee.teamLead.lastName,
-      email: backendEmployee.teamLead.email
-    } : undefined,
-    bonus: backendEmployee.bonus,
-    shiftStart: backendEmployee.shiftStart,
-    shiftEnd: backendEmployee.shiftEnd,
-    isActive: backendEmployee.status === 'active',
-    createdAt: backendEmployee.createdAt,
-    updatedAt: backendEmployee.updatedAt
-  };
-};
+// Department and Role Types
+export interface Department {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface DepartmentResponseDto {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DepartmentsListResponseDto {
+  departments: Department[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface RoleResponseDto {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RolesListResponseDto {
+  roles: Role[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface GetDepartmentsDto {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface GetRolesDto {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
 
 // HR Employee Management API Functions
 export const getEmployeesApi = async (query: GetEmployeesDto = {}): Promise<EmployeesListResponseDto> => {
@@ -248,31 +288,19 @@ export const getEmployeesApi = async (query: GetEmployeesDto = {}): Promise<Empl
     if (query.page) queryParams.append('page', query.page.toString());
     if (query.limit) queryParams.append('limit', query.limit.toString());
     if (query.search) queryParams.append('search', query.search);
-    if (query.department) queryParams.append('department', query.department);
-    if (query.role) queryParams.append('role', query.role);
-    if (query.sortBy) queryParams.append('sortBy', query.sortBy);
-    if (query.sortOrder) queryParams.append('sortOrder', query.sortOrder);
+    if (query.departmentId) queryParams.append('departmentId', query.departmentId.toString());
+    if (query.roleId) queryParams.append('roleId', query.roleId.toString());
+    if (query.status) queryParams.append('status', query.status);
+    if (query.employmentType) queryParams.append('employmentType', query.employmentType);
+    if (query.modeOfWork) queryParams.append('modeOfWork', query.modeOfWork);
 
     const url = `${API_BASE_URL}/hr/employees${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     console.log('Fetching HR employees from:', url);
     
-    const response = await apiGetJson<BackendEmployeesResponse>(url);
+    const response = await apiGetJson<EmployeesListResponseDto>(url);
     console.log('HR Employees API response:', response);
     
-    // Transform the backend response to match the expected frontend format
-    const transformedResponse: EmployeesListResponseDto = {
-      success: true,
-      data: {
-        employees: response.employees.map(transformBackendEmployee),
-        total: response.total,
-        page: response.page,
-        limit: response.limit,
-        totalPages: response.totalPages
-      },
-      message: 'Employees fetched successfully'
-    };
-    
-    return transformedResponse;
+    return response;
   } catch (error) {
     console.error('HR Employees API Error:', error);
     if (error instanceof ApiError) {
@@ -372,6 +400,45 @@ export const deleteEmployeeApi = async (id: number): Promise<{ message: string }
   }
 };
 
+// Statistics Types
+export interface EmployeeStatistics {
+  total: number;
+  active: number;
+  inactive: number;
+  byDepartment: Record<string, number>;
+  byRole: Record<string, number>;
+  byGender: Record<string, number>;
+  byEmploymentType: Record<string, number>;
+  byModeOfWork: Record<string, number>;
+  byMaritalStatus: Record<string, number>;
+  averageAge: number;
+  averageBonus: number;
+  thisMonth: {
+    new: number;
+    active: number;
+    inactive: number;
+  };
+}
+
+export interface EmployeeStatisticsResponseDto {
+  statistics: EmployeeStatistics;
+}
+
+// Get employee statistics from API
+export const getEmployeeStatisticsApi = async (): Promise<EmployeeStatisticsResponseDto> => {
+  try {
+    const response = await apiGetJson<EmployeeStatisticsResponseDto>(`${API_BASE_URL}/hr/employees/stats`);
+    console.log('Employee Statistics API response:', response);
+    return response;
+  } catch (error) {
+    console.error('Employee Statistics API Error:', error);
+    if (error instanceof ApiError) {
+      throw new Error(`Failed to fetch employee statistics: ${error.message}`);
+    }
+    throw new Error('Failed to fetch employee statistics');
+  }
+};
+
 export const terminateEmployeeApi = async (terminateData: TerminateEmployeeDto): Promise<{ message: string }> => {
   try {
     console.log('Terminating employee:', terminateData);
@@ -384,5 +451,85 @@ export const terminateEmployeeApi = async (terminateData: TerminateEmployeeDto):
       throw new Error(`Failed to terminate employee: ${error.message}`);
     }
     throw new Error('Failed to terminate employee');
+  }
+};
+
+// Department Management API Functions
+export const getDepartmentsApi = async (query: GetDepartmentsDto = {}): Promise<DepartmentsListResponseDto> => {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (query.page) queryParams.append('page', query.page.toString());
+    if (query.limit) queryParams.append('limit', query.limit.toString());
+    if (query.search) queryParams.append('search', query.search);
+
+    const url = `${API_BASE_URL}/departments${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    console.log('Fetching departments from:', url);
+    
+    const response = await apiGetJson<DepartmentsListResponseDto>(url);
+    console.log('Departments API response:', response);
+    
+    return response;
+  } catch (error) {
+    console.error('Departments API Error:', error);
+    if (error instanceof ApiError) {
+      throw new Error(`Failed to fetch departments: ${error.message}`);
+    }
+    throw new Error('Failed to fetch departments');
+  }
+};
+
+export const getDepartmentByIdApi = async (id: number): Promise<DepartmentResponseDto> => {
+  try {
+    console.log('Fetching department by ID:', id);
+    const response = await apiGetJson<DepartmentResponseDto>(`${API_BASE_URL}/departments/${id}`);
+    console.log('Department by ID API response:', response);
+    return response;
+  } catch (error) {
+    console.error('Department by ID API Error:', error);
+    if (error instanceof ApiError) {
+      throw new Error(`Failed to fetch department: ${error.message}`);
+    }
+    throw new Error('Failed to fetch department');
+  }
+};
+
+// Role Management API Functions
+export const getRolesApi = async (query: GetRolesDto = {}): Promise<RolesListResponseDto> => {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (query.page) queryParams.append('page', query.page.toString());
+    if (query.limit) queryParams.append('limit', query.limit.toString());
+    if (query.search) queryParams.append('search', query.search);
+
+    const url = `${API_BASE_URL}/roles${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    console.log('Fetching roles from:', url);
+    
+    const response = await apiGetJson<RolesListResponseDto>(url);
+    console.log('Roles API response:', response);
+    
+    return response;
+  } catch (error) {
+    console.error('Roles API Error:', error);
+    if (error instanceof ApiError) {
+      throw new Error(`Failed to fetch roles: ${error.message}`);
+    }
+    throw new Error('Failed to fetch roles');
+  }
+};
+
+export const getRoleByIdApi = async (id: number): Promise<RoleResponseDto> => {
+  try {
+    console.log('Fetching role by ID:', id);
+    const response = await apiGetJson<RoleResponseDto>(`${API_BASE_URL}/roles/${id}`);
+    console.log('Role by ID API response:', response);
+    return response;
+  } catch (error) {
+    console.error('Role by ID API Error:', error);
+    if (error instanceof ApiError) {
+      throw new Error(`Failed to fetch role: ${error.message}`);
+    }
+    throw new Error('Failed to fetch role');
   }
 };

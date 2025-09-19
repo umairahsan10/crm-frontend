@@ -6,7 +6,7 @@ import './App.css';
 
 // Import existing page components
 import DashboardPage from './pages/Dashboard/DashboardPage';
-import EmployeesPage from './pages/Employees/EmployeesPage';
+import EmployeeManagement from './pages/Employees/EmployeeManagement';
 import AttendancePage from './pages/Attendance/AttendancePage';
 import DealsPage from './pages/Deals/DealsPage';
 import ReportsPage from './pages/Sales/ReportsPage';
@@ -132,7 +132,7 @@ function AppLayout() {
         />
         <Route 
           path="/employees" 
-          element={canAccessPage('employees') ? <EmployeesPage /> : <Navigate to="/login" replace />} 
+          element={canAccessPage('employees') ? <EmployeeManagement /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/attendance" 

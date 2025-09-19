@@ -56,6 +56,9 @@ export const loginApi = async (credentials: LoginRequest): Promise<LoginResponse
             'manage_team': true,
             'approve_requests': true,
             'manage_unit': true,
+            'employee_add_permission': true,
+            'employee_edit_permission': true,
+            'employee_delete_permission': true,
           }
         }
       };

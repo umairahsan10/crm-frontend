@@ -2,11 +2,47 @@ import React, { useState } from 'react';
 import './EmployeeForm.css';
 
 const initialState = {
+  // Basic Information (Required)
   firstName: '',
-  middleName: '',
   lastName: '',
-  employeeId: '',
   email: '',
+  gender: '',
+  passwordHash: '',
+  
+  // Basic Information (Optional)
+  phone: '',
+  cnic: '',
+  address: '',
+  maritalStatus: false,
+  dob: '',
+  emergencyContact: '',
+  
+  // Employment Information (Required)
+  departmentId: '',
+  roleId: '',
+  
+  // Employment Information (Optional)
+  managerId: '',
+  teamLeadId: '',
+  status: 'active',
+  startDate: '',
+  endDate: '',
+  employmentType: 'full_time',
+  modeOfWork: 'hybrid',
+  remoteDaysAllowed: 0,
+  periodType: 'probation',
+  dateOfConfirmation: '',
+  
+  // Work Schedule
+  shiftStart: '09:00',
+  shiftEnd: '17:00',
+  
+  // Compensation
+  bonus: 0,
+  
+  // Legacy fields for compatibility
+  middleName: '',
+  employeeId: '',
   employeeType: '',
   employeeStatus: '',
   employeeEndDate: '',
@@ -17,11 +53,9 @@ const initialState = {
   sourceOfHire: '',
   salary: '',
   mobile: '',
-  phone: '',
   otherEmail: '',
   dateOfBirth: '',
   nationality: '',
-  gender: '',
   address1: '',
   address2: '',
   city: '',
@@ -40,9 +74,11 @@ interface EmployeeFormProps {
   onClose: () => void;
   onSave?: (employeeData: any) => void;
   employee?: any;
+  departments?: Array<{ id: number; name: string }>;
+  roles?: Array<{ id: number; name: string }>;
 }
 
-const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: _employee }) => {
+const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee, departments = [], roles = [] }) => {
   const validateRequiredFields = (formData: Record<string, unknown>, requiredFields: string[]) => {
     const errors: Record<string, string> = {};
     requiredFields.forEach((field) => {
@@ -53,7 +89,77 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: 
     return errors;
   };
 
-  const [form, setForm] = useState<State>(initialState);
+  // Initialize form with employee data if provided (for editing)
+  const getInitialFormState = (): State => {
+    if (!employee) return initialState;
+    
+    return {
+      // Basic Information (Required)
+      firstName: employee.firstName || '',
+      lastName: employee.lastName || '',
+      email: employee.email || '',
+      gender: employee.gender || '',
+      passwordHash: '', // Don't pre-fill password for security
+      
+      // Basic Information (Optional)
+      phone: employee.phone || '',
+      cnic: employee.cnic || '',
+      address: employee.address || '',
+      maritalStatus: employee.maritalStatus || false,
+      dob: employee.dob || '',
+      emergencyContact: employee.emergencyContact || '',
+      
+      // Employment Information (Required)
+      departmentId: employee.departmentId?.toString() || '',
+      roleId: employee.roleId?.toString() || '',
+      
+      // Employment Information (Optional)
+      managerId: employee.managerId?.toString() || '',
+      teamLeadId: employee.teamLeadId?.toString() || '',
+      status: employee.status || 'active',
+      startDate: employee.startDate || '',
+      endDate: employee.endDate || '',
+      employmentType: employee.employmentType || 'full_time',
+      modeOfWork: employee.modeOfWork || 'hybrid',
+      remoteDaysAllowed: employee.remoteDaysAllowed || 0,
+      periodType: employee.periodType || 'probation',
+      dateOfConfirmation: employee.dateOfConfirmation || '',
+      
+      // Work Schedule
+      shiftStart: employee.shiftStart || '09:00',
+      shiftEnd: employee.shiftEnd || '17:00',
+      
+      // Compensation
+      bonus: employee.bonus || 0,
+      
+      // Legacy fields for compatibility
+      middleName: '',
+      employeeId: employee.id?.toString() || '',
+      employeeType: employee.employmentType || '',
+      employeeStatus: employee.status || '',
+      employeeEndDate: employee.endDate || '',
+      dateOfHire: employee.startDate || '',
+      department: employee.department?.name || '',
+      jobTitle: employee.role?.name || '',
+      location: 'Main Location',
+      sourceOfHire: '',
+      salary: employee.bonus?.toString() || '',
+      mobile: employee.phone || '',
+      otherEmail: '',
+      dateOfBirth: employee.dob || '',
+      nationality: '',
+      address1: employee.address || '',
+      address2: '',
+      city: '',
+      country: '',
+      province: '',
+      postCode: '',
+      biography: '',
+      sendWelcome: false,
+    };
+  };
+
+  const [form, setForm] = useState<State>(getInitialFormState());
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -70,8 +176,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: 
     return '';
   };
 
-  // Check if all required fields in the main section are filled
-  const mainSectionRequiredFields: (keyof State)[] = ['firstName', 'email', 'employeeType', 'employeeStatus', 'dateOfHire'];
+  // Check if all required fields in the main section are filled (based on Prisma schema)
+  const mainSectionRequiredFields: (keyof State)[] = ['firstName', 'lastName', 'email', 'gender', 'passwordHash', 'departmentId', 'roleId'];
 
 
 
@@ -271,7 +377,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const requiredFields = ['firstName', 'email', 'employeeType', 'employeeStatus', 'dateOfHire'];
+    // For editing, password is not required (it's already set)
+    // For creating, password is required
+    const requiredFields = employee 
+      ? ['firstName', 'lastName', 'email', 'gender', 'departmentId', 'roleId']
+      : ['firstName', 'lastName', 'email', 'gender', 'passwordHash', 'departmentId', 'roleId'];
+    
     const newErrors = validateRequiredFields(form, requiredFields);
 
     setErrors(newErrors);
@@ -286,7 +397,46 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: 
     // Continue submission logic...
     try {
       if (onSave) {
-        await onSave(form);
+        // Create API-compatible data structure
+        const apiData = {
+          // Required fields (based on Prisma schema)
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          gender: form.gender,
+          departmentId: parseInt(form.departmentId),
+          roleId: parseInt(form.roleId),
+          
+          // Password only required for create operations
+          ...(form.passwordHash && { passwordHash: form.passwordHash }),
+          
+          // Optional fields (only include if they have values)
+          phone: form.phone || undefined,
+          cnic: form.cnic || undefined,
+          address: form.address || undefined,
+          maritalStatus: form.maritalStatus || undefined,
+          dob: form.dob || undefined,
+          emergencyContact: form.emergencyContact || undefined,
+          managerId: form.managerId ? parseInt(form.managerId) : undefined,
+          teamLeadId: form.teamLeadId ? parseInt(form.teamLeadId) : undefined,
+          status: form.status || undefined,
+          startDate: form.startDate || undefined,
+          endDate: form.endDate || undefined,
+          employmentType: form.employmentType || undefined,
+          modeOfWork: form.modeOfWork || undefined,
+          remoteDaysAllowed: form.remoteDaysAllowed || undefined,
+          periodType: form.periodType || undefined,
+          dateOfConfirmation: form.dateOfConfirmation || undefined,
+          shiftStart: form.shiftStart || undefined,
+          shiftEnd: form.shiftEnd || undefined,
+          bonus: form.bonus || undefined,
+          
+          // Metadata for form handling
+          isEdit: !!employee,
+          employeeId: employee?.id
+        };
+        
+        await onSave(apiData);
       } else {
         await appendToExistingFile();
       }
@@ -305,6 +455,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: 
     <div className="employee-form-modal">
       <form id="employee-form" className="employee-form" onSubmit={handleSubmit}>
         <div className="employee-form-section">
+          {/* Basic Information */}
+          <h4>Basic Information</h4>
           <div className="employee-form-row">
             <div className="employee-form-field">
               <label>First Name<span className="required">*</span></label>
@@ -321,18 +473,18 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: 
               )}
             </div>
             <div className="employee-form-field">
-              <label>Middle Name</label>
-              <input name="middleName" value={form.middleName} onChange={handleChange} />
-            </div>
-          </div>
-          <div className="employee-form-row">
-            <div className="employee-form-field">
-              <label>Last Name</label>
-              <input name="lastName" value={form.lastName} onChange={handleChange} />
-            </div>
-            <div className="employee-form-field">
-              <label>Employee ID</label>
-              <input name="employeeId" value={form.employeeId} onChange={handleChange} />
+              <label>Last Name<span className="required">*</span></label>
+              <input 
+                name="lastName" 
+                value={form.lastName} 
+                onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyUp={handleKeyUp}
+                className={touched.lastName && errors.lastName ? 'error' : ''}
+              />
+              {touched.lastName && errors.lastName && (
+                <span className="error-message">{errors.lastName}</span>
+              )}
             </div>
           </div>
           <div className="employee-form-row">
@@ -352,65 +504,247 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: 
               )}
             </div>
             <div className="employee-form-field">
-              <label>Employee Type<span className="required">*</span></label>
+              <label>Gender<span className="required">*</span></label>
               <select 
-                name="employeeType" 
-                value={form.employeeType} 
+                name="gender" 
+                value={form.gender} 
                 onChange={handleChange}
                 onBlur={handleBlur}
                 onKeyUp={handleKeyUp}
-                className={touched.employeeType && errors.employeeType ? 'error' : ''}
+                className={touched.gender && errors.gender ? 'error' : ''}
               >
-                <option value="">- Select -</option>
-                <option value="fulltime">Full Time</option>
-                <option value="parttime">Part Time</option>
-                <option value="contract">Contract</option>
+                <option value="">- Select Gender -</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
               </select>
-              {touched.employeeType && errors.employeeType && (
-                <span className="error-message">{errors.employeeType}</span>
+              {touched.gender && errors.gender && (
+                <span className="error-message">{errors.gender}</span>
+              )}
+            </div>
+            <div className="employee-form-field">
+              <label>CNIC</label>
+              <input name="cnic" value={form.cnic} onChange={handleChange} placeholder="12345-1234567-1" />
+            </div>
+          </div>
+          <div className="employee-form-row">
+            <div className="employee-form-field">
+              <label>
+                {employee ? 'New Password (leave blank to keep current)' : 'Password'}
+                {!employee && <span className="required">*</span>}
+              </label>
+              <input 
+                name="passwordHash" 
+                type="password" 
+                value={form.passwordHash} 
+                onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyUp={handleKeyUp}
+                className={touched.passwordHash && errors.passwordHash ? 'error' : ''}
+                placeholder={employee ? "Enter new password (optional)" : "Enter password"}
+              />
+              {touched.passwordHash && errors.passwordHash && (
+                <span className="error-message">{errors.passwordHash}</span>
+              )}
+            </div>
+            <div className="employee-form-field">
+              <label>Phone</label>
+              <input 
+                name="phone" 
+                value={form.phone} 
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+          <div className="employee-form-row">
+            <div className="employee-form-field">
+              <label>Date of Birth</label>
+              <input name="dob" type="date" value={form.dob} onChange={handleChange} />
+            </div>
+            <div className="employee-form-field">
+              <label>Emergency Contact</label>
+              <input name="emergencyContact" value={form.emergencyContact} onChange={handleChange} />
+            </div>
+          </div>
+          <div className="employee-form-row">
+            <div className="employee-form-field" style={{ flex: 1 }}>
+              <label>Address</label>
+              <input name="address" value={form.address} onChange={handleChange} />
+            </div>
+            <div className="employee-form-field">
+              <label>
+                <input type="checkbox" name="maritalStatus" checked={form.maritalStatus} onChange={handleChange} />
+                Married
+              </label>
+            </div>
+          </div>
+
+          {/* Employment Information */}
+          <h4>Employment Information</h4>
+          <div className="employee-form-row">
+            <div className="employee-form-field">
+              <label>Department<span className="required">*</span></label>
+              <select 
+                name="departmentId" 
+                value={form.departmentId} 
+                onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyUp={handleKeyUp}
+                className={touched.departmentId && errors.departmentId ? 'error' : ''}
+              >
+                <option value="">- Select Department -</option>
+                {departments.map(dept => (
+                  <option key={dept.id} value={dept.id.toString()}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+              {touched.departmentId && errors.departmentId && (
+                <span className="error-message">{errors.departmentId}</span>
+              )}
+            </div>
+            <div className="employee-form-field">
+              <label>Role<span className="required">*</span></label>
+              <select 
+                name="roleId" 
+                value={form.roleId} 
+                onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyUp={handleKeyUp}
+                className={touched.roleId && errors.roleId ? 'error' : ''}
+              >
+                <option value="">- Select Role -</option>
+                {roles.map(role => (
+                  <option key={role.id} value={role.id.toString()}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+              {touched.roleId && errors.roleId && (
+                <span className="error-message">{errors.roleId}</span>
               )}
             </div>
           </div>
           <div className="employee-form-row">
             <div className="employee-form-field">
-              <label>Employee Status<span className="required">*</span></label>
+              <label>Status<span className="required">*</span></label>
               <select 
-                name="employeeStatus" 
-                value={form.employeeStatus} 
+                name="status" 
+                value={form.status} 
                 onChange={handleChange}
                 onBlur={handleBlur}
                 onKeyUp={handleKeyUp}
-                className={touched.employeeStatus && errors.employeeStatus ? 'error' : ''}
+                className={touched.status && errors.status ? 'error' : ''}
               >
-                <option value="">- Select -</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="terminated">Terminated</option>
               </select>
-              {touched.employeeStatus && errors.employeeStatus && (
-                <span className="error-message">{errors.employeeStatus}</span>
+              {touched.status && errors.status && (
+                <span className="error-message">{errors.status}</span>
               )}
             </div>
             <div className="employee-form-field">
-              <label>Employee End Date</label>
-              <input name="employeeEndDate" type="date" value={form.employeeEndDate} onChange={handleChange} />
+              <label>Employment Type<span className="required">*</span></label>
+              <select 
+                name="employmentType" 
+                value={form.employmentType} 
+                onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyUp={handleKeyUp}
+                className={touched.employmentType && errors.employmentType ? 'error' : ''}
+              >
+                <option value="full_time">Full Time</option>
+                <option value="part_time">Part Time</option>
+              </select>
+              {touched.employmentType && errors.employmentType && (
+                <span className="error-message">{errors.employmentType}</span>
+              )}
             </div>
           </div>
           <div className="employee-form-row">
             <div className="employee-form-field">
-              <label>Date of Hire<span className="required">*</span></label>
+              <label>Start Date<span className="required">*</span></label>
               <input 
-                name="dateOfHire" 
+                name="startDate" 
                 type="date" 
-                value={form.dateOfHire} 
+                value={form.startDate} 
                 onChange={handleChange}
                 onBlur={handleBlur}
                 onKeyUp={handleKeyUp}
-                className={touched.dateOfHire && errors.dateOfHire ? 'error' : ''}
+                className={touched.startDate && errors.startDate ? 'error' : ''}
               />
-              {touched.dateOfHire && errors.dateOfHire && (
-                <span className="error-message">{errors.dateOfHire}</span>
+              {touched.startDate && errors.startDate && (
+                <span className="error-message">{errors.startDate}</span>
               )}
+            </div>
+            <div className="employee-form-field">
+              <label>End Date</label>
+              <input name="endDate" type="date" value={form.endDate} onChange={handleChange} />
+            </div>
+          </div>
+          <div className="employee-form-row">
+            <div className="employee-form-field">
+              <label>Mode of Work</label>
+              <select name="modeOfWork" value={form.modeOfWork} onChange={handleChange}>
+                <option value="hybrid">Hybrid</option>
+                <option value="on_site">On Site</option>
+                <option value="remote">Remote</option>
+              </select>
+            </div>
+            <div className="employee-form-field">
+              <label>Remote Days Allowed</label>
+              <input 
+                name="remoteDaysAllowed" 
+                type="number" 
+                value={form.remoteDaysAllowed} 
+                onChange={handleChange}
+                min="0"
+                max="5"
+              />
+            </div>
+          </div>
+          <div className="employee-form-row">
+            <div className="employee-form-field">
+              <label>Period Type</label>
+              <select name="periodType" value={form.periodType} onChange={handleChange}>
+                <option value="probation">Probation</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="contract">Contract</option>
+              </select>
+            </div>
+            <div className="employee-form-field">
+              <label>Date of Confirmation</label>
+              <input name="dateOfConfirmation" type="date" value={form.dateOfConfirmation} onChange={handleChange} />
+            </div>
+          </div>
+
+          {/* Work Schedule */}
+          <h4>Work Schedule</h4>
+          <div className="employee-form-row">
+            <div className="employee-form-field">
+              <label>Shift Start</label>
+              <input name="shiftStart" type="time" value={form.shiftStart} onChange={handleChange} />
+            </div>
+            <div className="employee-form-field">
+              <label>Shift End</label>
+              <input name="shiftEnd" type="time" value={form.shiftEnd} onChange={handleChange} />
+            </div>
+          </div>
+
+          {/* Compensation */}
+          <h4>Compensation</h4>
+          <div className="employee-form-row">
+            <div className="employee-form-field">
+              <label>Bonus</label>
+              <input 
+                name="bonus" 
+                type="number" 
+                value={form.bonus} 
+                onChange={handleChange}
+                min="0"
+                step="1"
+              />
             </div>
             <div className="employee-form-field">
               <label>
@@ -423,6 +757,23 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ onClose, onSave, employee: 
               Please fill in all required fields
             </div>
           )}
+        
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            {employee ? 'Update Employee' : 'Add Employee'}
+          </button>
+        </div>
         </div>
         {showAdvanced && (
           <div className="employee-form-advanced">
