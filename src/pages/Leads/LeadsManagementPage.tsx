@@ -4,7 +4,6 @@ import LeadsFilters from '../../components/leads/LeadsFilters';
 import LeadDetailsDrawer from '../../components/leads/LeadDetailsDrawer';
 import BulkActions from '../../components/leads/BulkActions';
 import LeadsStatistics from '../../components/leads/LeadsStatistics';
-import CreateLeadForm from '../../components/common/CreateLeadForm/CreateLeadForm';
 import { 
   getLeadsApi, 
   bulkUpdateLeadsApi, 
@@ -20,7 +19,6 @@ const LeadsManagementPage: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -285,17 +283,6 @@ const LeadsManagementPage: React.FC = () => {
   };
 
 
-  const handleLeadCreated = (newLead: Lead) => {
-    console.log('LeadsManagementPage: Lead created successfully:', newLead);
-    setLeads(prev => [newLead, ...prev]);
-    setShowCreateForm(false);
-    setNotification({
-      type: 'success',
-      message: 'Lead created successfully!'
-    });
-    // Auto-clear notification after 3 seconds
-    setTimeout(() => setNotification(null), 3000);
-  };
 
   const handleCloseNotification = () => {
     setNotification(null);
@@ -322,18 +309,6 @@ const LeadsManagementPage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 {showStatistics ? 'Hide Stats' : 'Show Stats'}
-              </button>
-              <button
-                onClick={() => {
-                  console.log('LeadsManagementPage: Create Lead button clicked');
-                  setShowCreateForm(true);
-                }}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Create Lead
               </button>
             </div>
           </div>
@@ -399,146 +374,6 @@ const LeadsManagementPage: React.FC = () => {
           }}
         />
 
-        {/* Create Lead Modal */}
-        {showCreateForm && (() => {
-          console.log('LeadsManagementPage: Modal is rendering, showCreateForm:', showCreateForm);
-          return (
-            <div 
-              className="modal-overlay" 
-              onClick={() => setShowCreateForm(false)}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                zIndex: 1000,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-            <div 
-              className="modal-content" 
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                padding: '0',
-                maxWidth: '480px',
-                width: '95%',
-                maxHeight: '95vh',
-                overflow: 'hidden',
-                position: 'relative',
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-              }}
-            >
-              {/* Modal Header */}
-              <div className="modal-header" style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '16px 20px',
-                borderBottom: '1px solid #e5e7eb',
-                backgroundColor: '#f9fafb'
-              }}>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: '#111827',
-                  margin: '0'
-                }}>Create New Lead</h3>
-                <button
-                  onClick={() => setShowCreateForm(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '20px',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    color: '#6b7280',
-                    borderRadius: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '28px',
-                    height: '28px'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  ×
-                </button>
-              </div>
-              
-              {/* Modal Body - Compact Form */}
-              <div className="modal-body" style={{ padding: '0' }}>
-                <div style={{ 
-                  padding: '20px',
-                  maxHeight: 'calc(95vh - 60px)',
-                  overflowY: 'auto'
-                }}>
-                  <style>{`
-                    .modal-body .create-lead-form {
-                      max-width: 100%;
-                      margin: 0;
-                      padding: 0;
-                    }
-                    .modal-body .reusable-form {
-                      max-width: 100%;
-                      margin: 0;
-                      box-shadow: none;
-                      border-radius: 0;
-                    }
-                    .modal-body .form-title {
-                      display: none;
-                    }
-                    .modal-body .form-container {
-                      padding: 0;
-                    }
-                    .modal-body .form-fields {
-                      gap: 12px;
-                      margin-bottom: 16px;
-                    }
-                    .modal-body .form-field-wrapper {
-                      margin-bottom: 0;
-                    }
-                    .modal-body .form-field {
-                      min-height: 40px;
-                      padding: 8px 12px;
-                      font-size: 14px;
-                    }
-                    .modal-body .form-label {
-                      font-size: 13px;
-                      margin-bottom: 4px;
-                      font-weight: 500;
-                    }
-                    .modal-body .form-submit {
-                      margin-top: 16px;
-                    }
-                    .modal-body .form-button {
-                      padding: 10px 20px;
-                      font-size: 14px;
-                      min-height: 40px;
-                    }
-                  `}</style>
-                  <CreateLeadForm
-                    onSuccess={(lead) => {
-                      console.log('LeadsManagementPage: CreateLeadForm onSuccess called with:', lead);
-                      handleLeadCreated(lead);
-                    }}
-                    onError={(error) => {
-                      console.log('LeadsManagementPage: CreateLeadForm onError called with:', error);
-                      setNotification({ type: 'error', message: error });
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          );
-        })()}
 
 
         {/* Notification */}

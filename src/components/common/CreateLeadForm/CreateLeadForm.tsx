@@ -26,12 +26,10 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({
     'SMM'
   ];
 
-  // Lead type options
+  // Lead type options - Updated to only include warm and cold
   const leadTypeOptions: LeadType[] = [
     'warm',
-    'cold',
-    'upsell',
-    'push'
+    'cold'
   ];
 
   // Fetch sales units on component mount
@@ -39,13 +37,13 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({
     const fetchSalesUnits = async () => {
       try {
         setIsLoadingSalesUnits(true);
-        console.log('Fetching sales units for create form...');
+        console.log('CreateLeadForm: Fetching sales units for create form...');
         const response = await getSalesUnitsApi();
-        console.log('Sales units response for create form:', response);
+        console.log('CreateLeadForm: Sales units response for create form:', response);
         
         if (response.success && response.data && Array.isArray(response.data)) {
           setSalesUnits(response.data);
-          console.log('Sales units set for create form:', response.data);
+          console.log('CreateLeadForm: Sales units set for create form:', response.data);
         } else {
           console.error('Sales units API failed for create form:', response);
           // Fallback to mock data if API fails

@@ -81,13 +81,13 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
     const fetchSalesUnits = async () => {
       try {
         setIsLoadingSalesUnits(true);
-        console.log('Fetching sales units...');
+        console.log('LeadsFilters: Fetching sales units...');
         const response = await getSalesUnitsApi();
-        console.log('Sales units response:', response);
+        console.log('LeadsFilters: Sales units response:', response);
         
         if (response.success && response.data && Array.isArray(response.data)) {
           setSalesUnits(response.data);
-          console.log('Sales units set:', response.data);
+          console.log('LeadsFilters: Sales units set:', response.data);
         } else {
           console.error('Sales units API failed:', response);
           // Fallback to mock data if API fails
