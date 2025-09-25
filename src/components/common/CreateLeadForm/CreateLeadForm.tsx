@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Form from '../Form/Form';
 import type { FormField } from '../Form/Form';
-import { createLeadApi } from '../../../apis/leads';
+import { createLeadApi, getSalesUnitsApi } from '../../../apis/leads';
 import type { CreateLeadRequest, LeadSource, LeadType } from '../../../types';
 import './CreateLeadForm.css';
 
@@ -17,18 +17,13 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({
   className = ''
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>([]);
+  const [isLoadingSalesUnits, setIsLoadingSalesUnits] = useState(true);
 
-  // Lead source options
+  // Lead source options - Updated to only include PPC and SMM
   const leadSourceOptions: LeadSource[] = [
     'PPC',
-    'Organic',
-    'Referral',
-    'Cold Call',
-    'Email',
-    'Social Media',
-    'Website',
-    'Trade Show',
-    'Other'
+    'SMM'
   ];
 
   // Lead type options
@@ -39,14 +34,46 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({
     'push'
   ];
 
-  // Static sales unit options (you can modify these as needed)
-  const salesUnitOptions = [
-    { id: 1, name: 'Sales Unit 1' },
-    { id: 2, name: 'Sales Unit 2' },
-    { id: 3, name: 'Sales Unit 3' },
-    { id: 4, name: 'Enterprise Sales' },
-    { id: 5, name: 'SMB Sales' }
-  ];
+  // Fetch sales units on component mount
+  useEffect(() => {
+    const fetchSalesUnits = async () => {
+      try {
+        setIsLoadingSalesUnits(true);
+        console.log('Fetching sales units for create form...');
+        const response = await getSalesUnitsApi();
+        console.log('Sales units response for create form:', response);
+        
+        if (response.success && response.data && Array.isArray(response.data)) {
+          setSalesUnits(response.data);
+          console.log('Sales units set for create form:', response.data);
+        } else {
+          console.error('Sales units API failed for create form:', response);
+          // Fallback to mock data if API fails
+          setSalesUnits([
+            { id: 1, name: 'Sales Unit 1' },
+            { id: 2, name: 'Sales Unit 2' },
+            { id: 3, name: 'Sales Unit 3' },
+            { id: 4, name: 'Enterprise Sales' },
+            { id: 5, name: 'SMB Sales' }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching sales units for create form:', error);
+        // Fallback to mock data on error
+        setSalesUnits([
+          { id: 1, name: 'Sales Unit 1' },
+          { id: 2, name: 'Sales Unit 2' },
+          { id: 3, name: 'Sales Unit 3' },
+          { id: 4, name: 'Enterprise Sales' },
+          { id: 5, name: 'SMB Sales' }
+        ]);
+      } finally {
+        setIsLoadingSalesUnits(false);
+      }
+    };
+
+    fetchSalesUnits();
+  }, []);
 
   // Form fields configuration
   const formFields: FormField[] = [
@@ -90,8 +117,8 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({
       name: 'salesUnitId',
       type: 'select',
       required: true,
-      options: salesUnitOptions.map(unit => unit.name),
-      placeholder: 'Select sales unit'
+      options: salesUnits.map(unit => unit.name),
+      placeholder: isLoadingSalesUnits ? 'Loading sales units...' : 'Select sales unit'
     }
   ];
 
@@ -104,7 +131,7 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({
       setIsSubmitting(true);
 
       // Find the sales unit ID based on the selected name
-      const selectedSalesUnit = salesUnitOptions.find(unit => unit.name === formData.salesUnitId);
+      const selectedSalesUnit = salesUnits.find(unit => unit.name === formData.salesUnitId);
       if (!selectedSalesUnit) {
         throw new Error('Please select a valid sales unit');
       }

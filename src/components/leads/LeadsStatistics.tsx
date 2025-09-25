@@ -2,15 +2,28 @@ import React from 'react';
 
 interface LeadsStatisticsProps {
   statistics: {
-    total: number;
-    byStatus: Record<string, number>;
-    byType: Record<string, number>;
-    conversionRate: number;
-    thisMonth: {
+    totalLeads: number;
+    activeLeads: number;
+    completedLeads: number;
+    failedLeads: number;
+    conversionRate: string;
+    completionRate: string;
+    byStatus: {
       new: number;
       inProgress: number;
       completed: number;
       failed: number;
+    };
+    byType: {
+      warm: number;
+      cold: number;
+      push: number;
+      upsell: number;
+    };
+    today: {
+      new: number;
+      completed: number;
+      inProgress: number;
     };
   };
   isLoading: boolean;
@@ -35,25 +48,17 @@ const LeadsStatistics: React.FC<LeadsStatisticsProps> = ({ statistics, isLoading
   const statusColors = {
     new: 'bg-blue-500',
     in_progress: 'bg-yellow-500',
-    contacted: 'bg-purple-500',
-    qualified: 'bg-indigo-500',
-    proposal: 'bg-orange-500',
-    negotiation: 'bg-pink-500',
-    cracked: 'bg-green-500',
     completed: 'bg-green-500',
+    payment_link_generated: 'bg-purple-500',
     failed: 'bg-red-500',
-    'closed-won': 'bg-green-500',
-    'closed-lost': 'bg-red-500'
+    cracked: 'bg-green-500'
   };
 
   const typeColors = {
     warm: 'bg-orange-500',
-    hot: 'bg-red-500',
     cold: 'bg-blue-500',
-    qualified: 'bg-green-500',
-    unqualified: 'bg-gray-500',
-    push: 'bg-purple-500',
-    upsell: 'bg-indigo-500'
+    upsell: 'bg-indigo-500',
+    push: 'bg-purple-500'
   };
 
   return (
@@ -71,7 +76,7 @@ const LeadsStatistics: React.FC<LeadsStatisticsProps> = ({ statistics, isLoading
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Leads</p>
-              <p className="text-2xl font-semibold text-gray-900">{statistics.total}</p>
+              <p className="text-2xl font-semibold text-gray-900">{statistics.totalLeads}</p>
             </div>
           </div>
         </div>
@@ -87,7 +92,7 @@ const LeadsStatistics: React.FC<LeadsStatisticsProps> = ({ statistics, isLoading
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Conversion Rate</p>
-              <p className="text-2xl font-semibold text-gray-900">{statistics.conversionRate}%</p>
+              <p className="text-2xl font-semibold text-gray-900">{statistics.conversionRate}</p>
             </div>
           </div>
         </div>
@@ -102,9 +107,9 @@ const LeadsStatistics: React.FC<LeadsStatisticsProps> = ({ statistics, isLoading
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">This Month</p>
+              <p className="text-sm font-medium text-gray-500">Today's Activity</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {statistics.thisMonth.new + statistics.thisMonth.inProgress + statistics.thisMonth.completed + statistics.thisMonth.failed}
+                {statistics.today.new + statistics.today.inProgress + statistics.today.completed}
               </p>
             </div>
           </div>
@@ -122,7 +127,7 @@ const LeadsStatistics: React.FC<LeadsStatisticsProps> = ({ statistics, isLoading
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Active Leads</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {statistics.byStatus.in_progress || 0 + statistics.byStatus.contacted || 0 + statistics.byStatus.qualified || 0}
+                {statistics.activeLeads}
               </p>
             </div>
           </div>
@@ -132,13 +137,13 @@ const LeadsStatistics: React.FC<LeadsStatisticsProps> = ({ statistics, isLoading
       {/* Status Breakdown */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Leads by Status</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Object.entries(statistics.byStatus).map(([status, count]) => (
             <div key={status} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center">
                 <div className={`w-3 h-3 rounded-full mr-3 ${statusColors[status as keyof typeof statusColors] || 'bg-gray-500'}`}></div>
                 <span className="text-sm font-medium text-gray-700 capitalize">
-                  {status.replace('_', ' ')}
+                  {status.replace('inProgress', 'In Progress')}
                 </span>
               </div>
               <span className="text-sm font-semibold text-gray-900">{count}</span>
@@ -165,25 +170,21 @@ const LeadsStatistics: React.FC<LeadsStatisticsProps> = ({ statistics, isLoading
         </div>
       </div>
 
-      {/* This Month's Activity */}
+      {/* Today's Activity */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">This Month's Activity</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Activity</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{statistics.thisMonth.new}</div>
+            <div className="text-2xl font-bold text-blue-600">{statistics.today.new}</div>
             <div className="text-sm text-gray-500">New Leads</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">{statistics.thisMonth.inProgress}</div>
+            <div className="text-2xl font-bold text-yellow-600">{statistics.today.inProgress}</div>
             <div className="text-sm text-gray-500">In Progress</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{statistics.thisMonth.completed}</div>
+            <div className="text-2xl font-bold text-green-600">{statistics.today.completed}</div>
             <div className="text-sm text-gray-500">Completed</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-red-600">{statistics.thisMonth.failed}</div>
-            <div className="text-sm text-gray-500">Failed</div>
           </div>
         </div>
       </div>
@@ -194,17 +195,15 @@ const LeadsStatistics: React.FC<LeadsStatisticsProps> = ({ statistics, isLoading
         <div className="space-y-4">
           {[
             { stage: 'New', count: statistics.byStatus.new || 0, color: 'bg-blue-500' },
-            { stage: 'Contacted', count: statistics.byStatus.contacted || 0, color: 'bg-purple-500' },
-            { stage: 'Qualified', count: statistics.byStatus.qualified || 0, color: 'bg-indigo-500' },
-            { stage: 'Proposal', count: statistics.byStatus.proposal || 0, color: 'bg-orange-500' },
-            { stage: 'Closed Won', count: statistics.byStatus['closed-won'] || 0, color: 'bg-green-500' }
+            { stage: 'In Progress', count: statistics.byStatus.inProgress || 0, color: 'bg-yellow-500' },
+            { stage: 'Completed', count: statistics.byStatus.completed || 0, color: 'bg-green-500' },
+            { stage: 'Failed', count: statistics.byStatus.failed || 0, color: 'bg-red-500' }
           ].map((stage) => {
             const maxCount = Math.max(...[
               statistics.byStatus.new || 0,
-              statistics.byStatus.contacted || 0,
-              statistics.byStatus.qualified || 0,
-              statistics.byStatus.proposal || 0,
-              statistics.byStatus['closed-won'] || 0
+              statistics.byStatus.inProgress || 0,
+              statistics.byStatus.completed || 0,
+              statistics.byStatus.failed || 0
             ]);
             const percentage = maxCount > 0 ? (stage.count / maxCount) * 100 : 0;
             

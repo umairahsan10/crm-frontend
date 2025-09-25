@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getSalesUnitsApi, getFilterEmployeesApi } from '../../apis/leads';
 
 interface LeadsFiltersProps {
   onSearch: (search: string) => void;
@@ -8,8 +9,6 @@ interface LeadsFiltersProps {
   onAssignedToFilter: (assignedTo: string) => void;
   onDateRangeFilter: (startDate: string, endDate: string) => void;
   onClearFilters: () => void;
-  salesUnits: Array<{ id: number; name: string }>;
-  employees: Array<{ id: string; name: string }>;
 }
 
 const LeadsFilters: React.FC<LeadsFiltersProps> = ({
@@ -19,9 +18,7 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
   onSalesUnitFilter,
   onAssignedToFilter,
   onDateRangeFilter,
-  onClearFilters,
-  salesUnits,
-  employees
+  onClearFilters
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -31,32 +28,132 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // API-driven data with fallback initialization
+  const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>(() => [
+    { id: 1, name: 'Sales Unit 1' },
+    { id: 2, name: 'Sales Unit 2' },
+    { id: 3, name: 'Enterprise Sales' },
+    { id: 4, name: 'SMB Sales' }
+  ]);
+  const [employees, setEmployees] = useState<Array<{ 
+    id?: string | number; 
+    employeeId?: string | number;
+    userId?: string | number;
+    _id?: string | number;
+    name?: string;
+    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    [key: string]: any;
+  }>>(() => [
+    { id: '1', name: 'John Smith' },
+    { id: '2', name: 'Sarah Johnson' },
+    { id: '3', name: 'Mike Wilson' },
+    { id: '4', name: 'Emily Davis' }
+  ]);
+  const [isLoadingSalesUnits, setIsLoadingSalesUnits] = useState(false);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
 
+  // Updated status options based on requirements
   const statusOptions = [
     { value: '', label: 'All Statuses' },
     { value: 'new', label: 'New' },
     { value: 'in_progress', label: 'In Progress' },
-    { value: 'contacted', label: 'Contacted' },
-    { value: 'qualified', label: 'Qualified' },
-    { value: 'proposal', label: 'Proposal' },
-    { value: 'negotiation', label: 'Negotiation' },
-    { value: 'cracked', label: 'Cracked' },
     { value: 'completed', label: 'Completed' },
+    { value: 'payment_link_generated', label: 'Payment Link Generated' },
     { value: 'failed', label: 'Failed' },
-    { value: 'closed-won', label: 'Closed Won' },
-    { value: 'closed-lost', label: 'Closed Lost' }
+    { value: 'cracked', label: 'Cracked' }
   ];
 
+  // Updated type options based on requirements
   const typeOptions = [
     { value: '', label: 'All Types' },
     { value: 'warm', label: 'Warm' },
-    { value: 'hot', label: 'Hot' },
     { value: 'cold', label: 'Cold' },
-    { value: 'qualified', label: 'Qualified' },
-    { value: 'unqualified', label: 'Unqualified' },
-    { value: 'push', label: 'Push' },
-    { value: 'upsell', label: 'Upsell' }
+    { value: 'upsell', label: 'Upsell' },
+    { value: 'push', label: 'Push' }
   ];
+
+  // Fetch sales units on component mount
+  useEffect(() => {
+    const fetchSalesUnits = async () => {
+      try {
+        setIsLoadingSalesUnits(true);
+        console.log('Fetching sales units...');
+        const response = await getSalesUnitsApi();
+        console.log('Sales units response:', response);
+        
+        if (response.success && response.data && Array.isArray(response.data)) {
+          setSalesUnits(response.data);
+          console.log('Sales units set:', response.data);
+        } else {
+          console.error('Sales units API failed:', response);
+          // Fallback to mock data if API fails
+          setSalesUnits([
+            { id: 1, name: 'Sales Unit 1' },
+            { id: 2, name: 'Sales Unit 2' },
+            { id: 3, name: 'Enterprise Sales' },
+            { id: 4, name: 'SMB Sales' }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching sales units:', error);
+        // Fallback to mock data on error
+        setSalesUnits([
+          { id: 1, name: 'Sales Unit 1' },
+          { id: 2, name: 'Sales Unit 2' },
+          { id: 3, name: 'Enterprise Sales' },
+          { id: 4, name: 'SMB Sales' }
+        ]);
+      } finally {
+        setIsLoadingSalesUnits(false);
+      }
+    };
+
+    fetchSalesUnits();
+  }, []);
+
+  // Fetch employees when component mounts or sales unit changes
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        setIsLoadingEmployees(true);
+        const salesUnitId = selectedSalesUnit ? parseInt(selectedSalesUnit) : undefined;
+        console.log('Fetching employees for sales unit:', salesUnitId);
+        const response = await getFilterEmployeesApi(salesUnitId);
+        console.log('Employees response:', response);
+        
+        if (response.success && response.data && Array.isArray(response.data)) {
+          setEmployees(response.data);
+          console.log('Employees loaded successfully:', response.data.length);
+        } else {
+          console.error('Employees API failed:', response);
+          // Fallback to mock data if API fails
+          setEmployees([
+            { id: '1', name: 'John Smith' },
+            { id: '2', name: 'Sarah Johnson' },
+            { id: '3', name: 'Mike Wilson' },
+            { id: '4', name: 'Emily Davis' }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+        // Fallback to mock data on error
+        setEmployees([
+          { id: '1', name: 'John Smith' },
+          { id: '2', name: 'Sarah Johnson' },
+          { id: '3', name: 'Mike Wilson' },
+          { id: '4', name: 'Emily Davis' }
+        ]);
+      } finally {
+        setIsLoadingEmployees(false);
+      }
+    };
+
+    fetchEmployees();
+  }, [selectedSalesUnit]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +175,13 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
     if (startDate && endDate) {
       onDateRangeFilter(startDate, endDate);
     }
+  };
+
+  // Handle sales unit change - reset employee selection and fetch new employees
+  const handleSalesUnitChange = (salesUnitId: string) => {
+    setSelectedSalesUnit(salesUnitId);
+    setSelectedAssignedTo(''); // Reset employee selection
+    onSalesUnitFilter(salesUnitId);
   };
 
   const hasActiveFilters = selectedStatus || selectedType || selectedSalesUnit || selectedAssignedTo || startDate || endDate;
@@ -180,14 +284,14 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
               </label>
               <select
                 value={selectedSalesUnit}
-                onChange={(e) => {
-                  setSelectedSalesUnit(e.target.value);
-                  onSalesUnitFilter(e.target.value);
-                }}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                onChange={(e) => handleSalesUnitChange(e.target.value)}
+                disabled={isLoadingSalesUnits}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">All Sales Units</option>
-                {salesUnits.map((unit) => (
+                <option value="">
+                  {isLoadingSalesUnits ? 'Loading...' : 'All Sales Units'}
+                </option>
+                {Array.isArray(salesUnits) && salesUnits.map((unit) => (
                   <option key={unit.id} value={unit.id}>
                     {unit.name}
                   </option>
@@ -206,15 +310,31 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                   setSelectedAssignedTo(e.target.value);
                   onAssignedToFilter(e.target.value);
                 }}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                disabled={isLoadingEmployees}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">All Employees</option>
-                {employees.map((employee) => (
-                  <option key={employee.id} value={employee.id}>
-                    {employee.name}
-                  </option>
-                ))}
+                <option value="">
+                  {isLoadingEmployees ? 'Loading...' : 'All Employees'}
+                </option>
+                {Array.isArray(employees) && employees.map((employee, index) => {
+                  // Handle different employee data formats
+                  const employeeId = (employee.id || employee.employeeId || employee.userId || employee._id || index.toString()).toString();
+                  const employeeName = employee.name || employee.fullName || 
+                    (employee.firstName && employee.lastName ? `${employee.firstName} ${employee.lastName}` : null) || 
+                    employee.email || `Employee ${index + 1}`;
+                  
+                  return (
+                    <option key={employeeId} value={employeeId}>
+                      {employeeName}
+                    </option>
+                  );
+                })}
               </select>
+              {selectedSalesUnit && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Showing employees from selected sales unit
+                </p>
+              )}
             </div>
 
             {/* Start Date */}
@@ -247,19 +367,32 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
           </div>
 
           {/* Filter Actions */}
-          <div className="mt-4 flex justify-end space-x-3">
-            <button
-              onClick={handleClearFilters}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Clear All
-            </button>
-            <button
-              onClick={() => setShowFilters(false)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Apply Filters
-            </button>
+          <div className="mt-4 flex justify-between items-center">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  // Refresh data from API
+                  window.location.reload();
+                }}
+                className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                🔄 Refresh Data
+              </button>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleClearFilters}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Clear All
+              </button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Apply Filters
+              </button>
+            </div>
           </div>
         </div>
       )}

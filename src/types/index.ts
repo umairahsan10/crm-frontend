@@ -297,7 +297,7 @@ export interface Lead {
   notes?: string;
 }
 
-export type LeadSource = 'PPC' | 'Organic' | 'Referral' | 'Cold Call' | 'Email' | 'Social Media' | 'Website' | 'Trade Show' | 'Other';
+export type LeadSource = 'PPC' | 'SMM';
 export type LeadType = 'warm' | 'cold' | 'upsell' | 'push';
 export type LeadStatus = 'new' | 'in_progress' | 'completed' | 'payment_link_generated' | 'failed' | 'cracked';
 

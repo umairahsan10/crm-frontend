@@ -10,7 +10,7 @@ import {
   bulkUpdateLeadsApi, 
   bulkDeleteLeadsApi, 
   getLeadsStatisticsApi, 
-  getEmployeesApi 
+  getFilterEmployeesApi 
 } from '../../apis/leads';
 import type { Lead } from '../../types';
 
@@ -44,18 +44,41 @@ const LeadsManagementPage: React.FC = () => {
   });
 
   // Data state
-  const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>([]);
-  const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
+  const [employees, setEmployees] = useState<Array<{ 
+    id?: string | number; 
+    employeeId?: string | number;
+    userId?: string | number;
+    _id?: string | number;
+    name?: string;
+    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    [key: string]: any;
+  }>>([]);
   const [statistics, setStatistics] = useState({
-    total: 0,
-    byStatus: {} as Record<string, number>,
-    byType: {} as Record<string, number>,
-    conversionRate: 0,
-    thisMonth: {
+    totalLeads: 0,
+    activeLeads: 0,
+    completedLeads: 0,
+    failedLeads: 0,
+    conversionRate: '0%',
+    completionRate: '0%',
+    byStatus: {
       new: 0,
       inProgress: 0,
       completed: 0,
       failed: 0
+    },
+    byType: {
+      warm: 0,
+      cold: 0,
+      push: 0,
+      upsell: 0
+    },
+    today: {
+      new: 0,
+      completed: 0,
+      inProgress: 0
     }
   });
 
@@ -97,36 +120,52 @@ const LeadsManagementPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching statistics:', error);
+      // Fallback to mock statistics data
+      setStatistics({
+        totalLeads: 0,
+        activeLeads: 0,
+        completedLeads: 0,
+        failedLeads: 0,
+        conversionRate: '0%',
+        completionRate: '0%',
+        byStatus: {
+          new: 0,
+          inProgress: 0,
+          completed: 0,
+          failed: 0
+        },
+        byType: {
+          warm: 0,
+          cold: 0,
+          push: 0,
+          upsell: 0
+        },
+        today: {
+          new: 0,
+          completed: 0,
+          inProgress: 0
+        }
+      });
     }
   };
 
-  // Fetch employees and sales units
+  // Fetch employees for bulk actions (this is separate from filter employees)
   const fetchSupportingData = async () => {
     try {
-      const [employeesRes, salesUnitsRes] = await Promise.all([
-        getEmployeesApi(),
-        // Mock sales units for now
-        Promise.resolve({
-          success: true,
-          data: [
-            { id: 1, name: 'Sales Unit 1' },
-            { id: 2, name: 'Sales Unit 2' },
-            { id: 3, name: 'Sales Unit 3' },
-            { id: 4, name: 'Enterprise Sales' },
-            { id: 5, name: 'SMB Sales' }
-          ]
-        })
-      ]);
+      const employeesRes = await getFilterEmployeesApi();
 
       if (employeesRes.success && employeesRes.data) {
         setEmployees(employeesRes.data);
       }
-
-      if (salesUnitsRes.success && salesUnitsRes.data) {
-        setSalesUnits(salesUnitsRes.data);
-      }
     } catch (error) {
       console.error('Error fetching supporting data:', error);
+      // Fallback to mock data for bulk actions
+      setEmployees([
+        { id: '1', name: 'John Smith' },
+        { id: '2', name: 'Sarah Johnson' },
+        { id: '3', name: 'Mike Wilson' },
+        { id: '4', name: 'Emily Davis' }
+      ]);
     }
   };
 
@@ -316,8 +355,6 @@ const LeadsManagementPage: React.FC = () => {
           onAssignedToFilter={handleAssignedToFilter}
           onDateRangeFilter={handleDateRangeFilter}
           onClearFilters={handleClearFilters}
-          salesUnits={salesUnits}
-          employees={employees}
         />
 
         {/* Bulk Actions */}
@@ -349,6 +386,17 @@ const LeadsManagementPage: React.FC = () => {
           lead={selectedLead}
           isOpen={!!selectedLead}
           onClose={() => setSelectedLead(null)}
+          onLeadUpdated={(updatedLead) => {
+            setLeads(prev => prev.map(lead => 
+              lead.id === updatedLead.id ? updatedLead : lead
+            ));
+            setSelectedLead(updatedLead);
+            setNotification({
+              type: 'success',
+              message: 'Lead updated successfully!'
+            });
+            setTimeout(() => setNotification(null), 3000);
+          }}
         />
 
         {/* Create Lead Modal */}
@@ -491,6 +539,7 @@ const LeadsManagementPage: React.FC = () => {
           </div>
           );
         })()}
+
 
         {/* Notification */}
         {notification && (

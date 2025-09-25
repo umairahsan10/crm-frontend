@@ -6,7 +6,18 @@ interface BulkActionsProps {
   onBulkStatusChange: (leadIds: string[], status: string) => void;
   onBulkDelete: (leadIds: string[]) => void;
   onClearSelection: () => void;
-  employees: Array<{ id: string; name: string }>;
+  employees: Array<{ 
+    id?: string | number; 
+    employeeId?: string | number;
+    userId?: string | number;
+    _id?: string | number;
+    name?: string;
+    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    [key: string]: any;
+  }>;
 }
 
 const BulkActions: React.FC<BulkActionsProps> = ({
@@ -25,15 +36,10 @@ const BulkActions: React.FC<BulkActionsProps> = ({
   const statusOptions = [
     { value: 'new', label: 'New' },
     { value: 'in_progress', label: 'In Progress' },
-    { value: 'contacted', label: 'Contacted' },
-    { value: 'qualified', label: 'Qualified' },
-    { value: 'proposal', label: 'Proposal' },
-    { value: 'negotiation', label: 'Negotiation' },
-    { value: 'cracked', label: 'Cracked' },
     { value: 'completed', label: 'Completed' },
+    { value: 'payment_link_generated', label: 'Payment Link Generated' },
     { value: 'failed', label: 'Failed' },
-    { value: 'closed-won', label: 'Closed Won' },
-    { value: 'closed-lost', label: 'Closed Lost' }
+    { value: 'cracked', label: 'Cracked' }
   ];
 
   const handleBulkAssign = () => {
@@ -108,11 +114,19 @@ const BulkActions: React.FC<BulkActionsProps> = ({
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="">Select Employee</option>
-                  {employees.map((employee) => (
-                    <option key={employee.id} value={employee.id}>
-                      {employee.name}
-                    </option>
-                  ))}
+                  {employees.map((employee, index) => {
+                    // Handle different employee data formats
+                    const employeeId = (employee.id || employee.employeeId || employee.userId || employee._id || index.toString()).toString();
+                    const employeeName = employee.name || employee.fullName || 
+                      (employee.firstName && employee.lastName ? `${employee.firstName} ${employee.lastName}` : null) || 
+                      employee.email || `Employee ${index + 1}`;
+                    
+                    return (
+                      <option key={employeeId} value={employeeId}>
+                        {employeeName}
+                      </option>
+                    );
+                  })}
                 </select>
                 <button
                   onClick={handleBulkAssign}
