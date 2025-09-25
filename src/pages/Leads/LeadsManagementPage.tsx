@@ -247,12 +247,15 @@ const LeadsManagementPage: React.FC = () => {
 
 
   const handleLeadCreated = (newLead: Lead) => {
+    console.log('LeadsManagementPage: Lead created successfully:', newLead);
     setLeads(prev => [newLead, ...prev]);
     setShowCreateForm(false);
     setNotification({
       type: 'success',
       message: 'Lead created successfully!'
     });
+    // Auto-clear notification after 3 seconds
+    setTimeout(() => setNotification(null), 3000);
   };
 
   const handleCloseNotification = () => {
@@ -282,7 +285,10 @@ const LeadsManagementPage: React.FC = () => {
                 {showStatistics ? 'Hide Stats' : 'Show Stats'}
               </button>
               <button
-                onClick={() => setShowCreateForm(true)}
+                onClick={() => {
+                  console.log('LeadsManagementPage: Create Lead button clicked');
+                  setShowCreateForm(true);
+                }}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -346,35 +352,145 @@ const LeadsManagementPage: React.FC = () => {
         />
 
         {/* Create Lead Modal */}
-        {showCreateForm && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowCreateForm(false)}></div>
+        {showCreateForm && (() => {
+          console.log('LeadsManagementPage: Modal is rendering, showCreateForm:', showCreateForm);
+          return (
+            <div 
+              className="modal-overlay" 
+              onClick={() => setShowCreateForm(false)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 1000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+            <div 
+              className="modal-content" 
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '12px',
+                padding: '0',
+                maxWidth: '480px',
+                width: '95%',
+                maxHeight: '95vh',
+                overflow: 'hidden',
+                position: 'relative',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+              }}
+            >
+              {/* Modal Header */}
+              <div className="modal-header" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '16px 20px',
+                borderBottom: '1px solid #e5e7eb',
+                backgroundColor: '#f9fafb'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: '0'
+                }}>Create New Lead</h3>
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '20px',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    color: '#6b7280',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '28px',
+                    height: '28px'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  ×
+                </button>
+              </div>
               
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              
-              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Create New Lead</h3>
-                    <button
-                      onClick={() => setShowCreateForm(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
+              {/* Modal Body - Compact Form */}
+              <div className="modal-body" style={{ padding: '0' }}>
+                <div style={{ 
+                  padding: '20px',
+                  maxHeight: 'calc(95vh - 60px)',
+                  overflowY: 'auto'
+                }}>
+                  <style>{`
+                    .modal-body .create-lead-form {
+                      max-width: 100%;
+                      margin: 0;
+                      padding: 0;
+                    }
+                    .modal-body .reusable-form {
+                      max-width: 100%;
+                      margin: 0;
+                      box-shadow: none;
+                      border-radius: 0;
+                    }
+                    .modal-body .form-title {
+                      display: none;
+                    }
+                    .modal-body .form-container {
+                      padding: 0;
+                    }
+                    .modal-body .form-fields {
+                      gap: 12px;
+                      margin-bottom: 16px;
+                    }
+                    .modal-body .form-field-wrapper {
+                      margin-bottom: 0;
+                    }
+                    .modal-body .form-field {
+                      min-height: 40px;
+                      padding: 8px 12px;
+                      font-size: 14px;
+                    }
+                    .modal-body .form-label {
+                      font-size: 13px;
+                      margin-bottom: 4px;
+                      font-weight: 500;
+                    }
+                    .modal-body .form-submit {
+                      margin-top: 16px;
+                    }
+                    .modal-body .form-button {
+                      padding: 10px 20px;
+                      font-size: 14px;
+                      min-height: 40px;
+                    }
+                  `}</style>
                   <CreateLeadForm
-                    onSuccess={handleLeadCreated}
-                    onError={(error) => setNotification({ type: 'error', message: error })}
+                    onSuccess={(lead) => {
+                      console.log('LeadsManagementPage: CreateLeadForm onSuccess called with:', lead);
+                      handleLeadCreated(lead);
+                    }}
+                    onError={(error) => {
+                      console.log('LeadsManagementPage: CreateLeadForm onError called with:', error);
+                      setNotification({ type: 'error', message: error });
+                    }}
                   />
                 </div>
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Notification */}
         {notification && (

@@ -2,6 +2,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 import type { CreateLeadRequest, CreateLeadResponse, Lead, ApiResponse } from '../types';
+import { getAuthData } from '../utils/cookieUtils';
 
 export interface ApiError {
   message: string;
@@ -11,7 +12,7 @@ export interface ApiError {
 // Create a new lead
 export const createLeadApi = async (leadData: CreateLeadRequest): Promise<CreateLeadResponse> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -119,7 +120,7 @@ export const getLeadsApi = async (
   } = {}
 ): Promise<ApiResponse<Lead[]>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -202,7 +203,7 @@ export const getLeadsApi = async (
 // Get a specific lead by ID
 export const getLeadByIdApi = async (leadId: string): Promise<ApiResponse<Lead>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -234,7 +235,7 @@ export const getLeadByIdApi = async (leadId: string): Promise<ApiResponse<Lead>>
 // Delete a lead
 export const deleteLeadApi = async (leadId: string): Promise<ApiResponse<void>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -265,7 +266,7 @@ export const deleteLeadApi = async (leadId: string): Promise<ApiResponse<void>> 
 // Bulk operations
 export const bulkUpdateLeadsApi = async (leadIds: string[], updates: Partial<Lead>): Promise<ApiResponse<void>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -296,7 +297,7 @@ export const bulkUpdateLeadsApi = async (leadIds: string[], updates: Partial<Lea
 
 export const bulkDeleteLeadsApi = async (leadIds: string[]): Promise<ApiResponse<void>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -339,7 +340,7 @@ export const getLeadsStatisticsApi = async (): Promise<ApiResponse<{
   };
 }>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -374,7 +375,7 @@ export const getLeadsStatisticsApi = async (): Promise<ApiResponse<{
 // Get employees for assignment
 export const getEmployeesApi = async (): Promise<ApiResponse<Array<{ id: string; name: string }>>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }

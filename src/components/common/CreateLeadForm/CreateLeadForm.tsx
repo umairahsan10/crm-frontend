@@ -163,7 +163,6 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({
         fields={formFields}
         onSubmit={handleSubmit}
         buttonText={isSubmitting ? 'Creating Lead...' : 'Create Lead'}
-        title="Create New Lead"
         theme="blue"
       />
     </div>
