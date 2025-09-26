@@ -34,7 +34,6 @@ const CsvUploadComponent: React.FC<CsvUploadComponentProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>([]);
-  const [isLoadingSalesUnits, setIsLoadingSalesUnits] = useState(true);
   const [previewData, setPreviewData] = useState<CsvRow[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,7 +46,6 @@ const CsvUploadComponent: React.FC<CsvUploadComponentProps> = ({
   React.useEffect(() => {
     const fetchSalesUnits = async () => {
       try {
-        setIsLoadingSalesUnits(true);
         const response = await getSalesUnitsApi();
         
         if (response.success && response.data && Array.isArray(response.data)) {
@@ -73,7 +71,7 @@ const CsvUploadComponent: React.FC<CsvUploadComponentProps> = ({
           { id: 5, name: 'SMB Sales' }
         ]);
       } finally {
-        setIsLoadingSalesUnits(false);
+        // Sales units loading completed
       }
     };
 
