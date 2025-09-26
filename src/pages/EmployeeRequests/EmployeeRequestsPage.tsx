@@ -1,5 +1,5 @@
 import React from 'react';
-import EmployeeRequestsManagement from '../../components/employee-requests/EmployeeRequestsManagement';
+import EmployeeRequestsManagement from '../../components/common/requests/EmployeeRequestsManagement';
 
 const EmployeeRequestsPage: React.FC = () => {
   return (

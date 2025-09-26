@@ -66,7 +66,7 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
         { id: 'reports', label: 'Reports', icon: '📊', path: '/reports' },
         { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics' },
-        { id: 'system-logs', label: 'System Logs', icon: '📋', path: '/system-logs' },
+        { id: 'system-logs', label: 'System Logs', icon: '📋', path: '/logs' },
         { id: 'audit-trail', label: 'Audit Trail', icon: '🔍', path: '/audit-trail' },
         { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/notifications' },
         { id: 'backup', label: 'Backup & Restore', icon: '💾', path: '/backup' },
@@ -162,8 +162,28 @@ const Navbar: React.FC<NavbarProps> = ({
   // Get current active page based on URL
   const getCurrentActivePage = () => {
     const currentPath = location.pathname;
-    const navItem = navigationItems.find(item => item.path === currentPath);
-    return navItem ? navItem.id : 'dashboard';
+    
+    // Find exact match first
+    const exactMatch = navigationItems.find(item => item.path === currentPath);
+    if (exactMatch) {
+      return exactMatch.id;
+    }
+    
+    // Handle sub-routes - check if current path starts with any navbar path
+    const subRouteMatch = navigationItems.find(item => 
+      item.path !== '/' && currentPath.startsWith(item.path + '/')
+    );
+    if (subRouteMatch) {
+      return subRouteMatch.id;
+    }
+    
+    // Special case: if we're on dashboard, highlight dashboard
+    if (currentPath === '/dashboard') {
+      return 'dashboard';
+    }
+    
+    // For all other pages not in navbar, don't highlight anything
+    return null;
   };
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);

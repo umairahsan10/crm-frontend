@@ -3,7 +3,19 @@ import { useAuth } from '../../../context/AuthContext';
 import DataTable from '../DataTable/DataTable';
 import DataStatistics from '../Statistics/DataStatistics';
 import BulkActions from '../BulkActions/BulkActions';
-import { getLeaveLogsApi, getLeaveLogsStatsApi, exportLeaveLogsApi, type GetLeaveLogsDto } from '../../../apis/leave-logs';
+import { 
+  getLeaveLogsApi, 
+  getLeaveLogsByEmployeeApi, 
+  getLeaveLogsStatsApi, 
+  exportLeaveLogsApi, 
+  type GetLeaveLogsDto, 
+  type LeaveLog,
+  type ExportLeaveLogsDto,
+  type LeaveLogsStatsDto,
+  type LeaveLogsStatsResponseDto,
+  ExportFormat,
+  StatsPeriod
+} from '../../../apis/leave-logs';
 
 // Local interface for component
 interface LeaveLogTableRow {
@@ -15,7 +27,7 @@ interface LeaveLogTableRow {
   end_date: string;
   days: number;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: string;
   approved_by?: number;
   approved_at?: string;
   rejected_reason?: string;
@@ -33,25 +45,24 @@ const LeaveLogsManagement: React.FC = () => {
   const [leaveLogs, setLeaveLogs] = useState<LeaveLogTableRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
-  const [statistics, setStatistics] = useState({
-    total: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-    totalDays: 0,
-    today: 0,
-    thisWeek: 0,
-    thisMonth: 0
+  const [statistics, setStatistics] = useState<LeaveLogsStatsResponseDto>({
+    total_leaves: 0,
+    pending_leaves: 0,
+    approved_leaves: 0,
+    rejected_leaves: 0,
+    total_leave_days: 0,
+    average_leave_duration: 0,
+    most_common_leave_type: 'N/A',
+    period_stats: []
   });
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [, setTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [leaveTypeFilter, setLeaveTypeFilter] = useState('all');
+  const [employeeIdFilter, setEmployeeIdFilter] = useState('');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>(ExportFormat.CSV);
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
   // Check if user has access to leave logs
@@ -86,101 +97,155 @@ const LeaveLogsManagement: React.FC = () => {
   // Fetch statistics from API
   const fetchStatistics = async () => {
     try {
-      const statsResponse = await getLeaveLogsStatsApi();
-      setStatistics({
-        total: statsResponse.summary.totalLogs,
-        pending: statsResponse.summary.pendingLogs,
-        approved: statsResponse.summary.approvedLogs,
-        rejected: statsResponse.summary.rejectedLogs,
-        totalDays: statsResponse.summary.totalDays,
-        today: statsResponse.timeBasedStats.today,
-        thisWeek: statsResponse.timeBasedStats.thisWeek,
-        thisMonth: statsResponse.timeBasedStats.thisMonth
-      });
+      const statsQuery: LeaveLogsStatsDto = {
+        period: StatsPeriod.MONTHLY,
+        include_breakdown: true
+      };
+      
+      const statsResponse = await getLeaveLogsStatsApi(statsQuery);
+      setStatistics(statsResponse);
     } catch (error) {
       console.error('Error fetching leave logs statistics:', error);
       // Fallback to empty stats if API fails
       setStatistics({
-        total: 0,
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        totalDays: 0,
-        today: 0,
-        thisWeek: 0,
-        thisMonth: 0
+        total_leaves: 0,
+        pending_leaves: 0,
+        approved_leaves: 0,
+        rejected_leaves: 0,
+        total_leave_days: 0,
+        average_leave_duration: 0,
+        most_common_leave_type: 'N/A',
+        period_stats: []
       });
     }
   };
 
-  // Fetch leave logs
-  const fetchLeaveLogs = async (page?: number) => {
+  // Fetch leave logs by employee ID
+  const fetchLeaveLogsByEmployee = async (empId: number) => {
     try {
       setLoading(true);
+      const response = await getLeaveLogsByEmployeeApi(empId);
+      console.log('Leave logs by employee API response:', response);
       
-      const pageNumber = page || currentPage;
-      const query: GetLeaveLogsDto = {
-        page: pageNumber,
-        limit: 10,
-        orderBy: 'startDate',
-        orderDirection: 'desc',
-      };
-
-      // Add filters
-      if (statusFilter !== 'all') {
-        query.status = statusFilter as 'pending' | 'approved' | 'rejected';
-      }
-      if (leaveTypeFilter !== 'all') {
-        query.leaveType = leaveTypeFilter;
-      }
-
-      console.log('Fetching leave logs for page:', pageNumber, 'with query:', query);
-      const response = await getLeaveLogsApi(query);
-      console.log('API Response for page', pageNumber, ':', response);
-      
-      // Check if response has logs data
-      if (!response || !response.logs || !Array.isArray(response.logs)) {
+      if (!response || !Array.isArray(response)) {
         console.warn('Invalid response structure:', response);
         setLeaveLogs([]);
-        setTotal(0);
-        setTotalPages(1);
         return;
       }
       
       // Map API response to component format
-      const mappedLogs = response.logs.map(log => {
-        // Ensure all required fields exist
-        if (!log || typeof log.id === 'undefined') {
+      const mappedLogs = response.map((log: LeaveLog) => {
+        if (!log || typeof log.leave_log_id === 'undefined') {
           console.warn('Invalid log entry:', log);
           return null;
         }
         
+        // Calculate days between start and end date
+        const startDate = new Date(log.start_date);
+        const endDate = new Date(log.end_date);
+        const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        
         return {
-          id: log.id.toString(), // For DataTable compatibility
-          leave_log_id: log.id,
-          employee_id: log.employeeId,
-          leave_type: log.leaveType,
-          start_date: log.startDate,
-          end_date: log.endDate,
-          days: log.days,
+          id: log.leave_log_id.toString(),
+          leave_log_id: log.leave_log_id,
+          employee_id: log.emp_id,
+          leave_type: log.leave_type,
+          start_date: log.start_date,
+          end_date: log.end_date,
+          days: days,
           reason: log.reason,
           status: log.status,
-          approved_by: log.approvedBy || 0,
-          approved_at: log.approvedAt || '',
-          rejected_reason: log.rejectedReason || '',
-          created_at: log.createdAt,
-          updated_at: log.updatedAt,
-          employee_name: `${log.employee.firstName} ${log.employee.lastName}`,
-          employee_email: log.employee.email,
-          approver_name: log.approver ? `${log.approver.firstName} ${log.approver.lastName}` : undefined
+          approved_by: log.reviewed_by || 0,
+          approved_at: log.reviewed_on || '',
+          rejected_reason: log.confirmation_reason || '',
+          created_at: log.created_at,
+          updated_at: log.updated_at,
+          employee_name: log.employee_name,
+          employee_email: '',
+          approver_name: log.reviewer_name || undefined
+        };
+      }).filter(log => log !== null);
+      
+      setLeaveLogs(mappedLogs);
+      setTotal(mappedLogs.length);
+    } catch (error) {
+      console.error('Error fetching leave logs by employee:', error);
+      setNotification({
+        type: 'error',
+        message: 'Failed to fetch leave logs for employee'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch leave logs
+  const fetchLeaveLogs = async () => {
+    try {
+      setLoading(true);
+      
+      const query: GetLeaveLogsDto = {};
+
+      // Add filters
+      if (statusFilter !== 'all') {
+        query.status = statusFilter;
+      }
+      if (employeeIdFilter && employeeIdFilter.trim() !== '') {
+        const empId = parseInt(employeeIdFilter.trim());
+        if (!isNaN(empId)) {
+          query.employee_id = empId;
+        }
+      }
+
+      console.log('Fetching leave logs with query:', query);
+      const response = await getLeaveLogsApi(query);
+      console.log('API Response:', response);
+      
+      // Check if response is an array (direct response from backend)
+      if (!response || !Array.isArray(response)) {
+        console.warn('Invalid response structure:', response);
+        setLeaveLogs([]);
+        setTotal(0);
+        return;
+      }
+      
+      // Map API response to component format
+      const mappedLogs = response.map((log: LeaveLog) => {
+        // Ensure all required fields exist
+        if (!log || typeof log.leave_log_id === 'undefined') {
+          console.warn('Invalid log entry:', log);
+          return null;
+        }
+        
+        // Calculate days between start and end date
+        const startDate = new Date(log.start_date);
+        const endDate = new Date(log.end_date);
+        const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        
+        return {
+          id: log.leave_log_id.toString(), // For DataTable compatibility
+          leave_log_id: log.leave_log_id,
+          employee_id: log.emp_id,
+          leave_type: log.leave_type,
+          start_date: log.start_date,
+          end_date: log.end_date,
+          days: days,
+          reason: log.reason,
+          status: log.status,
+          approved_by: log.reviewed_by || 0,
+          approved_at: log.reviewed_on || '',
+          rejected_reason: log.confirmation_reason || '',
+          created_at: log.created_at,
+          updated_at: log.updated_at,
+          employee_name: log.employee_name,
+          employee_email: '', // Not provided by backend
+          approver_name: log.reviewer_name || undefined
         };
       }).filter(log => log !== null); // Remove any null entries
       
-      console.log('Setting logs:', mappedLogs.length, 'total:', response.total, 'totalPages:', response.totalPages, 'currentPage:', response.page);
+      console.log('Setting logs:', mappedLogs.length);
       setLeaveLogs(mappedLogs);
-      setTotal(response.total || 0);
-      setTotalPages(response.totalPages || 1);
-      setCurrentPage(response.page || pageNumber);
+      setTotal(mappedLogs.length);
     } catch (error) {
       console.error('Error fetching leave logs:', error);
       setNotification({
@@ -196,19 +261,12 @@ const LeaveLogsManagement: React.FC = () => {
   const handleFilterChange = (filterType: string, value: string) => {
     if (filterType === 'status') {
       setStatusFilter(value);
-    } else if (filterType === 'leaveType') {
-      setLeaveTypeFilter(value);
+    } else if (filterType === 'employeeId') {
+      setEmployeeIdFilter(value);
     }
-    setCurrentPage(1);
-    fetchLeaveLogs(1);
+    fetchLeaveLogs();
   };
 
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    console.log('Page change requested:', { from: currentPage, to: page });
-    setCurrentPage(page);
-    fetchLeaveLogs(page);
-  };
 
   // Handle reason click
   const handleReasonClick = (reason: string) => {
@@ -225,16 +283,21 @@ const LeaveLogsManagement: React.FC = () => {
     try {
       switch (action) {
         case 'export':
-          const query: GetLeaveLogsDto = {
-            status: statusFilter !== 'all' ? statusFilter as 'pending' | 'approved' | 'rejected' : undefined,
-            leaveType: leaveTypeFilter !== 'all' ? leaveTypeFilter : undefined,
+          const exportQuery: ExportLeaveLogsDto = {
+            format: exportFormat,
+            employee_id: employeeIdFilter && employeeIdFilter.trim() !== '' ? parseInt(employeeIdFilter.trim()) : undefined,
+            include_reviewer_details: true,
+            include_confirmation_reason: true
           };
           
-          const blob = await exportLeaveLogsApi(query, 'csv');
+          const blob = await exportLeaveLogsApi(exportQuery);
+          
+          // Create download link from the blob
           const url = window.URL.createObjectURL(blob);
+          const filename = `leave-logs-${new Date().toISOString().split('T')[0]}.${exportFormat}`;
           const a = document.createElement('a');
           a.href = url;
-          a.download = `leave-logs-${new Date().toISOString().split('T')[0]}.csv`;
+          a.download = filename;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
@@ -242,7 +305,7 @@ const LeaveLogsManagement: React.FC = () => {
           
           setNotification({
             type: 'success',
-            message: 'Leave logs exported successfully'
+            message: `Leave logs exported successfully in ${exportFormat.toUpperCase()} format`
           });
           break;
         default:
@@ -271,10 +334,10 @@ const LeaveLogsManagement: React.FC = () => {
 
   // Reload data when filters change
   useEffect(() => {
-    if (statusFilter !== 'all' || leaveTypeFilter !== 'all') {
-      fetchLeaveLogs(1);
+    if (statusFilter !== 'all' || employeeIdFilter.trim() !== '') {
+      fetchLeaveLogs();
     }
-  }, [statusFilter, leaveTypeFilter]);
+  }, [statusFilter, employeeIdFilter]);
 
   // Auto-dismiss notifications
   useEffect(() => {
@@ -303,8 +366,8 @@ const LeaveLogsManagement: React.FC = () => {
   // Statistics cards
   const statisticsCards = [
     {
-      title: 'Total Logs',
-      value: statistics.total,
+      title: 'Total Leaves',
+      value: statistics.total_leaves,
       color: 'blue' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -314,7 +377,7 @@ const LeaveLogsManagement: React.FC = () => {
     },
     {
       title: 'Pending',
-      value: statistics.pending,
+      value: statistics.pending_leaves,
       color: 'yellow' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -324,7 +387,7 @@ const LeaveLogsManagement: React.FC = () => {
     },
     {
       title: 'Approved',
-      value: statistics.approved,
+      value: statistics.approved_leaves,
       color: 'green' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -334,7 +397,7 @@ const LeaveLogsManagement: React.FC = () => {
     },
     {
       title: 'Rejected',
-      value: statistics.rejected,
+      value: statistics.rejected_leaves,
       color: 'red' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -344,7 +407,7 @@ const LeaveLogsManagement: React.FC = () => {
     },
     {
       title: 'Total Days',
-      value: statistics.totalDays,
+      value: statistics.total_leave_days,
       color: 'purple' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -353,8 +416,8 @@ const LeaveLogsManagement: React.FC = () => {
       )
     },
     {
-      title: 'This Month',
-      value: statistics.thisMonth,
+      title: 'Avg Duration',
+      value: `${statistics.average_leave_duration.toFixed(1)} days`,
       color: 'indigo' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -395,7 +458,7 @@ const LeaveLogsManagement: React.FC = () => {
       accessor: 'leave_type',
       render: (value: string) => (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          {value.replace(/_/g, ' ').toUpperCase()}
+          {value ? value.replace(/_/g, ' ').toUpperCase() : 'N/A'}
         </span>
       )
     },
@@ -404,7 +467,7 @@ const LeaveLogsManagement: React.FC = () => {
       accessor: 'start_date',
       render: (value: string) => (
         <span className="text-sm text-gray-600">
-          {new Date(value).toLocaleDateString()}
+          {value ? new Date(value).toLocaleDateString() : 'N/A'}
         </span>
       )
     },
@@ -413,7 +476,7 @@ const LeaveLogsManagement: React.FC = () => {
       accessor: 'end_date',
       render: (value: string) => (
         <span className="text-sm text-gray-600">
-          {new Date(value).toLocaleDateString()}
+          {value ? new Date(value).toLocaleDateString() : 'N/A'}
         </span>
       )
     },
@@ -435,7 +498,7 @@ const LeaveLogsManagement: React.FC = () => {
           value === 'rejected' ? 'bg-red-100 text-red-800' :
           'bg-yellow-100 text-yellow-800'
         }`}>
-          {value.toUpperCase()}
+          {value ? value.toUpperCase() : 'N/A'}
         </span>
       )
     },
@@ -449,7 +512,7 @@ const LeaveLogsManagement: React.FC = () => {
             title="Click to view full reason"
             onClick={() => handleReasonClick(value)}
           >
-            {value.substring(0, 30) + '...'}
+            {value ? (value.length > 30 ? value.substring(0, 30) + '...' : value) : 'N/A'}
           </span>
         </div>
       )
@@ -468,7 +531,7 @@ const LeaveLogsManagement: React.FC = () => {
       accessor: 'created_at',
       render: (value: string) => (
         <span className="text-sm text-gray-600">
-          {new Date(value).toLocaleString()}
+          {value ? new Date(value).toLocaleString() : 'N/A'}
         </span>
       )
     }
@@ -518,23 +581,30 @@ const LeaveLogsManagement: React.FC = () => {
             </div>
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Leave Type Filter
+                Employee ID Filter
+              </label>
+              <input
+                type="number"
+                value={employeeIdFilter}
+                onChange={(e) => handleFilterChange('employeeId', e.target.value)}
+                placeholder="Enter employee ID"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Export Format
               </label>
               <select
-                value={leaveTypeFilter}
-                onChange={(e) => handleFilterChange('leaveType', e.target.value)}
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Types</option>
-                <option value="sick_leave">Sick Leave</option>
-                <option value="vacation_leave">Vacation Leave</option>
-                <option value="personal_leave">Personal Leave</option>
-                <option value="maternity_leave">Maternity Leave</option>
-                <option value="paternity_leave">Paternity Leave</option>
-                <option value="emergency_leave">Emergency Leave</option>
+                <option value={ExportFormat.CSV}>CSV</option>
+                <option value={ExportFormat.JSON}>JSON</option>
               </select>
             </div>
-            <div>
+            <div className="flex gap-2">
               <button
                 onClick={() => {
                   fetchLeaveLogs();
@@ -544,6 +614,19 @@ const LeaveLogsManagement: React.FC = () => {
               >
                 Refresh
               </button>
+              {employeeIdFilter && employeeIdFilter.trim() !== '' && (
+                <button
+                  onClick={() => {
+                    const empId = parseInt(employeeIdFilter.trim());
+                    if (!isNaN(empId)) {
+                      fetchLeaveLogsByEmployee(empId);
+                    }
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  Get Employee Logs
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -567,13 +650,9 @@ const LeaveLogsManagement: React.FC = () => {
             loading={loading}
             selectedRows={selectedLogs}
             onBulkSelect={setSelectedLogs}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
             sortable={true}
             selectable={true}
-            paginated={true}
-            serverSidePagination={true}
+            paginated={false}
           />
         </div>
 

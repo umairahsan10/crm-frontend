@@ -1,30 +1,23 @@
 import { apiGetJson, apiRequest, ApiError } from '../utils/apiClient';
 import { getApiBaseUrl } from '../config/api';
 
-// Types for Late Logs
+// Types for Late Logs - Updated to match backend LateLogsListResponseDto
 export interface LateLog {
-  id: number;
-  employeeId: number;
+  late_log_id: number;
+  emp_id: number;
+  employee_name: string;
   date: string;
-  lateMinutes: number;
-  reason?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  approvedBy?: number;
-  approvedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  employee: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  approver?: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
+  scheduled_time_in: string;
+  actual_time_in: string;
+  minutes_late: number;
+  reason: string;
+  justified: boolean;
+  late_type: string;
+  action_taken: string;
+  reviewed_by?: number;
+  reviewer_name?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LateLogsResponse {
@@ -35,50 +28,101 @@ export interface LateLogsResponse {
   totalPages: number;
 }
 
-export interface LateLogsStatsResponse {
-  summary: {
-    totalLogs: number;
-    pendingLogs: number;
-    approvedLogs: number;
-    rejectedLogs: number;
-    averageLateMinutes: number;
-  };
-  timeBasedStats: {
-    today: number;
-    thisWeek: number;
-    thisMonth: number;
-  };
+// Statistics response structure
+export interface LateLogsStatsResponseDto {
+  total_late_logs: number;
+  pending_late_logs: number;
+  completed_late_logs: number;
+  total_minutes_late: number;
+  average_minutes_late: number;
+  most_common_reason: string;
+  paid_late_count: number;
+  unpaid_late_count: number;
+  period_stats: LatePeriodStatsDto[];
+  employee_breakdown?: EmployeeLateStatsDto[];
+  reason_breakdown?: ReasonStatsDto[];
 }
 
+export interface LatePeriodStatsDto {
+  period: string;
+  total_late_logs: number;
+  completed_late_logs: number;
+  pending_late_logs: number;
+  total_minutes: number;
+}
+
+export interface EmployeeLateStatsDto {
+  employee_id: number;
+  employee_name: string;
+  total_late_logs: number;
+  total_minutes: number;
+  completed_late_logs: number;
+  pending_late_logs: number;
+  average_minutes_late: number;
+}
+
+export interface ReasonStatsDto {
+  reason: string;
+  count: number;
+  total_minutes: number;
+  completion_rate: number;
+}
+
+// Export format constants
+export const ExportFormat = {
+  CSV: 'csv',
+  JSON: 'json'
+} as const;
+
+export type ExportFormat = typeof ExportFormat[keyof typeof ExportFormat];
+
+// Export query parameters
+export interface ExportLateLogsDto {
+  employee_id?: number;
+  start_date?: string;
+  end_date?: string;
+  format: ExportFormat;
+  include_late_type?: boolean;
+  include_reviewer_details?: boolean;
+}
+
+// Statistics query parameters
+export interface LateLogsStatsDto {
+  employee_id?: number;
+  start_date?: string;
+  end_date?: string;
+  period?: StatsPeriod;
+  include_breakdown?: boolean;
+}
+
+export const StatsPeriod = {
+  DAILY: 'daily',
+  WEEKLY: 'weekly',
+  MONTHLY: 'monthly',
+  YEARLY: 'yearly'
+} as const;
+
+export type StatsPeriod = typeof StatsPeriod[keyof typeof StatsPeriod];
+
 export interface GetLateLogsDto {
-  employeeId?: number;
-  status?: 'pending' | 'approved' | 'rejected';
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-  page?: number;
-  orderBy?: string;
-  orderDirection?: 'asc' | 'desc';
+  employee_id?: number;
+  start_date?: string;
+  end_date?: string;
 }
 
 // API Functions
-export const getLateLogsApi = async (query: GetLateLogsDto = {}): Promise<LateLogsResponse> => {
+export const getLateLogsApi = async (query: GetLateLogsDto = {}): Promise<LateLog[]> => {
   try {
     const params = new URLSearchParams();
     
-    if (query.employeeId) params.append('employeeId', query.employeeId.toString());
-    if (query.status) params.append('status', query.status);
-    if (query.startDate) params.append('startDate', query.startDate);
-    if (query.endDate) params.append('endDate', query.endDate);
-    if (query.limit) params.append('limit', query.limit.toString());
-    if (query.page) params.append('page', query.page.toString());
-    if (query.orderBy) params.append('orderBy', query.orderBy);
-    if (query.orderDirection) params.append('orderDirection', query.orderDirection);
+    if (query.employee_id) params.append('employee_id', query.employee_id.toString());
+    if (query.start_date) params.append('start_date', query.start_date);
+    if (query.end_date) params.append('end_date', query.end_date);
     
     const queryString = params.toString();
-    const url = `${getApiBaseUrl()}/attendance/late-logs${queryString ? `?${queryString}` : ''}`;
+    const url = `${getApiBaseUrl()}/hr/attendance/late-logs${queryString ? `?${queryString}` : ''}`;
     
-    const response = await apiGetJson<LateLogsResponse>(url);
+    const response = await apiGetJson<LateLog[]>(url);
     console.log('Late logs API response:', response);
     
     return response;
@@ -91,9 +135,39 @@ export const getLateLogsApi = async (query: GetLateLogsDto = {}): Promise<LateLo
   }
 };
 
-export const getLateLogsStatsApi = async (): Promise<LateLogsStatsResponse> => {
+export const getLateLogsByEmployeeApi = async (empId: number): Promise<LateLog[]> => {
   try {
-    const response = await apiGetJson<LateLogsStatsResponse>(`${getApiBaseUrl()}/attendance/late-logs/stats`);
+    const url = `${getApiBaseUrl()}/hr/attendance/late-logs/employee/${empId}`;
+    const response = await apiGetJson<LateLog[]>(url);
+    console.log('Late logs by employee API response:', response);
+    
+    return response;
+  } catch (error: any) {
+    console.error('Error fetching late logs by employee:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
+    throw new Error(`Failed to fetch late logs by employee: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const getLateLogsStatsApi = async (query: LateLogsStatsDto = {}): Promise<LateLogsStatsResponseDto> => {
+  try {
+    const params = new URLSearchParams();
+    
+    // Add optional filters
+    if (query.employee_id) params.append('employee_id', query.employee_id.toString());
+    if (query.start_date) params.append('start_date', query.start_date);
+    if (query.end_date) params.append('end_date', query.end_date);
+    if (query.period) params.append('period', query.period);
+    if (query.include_breakdown) params.append('include_breakdown', 'true');
+    
+    const queryString = params.toString();
+    const url = `${getApiBaseUrl()}/hr/attendance/late-logs/stats${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await apiGetJson<LateLogsStatsResponseDto>(url);
+    console.log('Late logs statistics API response:', response);
+    
     return response;
   } catch (error: any) {
     console.error('Error fetching late logs statistics:', error);
@@ -104,31 +178,39 @@ export const getLateLogsStatsApi = async (): Promise<LateLogsStatsResponse> => {
   }
 };
 
-export const exportLateLogsApi = async (query: GetLateLogsDto = {}, format: 'csv' | 'json' = 'csv'): Promise<Blob> => {
+export const exportLateLogsApi = async (query: ExportLateLogsDto): Promise<Blob> => {
   try {
     const params = new URLSearchParams();
     
-    // Add format parameter
-    params.append('format', format);
+    // Add required format parameter
+    params.append('format', query.format);
     
     // Add optional filters
-    if (query.employeeId) params.append('employeeId', query.employeeId.toString());
-    if (query.status) params.append('status', query.status);
-    if (query.startDate) params.append('startDate', query.startDate);
-    if (query.endDate) params.append('endDate', query.endDate);
+    if (query.employee_id) params.append('employee_id', query.employee_id.toString());
+    if (query.start_date) params.append('start_date', query.start_date);
+    if (query.end_date) params.append('end_date', query.end_date);
+    if (query.include_late_type) params.append('include_late_type', 'true');
+    if (query.include_reviewer_details) params.append('include_reviewer_details', 'true');
     
     const queryString = params.toString();
-    const url = `/attendance/late-logs/export${queryString ? `?${queryString}` : ''}`;
+    const url = `/hr/attendance/late-logs/export${queryString ? `?${queryString}` : ''}`;
     
-    // Use apiRequest for proper authentication
+    // Use apiRequest for proper authentication (handles cookies)
     const response = await apiRequest(url, {
       method: 'GET',
       headers: {
-        'Accept': format === 'csv' ? 'text/csv' : 'application/json',
+        'Accept': query.format === 'csv' ? 'text/csv' : 'application/json',
       },
     });
 
-    return await response.blob();
+    if (!response.ok) {
+      throw new Error(`Export failed: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    console.log('Late logs export API response blob:', blob);
+    
+    return blob;
   } catch (error: any) {
     console.error('Error exporting late logs:', error);
     if (error instanceof ApiError) {
