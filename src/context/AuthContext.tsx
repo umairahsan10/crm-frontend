@@ -325,6 +325,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // HR-specific pages
       'hr-logs': ['admin', 'dept_manager'],
+      'logs': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior', 'junior'],
       'employee-requests': ['admin', 'dept_manager', 'team_leads', 'unit_head'],
     };
 
