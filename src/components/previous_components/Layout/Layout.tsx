@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../layout/Navbar/Navbar';
 import Header from '../Header/Header';
+import { useNavbar } from '../../../context/NavbarContext';
 import type { UserRole } from '../../../types';
 import './Layout.css';
 
@@ -20,12 +21,8 @@ const Layout: React.FC<LayoutProps> = ({
   activePage = 'dashboard',
   onLogout
 }) => {
-  const [navbarOpen, setNavbarOpen] = useState(true); // Start with navbar open
+  const { isNavbarOpen, toggleNavbar, setNavbarOpen } = useNavbar();
   const [isMobile, setIsMobile] = useState(false);
-
-  const toggleNavbar = () => {
-    setNavbarOpen(!navbarOpen);
-  };
 
   // Check if device is mobile
   useEffect(() => {
@@ -42,7 +39,7 @@ const Layout: React.FC<LayoutProps> = ({
   // Close navbar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isMobile && navbarOpen) {
+      if (isMobile && isNavbarOpen) {
         const target = event.target as HTMLElement;
         const navbar = document.querySelector('.navbar');
         const mobileButton = document.querySelector('.mobile-nav-button');
@@ -60,18 +57,18 @@ const Layout: React.FC<LayoutProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isMobile, navbarOpen]);
+  }, [isMobile, isNavbarOpen, setNavbarOpen]);
 
   return (
     <div className="layout">
       <Navbar
-        isOpen={navbarOpen}
+        isOpen={isNavbarOpen}
         onToggle={toggleNavbar}
         onNavigate={onNavigate}
         activePage={activePage}
         onLogout={onLogout}
       />
-      <div className={`main-content ${navbarOpen ? 'navbar-open' : ''}`}>
+      <div className={`main-content ${isNavbarOpen ? 'navbar-open' : ''}`}>
         {/* Mobile Navigation Button */}
         {isMobile && (
           <button 

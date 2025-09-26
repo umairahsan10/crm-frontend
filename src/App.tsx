@@ -1,13 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NavbarProvider } from './context/NavbarContext';
 import Layout from './components/previous_components/Layout/Layout';
 import Login from './pages/Login/Login';
 import './App.css';
 
 // Import existing page components
 import DashboardPage from './pages/Dashboard/DashboardPage';
-import EmployeeManagement from './pages/Employees/EmployeeManagement';
+import EmployeeManagement from './pages/HRManagement/Employees/EmployeeManagement';
 import AttendancePage from './pages/Attendance/AttendancePage';
+import HRLogsPage from './pages/HRLogs/HRLogsPage';
+import EmployeeRequestsPage from './pages/EmployeeRequests/EmployeeRequestsPage';
 import DealsPage from './pages/Deals/DealsPage';
 import ReportsPage from './pages/Sales/ReportsPage';
 import LeadsManagementPage from './pages/Leads/LeadsManagementPage';
@@ -65,21 +68,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/test" element={<TestPage />} />
-          <Route
-            path="/*"
-            element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
+      <NavbarProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/test" element={<TestPage />} />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Router>
+      </NavbarProvider>
     </AuthProvider>
   );
 }
@@ -137,7 +142,15 @@ function AppLayout() {
         />
         <Route 
           path="/attendance" 
-          element={canAccessPage('attendance') ? <AttendancePage /> : <Navigate to="/login" replace />} 
+          element={canAccessPage('attendance') ? <AttendancePage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/hr-logs" 
+          element={canAccessPage('hr-logs') ? <HRLogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/employee-requests" 
+          element={canAccessPage('employee-requests') ? <EmployeeRequestsPage /> : <Navigate to="/login" replace />}
         />
         <Route 
           path="/deals" 

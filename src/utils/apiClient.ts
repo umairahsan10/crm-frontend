@@ -4,6 +4,10 @@
  */
 
 import { getAuthData, isTokenExpired } from './cookieUtils';
+import { getApiBaseUrl } from '../config/api';
+
+// Base URL for API requests
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiRequestOptions extends RequestInit {
   requireAuth?: boolean;
@@ -69,7 +73,10 @@ export const apiRequest = async (
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const response = await fetch(url, {
+    // Construct full URL with base URL
+    const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+    console.log('API Request:', fullUrl);
+    const response = await fetch(fullUrl, {
       ...fetchOptions,
       headers: requestHeaders,
       signal: controller.signal,
@@ -77,8 +84,8 @@ export const apiRequest = async (
 
     clearTimeout(timeoutId);
 
-    // Handle HTTP errors
-    if (!response.ok) {
+    // Handle HTTP errors (but not 304 Not Modified)
+    if (!response.ok && response.status !== 304) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       
       try {
