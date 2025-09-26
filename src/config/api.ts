@@ -6,11 +6,7 @@
 export const API_CONFIG = {
   // Change this to your backend server URL
   BASE_URL: 'http://localhost:3000', // Default backend port
-  
-  // Alternative common backend ports:
-  // BASE_URL: 'http://localhost:8000',
-  // BASE_URL: 'http://localhost:5000',
-  // BASE_URL: 'http://localhost:4000',
+
 };
 
 // You can also use environment variables

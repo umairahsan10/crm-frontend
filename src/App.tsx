@@ -9,7 +9,15 @@ import './App.css';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import EmployeeManagement from './pages/HRManagement/Employees/EmployeeManagement';
 import AttendancePage from './pages/Attendance/AttendancePage';
-import HRLogsPage from './pages/HRLogs/HRLogsPage';
+import LogsPage from './pages/LogFiles/LogPages';
+import HRLogsPage from './pages/LogFiles/subpages/HRLogsPage';
+import AccessLogsPage from './pages/LogFiles/subpages/AccessLogsPage';
+import LeaveLogsPage from './pages/LogFiles/subpages/LeaveLogsPage';
+import LateLogsPage from './pages/LogFiles/subpages/LateLogsPage';
+import HalfDayLogsPage from './pages/LogFiles/subpages/HalfDayLogsPage';
+import CampaignLogsPage from './pages/LogFiles/subpages/CampaignLogsPage';
+import SalaryLogsPage from './pages/LogFiles/subpages/SalaryLogsPage';
+import ProjectLogsPage from './pages/LogFiles/subpages/ProjectLogsPage';
 import EmployeeRequestsPage from './pages/EmployeeRequests/EmployeeRequestsPage';
 import DealsPage from './pages/Deals/DealsPage';
 import ReportsPage from './pages/Sales/ReportsPage';
@@ -147,6 +155,42 @@ function AppLayout() {
         <Route 
           path="/hr-logs" 
           element={canAccessPage('hr-logs') ? <HRLogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/logs" 
+          element={canAccessPage('logs') ? <LogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/logs/access" 
+          element={canAccessPage('logs') ? <AccessLogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/logs/hr" 
+          element={canAccessPage('hr-logs') ? <HRLogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/logs/leave" 
+          element={canAccessPage('logs') ? <LeaveLogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/logs/late" 
+          element={canAccessPage('logs') ? <LateLogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/logs/half-day" 
+          element={canAccessPage('logs') ? <HalfDayLogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/logs/campaign" 
+          element={canAccessPage('logs') ? <CampaignLogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/logs/salary" 
+          element={canAccessPage('logs') ? <SalaryLogsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/logs/project" 
+          element={canAccessPage('logs') ? <ProjectLogsPage /> : <Navigate to="/login" replace />}
         />
         <Route 
           path="/employee-requests" 

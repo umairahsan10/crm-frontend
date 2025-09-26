@@ -1,5 +1,5 @@
 import React from 'react';
-import HRLogsManagement from '../../components/hr-logs/HRLogsManagement';
+import HRLogsManagement from '../../../components/common/wlogs/HRLogsManagement';
 
 const HRLogsPage: React.FC = () => {
   return (
