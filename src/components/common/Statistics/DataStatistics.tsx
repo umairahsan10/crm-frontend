@@ -108,7 +108,7 @@ const DataStatistics: React.FC<DataStatisticsProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="animate-pulse">
-                <div className="bg-gray-200 rounded-lg p-4">
+                <div className="bg-gray-200 rounded-lg p-4 min-h-[120px]">
                   <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
                   <div className="h-8 bg-gray-300 rounded w-1/2"></div>
                 </div>
@@ -129,8 +129,8 @@ const DataStatistics: React.FC<DataStatisticsProps> = ({
             const colors = getColorClasses(card.color);
             
             return (
-              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center">
+              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow min-h-[120px] flex flex-col">
+                <div className="flex items-start flex-1">
                   <div className="flex-shrink-0">
                     {card.icon ? (
                       <div className={`p-2 rounded-md ${colors.bgLight}`}>
@@ -149,7 +149,14 @@ const DataStatistics: React.FC<DataStatisticsProps> = ({
                     )}
                   </div>
                   <div className="ml-4 flex-1">
-                    <p className="text-sm font-medium text-gray-600">{card.title}</p>
+                    <p className="text-sm font-medium text-gray-600 mb-2" style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      lineHeight: '1.25rem',
+                      maxHeight: '2.5rem'
+                    }}>{card.title}</p>
                     <div className="flex items-baseline">
                       <p className="text-2xl font-semibold text-gray-900">{card.value}</p>
                       {card.change && (

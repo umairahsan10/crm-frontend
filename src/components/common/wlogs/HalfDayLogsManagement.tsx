@@ -3,24 +3,38 @@ import { useAuth } from '../../../context/AuthContext';
 import DataTable from '../DataTable/DataTable';
 import DataStatistics from '../Statistics/DataStatistics';
 import BulkActions from '../BulkActions/BulkActions';
-import { getHalfDayLogsApi, getHalfDayLogsStatsApi, exportHalfDayLogsApi, type GetHalfDayLogsDto } from '../../../apis/halfday-logs';
+import { 
+  getHalfDayLogsApi, 
+  getHalfDayLogsByEmployeeApi, 
+  getHalfDayLogsStatsApi, 
+  exportHalfDayLogsApi, 
+  type GetHalfDayLogsDto, 
+  type HalfDayLog,
+  type ExportHalfDayLogsDto,
+  type HalfDayLogsStatsDto,
+  type HalfDayLogsStatsResponseDto,
+  ExportFormat,
+  StatsPeriod
+} from '../../../apis/half-day-logs';
 
 // Local interface for component
 interface HalfDayLogTableRow {
   id: string; // For DataTable compatibility
-  halfday_log_id: number;
-  employee_id: number;
+  half_day_log_id: number;
+  emp_id: number;
+  employee_name: string;
   date: string;
-  halfday_type: 'morning' | 'afternoon';
-  reason?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  approved_by?: number;
-  approved_at?: string;
+  scheduled_time_in: string;
+  actual_time_in: string;
+  minutes_late: number;
+  reason: string;
+  justified: boolean;
+  half_day_type: string;
+  action_taken: string;
+  reviewed_by?: number;
+  reviewer_name?: string;
   created_at: string;
   updated_at: string;
-  employee_name: string;
-  employee_email: string;
-  approver_name?: string;
 }
 
 const HalfDayLogsManagement: React.FC = () => {
@@ -30,26 +44,24 @@ const HalfDayLogsManagement: React.FC = () => {
   const [halfDayLogs, setHalfDayLogs] = useState<HalfDayLogTableRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
-  const [statistics, setStatistics] = useState({
-    total: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-    morningHalfDays: 0,
-    afternoonHalfDays: 0,
-    today: 0,
-    thisWeek: 0,
-    thisMonth: 0
+  const [statistics, setStatistics] = useState<HalfDayLogsStatsResponseDto>({
+    total_half_day_logs: 0,
+    pending_half_day_logs: 0,
+    completed_half_day_logs: 0,
+    total_minutes_late: 0,
+    average_minutes_late: 0,
+    most_common_reason: 'N/A',
+    paid_half_day_count: 0,
+    unpaid_half_day_count: 0,
+    period_stats: []
   });
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [, setTotal] = useState(0);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [halfDayTypeFilter, setHalfDayTypeFilter] = useState('all');
+  const [employeeIdFilter, setEmployeeIdFilter] = useState('');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>(ExportFormat.CSV);
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
   // Check if user has access to half day logs
@@ -84,100 +96,88 @@ const HalfDayLogsManagement: React.FC = () => {
   // Fetch statistics from API
   const fetchStatistics = async () => {
     try {
-      const statsResponse = await getHalfDayLogsStatsApi();
-      setStatistics({
-        total: statsResponse.summary.totalLogs,
-        pending: statsResponse.summary.pendingLogs,
-        approved: statsResponse.summary.approvedLogs,
-        rejected: statsResponse.summary.rejectedLogs,
-        morningHalfDays: statsResponse.summary.morningHalfDays,
-        afternoonHalfDays: statsResponse.summary.afternoonHalfDays,
-        today: statsResponse.timeBasedStats.today,
-        thisWeek: statsResponse.timeBasedStats.thisWeek,
-        thisMonth: statsResponse.timeBasedStats.thisMonth
-      });
+      const statsQuery: HalfDayLogsStatsDto = {
+        period: StatsPeriod.MONTHLY,
+        include_breakdown: true
+      };
+      
+      const statsResponse = await getHalfDayLogsStatsApi(statsQuery);
+      setStatistics(statsResponse);
     } catch (error) {
       console.error('Error fetching half day logs statistics:', error);
       // Fallback to empty stats if API fails
       setStatistics({
-        total: 0,
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        morningHalfDays: 0,
-        afternoonHalfDays: 0,
-        today: 0,
-        thisWeek: 0,
-        thisMonth: 0
+        total_half_day_logs: 0,
+        pending_half_day_logs: 0,
+        completed_half_day_logs: 0,
+        total_minutes_late: 0,
+        average_minutes_late: 0,
+        most_common_reason: 'N/A',
+        paid_half_day_count: 0,
+        unpaid_half_day_count: 0,
+        period_stats: []
       });
     }
   };
 
   // Fetch half day logs
-  const fetchHalfDayLogs = async (page?: number) => {
+  const fetchHalfDayLogs = async () => {
     try {
       setLoading(true);
       
-      const pageNumber = page || currentPage;
-      const query: GetHalfDayLogsDto = {
-        page: pageNumber,
-        limit: 10,
-        orderBy: 'date',
-        orderDirection: 'desc',
-      };
+      const query: GetHalfDayLogsDto = {};
 
       // Add filters
-      if (statusFilter !== 'all') {
-        query.status = statusFilter as 'pending' | 'approved' | 'rejected';
-      }
-      if (halfDayTypeFilter !== 'all') {
-        query.halfDayType = halfDayTypeFilter as 'morning' | 'afternoon';
+      if (employeeIdFilter && employeeIdFilter.trim() !== '') {
+        const empId = parseInt(employeeIdFilter.trim());
+        if (!isNaN(empId)) {
+          query.employee_id = empId;
+        }
       }
 
-      console.log('Fetching half day logs for page:', pageNumber, 'with query:', query);
+      console.log('Fetching half day logs with query:', query);
       const response = await getHalfDayLogsApi(query);
-      console.log('API Response for page', pageNumber, ':', response);
+      console.log('API Response:', response);
       
-      // Check if response has logs data
-      if (!response || !response.logs || !Array.isArray(response.logs)) {
+      // Check if response is an array (direct response from backend)
+      if (!response || !Array.isArray(response)) {
         console.warn('Invalid response structure:', response);
         setHalfDayLogs([]);
         setTotal(0);
-        setTotalPages(1);
         return;
       }
       
       // Map API response to component format
-      const mappedLogs = response.logs.map(log => {
+      const mappedLogs = response.map((log: HalfDayLog) => {
         // Ensure all required fields exist
-        if (!log || typeof log.id === 'undefined') {
+        if (!log || typeof log.half_day_log_id === 'undefined') {
           console.warn('Invalid log entry:', log);
           return null;
         }
         
         return {
-          id: log.id.toString(), // For DataTable compatibility
-          halfday_log_id: log.id,
-          employee_id: log.employeeId,
+          id: log.half_day_log_id.toString(), // For DataTable compatibility
+          half_day_log_id: log.half_day_log_id,
+          emp_id: log.emp_id,
+          employee_name: log.employee_name,
           date: log.date,
-          halfday_type: log.halfDayType,
-          reason: log.reason || '',
-          status: log.status,
-          approved_by: log.approvedBy || 0,
-          approved_at: log.approvedAt || '',
-          created_at: log.createdAt,
-          updated_at: log.updatedAt,
-          employee_name: `${log.employee.firstName} ${log.employee.lastName}`,
-          employee_email: log.employee.email,
-          approver_name: log.approver ? `${log.approver.firstName} ${log.approver.lastName}` : undefined
+          scheduled_time_in: log.scheduled_time_in,
+          actual_time_in: log.actual_time_in,
+          minutes_late: log.minutes_late,
+          reason: log.reason,
+          justified: log.justified,
+          half_day_type: log.half_day_type,
+          action_taken: log.action_taken,
+          reviewed_by: log.reviewed_by,
+          reviewer_name: log.reviewer_name,
+          created_at: log.created_at,
+          updated_at: log.updated_at
         };
       }).filter(log => log !== null); // Remove any null entries
       
-      console.log('Setting logs:', mappedLogs.length, 'total:', response.total, 'totalPages:', response.totalPages, 'currentPage:', response.page);
+      console.log('Setting logs:', mappedLogs.length);
       setHalfDayLogs(mappedLogs);
-      setTotal(response.total || 0);
-      setTotalPages(response.totalPages || 1);
-      setCurrentPage(response.page || pageNumber);
+      setTotal(mappedLogs.length);
     } catch (error) {
       console.error('Error fetching half day logs:', error);
       setNotification({
@@ -189,23 +189,77 @@ const HalfDayLogsManagement: React.FC = () => {
     }
   };
 
-  // Handle filter change
-  const handleFilterChange = (filterType: string, value: string) => {
-    if (filterType === 'status') {
-      setStatusFilter(value);
-    } else if (filterType === 'halfDayType') {
-      setHalfDayTypeFilter(value);
+  // Fetch half day logs by employee
+  const fetchHalfDayLogsByEmployee = async (empId: number) => {
+    try {
+      setLoading(true);
+      
+      console.log('Fetching half day logs for employee:', empId);
+      const response = await getHalfDayLogsByEmployeeApi(empId);
+      console.log('Employee half day logs API response:', response);
+      
+      // Check if response is an array
+      if (!response || !Array.isArray(response)) {
+        console.warn('Invalid response structure:', response);
+        setHalfDayLogs([]);
+        setTotal(0);
+        return;
+      }
+      
+      // Map API response to component format
+      const mappedLogs = response.map((log: HalfDayLog) => {
+        if (!log || typeof log.half_day_log_id === 'undefined') {
+          console.warn('Invalid log entry:', log);
+          return null;
+        }
+        
+        return {
+          id: log.half_day_log_id.toString(),
+          half_day_log_id: log.half_day_log_id,
+          emp_id: log.emp_id,
+          employee_name: log.employee_name,
+          date: log.date,
+          scheduled_time_in: log.scheduled_time_in,
+          actual_time_in: log.actual_time_in,
+          minutes_late: log.minutes_late,
+          reason: log.reason,
+          justified: log.justified,
+          half_day_type: log.half_day_type,
+          action_taken: log.action_taken,
+          reviewed_by: log.reviewed_by,
+          reviewer_name: log.reviewer_name,
+          created_at: log.created_at,
+          updated_at: log.updated_at
+        };
+      }).filter(log => log !== null);
+      
+      console.log('Setting employee logs:', mappedLogs.length);
+      setHalfDayLogs(mappedLogs);
+      setTotal(mappedLogs.length);
+      
+      setNotification({
+        type: 'success',
+        message: `Found ${mappedLogs.length} half day logs for employee ${empId}`
+      });
+    } catch (error) {
+      console.error('Error fetching half day logs by employee:', error);
+      setNotification({
+        type: 'error',
+        message: 'Failed to fetch half day logs for employee'
+      });
+    } finally {
+      setLoading(false);
     }
-    setCurrentPage(1);
-    fetchHalfDayLogs(1);
   };
 
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    console.log('Page change requested:', { from: currentPage, to: page });
-    setCurrentPage(page);
-    fetchHalfDayLogs(page);
+  // Handle filter change
+  const handleFilterChange = (filterType: string, value: string) => {
+    if (filterType === 'employeeId') {
+      setEmployeeIdFilter(value);
+    }
+    fetchHalfDayLogs();
   };
+
 
   // Handle reason click
   const handleReasonClick = (reason: string) => {
@@ -222,16 +276,21 @@ const HalfDayLogsManagement: React.FC = () => {
     try {
       switch (action) {
         case 'export':
-          const query: GetHalfDayLogsDto = {
-            status: statusFilter !== 'all' ? statusFilter as 'pending' | 'approved' | 'rejected' : undefined,
-            halfDayType: halfDayTypeFilter !== 'all' ? halfDayTypeFilter as 'morning' | 'afternoon' : undefined,
+          const exportQuery: ExportHalfDayLogsDto = {
+            format: exportFormat,
+            employee_id: employeeIdFilter && employeeIdFilter.trim() !== '' ? parseInt(employeeIdFilter.trim()) : undefined,
+            include_half_day_type: true,
+            include_reviewer_details: true
           };
           
-          const blob = await exportHalfDayLogsApi(query, 'csv');
+          const blob = await exportHalfDayLogsApi(exportQuery);
+          
+          // Create download link from the blob
           const url = window.URL.createObjectURL(blob);
+          const filename = `half-day-logs-${new Date().toISOString().split('T')[0]}.${exportFormat}`;
           const a = document.createElement('a');
           a.href = url;
-          a.download = `halfday-logs-${new Date().toISOString().split('T')[0]}.csv`;
+          a.download = filename;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
@@ -239,7 +298,7 @@ const HalfDayLogsManagement: React.FC = () => {
           
           setNotification({
             type: 'success',
-            message: 'Half day logs exported successfully'
+            message: `Half day logs exported successfully in ${exportFormat.toUpperCase()} format`
           });
           break;
         default:
@@ -268,10 +327,10 @@ const HalfDayLogsManagement: React.FC = () => {
 
   // Reload data when filters change
   useEffect(() => {
-    if (statusFilter !== 'all' || halfDayTypeFilter !== 'all') {
-      fetchHalfDayLogs(1);
+    if (employeeIdFilter.trim() !== '') {
+      fetchHalfDayLogs();
     }
-  }, [statusFilter, halfDayTypeFilter]);
+  }, [employeeIdFilter]);
 
   // Auto-dismiss notifications
   useEffect(() => {
@@ -300,8 +359,8 @@ const HalfDayLogsManagement: React.FC = () => {
   // Statistics cards
   const statisticsCards = [
     {
-      title: 'Total Logs',
-      value: statistics.total,
+      title: 'Total Half Day Logs',
+      value: statistics.total_half_day_logs,
       color: 'blue' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -311,7 +370,7 @@ const HalfDayLogsManagement: React.FC = () => {
     },
     {
       title: 'Pending',
-      value: statistics.pending,
+      value: statistics.pending_half_day_logs,
       color: 'yellow' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -320,8 +379,8 @@ const HalfDayLogsManagement: React.FC = () => {
       )
     },
     {
-      title: 'Approved',
-      value: statistics.approved,
+      title: 'Completed',
+      value: statistics.completed_half_day_logs,
       color: 'green' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -330,18 +389,8 @@ const HalfDayLogsManagement: React.FC = () => {
       )
     },
     {
-      title: 'Rejected',
-      value: statistics.rejected,
-      color: 'red' as const,
-      icon: (
-        <svg fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-        </svg>
-      )
-    },
-    {
-      title: 'Morning Half Days',
-      value: statistics.morningHalfDays,
+      title: 'Avg Minutes Late',
+      value: `${statistics.average_minutes_late.toFixed(1)} min`,
       color: 'purple' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -350,8 +399,8 @@ const HalfDayLogsManagement: React.FC = () => {
       )
     },
     {
-      title: 'Afternoon Half Days',
-      value: statistics.afternoonHalfDays,
+      title: 'Paid Half Day Count',
+      value: statistics.paid_half_day_count,
       color: 'indigo' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -374,7 +423,7 @@ const HalfDayLogsManagement: React.FC = () => {
   const columns = [
     {
       header: 'Log ID',
-      accessor: 'halfday_log_id',
+      accessor: 'half_day_log_id',
       render: (value: number) => <span className="font-mono text-sm">{value}</span>
     },
     {
@@ -383,7 +432,7 @@ const HalfDayLogsManagement: React.FC = () => {
       render: (value: string, row: HalfDayLogTableRow) => (
         <div className="max-w-xs">
           <div className="text-sm font-medium text-gray-900">{value}</div>
-          <div className="text-sm text-gray-500">{row.employee_email}</div>
+          <div className="text-sm text-gray-500">ID: {row.emp_id}</div>
         </div>
       )
     },
@@ -398,25 +447,65 @@ const HalfDayLogsManagement: React.FC = () => {
     },
     {
       header: 'Half Day Type',
-      accessor: 'halfday_type',
+      accessor: 'half_day_type',
       render: (value: string) => (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          value === 'morning' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
+          value === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
         }`}>
-          {value.toUpperCase()}
+          {value ? value.replace(/_/g, ' ').toUpperCase() : 'N/A'}
+        </span>
+      )
+    },
+    {
+      header: 'Scheduled Time',
+      accessor: 'scheduled_time_in',
+      render: (value: string) => (
+        <span className="text-sm text-gray-600">
+          {value ? value : 'N/A'}
+        </span>
+      )
+    },
+    {
+      header: 'Actual Time',
+      accessor: 'actual_time_in',
+      render: (value: string) => (
+        <span className="text-sm text-gray-600">
+          {value ? value : 'N/A'}
+        </span>
+      )
+    },
+    {
+      header: 'Late Minutes',
+      accessor: 'minutes_late',
+      render: (value: number) => (
+        <span className="text-sm font-medium text-red-600">
+          {value ? `${value} min` : 'N/A'}
+        </span>
+      )
+    },
+    {
+      header: 'Justified',
+      accessor: 'justified',
+      render: (value: boolean) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          value === true ? 'bg-green-100 text-green-800' :
+          value === false ? 'bg-red-100 text-red-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {value === true ? 'YES' : value === false ? 'NO' : 'N/A'}
         </span>
       )
     },
     {
       header: 'Status',
-      accessor: 'status',
+      accessor: 'action_taken',
       render: (value: string) => (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          value === 'approved' ? 'bg-green-100 text-green-800' :
-          value === 'rejected' ? 'bg-red-100 text-red-800' :
-          'bg-yellow-100 text-yellow-800'
+          value === 'Completed' ? 'bg-green-100 text-green-800' :
+          value === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+          'bg-gray-100 text-gray-800'
         }`}>
-          {value.toUpperCase()}
+          {value ? value.toUpperCase() : 'N/A'}
         </span>
       )
     },
@@ -484,31 +573,27 @@ const HalfDayLogsManagement: React.FC = () => {
           <div className="flex items-end gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status Filter
+                Employee ID Filter
               </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
+              <input
+                type="text"
+                value={employeeIdFilter}
+                onChange={(e) => handleFilterChange('employeeId', e.target.value)}
+                placeholder="Enter employee ID"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
+              />
             </div>
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Half Day Type Filter
+                Export Format
               </label>
               <select
-                value={halfDayTypeFilter}
-                onChange={(e) => handleFilterChange('halfDayType', e.target.value)}
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Types</option>
-                <option value="morning">Morning Half Day</option>
-                <option value="afternoon">Afternoon Half Day</option>
+                <option value={ExportFormat.CSV}>CSV</option>
+                <option value={ExportFormat.JSON}>JSON</option>
               </select>
             </div>
             <div>
@@ -520,6 +605,21 @@ const HalfDayLogsManagement: React.FC = () => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 Refresh
+              </button>
+            </div>
+            <div>
+              <button
+                onClick={() => {
+                  if (employeeIdFilter && employeeIdFilter.trim() !== '') {
+                    const empId = parseInt(employeeIdFilter.trim());
+                    if (!isNaN(empId)) {
+                      fetchHalfDayLogsByEmployee(empId);
+                    }
+                  }
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                Get Employee Logs
               </button>
             </div>
           </div>
@@ -544,13 +644,9 @@ const HalfDayLogsManagement: React.FC = () => {
             loading={loading}
             selectedRows={selectedLogs}
             onBulkSelect={setSelectedLogs}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
             sortable={true}
             selectable={true}
-            paginated={true}
-            serverSidePagination={true}
+            paginated={false}
           />
         </div>
 

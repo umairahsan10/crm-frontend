@@ -3,24 +3,38 @@ import { useAuth } from '../../../context/AuthContext';
 import DataTable from '../DataTable/DataTable';
 import DataStatistics from '../Statistics/DataStatistics';
 import BulkActions from '../BulkActions/BulkActions';
-import { getLateLogsApi, getLateLogsStatsApi, exportLateLogsApi, type GetLateLogsDto } from '../../../apis/late-logs';
+import { 
+  getLateLogsApi, 
+  getLateLogsByEmployeeApi, 
+  getLateLogsStatsApi, 
+  exportLateLogsApi, 
+  type GetLateLogsDto, 
+  type LateLog,
+  type ExportLateLogsDto,
+  type LateLogsStatsDto,
+  type LateLogsStatsResponseDto,
+  ExportFormat,
+  StatsPeriod
+} from '../../../apis/late-logs';
 
 // Local interface for component
 interface LateLogTableRow {
   id: string; // For DataTable compatibility
   late_log_id: number;
-  employee_id: number;
+  emp_id: number;
+  employee_name: string;
   date: string;
-  late_minutes: number;
-  reason?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  approved_by?: number;
-  approved_at?: string;
+  scheduled_time_in: string;
+  actual_time_in: string;
+  minutes_late: number;
+  reason: string;
+  justified: boolean;
+  late_type: string;
+  action_taken: string;
+  reviewed_by?: number;
+  reviewer_name?: string;
   created_at: string;
   updated_at: string;
-  employee_name: string;
-  employee_email: string;
-  approver_name?: string;
 }
 
 const LateLogsManagement: React.FC = () => {
@@ -30,24 +44,24 @@ const LateLogsManagement: React.FC = () => {
   const [lateLogs, setLateLogs] = useState<LateLogTableRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
-  const [statistics, setStatistics] = useState({
-    total: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-    today: 0,
-    thisWeek: 0,
-    thisMonth: 0,
-    averageLateMinutes: 0
+  const [statistics, setStatistics] = useState<LateLogsStatsResponseDto>({
+    total_late_logs: 0,
+    pending_late_logs: 0,
+    completed_late_logs: 0,
+    total_minutes_late: 0,
+    average_minutes_late: 0,
+    most_common_reason: 'N/A',
+    paid_late_count: 0,
+    unpaid_late_count: 0,
+    period_stats: []
   });
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [, setTotal] = useState(0);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [employeeIdFilter, setEmployeeIdFilter] = useState('');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>(ExportFormat.CSV);
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
   // Check if user has access to late logs
@@ -82,99 +96,88 @@ const LateLogsManagement: React.FC = () => {
   // Fetch statistics from API
   const fetchStatistics = async () => {
     try {
-      const statsResponse = await getLateLogsStatsApi();
-      if (statsResponse && statsResponse.summary && statsResponse.timeBasedStats) {
-        setStatistics({
-          total: statsResponse.summary.totalLogs || 0,
-          pending: statsResponse.summary.pendingLogs || 0,
-          approved: statsResponse.summary.approvedLogs || 0,
-          rejected: statsResponse.summary.rejectedLogs || 0,
-          today: statsResponse.timeBasedStats.today || 0,
-          thisWeek: statsResponse.timeBasedStats.thisWeek || 0,
-          thisMonth: statsResponse.timeBasedStats.thisMonth || 0,
-          averageLateMinutes: statsResponse.summary.averageLateMinutes || 0
-        });
-      } else {
-        throw new Error('Invalid response structure');
-      }
+      const statsQuery: LateLogsStatsDto = {
+        period: StatsPeriod.MONTHLY,
+        include_breakdown: true
+      };
+      
+      const statsResponse = await getLateLogsStatsApi(statsQuery);
+      setStatistics(statsResponse);
     } catch (error) {
       console.error('Error fetching late logs statistics:', error);
       // Fallback to empty stats if API fails
       setStatistics({
-        total: 0,
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        today: 0,
-        thisWeek: 0,
-        thisMonth: 0,
-        averageLateMinutes: 0
+        total_late_logs: 0,
+        pending_late_logs: 0,
+        completed_late_logs: 0,
+        total_minutes_late: 0,
+        average_minutes_late: 0,
+        most_common_reason: 'N/A',
+        paid_late_count: 0,
+        unpaid_late_count: 0,
+        period_stats: []
       });
     }
   };
 
   // Fetch late logs
-  const fetchLateLogs = async (page?: number) => {
+  const fetchLateLogs = async () => {
     try {
       setLoading(true);
       
-      const pageNumber = page || currentPage;
-      const query: GetLateLogsDto = {
-        page: pageNumber,
-        limit: 10,
-        orderBy: 'date',
-        orderDirection: 'desc',
-      };
+      const query: GetLateLogsDto = {};
 
       // Add filters
-      if (statusFilter !== 'all') {
-        query.status = statusFilter as 'pending' | 'approved' | 'rejected';
+      if (employeeIdFilter && employeeIdFilter.trim() !== '') {
+        const empId = parseInt(employeeIdFilter.trim());
+        if (!isNaN(empId)) {
+          query.employee_id = empId;
+        }
       }
 
-      console.log('Fetching late logs for page:', pageNumber, 'with query:', query);
+      console.log('Fetching late logs with query:', query);
       const response = await getLateLogsApi(query);
-      console.log('API Response for page', pageNumber, ':', response);
+      console.log('API Response:', response);
       
-      // Check if response has logs data
-      if (!response || !response.logs || !Array.isArray(response.logs)) {
+      // Check if response is an array (direct response from backend)
+      if (!response || !Array.isArray(response)) {
         console.warn('Invalid response structure:', response);
         setLateLogs([]);
         setTotal(0);
-        setTotalPages(1);
         return;
       }
       
       // Map API response to component format
-      const mappedLogs = response.logs.map(log => {
+      const mappedLogs = response.map((log: LateLog) => {
         // Ensure all required fields exist
-        if (!log || typeof log.id === 'undefined') {
+        if (!log || typeof log.late_log_id === 'undefined') {
           console.warn('Invalid log entry:', log);
           return null;
         }
         
         return {
-          id: log.id.toString(), // For DataTable compatibility
-          late_log_id: log.id,
-          employee_id: log.employeeId,
+          id: log.late_log_id.toString(), // For DataTable compatibility
+          late_log_id: log.late_log_id,
+          emp_id: log.emp_id,
+          employee_name: log.employee_name,
           date: log.date,
-          late_minutes: log.lateMinutes,
-          reason: log.reason || '',
-          status: log.status,
-          approved_by: log.approvedBy || 0,
-          approved_at: log.approvedAt || '',
-          created_at: log.createdAt,
-          updated_at: log.updatedAt,
-          employee_name: `${log.employee.firstName} ${log.employee.lastName}`,
-          employee_email: log.employee.email,
-          approver_name: log.approver ? `${log.approver.firstName} ${log.approver.lastName}` : undefined
+          scheduled_time_in: log.scheduled_time_in,
+          actual_time_in: log.actual_time_in,
+          minutes_late: log.minutes_late,
+          reason: log.reason,
+          justified: log.justified,
+          late_type: log.late_type,
+          action_taken: log.action_taken,
+          reviewed_by: log.reviewed_by,
+          reviewer_name: log.reviewer_name,
+          created_at: log.created_at,
+          updated_at: log.updated_at
         };
       }).filter(log => log !== null); // Remove any null entries
       
-      console.log('Setting logs:', mappedLogs.length, 'total:', response.total, 'totalPages:', response.totalPages, 'currentPage:', response.page);
+      console.log('Setting logs:', mappedLogs.length);
       setLateLogs(mappedLogs);
-      setTotal(response.total || 0);
-      setTotalPages(response.totalPages || 1);
-      setCurrentPage(response.page || pageNumber);
+      setTotal(mappedLogs.length);
     } catch (error) {
       console.error('Error fetching late logs:', error);
       setNotification({
@@ -186,19 +189,77 @@ const LateLogsManagement: React.FC = () => {
     }
   };
 
-  // Handle filter change
-  const handleFilterChange = (filter: string) => {
-    setStatusFilter(filter);
-    setCurrentPage(1);
-    fetchLateLogs(1);
+  // Fetch late logs by employee
+  const fetchLateLogsByEmployee = async (empId: number) => {
+    try {
+      setLoading(true);
+      
+      console.log('Fetching late logs for employee:', empId);
+      const response = await getLateLogsByEmployeeApi(empId);
+      console.log('Employee late logs API response:', response);
+      
+      // Check if response is an array
+      if (!response || !Array.isArray(response)) {
+        console.warn('Invalid response structure:', response);
+        setLateLogs([]);
+        setTotal(0);
+        return;
+      }
+      
+      // Map API response to component format
+      const mappedLogs = response.map((log: LateLog) => {
+        if (!log || typeof log.late_log_id === 'undefined') {
+          console.warn('Invalid log entry:', log);
+          return null;
+        }
+        
+        return {
+          id: log.late_log_id.toString(),
+          late_log_id: log.late_log_id,
+          emp_id: log.emp_id,
+          employee_name: log.employee_name,
+          date: log.date,
+          scheduled_time_in: log.scheduled_time_in,
+          actual_time_in: log.actual_time_in,
+          minutes_late: log.minutes_late,
+          reason: log.reason,
+          justified: log.justified,
+          late_type: log.late_type,
+          action_taken: log.action_taken,
+          reviewed_by: log.reviewed_by,
+          reviewer_name: log.reviewer_name,
+          created_at: log.created_at,
+          updated_at: log.updated_at
+        };
+      }).filter(log => log !== null);
+      
+      console.log('Setting employee logs:', mappedLogs.length);
+      setLateLogs(mappedLogs);
+      setTotal(mappedLogs.length);
+      
+      setNotification({
+        type: 'success',
+        message: `Found ${mappedLogs.length} late logs for employee ${empId}`
+      });
+    } catch (error) {
+      console.error('Error fetching late logs by employee:', error);
+      setNotification({
+        type: 'error',
+        message: 'Failed to fetch late logs for employee'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    console.log('Page change requested:', { from: currentPage, to: page });
-    setCurrentPage(page);
-    fetchLateLogs(page);
+  // Handle filter change
+  const handleFilterChange = (filterType: string, value: string) => {
+    if (filterType === 'employeeId') {
+      setEmployeeIdFilter(value);
+    }
+    fetchLateLogs();
   };
+
 
   // Handle reason click
   const handleReasonClick = (reason: string) => {
@@ -215,15 +276,21 @@ const LateLogsManagement: React.FC = () => {
     try {
       switch (action) {
         case 'export':
-          const query: GetLateLogsDto = {
-            status: statusFilter !== 'all' ? statusFilter as 'pending' | 'approved' | 'rejected' : undefined,
+          const exportQuery: ExportLateLogsDto = {
+            format: exportFormat,
+            employee_id: employeeIdFilter && employeeIdFilter.trim() !== '' ? parseInt(employeeIdFilter.trim()) : undefined,
+            include_late_type: true,
+            include_reviewer_details: true
           };
           
-          const blob = await exportLateLogsApi(query, 'csv');
+          const blob = await exportLateLogsApi(exportQuery);
+          
+          // Create download link from the blob
           const url = window.URL.createObjectURL(blob);
+          const filename = `late-logs-${new Date().toISOString().split('T')[0]}.${exportFormat}`;
           const a = document.createElement('a');
           a.href = url;
-          a.download = `late-logs-${new Date().toISOString().split('T')[0]}.csv`;
+          a.download = filename;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
@@ -231,7 +298,7 @@ const LateLogsManagement: React.FC = () => {
           
           setNotification({
             type: 'success',
-            message: 'Late logs exported successfully'
+            message: `Late logs exported successfully in ${exportFormat.toUpperCase()} format`
           });
           break;
         default:
@@ -260,10 +327,10 @@ const LateLogsManagement: React.FC = () => {
 
   // Reload data when filters change
   useEffect(() => {
-    if (statusFilter !== 'all') {
-      fetchLateLogs(1);
+    if (employeeIdFilter.trim() !== '') {
+      fetchLateLogs();
     }
-  }, [statusFilter]);
+  }, [employeeIdFilter]);
 
   // Auto-dismiss notifications
   useEffect(() => {
@@ -292,8 +359,8 @@ const LateLogsManagement: React.FC = () => {
   // Statistics cards
   const statisticsCards = [
     {
-      title: 'Total Logs',
-      value: statistics.total,
+      title: 'Total Late Logs',
+      value: statistics.total_late_logs,
       color: 'blue' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -303,7 +370,7 @@ const LateLogsManagement: React.FC = () => {
     },
     {
       title: 'Pending',
-      value: statistics.pending,
+      value: statistics.pending_late_logs,
       color: 'yellow' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -312,8 +379,8 @@ const LateLogsManagement: React.FC = () => {
       )
     },
     {
-      title: 'Approved',
-      value: statistics.approved,
+      title: 'Completed',
+      value: statistics.completed_late_logs,
       color: 'green' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -322,18 +389,8 @@ const LateLogsManagement: React.FC = () => {
       )
     },
     {
-      title: 'Rejected',
-      value: statistics.rejected,
-      color: 'red' as const,
-      icon: (
-        <svg fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-        </svg>
-      )
-    },
-    {
-      title: 'Today',
-      value: statistics.today,
+      title: 'Avg Minutes Late',
+      value: `${statistics.average_minutes_late.toFixed(1)} min`,
       color: 'purple' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -342,8 +399,8 @@ const LateLogsManagement: React.FC = () => {
       )
     },
     {
-      title: 'Avg Late (min)',
-      value: Math.round(statistics.averageLateMinutes),
+      title: 'Paid Late Count',
+      value: statistics.paid_late_count,
       color: 'purple' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
@@ -375,7 +432,7 @@ const LateLogsManagement: React.FC = () => {
       render: (value: string, row: LateLogTableRow) => (
         <div className="max-w-xs">
           <div className="text-sm font-medium text-gray-900">{value}</div>
-          <div className="text-sm text-gray-500">{row.employee_email}</div>
+          <div className="text-sm text-gray-500">ID: {row.emp_id}</div>
         </div>
       )
     },
@@ -389,24 +446,64 @@ const LateLogsManagement: React.FC = () => {
       )
     },
     {
+      header: 'Scheduled Time',
+      accessor: 'scheduled_time_in',
+      render: (value: string) => (
+        <span className="text-sm text-gray-600">
+          {value ? value : 'N/A'}
+        </span>
+      )
+    },
+    {
+      header: 'Actual Time',
+      accessor: 'actual_time_in',
+      render: (value: string) => (
+        <span className="text-sm text-gray-600">
+          {value ? value : 'N/A'}
+        </span>
+      )
+    },
+    {
       header: 'Late Minutes',
-      accessor: 'late_minutes',
+      accessor: 'minutes_late',
       render: (value: number) => (
         <span className="text-sm font-medium text-red-600">
-          {value} min
+          {value ? `${value} min` : 'N/A'}
         </span>
       )
     },
     {
       header: 'Status',
-      accessor: 'status',
+      accessor: 'action_taken',
       render: (value: string) => (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          value === 'approved' ? 'bg-green-100 text-green-800' :
-          value === 'rejected' ? 'bg-red-100 text-red-800' :
-          'bg-yellow-100 text-yellow-800'
+          value === 'Completed' ? 'bg-green-100 text-green-800' :
+          value === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+          'bg-gray-100 text-gray-800'
         }`}>
-          {value.toUpperCase()}
+          {value ? value.toUpperCase() : 'N/A'}
+        </span>
+      )
+    },
+    {
+      header: 'Justified',
+      accessor: 'justified',
+      render: (value: boolean) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          value === true ? 'bg-green-100 text-green-800' :
+          value === false ? 'bg-red-100 text-red-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {value === true ? 'YES' : value === false ? 'NO' : 'N/A'}
+        </span>
+      )
+    },
+    {
+      header: 'Late Type',
+      accessor: 'late_type',
+      render: (value: string) => (
+        <span className="text-sm text-gray-600">
+          {value ? value.replace(/_/g, ' ').toUpperCase() : 'N/A'}
         </span>
       )
     },
@@ -474,17 +571,27 @@ const LateLogsManagement: React.FC = () => {
           <div className="flex items-end gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status Filter
+                Employee ID Filter
+              </label>
+              <input
+                type="text"
+                value={employeeIdFilter}
+                onChange={(e) => handleFilterChange('employeeId', e.target.value)}
+                placeholder="Enter employee ID"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Export Format
               </label>
               <select
-                value={statusFilter}
-                onChange={(e) => handleFilterChange(e.target.value)}
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
+                <option value={ExportFormat.CSV}>CSV</option>
+                <option value={ExportFormat.JSON}>JSON</option>
               </select>
             </div>
             <div>
@@ -496,6 +603,21 @@ const LateLogsManagement: React.FC = () => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 Refresh
+              </button>
+            </div>
+            <div>
+              <button
+                onClick={() => {
+                  if (employeeIdFilter && employeeIdFilter.trim() !== '') {
+                    const empId = parseInt(employeeIdFilter.trim());
+                    if (!isNaN(empId)) {
+                      fetchLateLogsByEmployee(empId);
+                    }
+                  }
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                Get Employee Logs
               </button>
             </div>
           </div>
@@ -520,13 +642,9 @@ const LateLogsManagement: React.FC = () => {
             loading={loading}
             selectedRows={selectedLogs}
             onBulkSelect={setSelectedLogs}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
             sortable={true}
             selectable={true}
-            paginated={true}
-            serverSidePagination={true}
+            paginated={false}
           />
         </div>
 

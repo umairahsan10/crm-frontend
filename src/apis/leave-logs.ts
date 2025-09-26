@@ -1,33 +1,23 @@
 import { apiGetJson, apiRequest, ApiError } from '../utils/apiClient';
 import { getApiBaseUrl } from '../config/api';
 
-// Types for Leave Logs
+// Types for Leave Logs - Updated to match backend LeaveLogsListResponseDto
 export interface LeaveLog {
-  id: number;
-  employeeId: number;
-  leaveType: string;
-  startDate: string;
-  endDate: string;
-  days: number;
+  leave_log_id: number;
+  emp_id: number;
+  employee_name: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-  approvedBy?: number;
-  approvedAt?: string;
-  rejectedReason?: string;
-  createdAt: string;
-  updatedAt: string;
-  employee: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  approver?: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
+  status: string;
+  applied_on: string;
+  reviewed_by?: number;
+  reviewer_name?: string;
+  reviewed_on?: string;
+  confirmation_reason?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LeaveLogsResponse {
@@ -38,55 +28,104 @@ export interface LeaveLogsResponse {
   totalPages: number;
 }
 
-export interface LeaveLogsStatsResponse {
-  summary: {
-    totalLogs: number;
-    pendingLogs: number;
-    approvedLogs: number;
-    rejectedLogs: number;
-    totalDays: number;
-  };
-  timeBasedStats: {
-    today: number;
-    thisWeek: number;
-    thisMonth: number;
-  };
-  byLeaveType: {
-    [key: string]: number;
-  };
+
+// Statistics response structure
+export interface LeaveLogsStatsResponseDto {
+  total_leaves: number;
+  pending_leaves: number;
+  approved_leaves: number;
+  rejected_leaves: number;
+  total_leave_days: number;
+  average_leave_duration: number;
+  most_common_leave_type: string;
+  period_stats: PeriodStatsDto[];
+  employee_breakdown?: EmployeeLeaveStatsDto[];
+  leave_type_breakdown?: LeaveTypeStatsDto[];
 }
 
+export interface PeriodStatsDto {
+  period: string;
+  total_leaves: number;
+  approved_leaves: number;
+  rejected_leaves: number;
+  pending_leaves: number;
+  total_days: number;
+}
+
+export interface EmployeeLeaveStatsDto {
+  employee_id: number;
+  employee_name: string;
+  total_leaves: number;
+  total_days: number;
+  approved_leaves: number;
+  rejected_leaves: number;
+  pending_leaves: number;
+}
+
+export interface LeaveTypeStatsDto {
+  leave_type: string;
+  count: number;
+  total_days: number;
+  approval_rate: number;
+}
+
+// Export format constants
+export const ExportFormat = {
+  CSV: 'csv',
+  JSON: 'json'
+} as const;
+
+export type ExportFormat = typeof ExportFormat[keyof typeof ExportFormat];
+
+// Export query parameters
+export interface ExportLeaveLogsDto {
+  employee_id?: number;
+  start_date?: string;
+  end_date?: string;
+  format: ExportFormat;
+  include_reviewer_details?: boolean;
+  include_confirmation_reason?: boolean;
+}
+
+// Statistics query parameters
+export interface LeaveLogsStatsDto {
+  employee_id?: number;
+  start_date?: string;
+  end_date?: string;
+  period?: StatsPeriod;
+  include_breakdown?: boolean;
+}
+
+export const StatsPeriod = {
+  DAILY: 'daily',
+  WEEKLY: 'weekly',
+  MONTHLY: 'monthly',
+  YEARLY: 'yearly'
+} as const;
+
+export type StatsPeriod = typeof StatsPeriod[keyof typeof StatsPeriod];
+
 export interface GetLeaveLogsDto {
-  employeeId?: number;
-  leaveType?: string;
-  status?: 'pending' | 'approved' | 'rejected';
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-  page?: number;
-  orderBy?: string;
-  orderDirection?: 'asc' | 'desc';
+  employee_id?: number;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 // API Functions
-export const getLeaveLogsApi = async (query: GetLeaveLogsDto = {}): Promise<LeaveLogsResponse> => {
+export const getLeaveLogsApi = async (query: GetLeaveLogsDto = {}): Promise<LeaveLog[]> => {
   try {
     const params = new URLSearchParams();
     
-    if (query.employeeId) params.append('employeeId', query.employeeId.toString());
-    if (query.leaveType) params.append('leaveType', query.leaveType);
+    if (query.employee_id) params.append('employee_id', query.employee_id.toString());
     if (query.status) params.append('status', query.status);
-    if (query.startDate) params.append('startDate', query.startDate);
-    if (query.endDate) params.append('endDate', query.endDate);
-    if (query.limit) params.append('limit', query.limit.toString());
-    if (query.page) params.append('page', query.page.toString());
-    if (query.orderBy) params.append('orderBy', query.orderBy);
-    if (query.orderDirection) params.append('orderDirection', query.orderDirection);
+    if (query.start_date) params.append('start_date', query.start_date);
+    if (query.end_date) params.append('end_date', query.end_date);
     
     const queryString = params.toString();
-    const url = `${getApiBaseUrl()}/attendance/leave-logs${queryString ? `?${queryString}` : ''}`;
+    const url = `${getApiBaseUrl()}/hr/attendance/leave-logs${queryString ? `?${queryString}` : ''}`;
     
-    const response = await apiGetJson<LeaveLogsResponse>(url);
+    const response = await apiGetJson<LeaveLog[]>(url);
     console.log('Leave logs API response:', response);
     
     return response;
@@ -99,9 +138,39 @@ export const getLeaveLogsApi = async (query: GetLeaveLogsDto = {}): Promise<Leav
   }
 };
 
-export const getLeaveLogsStatsApi = async (): Promise<LeaveLogsStatsResponse> => {
+export const getLeaveLogsByEmployeeApi = async (empId: number): Promise<LeaveLog[]> => {
   try {
-    const response = await apiGetJson<LeaveLogsStatsResponse>(`${getApiBaseUrl()}/attendance/leave-logs/stats`);
+    const url = `${getApiBaseUrl()}/hr/attendance/leave-logs/employee/${empId}`;
+    const response = await apiGetJson<LeaveLog[]>(url);
+    console.log('Leave logs by employee API response:', response);
+    
+    return response;
+  } catch (error: any) {
+    console.error('Error fetching leave logs by employee:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
+    throw new Error(`Failed to fetch leave logs by employee: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const getLeaveLogsStatsApi = async (query: LeaveLogsStatsDto = {}): Promise<LeaveLogsStatsResponseDto> => {
+  try {
+    const params = new URLSearchParams();
+    
+    // Add optional filters
+    if (query.employee_id) params.append('employee_id', query.employee_id.toString());
+    if (query.start_date) params.append('start_date', query.start_date);
+    if (query.end_date) params.append('end_date', query.end_date);
+    if (query.period) params.append('period', query.period);
+    if (query.include_breakdown) params.append('include_breakdown', 'true');
+    
+    const queryString = params.toString();
+    const url = `${getApiBaseUrl()}/hr/attendance/leave-logs/stats${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await apiGetJson<LeaveLogsStatsResponseDto>(url);
+    console.log('Statistics API response:', response);
+    
     return response;
   } catch (error: any) {
     console.error('Error fetching leave logs statistics:', error);
@@ -112,32 +181,39 @@ export const getLeaveLogsStatsApi = async (): Promise<LeaveLogsStatsResponse> =>
   }
 };
 
-export const exportLeaveLogsApi = async (query: GetLeaveLogsDto = {}, format: 'csv' | 'json' = 'csv'): Promise<Blob> => {
+export const exportLeaveLogsApi = async (query: ExportLeaveLogsDto): Promise<Blob> => {
   try {
     const params = new URLSearchParams();
     
-    // Add format parameter
-    params.append('format', format);
+    // Add required format parameter
+    params.append('format', query.format);
     
     // Add optional filters
-    if (query.employeeId) params.append('employeeId', query.employeeId.toString());
-    if (query.leaveType) params.append('leaveType', query.leaveType);
-    if (query.status) params.append('status', query.status);
-    if (query.startDate) params.append('startDate', query.startDate);
-    if (query.endDate) params.append('endDate', query.endDate);
+    if (query.employee_id) params.append('employee_id', query.employee_id.toString());
+    if (query.start_date) params.append('start_date', query.start_date);
+    if (query.end_date) params.append('end_date', query.end_date);
+    if (query.include_reviewer_details) params.append('include_reviewer_details', 'true');
+    if (query.include_confirmation_reason) params.append('include_confirmation_reason', 'true');
     
     const queryString = params.toString();
-    const url = `/attendance/leave-logs/export${queryString ? `?${queryString}` : ''}`;
+    const url = `/hr/attendance/leave-logs/export${queryString ? `?${queryString}` : ''}`;
     
-    // Use apiRequest for proper authentication
+    // Use apiRequest for proper authentication (handles cookies)
     const response = await apiRequest(url, {
       method: 'GET',
       headers: {
-        'Accept': format === 'csv' ? 'text/csv' : 'application/json',
+        'Accept': query.format === 'csv' ? 'text/csv' : 'application/json',
       },
     });
 
-    return await response.blob();
+    if (!response.ok) {
+      throw new Error(`Export failed: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    console.log('Export API response blob:', blob);
+    
+    return blob;
   } catch (error: any) {
     console.error('Error exporting leave logs:', error);
     if (error instanceof ApiError) {
