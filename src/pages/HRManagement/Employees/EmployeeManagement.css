@@ -1,0 +1,41 @@
+/* Modal positioning based on navbar state */
+.navbar-open-modal {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.navbar-closed-modal {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .navbar-open-modal,
+  .navbar-closed-modal {
+    margin-left: 0 !important;
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+}
+
+/* Tablet adjustments */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .navbar-open-modal {
+    margin-left: 250px !important;
+    width: calc(100vw - 270px) !important;
+    max-width: calc(100vw - 270px) !important;
+  }
+  
+  .navbar-closed-modal {
+    margin-left: 70px !important;
+    width: calc(100vw - 90px) !important;
+    max-width: calc(100vw - 90px) !important;
+  }
+}
+
+/* Ensure smooth transitions */
+.navbar-open-modal,
+.navbar-closed-modal {
+  transition: margin-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              max-width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}

@@ -1,0 +1,67 @@
+/* Modal positioning based on navbar state */
+.navbar-open-modal {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.navbar-closed-modal {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .navbar-open-modal,
+  .navbar-closed-modal {
+    margin-left: 0 !important;
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+}
+
+/* Tablet adjustments */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .navbar-open-modal {
+    margin-left: 200px !important;
+    width: 500px !important;
+    max-width: 500px !important;
+  }
+  
+  .navbar-closed-modal {
+    margin-left: 0px !important;
+    width: 500px !important;
+    max-width: 500px !important;
+  }
+}
+
+/* Ensure smooth transitions */
+.navbar-open-modal,
+.navbar-closed-modal {
+  transition: margin-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              max-width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Attendance status indicators */
+.attendance-status-present {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.attendance-status-late {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.attendance-status-absent {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.attendance-status-half-day {
+  background-color: #fed7aa;
+  color: #9a3412;
+}
+
+.attendance-status-not-marked {
+  background-color: #f3f4f6;
+  color: #374151;
+}

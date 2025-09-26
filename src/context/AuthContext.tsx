@@ -321,6 +321,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'integrations': ['admin'],
       'security': ['admin'],
       'maintenance': ['admin'],
+      
+      // HR-specific pages
+      'hr-logs': ['admin', 'dept_manager'],
+      'employee-requests': ['admin', 'dept_manager', 'team_leads', 'unit_head'],
     };
 
     // Check both role and department for better matching

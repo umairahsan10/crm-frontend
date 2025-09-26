@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import DataTable, { type Column } from '../../components/common/DataTable/DataTable';
-import DataFilters, { type FilterConfig } from '../../components/common/Filters/DataFilters';
-import BulkActions, { type BulkAction } from '../../components/common/BulkActions/BulkActions';
-import DataStatistics from '../../components/common/Statistics/DataStatistics';
-import DetailsDrawer, { type DetailsSection } from '../../components/common/DetailsDrawer/DetailsDrawer';
-import CreateEmployeeForm from '../../components/previous_components/EmployeeForm/EmployeeForm';
+import { useAuth } from '../../../context/AuthContext';
+import { useNavbar } from '../../../context/NavbarContext';
+import DataTable, { type Column } from '../../../components/common/DataTable/DataTable';
+import DataFilters, { type FilterConfig } from '../../../components/common/Filters/DataFilters';
+import BulkActions, { type BulkAction } from '../../../components/common/BulkActions/BulkActions';
+import DataStatistics from '../../../components/common/Statistics/DataStatistics';
+import DetailsDrawer, { type DetailsSection } from '../../../components/common/DetailsDrawer/DetailsDrawer';
+import CreateEmployeeForm from '../../../components/previous_components/EmployeeForm/EmployeeForm';
 import { 
   getEmployeesApi, 
   terminateEmployeeApi,
@@ -20,10 +21,12 @@ import {
   type GetEmployeesDto,
   type UpdateEmployeeDto,
   type EmployeeStatistics
-} from '../../apis/hr-employees';
+} from '../../../apis/hr-employees';
+import './EmployeeManagement.css';
 
 const EmployeeManagement: React.FC = () => {
   const { user, hasPermission } = useAuth();
+  const { isNavbarOpen } = useNavbar();
   
   // State management
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -223,19 +226,28 @@ const EmployeeManagement: React.FC = () => {
       render: (_, row) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => handleEmployeeClick(row)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEmployeeClick(row);
+            }}
             className="text-blue-600 hover:text-blue-900 text-sm font-medium"
           >
             View
           </button>
           <button
-            onClick={() => handleEditEmployee(row)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditEmployee(row);
+            }}
             className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
           >
             Edit
           </button>
           <button
-            onClick={() => handleTerminateEmployee(row)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTerminateEmployee(row);
+            }}
             className="text-orange-600 hover:text-orange-900 text-sm font-medium"
           >
             Terminate
@@ -1025,15 +1037,23 @@ const EmployeeManagement: React.FC = () => {
 
         {/* Create Employee Modal */}
         {showCreateForm && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div className="fixed inset-0 z-50 overflow-hidden">
+            <div className="flex items-center justify-center min-h-screen p-4">
               <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={handleCloseForm}></div>
               
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              
-              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="flex items-center justify-between mb-4">
+              <div 
+                className={`relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all ${
+                  isNavbarOpen ? 'navbar-open-modal' : 'navbar-closed-modal'
+                }`}
+                style={{
+                  width: '800px',
+                  maxWidth: '90vw',
+                  maxHeight: '85vh',
+                  marginLeft: isNavbarOpen ? '200px' : '0px'
+                }}
+              >
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
                     <h3 className="text-lg font-medium text-gray-900">
                       {selectedEmployee ? 'Edit Employee' : 'Create New Employee'}
                     </h3>
@@ -1046,13 +1066,15 @@ const EmployeeManagement: React.FC = () => {
                       </svg>
                     </button>
                   </div>
-                  <CreateEmployeeForm
-                    onClose={handleCloseForm}
-                    onSave={handleEmployeeCreated}
-                    employee={selectedEmployee}
-                    departments={departments}
-                    roles={roles}
-                  />
+                  <div className="flex-1 overflow-y-auto">
+                    <CreateEmployeeForm
+                      onClose={handleCloseForm}
+                      onSave={handleEmployeeCreated}
+                      employee={selectedEmployee}
+                      departments={departments}
+                      roles={roles}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1104,9 +1126,20 @@ const EmployeeManagement: React.FC = () => {
 
         {/* Termination Modal */}
         {showTerminateModal && employeeToTerminate && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
+          <div 
+            className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+            style={{
+              paddingLeft: isNavbarOpen ? '250px' : '70px',
+              paddingRight: '20px'
+            }}
+          >
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div 
+                className={`p-5 border w-96 shadow-lg rounded-md bg-white ${
+                  isNavbarOpen ? 'navbar-open-modal' : 'navbar-closed-modal'
+                }`}
+              >
+                <div className="mt-3">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-gray-900">Terminate Employee</h3>
                   <button
@@ -1168,6 +1201,7 @@ const EmployeeManagement: React.FC = () => {
                   >
                     {isDeleting ? 'Terminating...' : 'Terminate Employee'}
                   </button>
+                </div>
                 </div>
               </div>
             </div>
