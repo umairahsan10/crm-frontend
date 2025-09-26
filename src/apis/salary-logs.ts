@@ -1,4 +1,4 @@
-import { apiGetJson, apiRequest } from '../utils/apiClient';
+import { apiGetJson, apiRequest, ApiError } from '../utils/apiClient';
 import { getApiBaseUrl } from '../config/api';
 
 // Types for Salary Logs
@@ -93,8 +93,11 @@ export const getSalaryLogsApi = async (query: GetSalaryLogsDto = {}): Promise<Sa
     console.log('Salary logs API response:', response);
     
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching salary logs:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to fetch salary logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -103,8 +106,11 @@ export const getSalaryLogsStatsApi = async (): Promise<SalaryLogsStatsResponse> 
   try {
     const response = await apiGetJson<SalaryLogsStatsResponse>(`${getApiBaseUrl()}/finance/salary-logs/stats`);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching salary logs statistics:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to fetch salary logs statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -136,8 +142,11 @@ export const exportSalaryLogsApi = async (query: GetSalaryLogsDto = {}, format: 
     });
 
     return await response.blob();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error exporting salary logs:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to export salary logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

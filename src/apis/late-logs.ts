@@ -1,4 +1,4 @@
-import { apiGetJson, apiRequest } from '../utils/apiClient';
+import { apiGetJson, apiRequest, ApiError } from '../utils/apiClient';
 import { getApiBaseUrl } from '../config/api';
 
 // Types for Late Logs
@@ -82,8 +82,11 @@ export const getLateLogsApi = async (query: GetLateLogsDto = {}): Promise<LateLo
     console.log('Late logs API response:', response);
     
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching late logs:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to fetch late logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -92,8 +95,11 @@ export const getLateLogsStatsApi = async (): Promise<LateLogsStatsResponse> => {
   try {
     const response = await apiGetJson<LateLogsStatsResponse>(`${getApiBaseUrl()}/attendance/late-logs/stats`);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching late logs statistics:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to fetch late logs statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -123,8 +129,11 @@ export const exportLateLogsApi = async (query: GetLateLogsDto = {}, format: 'csv
     });
 
     return await response.blob();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error exporting late logs:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to export late logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

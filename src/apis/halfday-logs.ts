@@ -1,4 +1,4 @@
-import { apiGetJson, apiRequest } from '../utils/apiClient';
+import { apiGetJson, apiRequest, ApiError } from '../utils/apiClient';
 import { getApiBaseUrl } from '../config/api';
 
 // Types for Half Day Logs
@@ -85,8 +85,11 @@ export const getHalfDayLogsApi = async (query: GetHalfDayLogsDto = {}): Promise<
     console.log('Half day logs API response:', response);
     
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching half day logs:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to fetch half day logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -95,8 +98,11 @@ export const getHalfDayLogsStatsApi = async (): Promise<HalfDayLogsStatsResponse
   try {
     const response = await apiGetJson<HalfDayLogsStatsResponse>(`${getApiBaseUrl()}/attendance/halfday-logs/stats`);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching half day logs statistics:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to fetch half day logs statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -127,8 +133,11 @@ export const exportHalfDayLogsApi = async (query: GetHalfDayLogsDto = {}, format
     });
 
     return await response.blob();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error exporting half day logs:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to export half day logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

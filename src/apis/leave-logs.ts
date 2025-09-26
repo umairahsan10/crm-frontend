@@ -1,4 +1,4 @@
-import { apiGetJson, apiRequest } from '../utils/apiClient';
+import { apiGetJson, apiRequest, ApiError } from '../utils/apiClient';
 import { getApiBaseUrl } from '../config/api';
 
 // Types for Leave Logs
@@ -90,8 +90,11 @@ export const getLeaveLogsApi = async (query: GetLeaveLogsDto = {}): Promise<Leav
     console.log('Leave logs API response:', response);
     
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching leave logs:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to fetch leave logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -100,8 +103,11 @@ export const getLeaveLogsStatsApi = async (): Promise<LeaveLogsStatsResponse> =>
   try {
     const response = await apiGetJson<LeaveLogsStatsResponse>(`${getApiBaseUrl()}/attendance/leave-logs/stats`);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching leave logs statistics:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to fetch leave logs statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -132,8 +138,11 @@ export const exportLeaveLogsApi = async (query: GetLeaveLogsDto = {}, format: 'c
     });
 
     return await response.blob();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error exporting leave logs:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
     throw new Error(`Failed to export leave logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
