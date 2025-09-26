@@ -1,0 +1,96 @@
+/* LogsPage specific styles */
+.logs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.log-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.log-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.log-icon {
+  transition: transform 0.2s ease-in-out;
+}
+
+.log-card:hover .log-icon {
+  transform: scale(1.1);
+}
+
+/* Color variants for log cards */
+.log-card-blue {
+  border-left: 4px solid #3b82f6;
+}
+
+.log-card-purple {
+  border-left: 4px solid #8b5cf6;
+}
+
+.log-card-green {
+  border-left: 4px solid #10b981;
+}
+
+.log-card-yellow {
+  border-left: 4px solid #f59e0b;
+}
+
+.log-card-orange {
+  border-left: 4px solid #f97316;
+}
+
+.log-card-pink {
+  border-left: 4px solid #ec4899;
+}
+
+.log-card-emerald {
+  border-left: 4px solid #059669;
+}
+
+.log-card-indigo {
+  border-left: 4px solid #6366f1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .logs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animation for loading state */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar for log containers */
+.logs-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.logs-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.logs-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.logs-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
