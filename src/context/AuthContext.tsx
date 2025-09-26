@@ -302,6 +302,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'deals': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior'],
       'sales': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior'],
       'leads': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior'],
+      'leads-create': ['admin', 'dept_manager', 'team_leads', 'marketing'],
       'settings': ['admin'],
       'profile': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior', 'junior'],
       

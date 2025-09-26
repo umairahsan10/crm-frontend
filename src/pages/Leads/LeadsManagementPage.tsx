@@ -4,13 +4,12 @@ import LeadsFilters from '../../components/leads/LeadsFilters';
 import LeadDetailsDrawer from '../../components/leads/LeadDetailsDrawer';
 import BulkActions from '../../components/leads/BulkActions';
 import LeadsStatistics from '../../components/leads/LeadsStatistics';
-import CreateLeadForm from '../../components/common/CreateLeadForm/CreateLeadForm';
 import { 
   getLeadsApi, 
   bulkUpdateLeadsApi, 
   bulkDeleteLeadsApi, 
   getLeadsStatisticsApi, 
-  getEmployeesApi 
+  getFilterEmployeesApi 
 } from '../../apis/leads';
 import type { Lead } from '../../types';
 
@@ -20,7 +19,6 @@ const LeadsManagementPage: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -44,18 +42,41 @@ const LeadsManagementPage: React.FC = () => {
   });
 
   // Data state
-  const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>([]);
-  const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
+  const [employees, setEmployees] = useState<Array<{ 
+    id?: string | number; 
+    employeeId?: string | number;
+    userId?: string | number;
+    _id?: string | number;
+    name?: string;
+    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    [key: string]: any;
+  }>>([]);
   const [statistics, setStatistics] = useState({
-    total: 0,
-    byStatus: {} as Record<string, number>,
-    byType: {} as Record<string, number>,
-    conversionRate: 0,
-    thisMonth: {
+    totalLeads: 0,
+    activeLeads: 0,
+    completedLeads: 0,
+    failedLeads: 0,
+    conversionRate: '0%',
+    completionRate: '0%',
+    byStatus: {
       new: 0,
       inProgress: 0,
       completed: 0,
       failed: 0
+    },
+    byType: {
+      warm: 0,
+      cold: 0,
+      push: 0,
+      upsell: 0
+    },
+    today: {
+      new: 0,
+      completed: 0,
+      inProgress: 0
     }
   });
 
@@ -97,36 +118,52 @@ const LeadsManagementPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching statistics:', error);
+      // Fallback to mock statistics data
+      setStatistics({
+        totalLeads: 0,
+        activeLeads: 0,
+        completedLeads: 0,
+        failedLeads: 0,
+        conversionRate: '0%',
+        completionRate: '0%',
+        byStatus: {
+          new: 0,
+          inProgress: 0,
+          completed: 0,
+          failed: 0
+        },
+        byType: {
+          warm: 0,
+          cold: 0,
+          push: 0,
+          upsell: 0
+        },
+        today: {
+          new: 0,
+          completed: 0,
+          inProgress: 0
+        }
+      });
     }
   };
 
-  // Fetch employees and sales units
+  // Fetch employees for bulk actions (this is separate from filter employees)
   const fetchSupportingData = async () => {
     try {
-      const [employeesRes, salesUnitsRes] = await Promise.all([
-        getEmployeesApi(),
-        // Mock sales units for now
-        Promise.resolve({
-          success: true,
-          data: [
-            { id: 1, name: 'Sales Unit 1' },
-            { id: 2, name: 'Sales Unit 2' },
-            { id: 3, name: 'Sales Unit 3' },
-            { id: 4, name: 'Enterprise Sales' },
-            { id: 5, name: 'SMB Sales' }
-          ]
-        })
-      ]);
+      const employeesRes = await getFilterEmployeesApi();
 
       if (employeesRes.success && employeesRes.data) {
         setEmployees(employeesRes.data);
       }
-
-      if (salesUnitsRes.success && salesUnitsRes.data) {
-        setSalesUnits(salesUnitsRes.data);
-      }
     } catch (error) {
       console.error('Error fetching supporting data:', error);
+      // Fallback to mock data for bulk actions
+      setEmployees([
+        { id: '1', name: 'John Smith' },
+        { id: '2', name: 'Sarah Johnson' },
+        { id: '3', name: 'Mike Wilson' },
+        { id: '4', name: 'Emily Davis' }
+      ]);
     }
   };
 
@@ -246,14 +283,6 @@ const LeadsManagementPage: React.FC = () => {
   };
 
 
-  const handleLeadCreated = (newLead: Lead) => {
-    setLeads(prev => [newLead, ...prev]);
-    setShowCreateForm(false);
-    setNotification({
-      type: 'success',
-      message: 'Lead created successfully!'
-    });
-  };
 
   const handleCloseNotification = () => {
     setNotification(null);
@@ -281,15 +310,6 @@ const LeadsManagementPage: React.FC = () => {
                 </svg>
                 {showStatistics ? 'Hide Stats' : 'Show Stats'}
               </button>
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Create Lead
-              </button>
             </div>
           </div>
         </div>
@@ -310,8 +330,6 @@ const LeadsManagementPage: React.FC = () => {
           onAssignedToFilter={handleAssignedToFilter}
           onDateRangeFilter={handleDateRangeFilter}
           onClearFilters={handleClearFilters}
-          salesUnits={salesUnits}
-          employees={employees}
         />
 
         {/* Bulk Actions */}
@@ -343,38 +361,20 @@ const LeadsManagementPage: React.FC = () => {
           lead={selectedLead}
           isOpen={!!selectedLead}
           onClose={() => setSelectedLead(null)}
+          onLeadUpdated={(updatedLead) => {
+            setLeads(prev => prev.map(lead => 
+              lead.id === updatedLead.id ? updatedLead : lead
+            ));
+            setSelectedLead(updatedLead);
+            setNotification({
+              type: 'success',
+              message: 'Lead updated successfully!'
+            });
+            setTimeout(() => setNotification(null), 3000);
+          }}
         />
 
-        {/* Create Lead Modal */}
-        {showCreateForm && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowCreateForm(false)}></div>
-              
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              
-              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Create New Lead</h3>
-                    <button
-                      onClick={() => setShowCreateForm(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  <CreateLeadForm
-                    onSuccess={handleLeadCreated}
-                    onError={(error) => setNotification({ type: 'error', message: error })}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* Notification */}
         {notification && (

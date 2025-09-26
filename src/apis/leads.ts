@@ -2,6 +2,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 import type { CreateLeadRequest, CreateLeadResponse, Lead, ApiResponse } from '../types';
+import { getAuthData } from '../utils/cookieUtils';
 
 export interface ApiError {
   message: string;
@@ -11,7 +12,7 @@ export interface ApiError {
 // Create a new lead
 export const createLeadApi = async (leadData: CreateLeadRequest): Promise<CreateLeadResponse> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -119,7 +120,7 @@ export const getLeadsApi = async (
   } = {}
 ): Promise<ApiResponse<Lead[]>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -202,7 +203,7 @@ export const getLeadsApi = async (
 // Get a specific lead by ID
 export const getLeadByIdApi = async (leadId: string): Promise<ApiResponse<Lead>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -230,11 +231,77 @@ export const getLeadByIdApi = async (leadId: string): Promise<ApiResponse<Lead>>
   }
 };
 
+// Update a lead
+export const updateLeadApi = async (leadId: string, updates: Partial<Lead>): Promise<ApiResponse<Lead>> => {
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('Updating lead:', leadId, 'with data:', updates);
+
+    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(updates),
+    });
+
+    console.log('Update response status:', response.status);
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to update lead';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (parseError) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      console.error('Update lead API error:', errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    console.log('Update lead response:', data);
+    
+    // Handle different response formats from your backend
+    let updatedLead;
+    if (data.lead) {
+      // If response has a 'lead' property
+      updatedLead = data.lead;
+    } else if (data.data) {
+      // If response has a 'data' property
+      updatedLead = data.data;
+    } else if (data.id) {
+      // If response is the lead object directly
+      updatedLead = data;
+    } else {
+      // Fallback - use the original lead data
+      updatedLead = updates;
+    }
+    
+    return {
+      success: true,
+      data: updatedLead,
+      message: data.message || 'Lead updated successfully'
+    };
+  } catch (error) {
+    console.error('Update lead error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while updating the lead');
+  }
+};
+
 
 // Delete a lead
 export const deleteLeadApi = async (leadId: string): Promise<ApiResponse<void>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -265,7 +332,7 @@ export const deleteLeadApi = async (leadId: string): Promise<ApiResponse<void>> 
 // Bulk operations
 export const bulkUpdateLeadsApi = async (leadIds: string[], updates: Partial<Lead>): Promise<ApiResponse<void>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -296,7 +363,7 @@ export const bulkUpdateLeadsApi = async (leadIds: string[], updates: Partial<Lea
 
 export const bulkDeleteLeadsApi = async (leadIds: string[]): Promise<ApiResponse<void>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -325,24 +392,39 @@ export const bulkDeleteLeadsApi = async (leadIds: string[]): Promise<ApiResponse
   }
 };
 
-// Statistics
+// Statistics - Overview API
 export const getLeadsStatisticsApi = async (): Promise<ApiResponse<{
-  total: number;
-  byStatus: Record<string, number>;
-  byType: Record<string, number>;
-  conversionRate: number;
-  thisMonth: {
+  totalLeads: number;
+  activeLeads: number;
+  completedLeads: number;
+  failedLeads: number;
+  conversionRate: string;
+  completionRate: string;
+  byStatus: {
     new: number;
     inProgress: number;
     completed: number;
     failed: number;
   };
+  byType: {
+    warm: number;
+    cold: number;
+    push: number;
+    upsell: number;
+  };
+  today: {
+    new: number;
+    completed: number;
+    inProgress: number;
+  };
 }>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
+
+    console.log('Fetching leads statistics from:', `${API_BASE_URL}/leads/statistics/overview`);
 
     const response = await fetch(`${API_BASE_URL}/leads/statistics/overview`, {
       method: 'GET',
@@ -352,18 +434,30 @@ export const getLeadsStatisticsApi = async (): Promise<ApiResponse<{
       },
     });
 
+    console.log('Statistics API response status:', response.status);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch statistics');
+      let errorMessage = 'Failed to fetch statistics';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (parseError) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      console.error('Statistics API error:', errorMessage);
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
+    console.log('Statistics API raw data:', data);
+    
     return {
       success: true,
       data: data,
       message: 'Statistics fetched successfully'
     };
   } catch (error) {
+    console.error('Statistics API error:', error);
     if (error instanceof Error) {
       throw new Error(error.message);
     }
@@ -371,15 +465,20 @@ export const getLeadsStatisticsApi = async (): Promise<ApiResponse<{
   }
 };
 
-// Get employees for assignment
-export const getEmployeesApi = async (): Promise<ApiResponse<Array<{ id: string; name: string }>>> => {
+// Note: getEmployeesApi removed - use getFilterEmployeesApi instead
+
+// Get sales units for filter dropdown
+export const getSalesUnitsApi = async (): Promise<ApiResponse<Array<{ id: number; name: string }>>> => {
   try {
-    const token = localStorage.getItem('crm_token');
+    const { token } = getAuthData();
     if (!token) {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/employees`, {
+    const url = `${API_BASE_URL}/leads/filter-options/sales-units`;
+    console.log('Fetching sales units from:', url);
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -387,18 +486,114 @@ export const getEmployeesApi = async (): Promise<ApiResponse<Array<{ id: string;
       },
     });
 
+    console.log('Sales units response status:', response.status);
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch employees');
+      let errorMessage = 'Failed to fetch sales units';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (parseError) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      console.error('Sales units API error:', errorMessage);
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
+    console.log('Sales units raw data:', data);
+    
+    // Ensure data is an array
+    const salesUnitsData = Array.isArray(data) ? data : (data.data || data.salesUnits || []);
+    console.log('Processed sales units data:', salesUnitsData);
+    
     return {
       success: true,
-      data: data,
+      data: salesUnitsData,
+      message: 'Sales units fetched successfully'
+    };
+  } catch (error) {
+    console.error('Sales units API error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while fetching sales units');
+  }
+};
+
+// Get employees for filter dropdown (all employees or filtered by sales unit)
+export const getFilterEmployeesApi = async (salesUnitId?: number): Promise<ApiResponse<Array<{ 
+  id?: string | number; 
+  employeeId?: string | number;
+  userId?: string | number;
+  _id?: string | number;
+  name?: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  [key: string]: any;
+}>>> => {
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+    if (salesUnitId) {
+      queryParams.append('salesUnitId', salesUnitId.toString());
+    }
+
+    const url = salesUnitId 
+      ? `${API_BASE_URL}/leads/filter-options/employees?${queryParams.toString()}`
+      : `${API_BASE_URL}/leads/filter-options/employees`;
+
+    console.log('Fetching employees from:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Employees response status:', response.status);
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch employees';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (parseError) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      console.error('Employees API error:', errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    console.log('Employees raw data:', data);
+    
+    // Ensure data is an array and handle different response formats
+    let employeesData = [];
+    if (Array.isArray(data)) {
+      employeesData = data;
+    } else if (data && typeof data === 'object') {
+      employeesData = data.data || data.employees || data.users || data.results || [];
+    }
+    
+    console.log('Employees processed:', employeesData.length, 'items');
+    
+    return {
+      success: true,
+      data: employeesData,
       message: 'Employees fetched successfully'
     };
   } catch (error) {
+    console.error('Employees API error:', error);
     if (error instanceof Error) {
       throw new Error(error.message);
     }

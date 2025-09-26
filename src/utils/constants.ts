@@ -6,6 +6,7 @@ export const NAV_ITEMS = [
   { id: 'deals', label: 'Deals', icon: '💼', path: '/deals', roles: ['admin', 'hr', 'employee'] },
   { id: 'sales', label: 'Sales', icon: '📈', path: '/sales', roles: ['admin', 'hr'] },
   { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads', roles: ['admin', 'hr'] },
+  { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create', roles: ['admin', 'dept_manager', 'team_leads', 'marketing'] },
   
   // Admin-specific pages
   { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects', roles: ['admin'] },

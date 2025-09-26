@@ -11,6 +11,7 @@ import AttendancePage from './pages/Attendance/AttendancePage';
 import DealsPage from './pages/Deals/DealsPage';
 import ReportsPage from './pages/Sales/ReportsPage';
 import LeadsManagementPage from './pages/Leads/LeadsManagementPage';
+import LeadsCreationPage from './pages/Leads/LeadsCreationPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 
 // Import dashboard components
@@ -149,6 +150,10 @@ function AppLayout() {
         <Route 
           path="/leads" 
           element={canAccessPage('leads') ? <LeadsManagementPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/leads/create" 
+          element={canAccessPage('leads') ? <LeadsCreationPage /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/settings" 
