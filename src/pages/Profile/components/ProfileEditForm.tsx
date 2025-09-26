@@ -142,14 +142,14 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Profile</h3>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+    <div className="bg-white dark:bg-gray-271 rounded-lg shadow-lg border border-gray-100">
+      <div className="p-6 border-b border-gray-100">
+        <h3 className="text-lg font-bold text-gray-900">Edit Profile</h3>
+        <p className="mt-1 text-sm font-medium text-gray-600">
           Update your profile information and preferences
         </p>
         {!canEditSensitiveFields && (
-          <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
@@ -157,10 +157,10 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                <h3 className="text-sm font-medium text-yellow-800">
                   Limited Edit Access
                 </h3>
-                <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+                <div className="mt-1 text-sm text-yellow-700">
                   <p>You can only edit basic information. Sensitive fields like email, department, and role can only be changed by Admin or HR.</p>
                 </div>
               </div>
@@ -172,13 +172,13 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         {/* Avatar Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Profile Picture
           </label>
           <div className="flex items-center space-x-4">
             <div className="relative">
               <img
-                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
                 src={formData.avatar || '/default-avatar.svg'}
                 alt="Profile"
               />
@@ -197,7 +197,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
               >
                 Change Photo
               </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 JPG, PNG or GIF. Max size 2MB.
               </p>
             </div>
@@ -207,15 +207,15 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
         {/* Personal Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Full Name *
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              className={`w-full px-3 py-2 border border-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent bg-gray-100 text-gray-900 ${
+                errors.name ? 'border-red-500' : ''
               }`}
               placeholder="Enter your full name"
             />
@@ -223,7 +223,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Email Address *
             </label>
             <input
@@ -231,28 +231,28 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               disabled={!canEditSensitiveFields}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              } ${!canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''}`}
+              className={`w-full px-3 py-2 border border-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent bg-gray-100 text-gray-900 ${
+                errors.email ? 'border-red-500' : ''
+              } ${!canEditSensitiveFields ? 'bg-gray-50 text-gray-500' : ''}`}
               placeholder="Enter your email"
             />
             {!canEditSensitiveFields && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Email can only be changed by Admin/HR</p>
+              <p className="mt-1 text-xs text-gray-500">Email can only be changed by Admin/HR</p>
             )}
             {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
 
           {!isAdmin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                  errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                className={`w-full px-3 py-2 border border-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent bg-gray-100 text-gray-900 ${
+                  errors.phone ? 'border-red-500' : ''
                 }`}
                 placeholder="Enter your phone number"
               />
@@ -261,31 +261,31 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Employee ID
             </label>
             <input
               type="text"
               value={formData.employeeId}
               disabled
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
+              className="w-full px-3 py-2 border border-white rounded-lg bg-gray-50 text-gray-500"
               placeholder="Employee ID (read-only)"
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Employee ID cannot be changed</p>
+            <p className="mt-1 text-xs text-gray-500">Employee ID cannot be changed</p>
           </div>
         </div>
 
         {/* Address - Only for employees */}
         {!isAdmin && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Address
             </label>
             <textarea
               value={formData.address || ''}
               onChange={(e) => handleInputChange('address', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent bg-gray-100 text-gray-900"
               placeholder="Enter your address"
             />
           </div>
@@ -294,16 +294,16 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
         {/* Work Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Department *
             </label>
             <select
               value={formData.department}
               onChange={(e) => handleInputChange('department', e.target.value)}
               disabled={!canEditSensitiveFields}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.department ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              } ${!canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''}`}
+              className={`w-full px-3 py-2 border border-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent bg-gray-100 text-gray-900 ${
+                errors.department ? 'border-red-500' : ''
+              } ${!canEditSensitiveFields ? 'bg-gray-50 text-gray-500' : ''}`}
             >
               <option value="">Select Department</option>
               {departments.map((dept) => (
@@ -313,22 +313,22 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
               ))}
             </select>
             {!canEditSensitiveFields && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Department can only be changed by Admin/HR</p>
+              <p className="mt-1 text-xs text-gray-500">Department can only be changed by Admin/HR</p>
             )}
             {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Role *
             </label>
             <select
               value={formData.role}
               onChange={(e) => handleInputChange('role', e.target.value)}
               disabled={!canEditSensitiveFields}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.role ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              } ${!canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''}`}
+              className={`w-full px-3 py-2 border border-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent bg-gray-100 text-gray-900 ${
+                errors.role ? 'border-red-500' : ''
+              } ${!canEditSensitiveFields ? 'bg-gray-50 text-gray-500' : ''}`}
             >
               <option value="">Select Role</option>
               {roles.map((role) => (
@@ -338,13 +338,13 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
               ))}
             </select>
             {!canEditSensitiveFields && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Role can only be changed by Admin/HR</p>
+              <p className="mt-1 text-xs text-gray-500">Role can only be changed by Admin/HR</p>
             )}
             {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Start Date
             </label>
             <input
@@ -352,18 +352,18 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
               value={formData.startDate}
               onChange={(e) => handleInputChange('startDate', e.target.value)}
               disabled={!canEditSensitiveFields}
-              className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                !canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''
+              className={`w-full px-3 py-2 border border-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent bg-gray-100 text-gray-900 ${
+                !canEditSensitiveFields ? 'bg-gray-50 text-gray-500' : ''
               }`}
             />
             {!canEditSensitiveFields && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Start date can only be changed by Admin/HR</p>
+              <p className="mt-1 text-xs text-gray-500">Start date can only be changed by Admin/HR</p>
             )}
           </div>
 
           {!isAdmin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Manager
               </label>
               <input
@@ -371,29 +371,29 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
                 value={formData.manager || ''}
                 onChange={(e) => handleInputChange('manager', e.target.value)}
                 disabled={!canEditSensitiveFields}
-                className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                  !canEditSensitiveFields ? 'bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400' : ''
+                className={`w-full px-3 py-2 border border-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent bg-gray-100 text-gray-900 ${
+                  !canEditSensitiveFields ? 'bg-gray-50 text-gray-500' : ''
                 }`}
                 placeholder="Enter manager name"
               />
               {!canEditSensitiveFields && (
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Manager can only be changed by Admin/HR</p>
+                <p className="mt-1 text-xs text-gray-500">Manager can only be changed by Admin/HR</p>
               )}
             </div>
           )}
         </div>
 
         {/* Preferences */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Preferences</h4>
+        <div className="border-t border-gray-100 pt-6">
+          <h4 className="text-lg font-medium text-gray-900 mb-4">Preferences</h4>
           
           <div className="flex items-center justify-between">
             <div>
-              <h5 className="text-sm font-medium text-gray-900 dark:text-white">Theme</h5>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Choose your preferred theme</p>
+              <h5 className="text-sm font-medium text-gray-900">Theme</h5>
+              <p className="text-sm text-gray-500">Choose your preferred theme</p>
             </div>
             <div className="flex items-center space-x-3">
-              <span className={`text-sm ${formData.theme === 'light' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+              <span className={`text-sm ${formData.theme === 'light' ? 'text-gray-900' : 'text-gray-500'}`}>
                 Light
               </span>
               <button
@@ -409,7 +409,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
                   }`}
                 />
               </button>
-              <span className={`text-sm ${formData.theme === 'dark' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+              <span className={`text-sm ${formData.theme === 'dark' ? 'text-gray-900' : 'text-gray-500'}`}>
                 Dark
               </span>
             </div>
@@ -418,18 +418,18 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
 
         {/* Error Message */}
         {errors.submit && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.submit}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-600">{errors.submit}</p>
           </div>
         )}
 
         {/* Form Actions */}
-        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-100">
           <button
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium disabled:opacity-50"
+            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
           >
             Cancel
           </button>
