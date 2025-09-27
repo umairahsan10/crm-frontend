@@ -291,6 +291,7 @@ export interface Lead {
   type?: LeadType;
   salesUnitId: number;
   status?: LeadStatus;
+  outcome?: LeadOutcome | null;
   createdAt: string;
   updatedAt: string;
   assignedTo?: string | { firstName: string; lastName: string };
