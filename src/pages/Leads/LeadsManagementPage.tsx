@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import LeadsTable from '../../components/leads/LeadsTable';
+import CrackLeadsTable from '../../components/leads/CrackLeadsTable';
+import ArchiveLeadsTable from '../../components/leads/ArchiveLeadsTable';
 import LeadsFilters from '../../components/leads/LeadsFilters';
 import LeadDetailsDrawer from '../../components/leads/LeadDetailsDrawer';
 import BulkActions from '../../components/leads/BulkActions';
 import LeadsStatistics from '../../components/leads/LeadsStatistics';
+import RequestLeadModal from '../../components/leads/RequestLeadModal';
+import { useAuth } from '../../context/AuthContext';
 import { 
   getLeadsApi, 
   bulkUpdateLeadsApi, 
   bulkDeleteLeadsApi, 
   getLeadsStatisticsApi, 
-  getFilterEmployeesApi 
+  getFilterEmployeesApi
 } from '../../apis/leads';
 import type { Lead } from '../../types';
 
 const LeadsManagementPage: React.FC = () => {
+  // Auth context
+  const { user } = useAuth();
+  
   // State management
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -21,6 +28,18 @@ const LeadsManagementPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showStatistics, setShowStatistics] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<'leads' | 'crack' | 'archive'>('leads');
+  const [showRequestLeadModal, setShowRequestLeadModal] = useState(false);
+
+  // Helper function to check if user can access archive leads
+  const canAccessArchiveLeads = (): boolean => {
+    if (!user) return false;
+    
+    const userRole = user.role?.toLowerCase();
+    const allowedRoles = ['admin', 'unit_head', 'dep_manager'];
+    
+    return allowedRoles.includes(userRole);
+  };
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -174,6 +193,13 @@ const LeadsManagementPage: React.FC = () => {
     fetchSupportingData();
   }, []);
 
+  // Handle tab switching when archive access is not available
+  useEffect(() => {
+    if (activeTab === 'archive' && !canAccessArchiveLeads()) {
+      setActiveTab('leads');
+    }
+  }, [activeTab, user]);
+
   // Refetch when filters change
   useEffect(() => {
     fetchLeads(1);
@@ -288,6 +314,13 @@ const LeadsManagementPage: React.FC = () => {
     setNotification(null);
   };
 
+  const handleRequestLead = () => {
+    console.log('🔘 Request Lead button clicked');
+    console.log('👤 Current user:', { id: user?.id, role: user?.role });
+    setShowRequestLeadModal(true);
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -310,6 +343,15 @@ const LeadsManagementPage: React.FC = () => {
                 </svg>
                 {showStatistics ? 'Hide Stats' : 'Show Stats'}
               </button>
+              <button
+                onClick={handleRequestLead}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Request Lead
+              </button>
             </div>
           </div>
         </div>
@@ -320,6 +362,61 @@ const LeadsManagementPage: React.FC = () => {
             <LeadsStatistics statistics={statistics} isLoading={false} />
           </div>
         )}
+
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex justify-between" aria-label="Tabs">
+              <button
+                onClick={() => setActiveTab('leads')}
+                className={`${canAccessArchiveLeads() ? 'flex-1' : 'flex-1'} py-3 px-4 border-b-2 font-medium text-sm transition-colors text-center ${
+                  activeTab === 'leads'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span>All Leads</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('crack')}
+                className={`${canAccessArchiveLeads() ? 'flex-1' : 'flex-1'} py-3 px-4 border-b-2 font-medium text-sm transition-colors text-center ${
+                  activeTab === 'crack'
+                    ? 'border-green-500 text-green-600 bg-green-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Crack Leads</span>
+                </div>
+              </button>
+              {canAccessArchiveLeads() && (
+                <button
+                  onClick={() => setActiveTab('archive')}
+                  className={`flex-1 py-3 px-4 border-b-2 font-medium text-sm transition-colors text-center ${
+                    activeTab === 'archive'
+                      ? 'border-gray-500 text-gray-600 bg-gray-50'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8l4 4-4 4m5-4h6" />
+                    </svg>
+                    <span>Archive Leads</span>
+                  </div>
+                </button>
+              )}
+            </nav>
+          </div>
+        </div>
 
         {/* Filters */}
         <LeadsFilters
@@ -342,19 +439,51 @@ const LeadsManagementPage: React.FC = () => {
           employees={employees}
         />
 
-        {/* Leads Table */}
-        <LeadsTable
-          leads={leads}
-          isLoading={isLoading}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={handlePageChange}
-          onLeadClick={handleLeadClick}
-          onBulkSelect={handleBulkSelect}
-          selectedLeads={selectedLeads}
-        />
+        {/* Conditional Table Rendering */}
+        {activeTab === 'leads' && (
+          <LeadsTable
+            leads={leads}
+            isLoading={isLoading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onLeadClick={handleLeadClick}
+            onBulkSelect={handleBulkSelect}
+            selectedLeads={selectedLeads}
+          />
+        )}
+        
+        {activeTab === 'crack' && (
+          <CrackLeadsTable
+            leads={leads}
+            isLoading={isLoading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onLeadClick={handleLeadClick}
+            onBulkSelect={handleBulkSelect}
+            selectedLeads={selectedLeads}
+          />
+        )}
+        
+        {activeTab === 'archive' && canAccessArchiveLeads() && (
+          <ArchiveLeadsTable
+            leads={leads}
+            isLoading={isLoading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onLeadClick={handleLeadClick}
+            onBulkSelect={handleBulkSelect}
+            selectedLeads={selectedLeads}
+          />
+        )}
 
         {/* Lead Details Drawer */}
         <LeadDetailsDrawer
@@ -372,6 +501,13 @@ const LeadsManagementPage: React.FC = () => {
             });
             setTimeout(() => setNotification(null), 3000);
           }}
+        />
+
+        {/* Request Lead Modal */}
+        <RequestLeadModal
+          isOpen={showRequestLeadModal}
+          onClose={() => setShowRequestLeadModal(false)}
+          userRole={user?.role}
         />
 
 

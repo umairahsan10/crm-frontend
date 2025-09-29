@@ -117,6 +117,8 @@ export const getLeadsApi = async (
     endDate?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    outcome?: string;
+    userId?: string; // Add userId filter
   } = {}
 ): Promise<ApiResponse<Lead[]>> => {
   try {
@@ -137,7 +139,9 @@ export const getLeadsApi = async (
       ...(filters.startDate && { startDate: filters.startDate }),
       ...(filters.endDate && { endDate: filters.endDate }),
       ...(filters.sortBy && { sortBy: filters.sortBy }),
-      ...(filters.sortOrder && { sortOrder: filters.sortOrder })
+      ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
+      ...(filters.outcome && { outcome: filters.outcome }),
+      ...(filters.userId && { userId: filters.userId })
     });
 
     const response = await fetch(`${API_BASE_URL}/leads?${queryParams.toString()}`, {
@@ -518,6 +522,163 @@ export const getSalesUnitsApi = async (): Promise<ApiResponse<Array<{ id: number
       throw new Error(error.message);
     }
     throw new Error('An unexpected error occurred while fetching sales units');
+  }
+};
+
+// Get user's assigned leads
+export const getMyLeadsApi = async (
+  page: number = 1, 
+  limit: number = 20, 
+  filters: {
+    status?: string;
+    type?: string;
+    outcome?: string;
+    salesUnitId?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}
+): Promise<ApiResponse<Lead[]>> => {
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(filters.status && { status: filters.status }),
+      ...(filters.type && { type: filters.type }),
+      ...(filters.outcome && { outcome: filters.outcome }),
+      ...(filters.salesUnitId && { salesUnitId: filters.salesUnitId.toString() }),
+      ...(filters.search && { search: filters.search }),
+      ...(filters.sortBy && { sortBy: filters.sortBy }),
+      ...(filters.sortOrder && { sortOrder: filters.sortOrder })
+    });
+
+    const response = await fetch(`${API_BASE_URL}/leads/my-leads?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch my leads');
+    }
+
+    const data = await response.json();
+    console.log('Raw GET my-leads response:', data);
+    
+    // Handle the response format from your backend
+    let formattedResponse: ApiResponse<Lead[]>;
+    
+    if (data && typeof data === 'object' && 'leads' in data && Array.isArray(data.leads)) {
+      formattedResponse = {
+        success: true,
+        data: data.leads as Lead[],
+        message: 'My leads fetched successfully',
+        pagination: {
+          page: data.page || page,
+          limit: data.limit || limit,
+          total: data.total || 0,
+          totalPages: data.totalPages || 1,
+          hasNext: (data.page || page) < (data.totalPages || 1),
+          hasPrev: (data.page || page) > 1
+        }
+      };
+    } else {
+      formattedResponse = {
+        success: true,
+        data: data as any,
+        message: 'My leads fetched successfully'
+      };
+    }
+    
+    console.log('Formatted GET my-leads response:', formattedResponse);
+    return formattedResponse;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while fetching my leads');
+  }
+};
+
+// Request new leads
+export const requestLeadApi = async (keptLeadIds: number[], includePushLeads: boolean = false): Promise<ApiResponse<{
+  assignedLeads: Lead[];
+  keptLeads: Lead[];
+  totalActiveLeads: number;
+  circulatedLeads: number;
+  leadBreakdown: {
+    warmColdLeads: number;
+    pushLeads: number;
+    totalAssigned: number;
+  };
+  includePushLeads: boolean;
+}>> => {
+  console.log('🚀 requestLeadApi called with:', {
+    keptLeadIds,
+    includePushLeads,
+    apiUrl: `${API_BASE_URL}/leads/request`
+  });
+  
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      console.log('❌ No authentication token found');
+      throw new Error('No authentication token found');
+    }
+
+    console.log('🔐 Token found, making API request...');
+    const requestBody = {
+      keptLeadIds,
+      includePushLeads
+    };
+    
+    console.log('📤 Request body:', requestBody);
+    console.log('📡 Making POST request to:', `${API_BASE_URL}/leads/request`);
+
+    const response = await fetch(`${API_BASE_URL}/leads/request`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('📥 Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.log('❌ API Error:', errorData);
+      throw new Error(errorData.message || 'Failed to request leads');
+    }
+
+    const data = await response.json();
+    console.log('✅ API Success:', data);
+    
+    return {
+      success: true,
+      data: data,
+      message: 'Leads requested successfully'
+    };
+  } catch (error) {
+    console.error('💥 requestLeadApi error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while requesting leads');
   }
 };
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Lead } from '../../types';
 
-interface LeadsTableProps {
+interface ArchiveLeadsTableProps {
   leads: Lead[];
   isLoading: boolean;
   currentPage: number;
@@ -14,7 +14,7 @@ interface LeadsTableProps {
   selectedLeads: string[];
 }
 
-const LeadsTable: React.FC<LeadsTableProps> = ({
+const ArchiveLeadsTable: React.FC<ArchiveLeadsTableProps> = ({
   leads,
   isLoading,
   currentPage,
@@ -61,7 +61,8 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
       completed: 'bg-green-100 text-green-800',
       payment_link_generated: 'bg-purple-100 text-purple-800',
       failed: 'bg-red-100 text-red-800',
-      cracked: 'bg-green-100 text-green-800'
+      cracked: 'bg-green-100 text-green-800',
+      archived: 'bg-gray-100 text-gray-800'
     };
     
     return (
@@ -125,16 +126,16 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
       <div className="px-8 py-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <div className="h-8 w-8 bg-gray-100 rounded-lg flex items-center justify-center">
+              <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8l4 4-4 4m5-4h6" />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900">
-              Leads Management
+              Archive Leads Management
             </h3>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-              {totalItems} total
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+              {totalItems} archived
             </span>
           </div>
           <div className="text-sm text-gray-500 font-medium">
@@ -153,7 +154,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   type="checkbox"
                   checked={selectAll}
                   onChange={handleSelectAll}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
+                  className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded transition-colors"
                 />
               </th>
               <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -174,7 +175,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
             {leads.map((lead) => (
               <tr
                 key={lead.id}
-                className="hover:bg-blue-50/30 transition-colors duration-200 cursor-pointer group"
+                className="hover:bg-gray-50/30 transition-colors duration-200 cursor-pointer group opacity-75"
                 onClick={() => onLeadClick(lead)}
               >
                 <td className="px-8 py-5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -182,23 +183,23 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                     type="checkbox"
                     checked={selectedLeads.includes(lead.id)}
                     onChange={() => handleSelectLead(lead.id)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
+                    className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded transition-colors"
                   />
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap">
                   <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0 h-12 w-12">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                        <span className="text-lg font-semibold text-blue-700">
-                          {lead.name?.charAt(0).toUpperCase() || 'L'}
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                        <span className="text-lg font-semibold text-gray-600">
+                          {lead.name?.charAt(0).toUpperCase() || 'A'}
                         </span>
                       </div>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-base font-semibold text-gray-900 truncate">
+                      <div className="text-base font-semibold text-gray-700 truncate">
                         {lead.name || 'Unnamed Lead'}
                       </div>
-                      <div className="text-sm text-gray-500 truncate mt-1">
+                      <div className="text-sm text-gray-400 truncate mt-1">
                         {lead.email || 'No email provided'}
                       </div>
                     </div>
@@ -214,7 +215,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-8 w-8">
                       <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-xs font-medium text-gray-600">
+                        <span className="text-xs font-medium text-gray-500">
                           {lead.assignedTo 
                             ? (typeof lead.assignedTo === 'string' 
                                 ? lead.assignedTo.charAt(0).toUpperCase()
@@ -225,7 +226,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       </div>
                     </div>
                     <div className="ml-3">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-600">
                         {lead.assignedTo 
                           ? (typeof lead.assignedTo === 'string' 
                               ? lead.assignedTo 
@@ -301,7 +302,7 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
                       onClick={() => onPageChange(pageNum)}
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-semibold transition-colors ${
                         pageNum === currentPage
-                          ? 'z-10 bg-blue-600 border-blue-600 text-white shadow-lg'
+                          ? 'z-10 bg-gray-600 border-gray-600 text-white shadow-lg'
                           : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                       }`}
                     >
@@ -329,5 +330,4 @@ const LeadsTable: React.FC<LeadsTableProps> = ({
   );
 };
 
-export default LeadsTable;
-
+export default ArchiveLeadsTable;
