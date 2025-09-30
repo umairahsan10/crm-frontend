@@ -14,6 +14,7 @@ export const NAV_ITEMS = [
   { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management', roles: ['admin', 'hr'] },
   { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing', roles: ['admin', 'marketing'] },
   { id: 'production', label: 'Production', icon: '🏭', path: '/production', roles: ['admin', 'production'] },
+  { id: 'production-management', label: 'Production Management', icon: '⚙️', path: '/production-management', roles: ['admin', 'production'] },
   { id: 'clients', label: 'Clients', icon: '👤', path: '/clients', roles: ['admin', 'sales'] },
   { id: 'reports', label: 'Reports', icon: '📊', path: '/reports', roles: ['admin'] },
   { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics', roles: ['admin'] },

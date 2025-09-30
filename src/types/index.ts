@@ -415,4 +415,79 @@ export interface ClientStatistics {
     contacted: number;
     converted: number;
   };
+
+// Production Management Types
+export interface Production {
+  id: string;
+  name: string;
+  description: string;
+  productType: ProductionType;
+  status: ProductionStatus;
+  priority: ProductionPriority;
+  assignedTo?: string | { firstName: string; lastName: string };
+  departmentId: number;
+  startDate: string;
+  endDate?: string;
+  estimatedHours: number;
+  actualHours?: number;
+  progress: number; // 0-100
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
+  materials?: string[];
+  qualityScore?: number;
+  cost?: number;
+}
+
+export type ProductionType = 'manufacturing' | 'assembly' | 'quality_control' | 'packaging' | 'testing';
+export type ProductionStatus = 'planned' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled' | 'delayed';
+export type ProductionPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface CreateProductionRequest {
+  name: string;
+  description: string;
+  productType: ProductionType;
+  priority: ProductionPriority;
+  departmentId: number;
+  startDate: string;
+  endDate?: string;
+  estimatedHours: number;
+  notes?: string;
+  materials?: string[];
+}
+
+export interface ProductionStatistics {
+  totalProductions: number;
+  activeProductions: number;
+  completedProductions: number;
+  delayedProductions: number;
+  onTimeRate: string;
+  qualityScore: number;
+  byStatus: {
+    planned: number;
+    in_progress: number;
+    on_hold: number;
+    completed: number;
+    cancelled: number;
+    delayed: number;
+  };
+  byType: {
+    manufacturing: number;
+    assembly: number;
+    quality_control: number;
+    packaging: number;
+    testing: number;
+  };
+  byPriority: {
+    low: number;
+    medium: number;
+    high: number;
+    urgent: number;
+  };
+  today: {
+    started: number;
+    completed: number;
+    delayed: number;
+  };
+}
 } 

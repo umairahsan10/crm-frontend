@@ -63,6 +63,7 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
         { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing' },
         { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
+        { id: 'production-management', label: 'Production Management', icon: '⚙️', path: '/production-management' },
         { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
         { id: 'reports', label: 'Reports', icon: '📊', path: '/reports' },
         { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics' },
@@ -115,6 +116,7 @@ const Navbar: React.FC<NavbarProps> = ({
           return [
             ...baseItems,
             { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
+            { id: 'production-management', label: 'Production Management', icon: '⚙️', path: '/production-management' },
             { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];
         
