@@ -184,7 +184,30 @@ const AdminDashboard: React.FC = () => {
       icon: '📈',
       href: '/admin/analytics',
       color: 'bg-orange-100 text-orange-600'
-    }
+    },
+    {
+      title: 'Apply for Leave',
+      description: 'Submit leave requests and manage leaves',
+      icon: '🏖️',
+      href: '/leave-request-form',
+      color: 'bg-green-100 text-green-600'
+    },
+    {
+      title: 'Submit Late Reason',
+      description: 'Submit late reasons and manage late logs',
+      icon: '⏰',
+      href: '/late-reason-form',
+      color: 'bg-red-100 text-red-600'
+    },
+    {
+      title: 'Submit Half-day Reason',
+      description: 'Submit half-day reason and manage half-day logs',
+      icon: '🕐',
+      href: '/half-day-reason-form',
+      color: 'bg-yellow-100 text-yellow-600'
+    },
+    
+
   ];
 
   const userActivityData: ChartData[] = [

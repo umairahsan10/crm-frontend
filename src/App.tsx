@@ -52,6 +52,9 @@ import MaintenancePage from './pages/Maintenance/MaintenancePage';
 import TestPage from './pages/test';
 import ProfilePage from './pages/Profile/ProfilePage';
 import ChatPage from './pages/Chat/Chat';
+import LeaveRequestForm from './pages/EmployeeLeaveManagment/LeaveRequestForm';
+import LateReasonForm from './pages/EmployeeLeaveManagment/LateReasonForm';
+import HalfDayReasonForm from './pages/EmployeeLeaveManagment/HalfDayReasonForm';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -286,7 +289,20 @@ function AppLayout() {
           path="/maintenance" 
           element={canAccessPage('maintenance') ? <MaintenancePage /> : <Navigate to="/login" replace />} 
         />
+        <Route 
+          path="/leave-request-form" 
+          element={canAccessPage('employee-requests') ? <LeaveRequestForm /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/late-reason-form" 
+          element={canAccessPage('employee-requests') ? <LateReasonForm /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/half-day-reason-form" 
+          element={canAccessPage('employee-requests') ? <HalfDayReasonForm /> : <Navigate to="/login" replace />} 
+        />
         
+
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Layout>

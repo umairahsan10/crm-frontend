@@ -415,4 +415,79 @@ export interface ClientStatistics {
     contacted: number;
     converted: number;
   };
+}
+
+// Leave Request Types
+export type LeaveType = 'sick' | 'casual' | 'annual' | 'emergency';
+
+export interface LeaveRequest {
+  leave_log_id: number;
+  emp_id: number;
+  employee_first_name: string;
+  employee_last_name: string;
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  reason: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  applied_on: string;
+}
+
+export interface LeaveRequestFormData {
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  reason: string;
+}
+
+export interface LeaveRequestSubmission {
+  emp_id: number;
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  reason: string;
+}
+
+// Late Reason Form Types
+export interface LateReasonFormData {
+  date: string;
+  scheduled_time_in: string;
+  actual_time_in: string;
+  minutes_late: number;
+  reason: string;
+}
+
+export interface LateReasonSubmission {
+  emp_id: number;
+  date: string;
+  scheduled_time_in: string;
+  actual_time_in: string;
+  minutes_late: number;
+  reason: string;
+}
+
+export interface LateReasonResponse {
+  message: string;
+}
+
+// Half-Day Reason Form Types
+export interface HalfDayReasonFormData {
+  date: string;
+  scheduled_time_in: string;
+  actual_time_in: string;
+  minutes_late: number;
+  reason: string;
+}
+
+export interface HalfDayReasonSubmission {
+  emp_id: number;
+  date: string;
+  scheduled_time_in: string;
+  actual_time_in: string;
+  minutes_late: number;
+  reason: string;
+}
+
+export interface HalfDayReasonResponse {
+  message: string;
 } 
