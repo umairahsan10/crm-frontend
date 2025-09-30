@@ -325,4 +325,94 @@ export interface SalesUnit {
   id: number;
   name: string;
   description?: string;
+}
+
+// Client Management Types
+export interface Client {
+  id: string;
+  clientType: ClientType;
+  companyName?: string;
+  clientName: string;
+  email: string;
+  phone: string;
+  passwordHash?: string;
+  altPhone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  industryId?: number;
+  industry?: string;
+  taxId?: string;
+  accountStatus: ClientStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  assignedTo?: string | { firstName: string; lastName: string };
+  salesUnitId?: number;
+  lastContactDate?: string;
+  totalRevenue?: number;
+  satisfactionScore?: number;
+}
+
+export type ClientType = 'individual' | 'enterprise' | 'smb' | 'startup';
+export type ClientStatus = 'prospect' | 'active' | 'inactive' | 'suspended' | 'churned';
+
+export interface CreateClientRequest {
+  clientType: ClientType;
+  companyName?: string;
+  clientName: string;
+  email: string;
+  phone: string;
+  passwordHash?: string;
+  altPhone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  industryId?: number;
+  taxId?: string;
+  accountStatus: ClientStatus;
+  notes?: string;
+}
+
+export interface UpdateClientRequest extends Partial<CreateClientRequest> {}
+
+export interface ClientStatistics {
+  totalClients: number;
+  activeClients: number;
+  prospectClients: number;
+  inactiveClients: number;
+  churnedClients: number;
+  totalRevenue: number;
+  averageSatisfaction: number;
+  byStatus: {
+    prospect: number;
+    active: number;
+    inactive: number;
+    suspended: number;
+    churned: number;
+  };
+  byType: {
+    individual: number;
+    enterprise: number;
+    smb: number;
+    startup: number;
+  };
+  byIndustry: {
+    technology: number;
+    healthcare: number;
+    finance: number;
+    retail: number;
+    manufacturing: number;
+    education: number;
+    other: number;
+  };
+  today: {
+    new: number;
+    contacted: number;
+    converted: number;
+  };
 } 
