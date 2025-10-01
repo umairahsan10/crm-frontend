@@ -46,59 +46,6 @@ const ArchiveLeadsTable: React.FC<ArchiveLeadsTableProps> = ({
     setSelectAll(newSelected.length === leads.length);
   };
 
-  const getStatusBadge = (status: string | null | undefined) => {
-    if (!status) {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-          UNKNOWN
-        </span>
-      );
-    }
-
-    const statusClasses = {
-      new: 'bg-blue-100 text-blue-800',
-      in_progress: 'bg-yellow-100 text-yellow-800',
-      completed: 'bg-green-100 text-green-800',
-      payment_link_generated: 'bg-purple-100 text-purple-800',
-      failed: 'bg-red-100 text-red-800',
-      cracked: 'bg-green-100 text-green-800',
-      archived: 'bg-gray-100 text-gray-800'
-    };
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        statusClasses[status as keyof typeof statusClasses] || 'bg-gray-100 text-gray-800'
-      }`}>
-        {status.replace('_', ' ').toUpperCase()}
-      </span>
-    );
-  };
-
-  const getTypeBadge = (type: string | null | undefined) => {
-    if (!type) {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-          UNKNOWN
-        </span>
-      );
-    }
-
-    const typeClasses = {
-      warm: 'bg-orange-100 text-orange-800',
-      cold: 'bg-blue-100 text-blue-800',
-      upsell: 'bg-indigo-100 text-indigo-800',
-      push: 'bg-purple-100 text-purple-800'
-    };
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        typeClasses[type as keyof typeof typeClasses] || 'bg-gray-100 text-gray-800'
-      }`}>
-        {type.toUpperCase()}
-      </span>
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="bg-white shadow-sm rounded-lg border border-gray-200">
@@ -161,28 +108,68 @@ const ArchiveLeadsTable: React.FC<ArchiveLeadsTableProps> = ({
                 Contact Info
               </th>
               <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Status
+                Source & Outcome
               </th>
               <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Type
+                Quality Rating
               </th>
               <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Assignment
+                Archived On
+              </th>
+              <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Assigned To
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
-            {leads.map((lead) => (
+            {leads.map((archivedLead: any) => {
+              // Helper to get quality rating badge
+              const getQualityBadge = (rating: string) => {
+                const ratingClasses = {
+                  excellent: 'bg-green-100 text-green-800',
+                  very_good: 'bg-blue-100 text-blue-800',
+                  good: 'bg-yellow-100 text-yellow-800',
+                  bad: 'bg-orange-100 text-orange-800',
+                  useless: 'bg-red-100 text-red-800'
+                };
+                return (
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    ratingClasses[rating as keyof typeof ratingClasses] || 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {rating?.replace('_', ' ').toUpperCase() || 'N/A'}
+                  </span>
+                );
+              };
+
+              // Helper to get outcome badge
+              const getOutcomeBadge = (outcome: string) => {
+                const outcomeClasses = {
+                  interested: 'bg-green-100 text-green-800',
+                  denied: 'bg-red-100 text-red-800',
+                  voice_mail: 'bg-blue-100 text-blue-800',
+                  busy: 'bg-orange-100 text-orange-800',
+                  not_answered: 'bg-gray-100 text-gray-800'
+                };
+                return (
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    outcomeClasses[outcome as keyof typeof outcomeClasses] || 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {outcome?.replace('_', ' ').toUpperCase() || 'N/A'}
+                  </span>
+                );
+              };
+
+              return (
               <tr
-                key={lead.id}
+                key={archivedLead.id}
                 className="hover:bg-gray-50/30 transition-colors duration-200 cursor-pointer group opacity-75"
-                onClick={() => onLeadClick(lead)}
+                onClick={() => onLeadClick(archivedLead)}
               >
                 <td className="px-8 py-5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
-                    checked={selectedLeads.includes(lead.id)}
-                    onChange={() => handleSelectLead(lead.id)}
+                    checked={selectedLeads.includes(archivedLead.id.toString())}
+                    onChange={() => handleSelectLead(archivedLead.id.toString())}
                     className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded transition-colors"
                   />
                 </td>
@@ -191,54 +178,77 @@ const ArchiveLeadsTable: React.FC<ArchiveLeadsTableProps> = ({
                     <div className="flex-shrink-0 h-12 w-12">
                       <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
                         <span className="text-lg font-semibold text-gray-600">
-                          {lead.name?.charAt(0).toUpperCase() || 'A'}
+                          {archivedLead.name?.charAt(0).toUpperCase() || 'A'}
                         </span>
                       </div>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-base font-semibold text-gray-700 truncate">
-                        {lead.name || 'Unnamed Lead'}
+                        {archivedLead.name || 'Unnamed Lead'}
                       </div>
                       <div className="text-sm text-gray-400 truncate mt-1">
-                        {lead.email || 'No email provided'}
+                        {archivedLead.email || 'No email provided'}
+                      </div>
+                      <div className="text-xs text-gray-400 truncate mt-1">
+                        {archivedLead.phone || 'No phone'}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap">
-                  {getStatusBadge(lead.status)}
+                  <div className="space-y-2">
+                    <div>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {archivedLead.source || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      {getOutcomeBadge(archivedLead.outcome)}
+                    </div>
+                  </div>
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap">
-                  {getTypeBadge(lead.type)}
+                  {getQualityBadge(archivedLead.qualityRating)}
+                </td>
+                <td className="px-8 py-5 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {archivedLead.archivedOn 
+                      ? new Date(archivedLead.archivedOn).toLocaleDateString()
+                      : 'N/A'
+                    }
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {archivedLead.archivedOn 
+                      ? new Date(archivedLead.archivedOn).toLocaleTimeString()
+                      : ''
+                    }
+                  </div>
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-8 w-8">
                       <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
                         <span className="text-xs font-medium text-gray-500">
-                          {lead.assignedTo 
-                            ? (typeof lead.assignedTo === 'string' 
-                                ? lead.assignedTo.charAt(0).toUpperCase()
-                                : lead.assignedTo.firstName?.charAt(0).toUpperCase() || 'U')
-                            : 'U'
-                          }
+                          {archivedLead.employee?.firstName?.charAt(0).toUpperCase() || 'U'}
                         </span>
                       </div>
                     </div>
                     <div className="ml-3">
                       <div className="text-sm font-medium text-gray-600">
-                        {lead.assignedTo 
-                          ? (typeof lead.assignedTo === 'string' 
-                              ? lead.assignedTo 
-                              : `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`)
+                        {archivedLead.employee 
+                          ? `${archivedLead.employee.firstName} ${archivedLead.employee.lastName}`
                           : 'Unassigned'
                         }
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {archivedLead.unit?.name || 'No Unit'}
                       </div>
                     </div>
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -73,31 +73,6 @@ const CrackLeadsTable: React.FC<CrackLeadsTableProps> = ({
     );
   };
 
-  const getTypeBadge = (type: string | null | undefined) => {
-    if (!type) {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-          UNKNOWN
-        </span>
-      );
-    }
-
-    const typeClasses = {
-      warm: 'bg-orange-100 text-orange-800',
-      cold: 'bg-blue-100 text-blue-800',
-      upsell: 'bg-indigo-100 text-indigo-800',
-      push: 'bg-purple-100 text-purple-800'
-    };
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        typeClasses[type as keyof typeof typeClasses] || 'bg-gray-100 text-gray-800'
-      }`}>
-        {type.toUpperCase()}
-      </span>
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="bg-white shadow-sm rounded-lg border border-gray-200">
@@ -160,10 +135,13 @@ const CrackLeadsTable: React.FC<CrackLeadsTableProps> = ({
                 Contact Info
               </th>
               <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Status
+                Deal Amount
               </th>
               <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Type
+                Commission
+              </th>
+              <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                Status
               </th>
               <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Assignment
@@ -171,9 +149,16 @@ const CrackLeadsTable: React.FC<CrackLeadsTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
-            {leads.map((lead) => (
+            {leads.map((crackedLead: any) => {
+              // Handle the cracked lead API response structure
+              const lead = crackedLead.lead || crackedLead;  // The actual lead data
+              const amount = parseFloat(crackedLead.amount || 0);
+              const commissionRate = parseFloat(crackedLead.commissionRate || 0);
+              const commissionAmount = (amount * commissionRate) / 100;
+
+              return (
               <tr
-                key={lead.id}
+                key={crackedLead.id}
                 className="hover:bg-green-50/30 transition-colors duration-200 cursor-pointer group"
                 onClick={() => onLeadClick(lead)}
               >
@@ -205,10 +190,26 @@ const CrackLeadsTable: React.FC<CrackLeadsTableProps> = ({
                   </div>
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap">
-                  {getStatusBadge(lead.status)}
+                  <div className="text-base font-semibold text-gray-900">
+                    ${amount.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {crackedLead.totalPhases && crackedLead.currentPhase 
+                      ? `Phase ${crackedLead.currentPhase}/${crackedLead.totalPhases}` 
+                      : 'Total Amount'
+                    }
+                  </div>
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap">
-                  {getTypeBadge(lead.type)}
+                  <div className="text-base font-semibold text-green-600">
+                    ${commissionAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {commissionRate}% rate
+                  </div>
+                </td>
+                <td className="px-8 py-5 whitespace-nowrap">
+                  {getStatusBadge(lead.status)}
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap">
                   <div className="flex items-center">
@@ -237,7 +238,8 @@ const CrackLeadsTable: React.FC<CrackLeadsTableProps> = ({
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

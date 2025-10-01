@@ -21,7 +21,7 @@ export interface FormField {
 // Form props interface
 export interface FormProps {
   fields: FormField[];
-  onSubmit: (formData: Record<string, string>) => void;
+  onSubmit: (formData: Record<string, string>) => void | Promise<void>;
   buttonText?: string;
   title?: string;
   theme?: FormTheme;
@@ -45,6 +45,7 @@ const Form: React.FC<FormProps> = ({
   const [formData, setFormData] = useState<Record<string, string>>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle input changes
   const handleInputChange = useCallback((name: string, value: string) => {
@@ -105,11 +106,18 @@ const Form: React.FC<FormProps> = ({
   }, [formData, fields]);
 
   // Handle form submission
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit(formData);
+      setIsSubmitting(true);
+      try {
+        await onSubmit(formData);
+      } catch (error) {
+        console.error('Form submission error:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   }, [formData, validateForm, onSubmit]);
 
@@ -197,7 +205,7 @@ const Form: React.FC<FormProps> = ({
         </div>
 
         <div className="form-submit">
-          <button type="submit" className="form-button">
+          <button type="submit" className="form-button" disabled={isSubmitting}>
             {buttonText}
           </button>
         </div>

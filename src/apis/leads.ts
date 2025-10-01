@@ -762,3 +762,259 @@ export const getFilterEmployeesApi = async (salesUnitId?: number): Promise<ApiRe
   }
 };
 
+// Crack Lead API - Convert interested lead to cracked status
+export interface CrackLeadRequest {
+  status: 'cracked';
+  comment: string;
+  totalAmount: number;
+  industryId: number;
+  description: string;
+  totalPhases: number;
+  currentPhase: number;
+}
+
+export const crackLeadApi = async (leadId: string, crackData: CrackLeadRequest): Promise<ApiResponse<Lead>> => {
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('Cracking lead:', leadId, 'with data:', crackData);
+
+    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(crackData),
+    });
+
+    console.log('Crack lead response status:', response.status);
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to crack lead';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (parseError) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      console.error('Crack lead API error:', errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    console.log('Crack lead response:', data);
+    
+    return {
+      success: true,
+      data: data,
+      message: data.message || 'Lead cracked successfully'
+    };
+  } catch (error) {
+    console.error('Crack lead error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while cracking the lead');
+  }
+};
+
+// Push Lead API - Push lead for senior sales rep attention
+export interface PushLeadRequest {
+  action: 'push';
+  comment: string;
+}
+
+export const pushLeadApi = async (leadId: string, pushData: PushLeadRequest): Promise<ApiResponse<Lead>> => {
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('Pushing lead:', leadId, 'with data:', pushData);
+
+    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(pushData),
+    });
+
+    console.log('Push lead response status:', response.status);
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to push lead';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (parseError) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      console.error('Push lead API error:', errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    console.log('Push lead response:', data);
+    
+    return {
+      success: true,
+      data: data,
+      message: data.message || 'Lead pushed successfully'
+    };
+  } catch (error) {
+    console.error('Push lead error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while pushing the lead');
+  }
+};
+
+// Get cracked leads
+export const getCrackedLeadsApi = async (
+  page: number = 1, 
+  limit: number = 20, 
+  filters: {
+    search?: string;
+    industryId?: string;
+    minAmount?: string;
+    maxAmount?: string;
+    closedBy?: string;
+    currentPhase?: string;
+    totalPhases?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}
+): Promise<ApiResponse<any[]>> => {
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(filters.search && { search: filters.search }),
+      ...(filters.industryId && { industryId: filters.industryId }),
+      ...(filters.minAmount && { minAmount: filters.minAmount }),
+      ...(filters.maxAmount && { maxAmount: filters.maxAmount }),
+      ...(filters.closedBy && { closedBy: filters.closedBy }),
+      ...(filters.currentPhase && { currentPhase: filters.currentPhase }),
+      ...(filters.totalPhases && { totalPhases: filters.totalPhases }),
+      ...(filters.sortBy && { sortBy: filters.sortBy }),
+      ...(filters.sortOrder && { sortOrder: filters.sortOrder })
+    });
+
+    console.log('Fetching cracked leads with filters:', filters);
+
+    const response = await fetch(`${API_BASE_URL}/leads/cracked?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch cracked leads');
+    }
+
+    const data = await response.json();
+    console.log('Cracked leads response:', data);
+    
+    return {
+      success: true,
+      data: data.crackedLeads || data.data || data,
+      message: 'Cracked leads fetched successfully',
+      pagination: data.pagination
+    };
+  } catch (error) {
+    console.error('Cracked leads API error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while fetching cracked leads');
+  }
+};
+
+// Get archived leads
+export const getArchivedLeadsApi = async (
+  page: number = 1, 
+  limit: number = 20, 
+  filters: {
+    search?: string;
+    unitId?: string;  // Changed from salesUnitId to unitId for archived leads
+    assignedTo?: string;
+    source?: string;
+    outcome?: string;
+    qualityRating?: string;
+    archivedFrom?: string;
+    archivedTo?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}
+): Promise<ApiResponse<any[]>> => {
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(filters.search && { search: filters.search }),
+      ...(filters.unitId && { unitId: filters.unitId }),  // Changed to unitId
+      ...(filters.assignedTo && { assignedTo: filters.assignedTo }),
+      ...(filters.source && { source: filters.source }),
+      ...(filters.outcome && { outcome: filters.outcome }),
+      ...(filters.qualityRating && { qualityRating: filters.qualityRating }),
+      ...(filters.archivedFrom && { archivedFrom: filters.archivedFrom }),
+      ...(filters.archivedTo && { archivedTo: filters.archivedTo }),
+      ...(filters.sortBy && { sortBy: filters.sortBy }),
+      ...(filters.sortOrder && { sortOrder: filters.sortOrder })
+    });
+
+    console.log('Fetching archived leads with filters:', filters);
+
+    const response = await fetch(`${API_BASE_URL}/leads/archived?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch archived leads');
+    }
+
+    const data = await response.json();
+    console.log('Archived leads response:', data);
+    
+    return {
+      success: true,
+      data: data.archivedLeads || data.data || data,
+      message: 'Archived leads fetched successfully',
+      pagination: data.pagination
+    };
+  } catch (error) {
+    console.error('Archived leads API error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while fetching archived leads');
+  }
+};

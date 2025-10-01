@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Lead } from '../../types';
 import { getMyLeadsApi, requestLeadApi } from '../../apis/leads';
+import { useNavbar } from '../../context/NavbarContext';
 
 interface RequestLeadModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
   onClose,
   userRole
 }) => {
+  const { isNavbarOpen } = useNavbar();
   const [userLeads, setUserLeads] = useState<Lead[]>([]);
   const [leadsWithNullOutcome, setLeadsWithNullOutcome] = useState<Lead[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
@@ -127,11 +129,16 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+      <div className={`flex items-start justify-center min-h-screen pt-20 px-4 ${
+        isNavbarOpen ? 'pl-64' : 'pl-16' // Adjust padding based on navbar state
+      }`}>
+        <div className={`w-full max-w-4xl p-5 border shadow-lg rounded-md bg-white transition-all duration-300 ${
+          isNavbarOpen ? 'max-w-4xl' : 'max-w-5xl' // Adjust max width based on navbar state
+        }`}>
         <div className="mt-3">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg lg:text-xl font-semibold text-gray-900">
               Request New Lead
             </h3>
             <button
@@ -184,12 +191,12 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
                         </span>
                       </div>
                       <div className="ml-4 flex-1">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
                               {lead.name || 'Unnamed Lead'}
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 truncate">
                               {lead.email || 'No email'}
                             </p>
                             <p className="text-xs text-green-600 mt-1">
@@ -201,7 +208,7 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
                               </span>
                             </p>
                           </div>
-                          <div className="text-right">
+                          <div className="mt-2 sm:mt-0 sm:text-right flex-shrink-0">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               {lead.status?.replace('_', ' ').toUpperCase() || 'NEW'}
                             </span>
@@ -274,12 +281,12 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
                         </span>
                       </div>
                       <div className="ml-4 flex-1">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
                               {lead.name || 'Unnamed Lead'}
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 truncate">
                               {lead.email || 'No email'}
                             </p>
                             <p className="text-xs text-red-600 mt-1">
@@ -291,7 +298,7 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
                               </span>
                             </p>
                           </div>
-                          <div className="text-right">
+                          <div className="mt-2 sm:mt-0 sm:text-right flex-shrink-0">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                               {lead.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
                             </span>
@@ -307,7 +314,7 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end space-x-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   onClick={onClose}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -370,16 +377,16 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                       <div className="ml-4 flex-1">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
                               {lead.name || 'Unnamed Lead'}
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 truncate">
                               {lead.email || 'No email'}
                             </p>
                           </div>
-                          <div className="text-right">
+                          <div className="mt-2 sm:mt-0 sm:text-right flex-shrink-0">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                               {lead.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
                             </span>
@@ -416,7 +423,7 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end space-x-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   onClick={onClose}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -432,6 +439,7 @@ const RequestLeadModal: React.FC<RequestLeadModalProps> = ({
               </div>
             </>
           )}
+        </div>
         </div>
       </div>
     </div>

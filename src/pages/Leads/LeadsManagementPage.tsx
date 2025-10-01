@@ -10,6 +10,8 @@ import RequestLeadModal from '../../components/leads/RequestLeadModal';
 import { useAuth } from '../../context/AuthContext';
 import { 
   getLeadsApi, 
+  getCrackedLeadsApi,
+  getArchivedLeadsApi,
   bulkUpdateLeadsApi, 
   bulkDeleteLeadsApi, 
   getLeadsStatisticsApi, 
@@ -22,14 +24,44 @@ const LeadsManagementPage: React.FC = () => {
   const { user } = useAuth();
   
   // State management
-  const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showStatistics, setShowStatistics] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'leads' | 'crack' | 'archive'>('leads');
   const [showRequestLeadModal, setShowRequestLeadModal] = useState(false);
+
+  // Separate state for each tab
+  const [regularLeads, setRegularLeads] = useState<Lead[]>([]);
+  const [crackedLeads, setCrackedLeads] = useState<any[]>([]);
+  const [archivedLeads, setArchivedLeads] = useState<any[]>([]);
+
+  // Separate loading state for each tab
+  const [isLoadingRegular, setIsLoadingRegular] = useState(true);
+  const [isLoadingCracked, setIsLoadingCracked] = useState(false);
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false);
+
+  // Separate pagination for each tab
+  const [regularPagination, setRegularPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
+  
+  const [crackedPagination, setCrackedPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
+  
+  const [archivedPagination, setArchivedPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
 
   // Helper function to check if user can access archive leads
   const canAccessArchiveLeads = (): boolean => {
@@ -41,14 +73,8 @@ const LeadsManagementPage: React.FC = () => {
     return allowedRoles.includes(userRole);
   };
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [itemsPerPage] = useState(20);
-
-  // Filter state
-  const [filters, setFilters] = useState({
+  // Separate filters for each tab
+  const [regularFilters, setRegularFilters] = useState({
     search: '',
     status: '',
     type: '',
@@ -57,6 +83,31 @@ const LeadsManagementPage: React.FC = () => {
     startDate: '',
     endDate: '',
     sortBy: 'createdAt',
+    sortOrder: 'desc' as 'asc' | 'desc'
+  });
+
+  const [crackedFilters, setCrackedFilters] = useState({
+    search: '',
+    industryId: '',
+    minAmount: '',
+    maxAmount: '',
+    closedBy: '',
+    currentPhase: '',
+    totalPhases: '',
+    sortBy: 'crackedAt',
+    sortOrder: 'desc' as 'asc' | 'desc'
+  });
+
+  const [archivedFilters, setArchivedFilters] = useState({
+    search: '',
+    unitId: '',  // Changed from salesUnitId to unitId for archived leads
+    assignedTo: '',
+    source: '',
+    outcome: '',
+    qualityRating: '',
+    archivedFrom: '',
+    archivedTo: '',
+    sortBy: 'archivedOn',  // Correct field name from backend
     sortOrder: 'desc' as 'asc' | 'desc'
   });
 
@@ -99,32 +150,99 @@ const LeadsManagementPage: React.FC = () => {
     }
   });
 
-  // Fetch leads with current filters
-  const fetchLeads = async (page: number = currentPage) => {
+  // Fetch regular leads
+  const fetchRegularLeads = async (page: number = 1) => {
     try {
-      setIsLoading(true);
+      setIsLoadingRegular(true);
       
-      const response = await getLeadsApi(page, itemsPerPage, filters);
+      const response = await getLeadsApi(page, regularPagination.itemsPerPage, regularFilters);
       
       if (response.success && response.data) {
-        setLeads(response.data);
+        setRegularLeads(response.data);
         
         if (response.pagination) {
-          setTotalPages(response.pagination.totalPages);
-          setTotalItems(response.pagination.total);
-          setCurrentPage(response.pagination.page);
+          setRegularPagination({
+            currentPage: response.pagination.page,
+            totalPages: response.pagination.totalPages,
+            totalItems: response.pagination.total,
+            itemsPerPage: regularPagination.itemsPerPage
+          });
         }
       } else {
         throw new Error(response.message || 'Failed to fetch leads');
       }
     } catch (error) {
-      console.error('Error fetching leads:', error);
+      console.error('Error fetching regular leads:', error);
       setNotification({
         type: 'error',
         message: error instanceof Error ? error.message : 'Failed to load leads'
       });
     } finally {
-      setIsLoading(false);
+      setIsLoadingRegular(false);
+    }
+  };
+
+  // Fetch cracked leads
+  const fetchCrackedLeads = async (page: number = 1) => {
+    try {
+      setIsLoadingCracked(true);
+      
+      const response = await getCrackedLeadsApi(page, crackedPagination.itemsPerPage, crackedFilters);
+      
+      if (response.success && response.data) {
+        setCrackedLeads(response.data);
+        
+        if (response.pagination) {
+          setCrackedPagination({
+            currentPage: response.pagination.page,
+            totalPages: response.pagination.totalPages,
+            totalItems: response.pagination.total,
+            itemsPerPage: crackedPagination.itemsPerPage
+          });
+        }
+      } else {
+        throw new Error(response.message || 'Failed to fetch cracked leads');
+      }
+    } catch (error) {
+      console.error('Error fetching cracked leads:', error);
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to load cracked leads'
+      });
+    } finally {
+      setIsLoadingCracked(false);
+    }
+  };
+
+  // Fetch archived leads
+  const fetchArchivedLeads = async (page: number = 1) => {
+    try {
+      setIsLoadingArchived(true);
+      
+      const response = await getArchivedLeadsApi(page, archivedPagination.itemsPerPage, archivedFilters);
+      
+      if (response.success && response.data) {
+        setArchivedLeads(response.data);
+        
+        if (response.pagination) {
+          setArchivedPagination({
+            currentPage: response.pagination.page,
+            totalPages: response.pagination.totalPages,
+            totalItems: response.pagination.total,
+            itemsPerPage: archivedPagination.itemsPerPage
+          });
+        }
+      } else {
+        throw new Error(response.message || 'Failed to fetch archived leads');
+      }
+    } catch (error) {
+      console.error('Error fetching archived leads:', error);
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to load archived leads'
+      });
+    } finally {
+      setIsLoadingArchived(false);
     }
   };
 
@@ -188,27 +306,54 @@ const LeadsManagementPage: React.FC = () => {
 
   // Load data on component mount
   useEffect(() => {
-    fetchLeads();
+    fetchRegularLeads();
     fetchStatistics();
     fetchSupportingData();
   }, []);
 
-  // Handle tab switching when archive access is not available
+  // Handle tab switching
   useEffect(() => {
     if (activeTab === 'archive' && !canAccessArchiveLeads()) {
       setActiveTab('leads');
+      return;
     }
-  }, [activeTab, user]);
 
-  // Refetch when filters change
+    // Fetch data for the active tab
+    if (activeTab === 'leads') {
+      if (regularLeads.length === 0) fetchRegularLeads();
+    } else if (activeTab === 'crack') {
+      if (crackedLeads.length === 0) fetchCrackedLeads();
+    } else if (activeTab === 'archive') {
+      if (archivedLeads.length === 0) fetchArchivedLeads();
+    }
+  }, [activeTab]);
+
+  // Refetch when filters change for each tab
   useEffect(() => {
-    fetchLeads(1);
-  }, [filters]);
+    fetchRegularLeads(1);
+  }, [regularFilters]);
 
-  // Handlers
+  useEffect(() => {
+    if (activeTab === 'crack') {
+      fetchCrackedLeads(1);
+    }
+  }, [crackedFilters]);
+
+  useEffect(() => {
+    if (activeTab === 'archive') {
+      fetchArchivedLeads(1);
+    }
+  }, [archivedFilters]);
+
+  // Handlers - Tab-aware page change
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    fetchLeads(page);
+    if (activeTab === 'leads') {
+      fetchRegularLeads(page);
+    } else if (activeTab === 'crack') {
+      fetchCrackedLeads(page);
+    } else if (activeTab === 'archive') {
+      fetchArchivedLeads(page);
+    }
   };
 
   const handleLeadClick = (lead: Lead) => {
@@ -219,42 +364,88 @@ const LeadsManagementPage: React.FC = () => {
     setSelectedLeads(leadIds);
   };
 
+  // Regular leads filter handlers
   const handleSearch = (search: string) => {
-    setFilters(prev => ({ ...prev, search }));
+    if (activeTab === 'leads') {
+      setRegularFilters(prev => ({ ...prev, search }));
+    } else if (activeTab === 'crack') {
+      setCrackedFilters(prev => ({ ...prev, search }));
+    } else if (activeTab === 'archive') {
+      setArchivedFilters(prev => ({ ...prev, search }));
+    }
   };
 
   const handleStatusFilter = (status: string) => {
-    setFilters(prev => ({ ...prev, status }));
+    setRegularFilters(prev => ({ ...prev, status }));
   };
 
   const handleTypeFilter = (type: string) => {
-    setFilters(prev => ({ ...prev, type }));
+    setRegularFilters(prev => ({ ...prev, type }));
   };
 
   const handleSalesUnitFilter = (salesUnitId: string) => {
-    setFilters(prev => ({ ...prev, salesUnitId }));
+    if (activeTab === 'leads') {
+      setRegularFilters(prev => ({ ...prev, salesUnitId }));
+    } else if (activeTab === 'archive') {
+      setArchivedFilters(prev => ({ ...prev, unitId: salesUnitId }));  // Map to unitId for archived
+    }
   };
 
   const handleAssignedToFilter = (assignedTo: string) => {
-    setFilters(prev => ({ ...prev, assignedTo }));
+    if (activeTab === 'leads') {
+      setRegularFilters(prev => ({ ...prev, assignedTo }));
+    } else if (activeTab === 'archive') {
+      setArchivedFilters(prev => ({ ...prev, assignedTo }));
+    }
   };
 
   const handleDateRangeFilter = (startDate: string, endDate: string) => {
-    setFilters(prev => ({ ...prev, startDate, endDate }));
+    if (activeTab === 'leads') {
+      setRegularFilters(prev => ({ ...prev, startDate, endDate }));
+    } else if (activeTab === 'archive') {
+      setArchivedFilters(prev => ({ ...prev, archivedFrom: startDate, archivedTo: endDate }));
+    }
   };
 
   const handleClearFilters = () => {
-    setFilters({
-      search: '',
-      status: '',
-      type: '',
-      salesUnitId: '',
-      assignedTo: '',
-      startDate: '',
-      endDate: '',
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
+    if (activeTab === 'leads') {
+      setRegularFilters({
+        search: '',
+        status: '',
+        type: '',
+        salesUnitId: '',
+        assignedTo: '',
+        startDate: '',
+        endDate: '',
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      });
+    } else if (activeTab === 'crack') {
+      setCrackedFilters({
+        search: '',
+        industryId: '',
+        minAmount: '',
+        maxAmount: '',
+        closedBy: '',
+        currentPhase: '',
+        totalPhases: '',
+        sortBy: 'crackedAt',
+        sortOrder: 'desc'
+      });
+    } else if (activeTab === 'archive') {
+      setArchivedFilters({
+        search: '',
+        unitId: '',  // Changed from salesUnitId to unitId
+        assignedTo: '',
+        source: '',
+        outcome: '',
+        qualityRating: '',
+        archivedFrom: '',
+        archivedTo: '',
+        sortBy: 'archivedOn',  // Correct field name from backend
+        sortOrder: 'desc'
+      });
+    }
   };
 
   const handleBulkAssign = async (leadIds: string[], assignedTo: string) => {
@@ -265,7 +456,11 @@ const LeadsManagementPage: React.FC = () => {
         message: `Successfully assigned ${leadIds.length} leads`
       });
       setSelectedLeads([]);
-      fetchLeads(currentPage);
+      
+      // Refetch current tab
+      if (activeTab === 'leads') fetchRegularLeads(regularPagination.currentPage);
+      else if (activeTab === 'crack') fetchCrackedLeads(crackedPagination.currentPage);
+      else if (activeTab === 'archive') fetchArchivedLeads(archivedPagination.currentPage);
     } catch (error) {
       setNotification({
         type: 'error',
@@ -282,7 +477,11 @@ const LeadsManagementPage: React.FC = () => {
         message: `Successfully updated status for ${leadIds.length} leads`
       });
       setSelectedLeads([]);
-      fetchLeads(currentPage);
+      
+      // Refetch current tab
+      if (activeTab === 'leads') fetchRegularLeads(regularPagination.currentPage);
+      else if (activeTab === 'crack') fetchCrackedLeads(crackedPagination.currentPage);
+      else if (activeTab === 'archive') fetchArchivedLeads(archivedPagination.currentPage);
     } catch (error) {
       setNotification({
         type: 'error',
@@ -299,7 +498,11 @@ const LeadsManagementPage: React.FC = () => {
         message: `Successfully deleted ${leadIds.length} leads`
       });
       setSelectedLeads([]);
-      fetchLeads(currentPage);
+      
+      // Refetch current tab
+      if (activeTab === 'leads') fetchRegularLeads(regularPagination.currentPage);
+      else if (activeTab === 'crack') fetchCrackedLeads(crackedPagination.currentPage);
+      else if (activeTab === 'archive') fetchArchivedLeads(archivedPagination.currentPage);
     } catch (error) {
       setNotification({
         type: 'error',
@@ -442,12 +645,12 @@ const LeadsManagementPage: React.FC = () => {
         {/* Conditional Table Rendering */}
         {activeTab === 'leads' && (
           <LeadsTable
-            leads={leads}
-            isLoading={isLoading}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
+            leads={regularLeads}
+            isLoading={isLoadingRegular}
+            currentPage={regularPagination.currentPage}
+            totalPages={regularPagination.totalPages}
+            totalItems={regularPagination.totalItems}
+            itemsPerPage={regularPagination.itemsPerPage}
             onPageChange={handlePageChange}
             onLeadClick={handleLeadClick}
             onBulkSelect={handleBulkSelect}
@@ -457,12 +660,12 @@ const LeadsManagementPage: React.FC = () => {
         
         {activeTab === 'crack' && (
           <CrackLeadsTable
-            leads={leads}
-            isLoading={isLoading}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
+            leads={crackedLeads}
+            isLoading={isLoadingCracked}
+            currentPage={crackedPagination.currentPage}
+            totalPages={crackedPagination.totalPages}
+            totalItems={crackedPagination.totalItems}
+            itemsPerPage={crackedPagination.itemsPerPage}
             onPageChange={handlePageChange}
             onLeadClick={handleLeadClick}
             onBulkSelect={handleBulkSelect}
@@ -472,12 +675,12 @@ const LeadsManagementPage: React.FC = () => {
         
         {activeTab === 'archive' && canAccessArchiveLeads() && (
           <ArchiveLeadsTable
-            leads={leads}
-            isLoading={isLoading}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
+            leads={archivedLeads}
+            isLoading={isLoadingArchived}
+            currentPage={archivedPagination.currentPage}
+            totalPages={archivedPagination.totalPages}
+            totalItems={archivedPagination.totalItems}
+            itemsPerPage={archivedPagination.itemsPerPage}
             onPageChange={handlePageChange}
             onLeadClick={handleLeadClick}
             onBulkSelect={handleBulkSelect}
@@ -490,10 +693,23 @@ const LeadsManagementPage: React.FC = () => {
           lead={selectedLead}
           isOpen={!!selectedLead}
           onClose={() => setSelectedLead(null)}
+          viewMode={activeTab === 'leads' ? 'full' : 'details-only'}
           onLeadUpdated={(updatedLead) => {
-            setLeads(prev => prev.map(lead => 
-              lead.id === updatedLead.id ? updatedLead : lead
-            ));
+            // Update the correct leads array based on active tab
+            if (activeTab === 'leads') {
+              setRegularLeads(prev => prev.map(lead => 
+                lead.id === updatedLead.id ? updatedLead : lead
+              ));
+            } else if (activeTab === 'crack') {
+              setCrackedLeads(prev => prev.map((lead: any) => 
+                lead.id === updatedLead.id || lead.lead?.id === updatedLead.id ? updatedLead : lead
+              ));
+            } else if (activeTab === 'archive') {
+              setArchivedLeads(prev => prev.map((lead: any) => 
+                lead.id === updatedLead.id ? updatedLead : lead
+              ));
+            }
+            
             setSelectedLead(updatedLead);
             setNotification({
               type: 'success',
