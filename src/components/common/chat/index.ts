@@ -1,5 +1,4 @@
-// Main Chat Component
-export { default as Chat } from './Chat';
+// Main Chat Component moved to pages/Chat/Chat.tsx
 
 // Individual Components
 export { default as ChatList } from './ChatList';
