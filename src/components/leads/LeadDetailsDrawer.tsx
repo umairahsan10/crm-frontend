@@ -111,6 +111,12 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
   // Populate forms when lead changes
   useEffect(() => {
     if (lead) {
+      console.log('🔍 LeadDetailsDrawer received lead:', lead);
+      console.log('🔍 Lead Source:', lead.source);
+      console.log('🔍 Lead Sales Unit:', (lead as any).salesUnit);
+      console.log('🔍 Lead Sales Unit ID:', lead.salesUnitId);
+      console.log('🔍 Is Cracked Lead:', (lead as any).crackedLeads?.length > 0);
+      
       // Reset update form
       setUpdateForm({
         outcome: lead.outcome || '',
@@ -499,24 +505,24 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
               ) : (
                 // For regular leads - show all tabs
                 [
-                  { id: 'details', name: 'Details' },
-                  { id: 'timeline', name: 'Timeline' },
-                  { id: 'comments', name: 'Comments' },
-                  { id: 'update', name: 'Update' }
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id as any);
-                    }}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    {tab.name}
-                  </button>
+                { id: 'details', name: 'Details' },
+                { id: 'timeline', name: 'Timeline' },
+                { id: 'comments', name: 'Comments' },
+                { id: 'update', name: 'Update' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id as any);
+                  }}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {tab.name}
+                </button>
                 ))
               )}
             </nav>
@@ -550,7 +556,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Lead Source</label>
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        {lead.source}
+                        {lead.source || 'N/A'}
                       </span>
                     </div>
                     <div>
@@ -560,46 +566,57 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                       </span>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Sales Unit ID</label>
-                      <p className="text-lg text-gray-900 font-medium">{lead.salesUnitId}</p>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Sales Unit</label>
+                      <div className="text-lg text-gray-900 font-medium">
+                        {(lead as any).salesUnit?.name || lead.salesUnitId || 'N/A'}
+                    </div>
+                      {lead.salesUnitId && (
+                        <div className="text-sm text-gray-500 mt-1">
+                          ID: {lead.salesUnitId}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Lead Status & Assignment */}
-                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <svg className="h-5 w-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Lead Status & Assignment
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Current Status</label>
-                      <div className="mt-1">
-                        {getStatusBadge(lead.status)}
+                {/* Lead Status & Assignment - Hide for cracked leads */}
+                {!((lead as any).crackedLeads && (lead as any).crackedLeads.length > 0) && (
+                  <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Lead Status & Assignment
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Current Status</label>
+                        <div className="mt-1">
+                          {getStatusBadge(lead.status)}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Current Outcome</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {lead.outcome ? lead.outcome.replace('_', ' ').toUpperCase() : 'Not Set'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {lead.assignedTo 
+                            ? (typeof lead.assignedTo === 'string' 
+                                ? lead.assignedTo 
+                                : `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`)
+                            : (lead as any).employee 
+                              ? `${(lead as any).employee.firstName} ${(lead as any).employee.lastName}`
+                              : 'Unassigned'
+                          }
+                        </p>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Current Outcome</label>
-                      <p className="text-lg text-gray-900 font-medium">
-                        {lead.outcome ? lead.outcome.replace('_', ' ').toUpperCase() : 'Not Set'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
-                      <p className="text-lg text-gray-900 font-medium">
-                        {lead.assignedTo 
-                          ? (typeof lead.assignedTo === 'string' 
-                              ? lead.assignedTo 
-                              : `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`)
-                          : 'Unassigned'
-                        }
-                      </p>
-                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Additional Information */}
                 <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
@@ -611,16 +628,38 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                   </h3>
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Show Assigned To for cracked leads */}
+                      {(lead as any).crackedLeads && (lead as any).crackedLeads.length > 0 && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
+                          <p className="text-lg text-gray-900 font-medium">
+                            {lead.assignedTo 
+                              ? (typeof lead.assignedTo === 'string' 
+                                  ? lead.assignedTo 
+                                  : `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`)
+                              : 'Unassigned'
+                            }
+                          </p>
+                        </div>
+                      )}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Created At</label>
                         <p className="text-lg text-gray-900 font-medium">
-                          {lead.createdAt ? new Date(lead.createdAt).toLocaleString() : 'N/A'}
+                          {/* For cracked leads, use crackedLeads[0].createdAt, otherwise use lead.createdAt */}
+                          {(lead as any).crackedLeads && (lead as any).crackedLeads.length > 0
+                            ? ((lead as any).crackedLeads[0].createdAt ? new Date((lead as any).crackedLeads[0].createdAt).toLocaleString() : 'N/A')
+                            : (lead.createdAt ? new Date(lead.createdAt).toLocaleString() : 'N/A')
+                          }
                         </p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
                         <p className="text-lg text-gray-900 font-medium">
-                          {lead.updatedAt ? new Date(lead.updatedAt).toLocaleString() : 'N/A'}
+                          {/* For cracked leads, use crackedLeads[0].updatedAt, otherwise use lead.updatedAt */}
+                          {(lead as any).crackedLeads && (lead as any).crackedLeads.length > 0
+                            ? ((lead as any).crackedLeads[0].updatedAt ? new Date((lead as any).crackedLeads[0].updatedAt).toLocaleString() : 'N/A')
+                            : (lead.updatedAt ? new Date(lead.updatedAt).toLocaleString() : 'N/A')
+                          }
                         </p>
                       </div>
                     </div>
@@ -633,7 +672,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                           <p className="text-lg text-red-600 font-medium">
                             {new Date((lead as any).archivedOn).toLocaleString()}
                           </p>
-                        </div>
+                  </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Quality Rating</label>
                           <p className="text-lg text-gray-900 font-medium">
@@ -645,9 +684,9 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                           <p className="text-lg text-gray-900 font-medium">
                             {(lead as any).unit?.name || 'N/A'}
                           </p>
-                        </div>
-                      </div>
-                    )}
+                </div>
+              </div>
+            )}
 
                     {/* Show cracked lead specific info */}
                     {(lead as any).crackedLeads && (lead as any).crackedLeads.length > 0 && (
@@ -658,7 +697,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">Total Amount</label>
                               <p className="text-lg text-green-600 font-bold">
-                                ${parseFloat(crackedLead.amount).toLocaleString()}
+                                ${parseFloat(crackedLead.amount || 0).toLocaleString()}
                               </p>
                             </div>
                             <div>
@@ -670,7 +709,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">Commission</label>
                               <p className="text-lg text-purple-600 font-bold">
-                                ${((parseFloat(crackedLead.amount) * parseFloat(crackedLead.commissionRate)) / 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                ${((parseFloat(crackedLead.amount || 0) * parseFloat(crackedLead.commissionRate || 0)) / 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                               </p>
                             </div>
                             <div>
@@ -688,7 +727,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">Remaining Amount</label>
                               <p className="text-lg text-orange-600 font-bold">
-                                ${parseFloat(crackedLead.remainingAmount).toLocaleString()}
+                                ${parseFloat(crackedLead.remainingAmount || 0).toLocaleString()}
                               </p>
                             </div>
                             <div className="md:col-span-3">
@@ -742,14 +781,14 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                         const displayOutcome = isStatusChange ? 'Status Updated' : event.outcome.replace('_', ' ').toUpperCase();
                         
                         return (
-                          <li key={event.id}>
-                            <div className="relative pb-8">
+                      <li key={event.id}>
+                        <div className="relative pb-8">
                               {eventIdx !== outcomeHistory.length - 1 ? (
-                                <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
-                              ) : null}
-                              <div className="relative flex space-x-4">
-                                <div>
-                                  <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
+                            <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
+                          ) : null}
+                            <div className="relative flex space-x-4">
+                            <div>
+                              <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
                                     isStatusChange ? 'bg-yellow-500' :
                                     event.outcome === 'interested' ? 'bg-green-500' :
                                     event.outcome === 'denied' ? 'bg-red-500' :
@@ -757,38 +796,38 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                                     event.outcome === 'not_answered' ? 'bg-gray-500' :
                                     event.outcome === 'voice_mail' ? 'bg-blue-500' :
                                     'bg-purple-500'
-                                  }`}>
-                                    <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                  </span>
-                                </div>
-                                <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                  <div className="flex-1">
-                                    <p className="text-base text-gray-900 font-medium">
+                              }`}>
+                                  <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              </span>
+                            </div>
+                            <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                <div className="flex-1">
+                                  <p className="text-base text-gray-900 font-medium">
                                       Outcome: <span className="font-semibold text-gray-900">{displayOutcome}</span>
                                     </p>
                                     {event.comment && event.comment.commentText && (
-                                      <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                                    <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
                                         "{event.comment.commentText}"
-                                      </p>
-                                    )}
+                                    </p>
+                                  )}
                                     <p className="mt-2 text-sm text-gray-500">
                                       by {event.changedByUser.firstName} {event.changedByUser.lastName}
                                     </p>
-                                  </div>
-                                  <div className="text-right text-sm whitespace-nowrap text-gray-500">
+                              </div>
+                              <div className="text-right text-sm whitespace-nowrap text-gray-500">
                                     <time dateTime={event.createdAt}>
                                       {new Date(event.createdAt).toLocaleDateString()}
-                                    </time>
+                                </time>
                                     <p className="text-xs text-gray-400 mt-1">
                                       {new Date(event.createdAt).toLocaleTimeString()}
                                     </p>
-                                  </div>
-                                </div>
                               </div>
                             </div>
-                          </li>
+                          </div>
+                        </div>
+                      </li>
                         );
                       })
                     )}

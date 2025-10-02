@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import LeadsTable from '../../components/leads/LeadsTable';
 import CrackLeadsTable from '../../components/leads/CrackLeadsTable';
 import ArchiveLeadsTable from '../../components/leads/ArchiveLeadsTable';
-import LeadsFilters from '../../components/leads/LeadsFilters';
+import LeadsSearchFilters from '../../components/leads/LeadsSearchFilters';
+import { regularLeadsConfig, crackedLeadsConfig, archivedLeadsConfig } from '../../components/leads/filterConfigs';
 import LeadDetailsDrawer from '../../components/leads/LeadDetailsDrawer';
 import BulkActions from '../../components/leads/BulkActions';
 import LeadsStatistics from '../../components/leads/LeadsStatistics';
@@ -365,14 +366,8 @@ const LeadsManagementPage: React.FC = () => {
   };
 
   // Regular leads filter handlers
-  const handleSearch = (search: string) => {
-    if (activeTab === 'leads') {
-      setRegularFilters(prev => ({ ...prev, search }));
-    } else if (activeTab === 'crack') {
-      setCrackedFilters(prev => ({ ...prev, search }));
-    } else if (activeTab === 'archive') {
-      setArchivedFilters(prev => ({ ...prev, search }));
-    }
+  const handleRegularSearch = (search: string) => {
+    setRegularFilters(prev => ({ ...prev, search }));
   };
 
   const handleStatusFilter = (status: string) => {
@@ -384,68 +379,116 @@ const LeadsManagementPage: React.FC = () => {
   };
 
   const handleSalesUnitFilter = (salesUnitId: string) => {
-    if (activeTab === 'leads') {
-      setRegularFilters(prev => ({ ...prev, salesUnitId }));
-    } else if (activeTab === 'archive') {
-      setArchivedFilters(prev => ({ ...prev, unitId: salesUnitId }));  // Map to unitId for archived
-    }
+    setRegularFilters(prev => ({ ...prev, salesUnitId }));
   };
 
   const handleAssignedToFilter = (assignedTo: string) => {
-    if (activeTab === 'leads') {
-      setRegularFilters(prev => ({ ...prev, assignedTo }));
-    } else if (activeTab === 'archive') {
-      setArchivedFilters(prev => ({ ...prev, assignedTo }));
-    }
+    setRegularFilters(prev => ({ ...prev, assignedTo }));
   };
 
   const handleDateRangeFilter = (startDate: string, endDate: string) => {
-    if (activeTab === 'leads') {
-      setRegularFilters(prev => ({ ...prev, startDate, endDate }));
-    } else if (activeTab === 'archive') {
-      setArchivedFilters(prev => ({ ...prev, archivedFrom: startDate, archivedTo: endDate }));
-    }
+    setRegularFilters(prev => ({ ...prev, startDate, endDate }));
   };
 
-  const handleClearFilters = () => {
-    if (activeTab === 'leads') {
-      setRegularFilters({
-        search: '',
-        status: '',
-        type: '',
-        salesUnitId: '',
-        assignedTo: '',
-        startDate: '',
-        endDate: '',
-        sortBy: 'createdAt',
-        sortOrder: 'desc'
-      });
-    } else if (activeTab === 'crack') {
-      setCrackedFilters({
-        search: '',
-        industryId: '',
-        minAmount: '',
-        maxAmount: '',
-        closedBy: '',
-        currentPhase: '',
-        totalPhases: '',
-        sortBy: 'crackedAt',
-        sortOrder: 'desc'
-      });
-    } else if (activeTab === 'archive') {
-      setArchivedFilters({
-        search: '',
-        unitId: '',  // Changed from salesUnitId to unitId
-        assignedTo: '',
-        source: '',
-        outcome: '',
-        qualityRating: '',
-        archivedFrom: '',
-        archivedTo: '',
-        sortBy: 'archivedOn',  // Correct field name from backend
-        sortOrder: 'desc'
-      });
-    }
+  // Cracked leads filter handlers
+  const handleCrackedSearch = (search: string) => {
+    setCrackedFilters(prev => ({ ...prev, search }));
+  };
+
+  const handleIndustryFilter = (industryId: string) => {
+    setCrackedFilters(prev => ({ ...prev, industryId }));
+  };
+
+  const handleMinAmountFilter = (minAmount: string) => {
+    setCrackedFilters(prev => ({ ...prev, minAmount }));
+  };
+
+  const handleMaxAmountFilter = (maxAmount: string) => {
+    setCrackedFilters(prev => ({ ...prev, maxAmount }));
+  };
+
+  const handleClosedByFilter = (closedBy: string) => {
+    setCrackedFilters(prev => ({ ...prev, closedBy }));
+  };
+
+  const handleCurrentPhaseFilter = (currentPhase: string) => {
+    setCrackedFilters(prev => ({ ...prev, currentPhase }));
+  };
+
+  const handleTotalPhasesFilter = (totalPhases: string) => {
+    setCrackedFilters(prev => ({ ...prev, totalPhases }));
+  };
+
+  // Archived leads filter handlers
+  const handleArchivedSearch = (search: string) => {
+    setArchivedFilters(prev => ({ ...prev, search }));
+  };
+
+  const handleArchivedUnitFilter = (unitId: string) => {
+    setArchivedFilters(prev => ({ ...prev, unitId }));
+  };
+
+  const handleArchivedAssignedToFilter = (assignedTo: string) => {
+    setArchivedFilters(prev => ({ ...prev, assignedTo }));
+  };
+
+  const handleSourceFilter = (source: string) => {
+    setArchivedFilters(prev => ({ ...prev, source }));
+  };
+
+  const handleOutcomeFilter = (outcome: string) => {
+    setArchivedFilters(prev => ({ ...prev, outcome }));
+  };
+
+  const handleQualityRatingFilter = (qualityRating: string) => {
+    setArchivedFilters(prev => ({ ...prev, qualityRating }));
+  };
+
+  const handleArchivedDateRangeFilter = (archivedFrom: string, archivedTo: string) => {
+    setArchivedFilters(prev => ({ ...prev, archivedFrom, archivedTo }));
+  };
+
+  const handleRegularClearFilters = () => {
+    setRegularFilters({
+      search: '',
+      status: '',
+      type: '',
+      salesUnitId: '',
+      assignedTo: '',
+      startDate: '',
+      endDate: '',
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
+    });
+  };
+
+  const handleCrackedClearFilters = () => {
+    setCrackedFilters({
+      search: '',
+      industryId: '',
+      minAmount: '',
+      maxAmount: '',
+      closedBy: '',
+      currentPhase: '',
+      totalPhases: '',
+      sortBy: 'crackedAt',
+      sortOrder: 'desc'
+    });
+  };
+
+  const handleArchivedClearFilters = () => {
+    setArchivedFilters({
+      search: '',
+      unitId: '',
+      assignedTo: '',
+      source: '',
+      outcome: '',
+      qualityRating: '',
+      archivedFrom: '',
+      archivedTo: '',
+      sortBy: 'archivedOn',
+      sortOrder: 'desc'
+    });
   };
 
   const handleBulkAssign = async (leadIds: string[], assignedTo: string) => {
@@ -621,16 +664,47 @@ const LeadsManagementPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters */}
-        <LeadsFilters
-          onSearch={handleSearch}
-          onStatusFilter={handleStatusFilter}
-          onTypeFilter={handleTypeFilter}
-          onSalesUnitFilter={handleSalesUnitFilter}
-          onAssignedToFilter={handleAssignedToFilter}
-          onDateRangeFilter={handleDateRangeFilter}
-          onClearFilters={handleClearFilters}
-        />
+        {/* Dynamic Tab-specific Filters */}
+        {activeTab === 'leads' && (
+          <LeadsSearchFilters
+            config={regularLeadsConfig}
+            onSearch={handleRegularSearch}
+            onStatusFilter={handleStatusFilter}
+            onTypeFilter={handleTypeFilter}
+            onSalesUnitFilter={handleSalesUnitFilter}
+            onAssignedToFilter={handleAssignedToFilter}
+            onDateRangeFilter={handleDateRangeFilter}
+            onClearFilters={handleRegularClearFilters}
+          />
+        )}
+        
+        {activeTab === 'crack' && (
+          <LeadsSearchFilters
+            config={crackedLeadsConfig}
+            onSearch={handleCrackedSearch}
+            onIndustryFilter={handleIndustryFilter}
+            onMinAmountFilter={handleMinAmountFilter}
+            onMaxAmountFilter={handleMaxAmountFilter}
+            onClosedByFilter={handleClosedByFilter}
+            onCurrentPhaseFilter={handleCurrentPhaseFilter}
+            onTotalPhasesFilter={handleTotalPhasesFilter}
+            onClearFilters={handleCrackedClearFilters}
+          />
+        )}
+        
+        {activeTab === 'archive' && canAccessArchiveLeads() && (
+          <LeadsSearchFilters
+            config={archivedLeadsConfig}
+            onSearch={handleArchivedSearch}
+            onSalesUnitFilter={handleArchivedUnitFilter}
+            onAssignedToFilter={handleArchivedAssignedToFilter}
+            onSourceFilter={handleSourceFilter}
+            onOutcomeFilter={handleOutcomeFilter}
+            onQualityRatingFilter={handleQualityRatingFilter}
+            onArchivedDateRangeFilter={handleArchivedDateRangeFilter}
+            onClearFilters={handleArchivedClearFilters}
+          />
+        )}
 
         {/* Bulk Actions */}
         <BulkActions

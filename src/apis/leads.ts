@@ -1018,3 +1018,43 @@ export const getArchivedLeadsApi = async (
     throw new Error('An unexpected error occurred while fetching archived leads');
   }
 };
+
+// Get single cracked lead details
+export const getCrackedLeadApi = async (crackedLeadId: number): Promise<ApiResponse<any>> => {
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('Fetching single cracked lead:', crackedLeadId);
+
+    const response = await fetch(`${API_BASE_URL}/leads/cracked/${crackedLeadId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch cracked lead details');
+    }
+
+    const data = await response.json();
+    console.log('Single cracked lead response:', data);
+    
+    return {
+      success: true,
+      data: data,
+      message: 'Cracked lead details fetched successfully'
+    };
+  } catch (error) {
+    console.error('Single cracked lead API error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while fetching cracked lead details');
+  }
+};
