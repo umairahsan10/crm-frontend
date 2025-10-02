@@ -33,11 +33,6 @@ const qualityRatingBadgeConfig = {
   useless: { className: 'bg-red-100 text-red-800', text: 'USELESS' }
 };
 
-const sourceBadgeConfig = {
-  PPC: { className: 'bg-blue-100 text-blue-800', text: 'PPC' },
-  SMM: { className: 'bg-blue-100 text-blue-800', text: 'SMM' }
-};
-
 // Regular Leads Table Configuration
 export const regularLeadsTableConfig: ColumnConfig[] = [
   {

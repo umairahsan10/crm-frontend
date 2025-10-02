@@ -84,7 +84,7 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
     setSelectAll(!selectAll);
   };
 
-  const handleSelectItem = (itemId: string, e: React.MouseEvent) => {
+  const handleSelectItem = (itemId: string, e: React.SyntheticEvent) => {
     e.stopPropagation();
     const newSelected = selectedItems.includes(itemId)
       ? selectedItems.filter(id => id !== itemId)
@@ -356,7 +356,7 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
                   <input
                     type="checkbox"
                     checked={selectedItems.includes(row.id?.toString() || '')}
-                    onChange={() => handleSelectItem(row.id?.toString() || '', e)}
+                    onChange={(e) => handleSelectItem(row.id?.toString() || '', e)}
                     className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded transition-colors"
                   />
                 </td>

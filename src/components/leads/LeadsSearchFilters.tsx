@@ -7,7 +7,7 @@ interface FilterOption {
   label: string;
 }
 
-interface SearchFiltersConfig {
+export interface SearchFiltersConfig {
   tabType: 'regular' | 'cracked' | 'archived';
   searchPlaceholder: string;
   theme: {
