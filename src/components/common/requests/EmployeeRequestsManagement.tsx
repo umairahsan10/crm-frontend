@@ -46,6 +46,7 @@ const EmployeeRequestsManagement: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [hrEmployees, setHrEmployees] = useState<Employee[]>([]);
   const [hrEmployeesLoading, setHrEmployeesLoading] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
   const [statistics, setStatistics] = useState<EmployeeRequestStats>({
     total_requests: 0,
     pending_requests: 0,
@@ -63,11 +64,11 @@ const EmployeeRequestsManagement: React.FC = () => {
   });
 
   // Filter states
-  const [statusFilter, setStatusFilter] = useState<string>('All Status');
-  const [priorityFilter, setPriorityFilter] = useState<string>('All Priority');
-  const [departmentFilter, setDepartmentFilter] = useState<string>('All Departments');
-  const [requestTypeFilter, setRequestTypeFilter] = useState<string>('All Types');
-  const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
+  const [search, setSearch] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [priorityFilter, setPriorityFilter] = useState<string>('');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('');
+  const [requestTypeFilter, setRequestTypeFilter] = useState<string>('');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -176,25 +177,36 @@ const EmployeeRequestsManagement: React.FC = () => {
       // Apply all filters on the frontend
       let filteredRequests = response;
       
-      if (statusFilter && statusFilter !== 'All Status') {
+      // Search filter
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredRequests = filteredRequests.filter(request => 
+          request.subject?.toLowerCase().includes(searchLower) ||
+          request.description?.toLowerCase().includes(searchLower) ||
+          `${request.employee?.firstName || ''} ${request.employee?.lastName || ''}`.toLowerCase().includes(searchLower) ||
+          request.employee?.email?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      if (statusFilter) {
         filteredRequests = filteredRequests.filter(request => 
           request.status === statusFilter
         );
       }
       
-      if (priorityFilter && priorityFilter !== 'All Priority') {
+      if (priorityFilter) {
         filteredRequests = filteredRequests.filter(request => 
           request.priority === priorityFilter
         );
       }
       
-      if (departmentFilter && departmentFilter !== 'All Departments') {
+      if (departmentFilter) {
         filteredRequests = filteredRequests.filter(request => 
           request.department?.name === departmentFilter
         );
       }
       
-      if (requestTypeFilter && requestTypeFilter !== 'All Types') {
+      if (requestTypeFilter) {
         filteredRequests = filteredRequests.filter(request => 
           request.requestType === requestTypeFilter
         );
@@ -267,13 +279,13 @@ const EmployeeRequestsManagement: React.FC = () => {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `employee_requests_export_${new Date().toISOString().split('T')[0]}.${exportFormat}`;
+          a.download = `employee_requests_export_${new Date().toISOString().split('T')[0]}.csv`;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
 
-          alert(`Employee requests exported successfully in ${exportFormat.toUpperCase()} format`);
+          alert('Employee requests exported successfully');
           break;
         default:
           alert(`Bulk action "${action}" not implemented yet`);
@@ -434,10 +446,11 @@ const EmployeeRequestsManagement: React.FC = () => {
 
   // Clear filters
   const handleClearFilters = () => {
-    setStatusFilter('All Status');
-    setPriorityFilter('All Priority');
-    setDepartmentFilter('All Departments');
-    setRequestTypeFilter('All Types');
+    setSearch('');
+    setStatusFilter('');
+    setPriorityFilter('');
+    setDepartmentFilter('');
+    setRequestTypeFilter('');
   };
 
   // Statistics cards
@@ -449,6 +462,16 @@ const EmployeeRequestsManagement: React.FC = () => {
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+        </svg>
+      )
+    },
+    {
+      title: `Page ${currentPage} Requests`,
+      value: employeeRequests.length,
+      color: 'blue' as const,
+      icon: (
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
         </svg>
       )
     },
@@ -513,7 +536,7 @@ const EmployeeRequestsManagement: React.FC = () => {
   // Refetch when filters change
   useEffect(() => {
     fetchFilteredRequests();
-  }, [statusFilter, priorityFilter, departmentFilter, requestTypeFilter]);
+  }, [search, statusFilter, priorityFilter, departmentFilter, requestTypeFilter]);
 
   // Get paginated data
   const paginatedRequests = employeeRequests.slice(
@@ -533,30 +556,112 @@ const EmployeeRequestsManagement: React.FC = () => {
                 View and manage employee requests and communications
               </p>
             </div>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowStatistics(!showStatistics)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                {showStatistics ? 'Hide Stats' : 'Show Stats'}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Statistics */}
-        <div className="mb-8">
-          <DataStatistics 
-            title="Request Statistics"
-            cards={statisticsCards}
-            loading={loading}
-          />
-        </div>
+        {/* Statistics Dashboard */}
+        {showStatistics && (
+          <div className="mb-8">
+            <DataStatistics 
+              title={`Request Statistics - Overall (Page ${currentPage} of ${totalPages} showing ${paginatedRequests.length} of ${totalItems} requests)`}
+              cards={statisticsCards}
+              loading={loading}
+            />
+            
+            {/* Page Information */}
+            <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Current Page Information</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Showing requests {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} total requests
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-blue-600">{paginatedRequests.length}</div>
+                  <div className="text-sm text-gray-500">requests on this page</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Statistics Sections */}
+            <div className="mt-8">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Breakdown by Category (Overall)</h3>
+                <p className="text-sm text-gray-600">Statistics from all requests in the system</p>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Department Breakdown */}
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">By Department</h3>
+                  <div className="space-y-3">
+                    {statistics.department_breakdown.length > 0 ? (
+                      statistics.department_breakdown.map((dept) => (
+                        <div key={dept.department_name} className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-600">{dept.department_name}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-bold text-blue-600">{dept.total_requests}</span>
+                            <span className="text-xs text-gray-500">
+                              ({dept.pending_requests} pending)
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">No department data available</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Request Type Breakdown */}
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">By Request Type</h3>
+                  <div className="space-y-3">
+                    {statistics.request_type_breakdown.length > 0 ? (
+                      statistics.request_type_breakdown.map((type) => (
+                        <div key={type.request_type} className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-600">{type.request_type}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-bold text-blue-600">{type.count}</span>
+                            <span className="text-xs text-gray-500">
+                              ({type.resolution_rate}% resolved)
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">No request type data available</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <EmployeeRequestsFilters
+          search={search}
           statusFilter={statusFilter}
           priorityFilter={priorityFilter}
           departmentFilter={departmentFilter}
           requestTypeFilter={requestTypeFilter}
-          exportFormat={exportFormat}
+          onSearchChange={setSearch}
           onStatusFilter={setStatusFilter}
           onPriorityFilter={setPriorityFilter}
           onDepartmentFilter={setDepartmentFilter}
           onRequestTypeFilter={setRequestTypeFilter}
-          onExportFormatChange={setExportFormat}
           onClearFilters={handleClearFilters}
         />
 

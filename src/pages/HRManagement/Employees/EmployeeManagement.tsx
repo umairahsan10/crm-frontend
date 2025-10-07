@@ -7,6 +7,7 @@ import EmployeesTable from '../../../components/employees/EmployeesTable';
 import EmployeesFilters from '../../../components/employees/EmployeesFilters';
 import EmployeeDetailsDrawer from '../../../components/employees/EmployeeDetailsDrawer';
 import CreateEmployeeForm from '../../../components/previous_components/EmployeeForm/EmployeeForm';
+import CreateEmployeeWizard from '../../../components/employees/CreateEmployeeWizard/CreateEmployeeWizard';
 import { 
   getEmployeesApi, 
   terminateEmployeeApi,
@@ -35,6 +36,7 @@ const EmployeeManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showTerminateModal, setShowTerminateModal] = useState(false);
   const [employeeToTerminate, setEmployeeToTerminate] = useState<Employee | null>(null);
@@ -368,7 +370,17 @@ const EmployeeManagement: React.FC = () => {
 
   const handleAddEmployee = () => {
     setSelectedEmployee(null);
-    setShowCreateForm(true);
+    setShowWizard(true);
+  };
+
+  const handleWizardSuccess = () => {
+    setNotification({
+      type: 'success',
+      message: 'Employee created successfully with all related records!'
+    });
+    setShowWizard(false);
+    fetchEmployees(currentPage);
+    fetchStatistics();
   };
 
   const handleEditEmployee = (employee: Employee) => {
@@ -837,7 +849,35 @@ const EmployeeManagement: React.FC = () => {
           isDeleting={isDeleting}
         />
 
-        {/* Create Employee Modal */}
+        {/* Create Employee Wizard */}
+        {showWizard && (
+          <div className="fixed inset-0 z-50 overflow-hidden">
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowWizard(false)}></div>
+              
+              <div 
+                className={`relative bg-white rounded-lg text-left shadow-xl transform transition-all ${
+                  isNavbarOpen ? 'navbar-open-modal' : 'navbar-closed-modal'
+                }`}
+                style={{
+                  width: '900px',
+                  maxWidth: '90vw',
+                  maxHeight: '90vh',
+                  marginLeft: isNavbarOpen ? '200px' : '0px',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                <CreateEmployeeWizard
+                  onClose={() => setShowWizard(false)}
+                  onSuccess={handleWizardSuccess}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Employee Modal (Old Form) */}
         {showCreateForm && (
           <div className="fixed inset-0 z-50 overflow-hidden">
             <div className="flex items-center justify-center min-h-screen p-4">

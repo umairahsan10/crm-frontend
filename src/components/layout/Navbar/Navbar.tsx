@@ -53,6 +53,7 @@ const Navbar: React.FC<NavbarProps> = ({
       return [
         { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
         { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
+        { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
         { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
         { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
         { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
@@ -82,6 +83,7 @@ const Navbar: React.FC<NavbarProps> = ({
     if (type === 'employee') {
       const baseItems = [
         { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
+        { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
         { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
       ];
 
@@ -282,6 +284,13 @@ const Navbar: React.FC<NavbarProps> = ({
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        );
+      case '📝':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         );
       default:
