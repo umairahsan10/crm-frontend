@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 export interface ColumnConfig {
   key: string;
@@ -47,12 +47,8 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
   totalPages,
   totalItems,
   itemsPerPage,
-  selectedItems,
   onPageChange,
   onRowClick,
-  onBulkSelect,
-  onSelectAll,
-  onDeselectAll,
   className = '',
   emptyMessage = 'No data available',
   theme = {
@@ -61,37 +57,7 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
     accent: 'blue'
   }
 }) => {
-  const [selectAll, setSelectAll] = useState(false);
-
-  // Update select all state when data or selected items change
-  useEffect(() => {
-    if (data.length === 0) {
-      setSelectAll(false);
-    } else {
-      setSelectAll(selectedItems.length === data.length);
-    }
-  }, [selectedItems.length, data.length]);
-
-  const handleSelectAll = () => {
-    if (selectAll) {
-      onBulkSelect([]);
-      if (onDeselectAll) onDeselectAll();
-    } else {
-      const allIds = data.map((item: any) => item.id?.toString() || '');
-      onBulkSelect(allIds);
-      if (onSelectAll) onSelectAll();
-    }
-    setSelectAll(!selectAll);
-  };
-
-  const handleSelectItem = (itemId: string, e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    const newSelected = selectedItems.includes(itemId)
-      ? selectedItems.filter(id => id !== itemId)
-      : [...selectedItems, itemId];
-    onBulkSelect(newSelected);
-    setSelectAll(newSelected.length === data.length);
-  };
+  // Removed bulk selection functionality as it's no longer used
 
   // Helper function to get badge styling
   const getBadgeClass = (value: string, badgeConfig?: { [key: string]: { className: string; text: string } }) => {
@@ -321,21 +287,11 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
         <table className="min-w-full divide-y divide-gray-100">
           <thead className="bg-gray-50">
             <tr>
-              {/* Selection Column */}
-              <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                <input
-                  type="checkbox"
-                  checked={selectAll}
-                  onChange={handleSelectAll}
-                  className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded transition-colors"
-                />
-              </th>
-              
               {/* Data Columns */}
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider ${column.className || ''}`}
+                  className={`px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider ${column.className || ''}`}
                   style={column.width ? { width: column.width } : undefined}
                 >
                   {column.label}
@@ -351,21 +307,11 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
                 className="hover:bg-gray-50/30 transition-colors duration-200 cursor-pointer group"
                 onClick={() => onRowClick(row)}
               >
-                {/* Selection Cell */}
-                <td className="px-8 py-5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.includes(row.id?.toString() || '')}
-                    onChange={(e) => handleSelectItem(row.id?.toString() || '', e)}
-                    className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded transition-colors"
-                  />
-                </td>
-                
                 {/* Data Cells */}
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`px-8 py-5 whitespace-nowrap ${column.className || ''}`}
+                    className={`px-4 py-2 whitespace-nowrap ${column.className || ''}`}
                   >
                     {renderCellContent(column, row[column.key], row)}
                   </td>

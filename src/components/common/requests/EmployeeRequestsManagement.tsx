@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import DataTable from '../DataTable/DataTable';
 import DataStatistics from '../Statistics/DataStatistics';
 import BulkActions from '../BulkActions/BulkActions';
+import EmployeeRequestsTable from '../../employee-requests/EmployeeRequestsTable';
+import EmployeeRequestsFilters from '../../employee-requests/EmployeeRequestsFilters';
+import EmployeeRequestDetailsDrawer from '../../employee-requests/EmployeeRequestDetailsDrawer';
 import { 
   getEmployeeRequestsApi, 
   takeEmployeeRequestActionApi,
@@ -40,6 +42,8 @@ const EmployeeRequestsManagement: React.FC = () => {
   const [employeeRequests, setEmployeeRequests] = useState<EmployeeRequestTableRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequests] = useState<string[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<EmployeeRequest | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [hrEmployees, setHrEmployees] = useState<Employee[]>([]);
   const [hrEmployeesLoading, setHrEmployeesLoading] = useState(false);
   const [statistics, setStatistics] = useState<EmployeeRequestStats>({
@@ -58,20 +62,18 @@ const EmployeeRequestsManagement: React.FC = () => {
     request_type_breakdown: []
   });
 
-  // Filter states - only 4 filters
+  // Filter states
   const [statusFilter, setStatusFilter] = useState<string>('All Status');
   const [priorityFilter, setPriorityFilter] = useState<string>('All Priority');
   const [departmentFilter, setDepartmentFilter] = useState<string>('All Departments');
   const [requestTypeFilter, setRequestTypeFilter] = useState<string>('All Types');
   const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
 
-  // Action modal states
-  const [selectedRequest, setSelectedRequest] = useState<EmployeeRequest | null>(null);
-  const [actionModalOpen, setActionModalOpen] = useState(false);
-  const [actionType, setActionType] = useState<'approve' | 'reject' | 'update' | 'hold' | 'assign'>('approve');
-  const [actionNotes, setActionNotes] = useState('');
-  const [actionPriority, setActionPriority] = useState<string>('');
-  const [actionAssignedTo, setActionAssignedTo] = useState<string>('');
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
 
   // Check permissions
   if (!user || (user.role !== 'admin' && user.department !== 'HR')) {
@@ -101,7 +103,6 @@ const EmployeeRequestsManagement: React.FC = () => {
       setHrEmployees(response.employees);
     } catch (error) {
       console.error('Error fetching HR employees:', error);
-      // Fallback to empty array
       setHrEmployees([]);
     } finally {
       setHrEmployeesLoading(false);
@@ -121,7 +122,7 @@ const EmployeeRequestsManagement: React.FC = () => {
       high_priority_requests: requests.filter(r => r.priority === 'High').length,
       medium_priority_requests: requests.filter(r => r.priority === 'Medium').length,
       low_priority_requests: requests.filter(r => r.priority === 'Low').length,
-      avg_resolution_time: 0, // This would need backend calculation
+      avg_resolution_time: 0,
       department_breakdown: [] as any[],
       request_type_breakdown: [] as any[]
     };
@@ -165,49 +166,39 @@ const EmployeeRequestsManagement: React.FC = () => {
     return stats;
   };
 
-
-
-  // Fetch filtered requests using correct API endpoints
+  // Fetch filtered requests
   const fetchFilteredRequests = async () => {
     try {
       setLoading(true);
       
-      // Always fetch all requests without backend filtering
-      // Apply all filters on the frontend for consistency
       const response = await getEmployeeRequestsApi();
       
       // Apply all filters on the frontend
       let filteredRequests = response;
       
-      // Apply status filter (frontend filtering)
       if (statusFilter && statusFilter !== 'All Status') {
         filteredRequests = filteredRequests.filter(request => 
           request.status === statusFilter
         );
       }
       
-      // Apply priority filter (frontend filtering)
       if (priorityFilter && priorityFilter !== 'All Priority') {
         filteredRequests = filteredRequests.filter(request => 
           request.priority === priorityFilter
         );
       }
       
-      // Apply department filter (frontend filtering)
       if (departmentFilter && departmentFilter !== 'All Departments') {
         filteredRequests = filteredRequests.filter(request => 
           request.department?.name === departmentFilter
         );
       }
       
-      // Apply request type filter (frontend filtering)
       if (requestTypeFilter && requestTypeFilter !== 'All Types') {
         filteredRequests = filteredRequests.filter(request => 
           request.requestType === requestTypeFilter
         );
       }
-      
-      console.log('Filtered requests count:', filteredRequests.length);
       
       const mappedRequests: EmployeeRequestTableRow[] = filteredRequests.map(request => ({
         id: request.id.toString(),
@@ -232,12 +223,15 @@ const EmployeeRequestsManagement: React.FC = () => {
 
       setEmployeeRequests(mappedRequests);
       
+      // Calculate pagination
+      setTotalItems(mappedRequests.length);
+      setTotalPages(Math.ceil(mappedRequests.length / itemsPerPage));
+      
       // Calculate statistics from the filtered data
       const stats = calculateStatistics(mappedRequests);
       setStatistics(stats);
     } catch (error) {
       console.error('Error fetching filtered requests:', error);
-      // Set empty state on error
       setEmployeeRequests([]);
       setStatistics({
         total_requests: 0,
@@ -269,7 +263,6 @@ const EmployeeRequestsManagement: React.FC = () => {
     try {
       switch (action) {
         case 'export':
-          // Export all data and let the backend handle the export
           const blob = await exportEmployeeRequestsApi({});
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -291,54 +284,160 @@ const EmployeeRequestsManagement: React.FC = () => {
     }
   };
 
-  // Handle individual request action
-  const handleRequestAction = async (requestId: number, action: 'approve' | 'reject' | 'update' | 'hold' | 'assign') => {
-    if (!user) return;
-
-    try {
-       const actionData: EmployeeRequestAction = {
-         status: action === 'approve' ? 'Resolved' : 
-                 action === 'reject' ? 'Rejected' : 
-                 action === 'hold' ? 'Cancelled' : 
-                 action === 'assign' ? 'In_Progress' : 'In_Progress',
-         responseNotes: actionNotes || '',
-         priority: actionPriority as 'Low' | 'Medium' | 'High' | 'Urgent' | undefined,
-         assignedTo: actionAssignedTo && !isNaN(Number(actionAssignedTo)) ? Number(actionAssignedTo) : undefined
-       };
-
-      const userId = Number(user.id) || 0;
-      if (userId === 0) {
-        alert('Invalid user ID. Please log in again.');
-        return;
+  // Handle row click - find and set the full request object
+  const handleRequestClick = (row: EmployeeRequestTableRow) => {
+    // We need to find the full EmployeeRequest object from the API response
+    // For now, we'll construct it from the row data
+    const fullRequest: EmployeeRequest = {
+      id: row.request_id,
+      empId: row.emp_id,
+      departmentId: 0, // This would need to be stored in the row
+      requestType: row.request_type,
+      subject: row.subject,
+      description: row.description,
+      priority: row.priority as any,
+      status: row.status as any,
+      assignedTo: 0,
+      requestedOn: row.requested_on,
+      resolvedOn: row.resolved_on,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      employee: {
+        id: row.emp_id,
+        firstName: row.employee_name.split(' ')[0] || '',
+        lastName: row.employee_name.split(' ').slice(1).join(' ') || '',
+        email: row.employee_email,
+        department: {
+          id: 0,
+          name: row.department_name
+        },
+        role: {
+          id: 0,
+          name: ''
+        }
+      },
+      department: {
+        id: 0,
+        name: row.department_name
+      },
+      assignedToEmployee: {
+        id: 0,
+        firstName: row.assigned_to_name !== 'Unassigned' ? row.assigned_to_name.split(' ')[0] : 'Unassigned',
+        lastName: row.assigned_to_name !== 'Unassigned' ? row.assigned_to_name.split(' ').slice(1).join(' ') : '',
+        email: ''
       }
+    };
+    
+    setSelectedRequest(fullRequest);
+    setDrawerOpen(true);
+  };
 
+  // Action handlers
+  const handleResolve = async (requestId: number, notes: string) => {
+    if (!user) return;
+    try {
+      const actionData: EmployeeRequestAction = {
+        status: 'Resolved',
+        responseNotes: notes
+      };
+      const userId = Number(user.id) || 0;
       await takeEmployeeRequestActionApi(requestId, userId, actionData);
-      
-      alert(`Request ${action}ed successfully`);
-
-      // Refresh data (statistics will be calculated automatically)
+      alert('Request resolved successfully');
       fetchFilteredRequests();
-      
-      // Close modal
-      setActionModalOpen(false);
+      setDrawerOpen(false);
       setSelectedRequest(null);
-      setActionNotes('');
-      setActionPriority('');
-      setActionAssignedTo('');
     } catch (error) {
-      console.error('Error performing request action:', error);
-      alert('Failed to perform request action');
+      console.error('Error resolving request:', error);
+      alert('Failed to resolve request');
     }
   };
 
-  // Open action modal
-  const openActionModal = (request: EmployeeRequest, action: 'approve' | 'reject' | 'update' | 'hold' | 'assign') => {
-    setSelectedRequest(request);
-    setActionType(action);
-    setActionModalOpen(true);
-    setActionNotes('');
-    setActionPriority(request.priority || 'Low');
-    setActionAssignedTo(request.assignedTo?.toString() || '');
+  const handleReject = async (requestId: number, notes: string) => {
+    if (!user) return;
+    try {
+      const actionData: EmployeeRequestAction = {
+        status: 'Rejected',
+        responseNotes: notes
+      };
+      const userId = Number(user.id) || 0;
+      await takeEmployeeRequestActionApi(requestId, userId, actionData);
+      alert('Request rejected successfully');
+      fetchFilteredRequests();
+      setDrawerOpen(false);
+      setSelectedRequest(null);
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      alert('Failed to reject request');
+    }
+  };
+
+  const handleUpdate = async (requestId: number, notes: string, priority: string, assignedTo: string) => {
+    if (!user) return;
+    try {
+      const actionData: EmployeeRequestAction = {
+        status: 'In_Progress',
+        responseNotes: notes,
+        priority: priority as any,
+        assignedTo: assignedTo && !isNaN(Number(assignedTo)) ? Number(assignedTo) : undefined
+      };
+      const userId = Number(user.id) || 0;
+      await takeEmployeeRequestActionApi(requestId, userId, actionData);
+      alert('Request updated successfully');
+      fetchFilteredRequests();
+      setDrawerOpen(false);
+      setSelectedRequest(null);
+    } catch (error) {
+      console.error('Error updating request:', error);
+      alert('Failed to update request');
+    }
+  };
+
+  const handleAssign = async (requestId: number, notes: string, priority: string, assignedTo: string) => {
+    if (!user) return;
+    try {
+      const actionData: EmployeeRequestAction = {
+        status: 'In_Progress',
+        responseNotes: notes,
+        priority: priority as any,
+        assignedTo: assignedTo && !isNaN(Number(assignedTo)) ? Number(assignedTo) : undefined
+      };
+      const userId = Number(user.id) || 0;
+      await takeEmployeeRequestActionApi(requestId, userId, actionData);
+      alert('Request assigned successfully');
+      fetchFilteredRequests();
+      setDrawerOpen(false);
+      setSelectedRequest(null);
+    } catch (error) {
+      console.error('Error assigning request:', error);
+      alert('Failed to assign request');
+    }
+  };
+
+  const handleHold = async (requestId: number, notes: string) => {
+    if (!user) return;
+    try {
+      const actionData: EmployeeRequestAction = {
+        status: 'Cancelled',
+        responseNotes: notes
+      };
+      const userId = Number(user.id) || 0;
+      await takeEmployeeRequestActionApi(requestId, userId, actionData);
+      alert('Request put on hold successfully');
+      fetchFilteredRequests();
+      setDrawerOpen(false);
+      setSelectedRequest(null);
+    } catch (error) {
+      console.error('Error putting request on hold:', error);
+      alert('Failed to put request on hold');
+    }
+  };
+
+  // Clear filters
+  const handleClearFilters = () => {
+    setStatusFilter('All Status');
+    setPriorityFilter('All Priority');
+    setDepartmentFilter('All Departments');
+    setRequestTypeFilter('All Types');
   };
 
   // Statistics cards
@@ -405,139 +504,6 @@ const EmployeeRequestsManagement: React.FC = () => {
     }
   ];
 
-  // Table columns
-  const columns = [
-    {
-      header: 'Request ID',
-      accessor: 'request_id',
-      render: (value: number) => (
-        <span className="text-sm font-medium text-gray-900">#{value}</span>
-      )
-    },
-    {
-      header: 'Employee',
-      accessor: 'employee_name',
-      render: (value: string, row: EmployeeRequestTableRow) => (
-        <div className="max-w-xs">
-          <div className="text-sm font-medium text-gray-900">{value}</div>
-          <div className="text-sm text-gray-500">{row.employee_email}</div>
-        </div>
-      )
-    },
-    {
-      header: 'Department',
-      accessor: 'department_name',
-      render: (value: string) => (
-        <span className="text-sm text-gray-600">{value}</span>
-      )
-    },
-    {
-      header: 'Request Type',
-      accessor: 'request_type',
-      render: (value: string) => (
-        <span className="text-sm text-gray-900">{value}</span>
-      )
-    },
-    {
-      header: 'Subject',
-      accessor: 'subject',
-      render: (value: string) => (
-        <div className="max-w-xs">
-          <span className="text-sm text-gray-900 truncate block" title={value}>
-            {value}
-          </span>
-        </div>
-      )
-    },
-     {
-       header: 'Priority',
-       accessor: 'priority',
-       render: (value: string) => {
-         const priorityColors = {
-           'Urgent': 'bg-red-100 text-red-800',
-           'High': 'bg-orange-100 text-orange-800',
-           'Medium': 'bg-yellow-100 text-yellow-800',
-           'Low': 'bg-green-100 text-green-800'
-         };
-         return (
-           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[value as keyof typeof priorityColors] || 'bg-gray-100 text-gray-800'}`}>
-             {value}
-           </span>
-         );
-       }
-     },
-     {
-       header: 'Status',
-       accessor: 'status',
-       render: (value: string) => {
-         const statusColors = {
-           'Pending': 'bg-yellow-100 text-yellow-800',
-           'In_Progress': 'bg-blue-100 text-blue-800',
-           'Resolved': 'bg-green-100 text-green-800',
-           'Rejected': 'bg-red-100 text-red-800',
-           'Cancelled': 'bg-gray-100 text-gray-800'
-         };
-         return (
-           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[value as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
-             {value === 'In_Progress' ? 'In Progress' : value}
-           </span>
-         );
-       }
-     },
-    {
-      header: 'Assigned To',
-      accessor: 'assigned_to_name',
-      render: (value: string) => (
-        <span className="text-sm text-gray-600">{value}</span>
-      )
-    },
-    {
-      header: 'Requested On',
-      accessor: 'requested_on',
-      render: (value: string) => (
-        <span className="text-sm text-gray-600">
-          {value ? new Date(value).toLocaleDateString() : 'N/A'}
-        </span>
-      )
-    },
-    {
-      header: 'Actions',
-      accessor: 'actions',
-      render: (_: any, row: EmployeeRequestTableRow) => (
-        <div className="flex space-x-2 flex-wrap">
-           <button
-             onClick={() => openActionModal(row as any, 'approve')}
-             className="text-green-600 hover:text-green-800 text-sm font-medium"
-             disabled={row.status === 'Resolved'}
-           >
-             Resolve
-           </button>
-           <button
-             onClick={() => openActionModal(row as any, 'reject')}
-             className="text-red-600 hover:text-red-800 text-sm font-medium"
-             disabled={row.status === 'Rejected'}
-           >
-             Reject
-           </button>
-          <button
-            onClick={() => openActionModal(row as any, 'update')}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-          >
-            Update
-          </button>
-          {row.assigned_to_name === 'Unassigned' && (
-            <button
-              onClick={() => openActionModal(row as any, 'assign')}
-              className="text-purple-600 hover:text-purple-800 text-sm font-medium"
-            >
-              Assign
-            </button>
-          )}
-        </div>
-      )
-    }
-  ];
-
   // Load data on component mount
   useEffect(() => {
     fetchFilteredRequests();
@@ -548,6 +514,12 @@ const EmployeeRequestsManagement: React.FC = () => {
   useEffect(() => {
     fetchFilteredRequests();
   }, [statusFilter, priorityFilter, departmentFilter, requestTypeFilter]);
+
+  // Get paginated data
+  const paginatedRequests = employeeRequests.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -574,227 +546,61 @@ const EmployeeRequestsManagement: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Filters</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                 <select
-                   value={statusFilter}
-                   onChange={(e) => setStatusFilter(e.target.value)}
-                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                 >
-                   <option value="All Status">All Status</option>
-                   <option value="Pending">Pending</option>
-                   <option value="In_Progress">In Progress</option>
-                   <option value="Resolved">Resolved</option>
-                   <option value="Rejected">Rejected</option>
-                   <option value="Cancelled">Cancelled</option>
-                 </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-                 <select
-                   value={priorityFilter}
-                   onChange={(e) => setPriorityFilter(e.target.value)}
-                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                 >
-                   <option value="All Priority">All Priority</option>
-                   <option value="Low">Low</option>
-                   <option value="Medium">Medium</option>
-                   <option value="High">High</option>
-                   <option value="Urgent">Urgent</option>
-                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                <select
-                  value={departmentFilter}
-                  onChange={(e) => setDepartmentFilter(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="All Departments">All Departments</option>
-                  <option value="Development">Development</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Sales">Sales</option>
-                  <option value="Production">Production</option>
-                  <option value="HR">HR</option>
-                  <option value="Accounts">Accounts</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Request Type</label>
-                <select
-                  value={requestTypeFilter}
-                  onChange={(e) => setRequestTypeFilter(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="All Types">All Types</option>
-                  <option value="Leave Request">Leave Request</option>
-                  <option value="Salary Request">Salary Request</option>
-                  <option value="Equipment Request">Equipment Request</option>
-                  <option value="Training Request">Training Request</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Export Format</label>
-                <select
-                  value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value as 'csv' | 'json')}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="csv">CSV</option>
-                  <option value="json">JSON</option>
-                </select>
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  onClick={() => {
-                    setStatusFilter('All Status');
-                    setPriorityFilter('All Priority');
-                    setDepartmentFilter('All Departments');
-                    setRequestTypeFilter('All Types');
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                >
-                  Clear Filters
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <EmployeeRequestsFilters
+          statusFilter={statusFilter}
+          priorityFilter={priorityFilter}
+          departmentFilter={departmentFilter}
+          requestTypeFilter={requestTypeFilter}
+          exportFormat={exportFormat}
+          onStatusFilter={setStatusFilter}
+          onPriorityFilter={setPriorityFilter}
+          onDepartmentFilter={setDepartmentFilter}
+          onRequestTypeFilter={setRequestTypeFilter}
+          onExportFormatChange={setExportFormat}
+          onClearFilters={handleClearFilters}
+        />
 
         {/* Bulk Actions */}
         <div className="mb-6">
-        <BulkActions
-          selectedItems={selectedRequests}
-          onClearSelection={() => {}}
-          actions={[
-            { id: 'export', label: 'Export Selected', icon: '📤', onClick: () => handleBulkAction('export') }
-          ]}
-        />
-        </div>
-
-        {/* Employee Requests Table */}
-        <div className="bg-white rounded-lg shadow">
-          <DataTable
-            data={employeeRequests}
-            columns={columns}
-            loading={loading}
-            paginated={false}
+          <BulkActions
+            selectedItems={selectedRequests}
+            onClearSelection={() => {}}
+            actions={[
+              { id: 'export', label: 'Export Selected', icon: '📤', onClick: () => handleBulkAction('export') }
+            ]}
           />
         </div>
 
-        {/* Action Modal */}
-        {actionModalOpen && selectedRequest && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  {actionType === 'approve' ? 'Resolve' : 
-                   actionType === 'reject' ? 'Reject' : 
-                   actionType === 'hold' ? 'Put On Hold' : 
-                   actionType === 'assign' ? 'Assign' : 'Update'} Request
-                </h3>
-                
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <strong>Subject:</strong> {selectedRequest.subject || 'N/A'}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-2">
-                    <strong>Employee:</strong> {selectedRequest.employee?.firstName || ''} {selectedRequest.employee?.lastName || ''}
-                  </p>
-                </div>
+        {/* Employee Requests Table */}
+        <EmployeeRequestsTable
+          requests={paginatedRequests}
+          isLoading={loading}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onRequestClick={handleRequestClick}
+          onBulkSelect={() => {}}
+          selectedRequests={selectedRequests}
+        />
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Response Notes
-                  </label>
-                  <textarea
-                    value={actionNotes}
-                    onChange={(e) => setActionNotes(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    placeholder="Enter your response notes..."
-                  />
-                </div>
-
-                {(actionType === 'update' || actionType === 'assign') && (
-                  <>
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Priority
-                      </label>
-                       <select
-                         value={actionPriority}
-                         onChange={(e) => setActionPriority(e.target.value)}
-                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       >
-                         <option value="Low">Low</option>
-                         <option value="Medium">Medium</option>
-                         <option value="High">High</option>
-                         <option value="Urgent">Urgent</option>
-                       </select>
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Assign To HR Employee
-                      </label>
-                      <select
-                        value={actionAssignedTo}
-                        onChange={(e) => setActionAssignedTo(e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={hrEmployeesLoading}
-                      >
-                        <option value="">Select HR Employee</option>
-                        {hrEmployees.map((hr) => (
-                          <option key={hr.id} value={hr.id.toString()}>
-                            {hr.firstName} {hr.lastName} (ID: {hr.id}) - {hr.role.name}
-                          </option>
-                        ))}
-                      </select>
-                      {hrEmployeesLoading && (
-                        <p className="text-xs text-gray-500 mt-1">Loading HR employees...</p>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                <div className="flex justify-end space-x-3">
-                  <button
-                    onClick={() => setActionModalOpen(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleRequestAction(selectedRequest.id, actionType)}
-                    className={`px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 ${
-                      actionType === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
-                      actionType === 'reject' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' :
-                      actionType === 'hold' ? 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500' :
-                      actionType === 'assign' ? 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500' :
-                      'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                    }`}
-                  >
-                    {actionType === 'approve' ? 'Resolve' : 
-                     actionType === 'reject' ? 'Reject' : 
-                     actionType === 'hold' ? 'Put On Hold' : 
-                     actionType === 'assign' ? 'Assign' : 'Update'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Request Details Drawer */}
+        <EmployeeRequestDetailsDrawer
+          request={selectedRequest}
+          isOpen={drawerOpen}
+          onClose={() => {
+            setDrawerOpen(false);
+            setSelectedRequest(null);
+          }}
+          hrEmployees={hrEmployees}
+          hrEmployeesLoading={hrEmployeesLoading}
+          onResolve={handleResolve}
+          onReject={handleReject}
+          onUpdate={handleUpdate}
+          onAssign={handleAssign}
+          onHold={handleHold}
+        />
       </div>
     </div>
   );
