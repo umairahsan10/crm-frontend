@@ -61,9 +61,7 @@ export interface ChatRoomProps {
   messages: ChatMessage[];
   participants: ChatParticipant[];
   onSendMessage: (message: string) => void;
-  onAddParticipant: (employeeId: number) => void;
-  onRemoveParticipant: (participantId: number) => void;
-  onTransferChat: (toEmployeeId: number) => void;
+  onRemoveParticipant?: (participantId: number) => void;
   loading?: boolean;
 }
 
@@ -85,9 +83,6 @@ export interface MessageInputProps {
 export interface ChatHeaderProps {
   chat: ProjectChat;
   participants: ChatParticipant[];
-  onAddParticipant: () => void;
-  onTransferChat: () => void;
-  onCloseChat: () => void;
 }
 
 export interface ParticipantListProps {

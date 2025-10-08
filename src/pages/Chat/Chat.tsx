@@ -26,21 +26,11 @@ const Chat: React.FC<ChatProps> = ({
     error,
     selectChat,
     sendMessage,
-    addParticipant,
-    removeParticipant,
-    transferChat
+    removeParticipant
   } = useChat(currentUser);
 
   const handleChatSelect = (chat: any) => {
     selectChat(chat.id);
-  };
-
-  const handleAddParticipant = async (employeeId: number) => {
-    try {
-      await addParticipant(employeeId);
-    } catch (error) {
-      console.error('Failed to add participant:', error);
-    }
   };
 
   const handleRemoveParticipant = async (participantId: number) => {
@@ -51,18 +41,10 @@ const Chat: React.FC<ChatProps> = ({
     }
   };
 
-  const handleTransferChat = async (toEmployeeId: number) => {
-    try {
-      await transferChat(toEmployeeId);
-    } catch (error) {
-      console.error('Failed to transfer chat:', error);
-    }
-  };
-
   return (
     <div className={`flex h-full w-full bg-white overflow-hidden ${className}`} style={style}>
       <div className="flex h-full w-full">
-        <div className="w-80 flex-shrink-0 h-full">
+        <div className="w-64 flex-shrink-0 h-full border-r border-gray-200">
           <ChatList
             chats={chats}
             currentUser={currentUser}
@@ -79,9 +61,7 @@ const Chat: React.FC<ChatProps> = ({
               messages={messages}
               participants={participants}
               onSendMessage={sendMessage}
-              onAddParticipant={handleAddParticipant}
               onRemoveParticipant={handleRemoveParticipant}
-              onTransferChat={handleTransferChat}
               loading={loading}
             />
           )}
@@ -116,9 +96,9 @@ const ChatPage: React.FC = () => {
 
   // Convert user from AuthContext to ChatUser format
   const currentUser: ChatUser = user ? {
-    id: user.id,
-    firstName: user.firstName || '',
-    lastName: user.lastName || '',
+    id: parseInt(user.id) || 0,
+    firstName: user.name?.split(' ')[0] || 'User',
+    lastName: user.name?.split(' ').slice(1).join(' ') || '',
     email: user.email || '',
     avatar: user.avatar || '/default-avatar.svg',
     department: user.department || '',

@@ -82,13 +82,13 @@ const ChatList: React.FC<ChatListProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
-      <div className="flex items-center justify-between p-5 bg-gray-50">
-        <h2 className="text-lg font-semibold text-gray-900 m-0">Chats</h2>
+      <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
+        <h2 className="text-base font-semibold text-gray-900 m-0">Chats</h2>
       </div>
 
-      <div className="p-4 bg-gray-50">
+      <div className="px-3 py-2 bg-white border-b border-gray-200">
         <div className="relative flex items-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute left-3 text-gray-400 pointer-events-none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute left-3 text-gray-400 pointer-events-none">
             <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
             <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2"/>
           </svg>
@@ -97,7 +97,7 @@ const ChatList: React.FC<ChatListProps> = ({
             placeholder="Search chats..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2.5 pl-10 border border-gray-300 rounded-lg text-sm bg-white transition-colors focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+            className="w-full px-3 py-1.5 pl-9 border border-gray-300 rounded-lg text-xs bg-white transition-colors focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]"
           />
         </div>
       </div>
@@ -126,24 +126,24 @@ const ChatList: React.FC<ChatListProps> = ({
             </p>
           </div>
         ) : (
-          <div className="py-2">
+          <div className="py-1">
             {filteredChats.map((chat) => (
               <div
                 key={chat.id}
                 onClick={() => onChatSelect(chat)}
-                className="flex items-center gap-3 p-4 cursor-pointer transition-colors border-b border-gray-100 hover:bg-gray-50 last:border-b-0"
+                className="flex items-center gap-3 px-3 py-3 mx-2 my-1 cursor-pointer transition-all rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm"
               >
-                <div className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 text-gray-500">
+                <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 text-gray-500">
                   {chat.project ? (
-                    <div className="bg-blue-100 text-blue-600">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <div className="w-full h-full rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
                   ) : (
-                    <div className="bg-gray-100 text-gray-600">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <div className="w-full h-full rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
@@ -151,16 +151,16 @@ const ChatList: React.FC<ChatListProps> = ({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-0.5">
                     <h3 className="text-sm font-semibold text-gray-900 m-0 whitespace-nowrap overflow-hidden text-ellipsis flex-1 mr-2">
                       {getChatTitle(chat)}
                     </h3>
-                    <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                    <span className="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">
                       {formatDate(chat.updatedAt)}
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-1 mb-1 text-xs text-gray-500">
+                  <div className="flex items-center gap-1 mb-0.5 text-[10px] text-gray-500">
                     <span className="font-medium">
                       {getParticipantCount(chat)} participant{getParticipantCount(chat) !== 1 ? 's' : ''}
                     </span>
@@ -171,13 +171,9 @@ const ChatList: React.FC<ChatListProps> = ({
                     )}
                   </div>
                   
-                  <p className="text-xs text-gray-500 m-0 whitespace-nowrap overflow-hidden text-ellipsis leading-relaxed">
+                  <p className="text-[11px] text-gray-500 m-0 whitespace-nowrap overflow-hidden text-ellipsis leading-relaxed">
                     {getLastMessage(chat)}
                   </p>
-                </div>
-
-                <div className="flex items-center flex-shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-gray-200 transition-colors group-hover:bg-blue-500"></div>
                 </div>
               </div>
             ))}

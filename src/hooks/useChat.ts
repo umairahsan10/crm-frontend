@@ -9,13 +9,22 @@ import type {
 import { chatApi } from '../apis/chat';
 
 // Custom hook for chat functionality
-export const useChat = (currentUser: ChatUser) => {
+export const useChat = (_currentUser: ChatUser) => {
   const [chats, setChats] = useState<ProjectChat[]>([]);
   const [currentChat, setCurrentChat] = useState<ProjectChat | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [participants, setParticipants] = useState<ChatParticipant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper function to sort messages chronologically (oldest first, newest last)
+  const sortMessages = (messages: ChatMessage[]): ChatMessage[] => {
+    return messages.sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return dateA.getTime() - dateB.getTime();
+    });
+  };
 
   // Load chats on component mount - fetches all chats where user is a participant
   const loadChats = useCallback(async () => {
@@ -47,7 +56,10 @@ export const useChat = (currentUser: ChatUser) => {
 
       // Load messages for this chat
       const messagesData = await chatApi.getMessages(chatId, 50, 0);
-      setMessages(messagesData.messages);
+      
+      // Sort messages by creation date (oldest first, newest last)
+      const sortedMessages = sortMessages(messagesData.messages);
+      setMessages(sortedMessages);
 
       // Load participants for this chat
       const participantsData = await chatApi.getParticipants(chatId);
@@ -62,8 +74,17 @@ export const useChat = (currentUser: ChatUser) => {
   }, [chats]);
 
   // Send a message
-  const sendMessage = useCallback(async (message: string) => {
-    if (!currentChat || !message.trim()) return;
+  const sendMessage = useCallback(async (message: string): Promise<void> => {
+    if (!currentChat || !message.trim()) {
+      return;
+    }
+    
+    // Validate message length (backend limit: 1000 characters)
+    if (message.trim().length > 1000) {
+      const errorMessage = 'Message too long. Maximum 1000 characters allowed.';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
     
     setError(null);
     
@@ -71,8 +92,12 @@ export const useChat = (currentUser: ChatUser) => {
       // Send message to backend
       const newMessage = await chatApi.sendMessage(currentChat.id, message.trim());
       
-      // Add message to current messages
-      setMessages(prev => [...prev, newMessage]);
+      // Add message to current messages and maintain chronological order
+      setMessages(prev => {
+        const updatedMessages = [...prev, newMessage];
+        // Sort messages by creation date (oldest first, newest last)
+        return sortMessages(updatedMessages);
+      });
       
       // Update chat's last message in the list
       setChats(prev => prev.map(chat => 
@@ -86,8 +111,10 @@ export const useChat = (currentUser: ChatUser) => {
       ));
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+      setError(errorMessage);
       console.error('Failed to send message:', err);
+      throw err; // Re-throw to handle in MessageInput
     }
   }, [currentChat]);
 

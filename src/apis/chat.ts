@@ -100,6 +100,14 @@ export const chatApi = {
 
     console.log('🔵 Sending message to chat:', chatId);
     console.log('📤 Message content:', content);
+    
+    // Request body matches backend specification
+    const requestBody = { 
+      chatId,
+      content
+    };
+    
+    console.log('📤 Request body:', JSON.stringify(requestBody));
 
     const response = await fetch(`${API_BASE_URL}/chat-messages`, {
       method: 'POST',
@@ -107,20 +115,34 @@ export const chatApi = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ 
-        chatId,
-        content,
-        messageType: 'text',
-        attachmentUrl: null
-      })
+      body: JSON.stringify(requestBody)
     });
 
-    console.log('📥 Send message response:', response.status);
+    console.log('📥 Send message response status:', response.status);
     
-    const data = await handleResponse<ChatMessage>(response);
-    console.log('✅ Message sent successfully:', data);
+    // Check if response is not ok before trying to parse
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Send message error response:', errorText);
+      
+      // Try to parse as JSON for better error handling
+      try {
+        const errorData = JSON.parse(errorText);
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      } catch (parseError) {
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+    }
     
-    return data;
+    // Handle the backend response format
+    const responseData = await response.json();
+    console.log('📥 Raw response:', responseData);
+    
+    // Extract the message data from the backend response format
+    const messageData = responseData.data || responseData;
+    console.log('✅ Message sent successfully:', messageData);
+    
+    return messageData;
   },
 
   // Get chat participants

@@ -9,6 +9,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
 
@@ -49,14 +51,25 @@ const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   // Handle send message
-  const handleSend = () => {
-    if (message.trim() && !disabled) {
-      onSendMessage(message.trim());
-      setMessage('');
-      setIsTyping(false);
+  const handleSend = async () => {
+    if (message.trim() && !disabled && !isSending) {
+      setIsSending(true);
+      setError(null);
       
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
+      try {
+        await onSendMessage(message.trim());
+        setMessage('');
+        setIsTyping(false);
+        
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+        }
+      } catch (error) {
+        console.error('Error sending message:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+        setError(errorMessage);
+      } finally {
+        setIsSending(false);
       }
     }
   };
@@ -97,12 +110,33 @@ const MessageInput: React.FC<MessageInputProps> = ({
     };
   }, []);
 
-  const canSend = message.trim().length > 0 && !disabled;
+  const canSend = message.trim().length > 0 && !disabled && !isSending;
   const remainingChars = maxLength ? maxLength - message.length : null;
 
   return (
-    <div className="relative p-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
-      <div className="flex items-end gap-3 bg-white border border-gray-300 rounded-3xl px-4 py-2 transition-colors focus-within:border-blue-500 focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]">
+    <div className="relative px-3 py-2 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+      {/* Error message display */}
+      {error && (
+        <div className="mb-2 px-2 py-1.5 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-red-500 flex-shrink-0">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+              <path d="M15 9l-6 6m0-6l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <span className="text-xs text-red-700">{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto text-red-500 hover:text-red-700"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+      
+      <div className="flex items-end gap-2 bg-white border border-gray-300 rounded-2xl px-3 py-1.5 transition-colors focus-within:border-blue-500 focus-within:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]">
         <div className="flex-1 relative flex flex-col">
           <textarea
             ref={textareaRef}
@@ -112,13 +146,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
             onPaste={handlePaste}
             placeholder={placeholder}
             disabled={disabled}
-            className="w-full border-none outline-none bg-transparent text-sm leading-relaxed resize-none min-h-[20px] max-h-[120px] font-inherit text-gray-900 placeholder:text-gray-400 disabled:text-gray-500 disabled:cursor-not-allowed"
+            className="w-full border-none outline-none bg-transparent text-[13px] leading-relaxed resize-none min-h-[20px] max-h-[100px] font-inherit text-gray-900 placeholder:text-gray-400 disabled:text-gray-500 disabled:cursor-not-allowed"
             rows={1}
             maxLength={maxLength}
           />
           
           {remainingChars !== null && remainingChars < 100 && (
-            <div className="absolute -bottom-6 right-0 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-200">
+            <div className="absolute -bottom-5 right-0 text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200">
               {remainingChars}
             </div>
           )}
@@ -128,13 +162,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <button
             onClick={handleSend}
             disabled={!canSend}
-            className="flex items-center justify-center w-9 h-9 bg-blue-500 text-white border-none rounded-full cursor-pointer transition-all hover:bg-blue-600 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
+            className="flex items-center justify-center w-7 h-7 bg-blue-500 text-white border-none rounded-full cursor-pointer transition-all hover:bg-blue-600 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
             type="button"
-            aria-label="Send message"
+            aria-label={isSending ? "Sending message..." : "Send message"}
           >
             <svg
-              width="20"
-              height="20"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
