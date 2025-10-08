@@ -53,9 +53,8 @@ const Navbar: React.FC<NavbarProps> = ({
       return [
         { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
         { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
+        { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
         { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
-        { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
-        { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
         { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
         { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
         { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects' },
@@ -63,7 +62,6 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
         { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing' },
         { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
-        { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
         { id: 'reports', label: 'Reports', icon: '📊', path: '/reports' },
         { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics' },
         { id: 'system-logs', label: 'System Logs', icon: '📋', path: '/logs' },
@@ -74,7 +72,6 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'security', label: 'Security', icon: '🔒', path: '/security' },
         { id: 'maintenance', label: 'Maintenance', icon: '⚙️', path: '/maintenance' },
         { id: 'test', label: 'Test Page', icon: '🧪', path: '/test' },
-        { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
       ];
     }
 
@@ -82,7 +79,7 @@ const Navbar: React.FC<NavbarProps> = ({
     if (type === 'employee') {
       const baseItems = [
         { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
-        { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
+        { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
       ];
 
       // Add department-specific items
@@ -92,9 +89,6 @@ const Navbar: React.FC<NavbarProps> = ({
             ...baseItems,
             { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
             { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
-            { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
-            { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
-            { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
             { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
             { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
             { id: 'chats', label: 'Chats', icon: '💬', path: '/chats' },
@@ -103,8 +97,6 @@ const Navbar: React.FC<NavbarProps> = ({
         case 'sales':
           return [
             ...baseItems,
-            { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
-            { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
             { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
             { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
             { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
@@ -126,7 +118,6 @@ const Navbar: React.FC<NavbarProps> = ({
             { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];
         
-        case 'finance':
         case 'accounts':
           return [
             ...baseItems,
@@ -282,6 +273,13 @@ const Navbar: React.FC<NavbarProps> = ({
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        );
+      case '📝':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         );
       default:
