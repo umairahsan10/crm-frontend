@@ -6,7 +6,7 @@ interface AccountantFormProps {
   errors: Record<string, string>;
 }
 
-const AccountantForm: React.FC<AccountantFormProps> = ({ data, updateData, errors }) => {
+const AccountantForm: React.FC<AccountantFormProps> = ({ data, updateData, errors: _errors }) => {
   const accountantData = data.departmentData.accountant || {};
 
   const updateAccountantData = (field: string, value: boolean) => {

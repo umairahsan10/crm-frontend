@@ -6,7 +6,7 @@ interface HRFormProps {
   errors: Record<string, string>;
 }
 
-const HRForm: React.FC<HRFormProps> = ({ data, updateData, errors }) => {
+const HRForm: React.FC<HRFormProps> = ({ data, updateData, errors: _errors }) => {
   const hrData = data.departmentData.hr || {};
 
   const updateHRData = (field: string, value: boolean) => {
