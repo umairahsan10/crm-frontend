@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Lead, LeadOutcome } from '../../types';
-import { updateLeadApi, crackLeadApi, pushLeadApi, type CrackLeadRequest, type PushLeadRequest } from '../../apis/leads';
+import { updateLeadApi, crackLeadApi, pushLeadApi, getLeadByIdApi, type CrackLeadRequest, type PushLeadRequest } from '../../apis/leads';
 import { getActiveIndustriesApi, createIndustryApi, type Industry } from '../../apis/industries';
 import { useAuth } from '../../context/AuthContext';
 import { useNavbar } from '../../context/NavbarContext';
@@ -62,6 +62,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
   const [comments, setComments] = useState<LeadComment[]>([]);
   const [outcomeHistory, setOutcomeHistory] = useState<OutcomeHistoryItem[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoadingLeadData, setIsLoadingLeadData] = useState(false);
   
   // Update outcome form state
   const [updateForm, setUpdateForm] = useState({
@@ -108,9 +109,64 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
     { value: 'denied', label: 'Denied' }
   ];
 
+  // Fetch complete lead details when drawer opens
+  const fetchLeadDetails = async (leadId: string) => {
+    try {
+      setIsLoadingLeadData(true);
+      console.log('🔄 Fetching complete lead details for ID:', leadId);
+      
+      const response = await getLeadByIdApi(leadId);
+      console.log('🔍 fetchLeadDetails - Response received:', response);
+      
+      if (response.success && response.data) {
+        const leadData = response.data;
+        console.log('✅ Complete lead data fetched:', leadData);
+        console.log('🔍 Lead data type:', typeof leadData);
+        console.log('🔍 Lead data keys:', Object.keys(leadData));
+        
+        // Extract comments from lead data - try multiple paths
+        let leadComments = (leadData as any).comments || [];
+        if (!Array.isArray(leadComments) || leadComments.length === 0) {
+          console.log('⚠️ No comments found in leadData.comments, checking alternative paths...');
+          leadComments = (response as any).comments || [];
+        }
+        
+        setComments(leadComments);
+        console.log('📝 Comments extracted and set:', leadComments);
+        console.log('📝 Number of comments:', leadComments.length);
+        
+        // Extract outcome history from lead data - try multiple paths
+        let history = (leadData as any).outcomeHistory || [];
+        if (!Array.isArray(history) || history.length === 0) {
+          console.log('⚠️ No outcome history found in leadData.outcomeHistory, checking alternative paths...');
+          history = (response as any).outcomeHistory || [];
+        }
+        
+        setOutcomeHistory(history);
+        console.log('📅 Outcome history extracted and set:', history);
+        console.log('📅 Number of history items:', history.length);
+      } else {
+        console.warn('⚠️ Response success is false or no data:', response);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching lead details:', error);
+      // If fetching fails, try to use the data from the lead prop
+      const leadComments = (lead as any)?.comments || [];
+      setComments(leadComments);
+      console.log('📝 Fallback - Comments from lead prop:', leadComments);
+      
+      const history = (lead as any)?.outcomeHistory || [];
+      setOutcomeHistory(history);
+      console.log('📅 Fallback - Outcome history from lead prop:', history);
+    } finally {
+      setIsLoadingLeadData(false);
+      console.log('✅ fetchLeadDetails completed');
+    }
+  };
+
   // Populate forms when lead changes
   useEffect(() => {
-    if (lead) {
+    if (lead && isOpen) {
       console.log('🔍 LeadDetailsDrawer received lead:', lead);
       console.log('🔍 Lead Source:', lead.source);
       console.log('🔍 Lead Sales Unit:', (lead as any).salesUnit);
@@ -123,17 +179,10 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
         comment: ''
       });
       
-      // Extract comments from lead data
-      const leadComments = (lead as any).comments || [];
-      setComments(leadComments);
-      console.log('📝 Comments loaded:', leadComments);
-      
-      // Extract outcome history from lead data
-      const history = (lead as any).outcomeHistory || [];
-      setOutcomeHistory(history);
-      console.log('📅 Outcome history loaded:', history);
+      // Fetch complete lead details (including comments and timeline)
+      fetchLeadDetails(lead.id.toString());
     }
-  }, [lead]);
+  }, [lead, isOpen]);
 
 
   // Check if device is mobile
@@ -402,6 +451,9 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
           outcome: updateForm.outcome,
           comment: ''
         });
+        
+        // Refresh lead details to get updated comments and timeline
+        await fetchLeadDetails(lead.id.toString());
         
         setNotification({ type: 'success', message: 'Outcome updated successfully!' });
         setTimeout(() => setNotification(null), 3000);
@@ -768,7 +820,15 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                   </h3>
                 <div className="flow-root">
                   <ul className="-mb-8">
-                    {outcomeHistory.length === 0 ? (
+                    {isLoadingLeadData ? (
+                      <div className="text-center py-8">
+                        <svg className="animate-spin mx-auto h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="mt-2 text-sm text-gray-500">Loading timeline...</p>
+                      </div>
+                    ) : outcomeHistory.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -849,7 +909,15 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
 
                 {/* Comments List */}
                 <div className="space-y-4">
-                    {comments.length === 0 ? (
+                    {isLoadingLeadData ? (
+                      <div className="text-center py-8">
+                        <svg className="animate-spin mx-auto h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="mt-2 text-sm text-gray-500">Loading comments...</p>
+                      </div>
+                    ) : comments.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />

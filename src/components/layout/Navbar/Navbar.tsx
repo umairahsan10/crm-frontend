@@ -55,8 +55,6 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
         { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
         { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
-        { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
-        { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
         { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
         { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
         { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects' },
@@ -64,7 +62,6 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
         { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing' },
         { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
-        { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
         { id: 'reports', label: 'Reports', icon: '📊', path: '/reports' },
         { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics' },
         { id: 'system-logs', label: 'System Logs', icon: '📋', path: '/logs' },
@@ -75,7 +72,6 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'security', label: 'Security', icon: '🔒', path: '/security' },
         { id: 'maintenance', label: 'Maintenance', icon: '⚙️', path: '/maintenance' },
         { id: 'test', label: 'Test Page', icon: '🧪', path: '/test' },
-        { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
       ];
     }
 
@@ -84,7 +80,6 @@ const Navbar: React.FC<NavbarProps> = ({
       const baseItems = [
         { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
         { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
-        { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
       ];
 
       // Add department-specific items
@@ -94,9 +89,6 @@ const Navbar: React.FC<NavbarProps> = ({
             ...baseItems,
             { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
             { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
-            { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
-            { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
-            { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
             { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
             { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
             { id: 'chats', label: 'Chats', icon: '💬', path: '/chats' },
@@ -105,8 +97,6 @@ const Navbar: React.FC<NavbarProps> = ({
         case 'sales':
           return [
             ...baseItems,
-            { id: 'deals', label: 'Deals', icon: '💼', path: '/deals' },
-            { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
             { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
             { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
             { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
@@ -128,7 +118,6 @@ const Navbar: React.FC<NavbarProps> = ({
             { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];
         
-        case 'finance':
         case 'accounts':
           return [
             ...baseItems,

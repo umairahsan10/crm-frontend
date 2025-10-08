@@ -212,6 +212,8 @@ export const getLeadByIdApi = async (leadId: string): Promise<ApiResponse<Lead>>
       throw new Error('No authentication token found');
     }
 
+    console.log('📡 Fetching lead by ID:', leadId);
+
     const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
       method: 'GET',
       headers: {
@@ -220,14 +222,51 @@ export const getLeadByIdApi = async (leadId: string): Promise<ApiResponse<Lead>>
       },
     });
 
+    console.log('📥 getLeadByIdApi response status:', response.status);
+
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('❌ getLeadByIdApi error:', errorData);
       throw new Error(errorData.message || 'Failed to fetch lead');
     }
 
-    const data: ApiResponse<Lead> = await response.json();
-    return data;
+    const data = await response.json();
+    console.log('✅ getLeadByIdApi raw response:', data);
+    console.log('📝 Comments in response:', data.comments || 'NOT FOUND');
+    console.log('📅 Outcome history in response:', data.outcomeHistory || 'NOT FOUND');
+    
+    // Handle different response formats
+    let formattedResponse: ApiResponse<Lead>;
+    
+    // If the response is already in the expected format with success property
+    if (typeof data === 'object' && 'success' in data && data.data) {
+      formattedResponse = {
+        success: true,
+        data: data.data,
+        message: data.message || 'Lead fetched successfully'
+      };
+    } 
+    // If the response is the lead object directly (most common)
+    else if (data && typeof data === 'object' && 'id' in data) {
+      formattedResponse = {
+        success: true,
+        data: data as Lead,
+        message: 'Lead fetched successfully'
+      };
+    }
+    // Fallback
+    else {
+      formattedResponse = {
+        success: true,
+        data: data as any,
+        message: 'Lead fetched successfully'
+      };
+    }
+    
+    console.log('📦 Formatted response:', formattedResponse);
+    return formattedResponse;
   } catch (error) {
+    console.error('💥 getLeadByIdApi error:', error);
     if (error instanceof Error) {
       throw new Error(error.message);
     }
