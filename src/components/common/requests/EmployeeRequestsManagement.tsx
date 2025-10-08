@@ -5,8 +5,12 @@ import BulkActions from '../BulkActions/BulkActions';
 import EmployeeRequestsTable from '../../employee-requests/EmployeeRequestsTable';
 import EmployeeRequestsFilters from '../../employee-requests/EmployeeRequestsFilters';
 import EmployeeRequestDetailsDrawer from '../../employee-requests/EmployeeRequestDetailsDrawer';
+import CreateRequestModal from './CreateRequestModal';
+import Notification from '../Notification/Notification';
+import { useNotification } from '../../../hooks/useNotification';
 import { 
   getEmployeeRequestsApi, 
+  getMyEmployeeRequestsApi,
   takeEmployeeRequestActionApi,
   exportEmployeeRequestsApi,
   type EmployeeRequest, 
@@ -37,6 +41,10 @@ interface EmployeeRequestTableRow {
 
 const EmployeeRequestsManagement: React.FC = () => {
   const { user } = useAuth();
+  const notification = useNotification();
+  
+  // Check if user is HR or Admin
+  const isHROrAdmin = user?.role === 'admin' || user?.department === 'HR';
   
   // State management
   const [employeeRequests, setEmployeeRequests] = useState<EmployeeRequestTableRow[]>([]);
@@ -44,6 +52,7 @@ const EmployeeRequestsManagement: React.FC = () => {
   const [selectedRequests] = useState<string[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<EmployeeRequest | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [hrEmployees, setHrEmployees] = useState<Employee[]>([]);
   const [hrEmployeesLoading, setHrEmployeesLoading] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
@@ -76,25 +85,31 @@ const EmployeeRequestsManagement: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 20;
 
-  // Check permissions
-  if (!user || (user.role !== 'admin' && user.department !== 'HR')) {
+  // No access check needed - all logged-in users can access this page
+  if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
           <svg className="mx-auto h-12 w-12 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Not Logged In</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You don't have permission to access employee requests. Please contact your administrator.
+            Please log in to access employee requests.
           </p>
         </div>
       </div>
     );
   }
 
-  // Fetch HR employees for assignment dropdown
+  // Fetch HR employees for assignment dropdown (only for HR/Admin)
   const fetchHrEmployees = async () => {
+    // Skip fetching HR employees if user is not HR or Admin
+    if (!isHROrAdmin) {
+      console.log('Skipping HR employees fetch - user is not HR/Admin');
+      return;
+    }
+    
     try {
       setHrEmployeesLoading(true);
       const response = await getEmployeesApi({ 
@@ -172,7 +187,16 @@ const EmployeeRequestsManagement: React.FC = () => {
     try {
       setLoading(true);
       
-      const response = await getEmployeeRequestsApi();
+      console.log('User ID:', user.id);
+      console.log('Is HR or Admin:', isHROrAdmin);
+      
+      // For regular employees, use the my-requests endpoint
+      // For HR/Admin, use the main endpoint to get all requests
+      const response = isHROrAdmin 
+        ? await getEmployeeRequestsApi({})
+        : await getMyEmployeeRequestsApi(Number(user.id));
+      
+      console.log('Fetched requests response:', response);
       
       // Apply all filters on the frontend
       let filteredRequests = response;
@@ -233,6 +257,9 @@ const EmployeeRequestsManagement: React.FC = () => {
         updated_at: request.updatedAt || new Date().toISOString()
       }));
 
+      console.log('Mapped requests count:', mappedRequests.length);
+      console.log('Mapped requests:', mappedRequests);
+
       setEmployeeRequests(mappedRequests);
       
       // Calculate pagination
@@ -268,7 +295,18 @@ const EmployeeRequestsManagement: React.FC = () => {
   // Handle bulk actions
   const handleBulkAction = async (action: string) => {
     if (selectedRequests.length === 0) {
-      alert('Please select requests to perform action');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'warning',
+          message: 'Please select requests to perform action',
+          title: 'No Selection',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-yellow-500 text-yellow-700 shadow-lg notification-red-close'
+        });
+      }, 100);
       return;
     }
 
@@ -285,14 +323,52 @@ const EmployeeRequestsManagement: React.FC = () => {
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
 
-          alert('Employee requests exported successfully');
+          notification.hide();
+          setTimeout(() => {
+            notification.show({
+              type: 'success',
+              message: 'Employee requests exported successfully!',
+              title: 'Export Complete',
+              autoDismiss: true,
+              dismissTimeout: 2000,
+              position: 'top-right',
+              className: 'bg-white notification-red-close',
+              style: {
+                backgroundColor: '#ffffff',
+                border: '2px solid #000000',
+                color: '#000000'
+              }
+            });
+          }, 100);
           break;
         default:
-          alert(`Bulk action "${action}" not implemented yet`);
+          notification.hide();
+          setTimeout(() => {
+            notification.show({
+              type: 'info',
+              message: `Bulk action "${action}" not implemented yet`,
+              title: 'Info',
+              autoDismiss: true,
+              dismissTimeout: 2000,
+              position: 'top-right',
+              className: 'bg-white border-2 border-blue-500 text-blue-700 shadow-lg notification-red-close'
+            });
+          }, 100);
       }
     } catch (error) {
       console.error('Error performing bulk action:', error);
-      alert('Failed to perform bulk action');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'error',
+          message: 'Failed to perform bulk action',
+          title: 'Error',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-red-500 text-red-700 shadow-lg notification-red-close'
+        });
+      }, 100);
     }
   };
 
@@ -354,13 +430,37 @@ const EmployeeRequestsManagement: React.FC = () => {
       };
       const userId = Number(user.id) || 0;
       await takeEmployeeRequestActionApi(requestId, userId, actionData);
-      alert('Request resolved successfully');
+      notification.show({
+        type: 'success',
+        message: 'Request resolved successfully!',
+        title: 'Success',
+        autoDismiss: true,
+        dismissTimeout: 2000,
+        position: 'top-right',
+        className: 'bg-white notification-red-close',
+        style: {
+          backgroundColor: '#ffffff',
+          border: '2px solid #000000',
+          color: '#000000'
+        }
+      });
       fetchFilteredRequests();
       setDrawerOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error resolving request:', error);
-      alert('Failed to resolve request');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'error',
+          message: 'Failed to resolve request',
+          title: 'Error',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-red-500 text-red-700 shadow-lg notification-red-close'
+        });
+      }, 100);
     }
   };
 
@@ -373,13 +473,35 @@ const EmployeeRequestsManagement: React.FC = () => {
       };
       const userId = Number(user.id) || 0;
       await takeEmployeeRequestActionApi(requestId, userId, actionData);
-      alert('Request rejected successfully');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'success',
+          message: 'Request rejected successfully',
+          title: 'Rejected',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-orange-500 text-orange-700 shadow-lg notification-red-close'
+        });
+      }, 100);
       fetchFilteredRequests();
       setDrawerOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error rejecting request:', error);
-      alert('Failed to reject request');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'error',
+          message: 'Failed to reject request',
+          title: 'Error',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-red-500 text-red-700 shadow-lg notification-red-close'
+        });
+      }, 100);
     }
   };
 
@@ -394,13 +516,35 @@ const EmployeeRequestsManagement: React.FC = () => {
       };
       const userId = Number(user.id) || 0;
       await takeEmployeeRequestActionApi(requestId, userId, actionData);
-      alert('Request updated successfully');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'success',
+          message: 'Request updated successfully!',
+          title: 'Success',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-blue-500 text-blue-700 shadow-lg notification-red-close'
+        });
+      }, 100);
       fetchFilteredRequests();
       setDrawerOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error updating request:', error);
-      alert('Failed to update request');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'error',
+          message: 'Failed to update request',
+          title: 'Error',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-red-500 text-red-700 shadow-lg notification-red-close'
+        });
+      }, 100);
     }
   };
 
@@ -415,13 +559,35 @@ const EmployeeRequestsManagement: React.FC = () => {
       };
       const userId = Number(user.id) || 0;
       await takeEmployeeRequestActionApi(requestId, userId, actionData);
-      alert('Request assigned successfully');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'success',
+          message: 'Request assigned successfully!',
+          title: 'Success',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-purple-500 text-purple-700 shadow-lg notification-red-close'
+        });
+      }, 100);
       fetchFilteredRequests();
       setDrawerOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error assigning request:', error);
-      alert('Failed to assign request');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'error',
+          message: 'Failed to assign request',
+          title: 'Error',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-red-500 text-red-700 shadow-lg notification-red-close'
+        });
+      }, 100);
     }
   };
 
@@ -434,13 +600,35 @@ const EmployeeRequestsManagement: React.FC = () => {
       };
       const userId = Number(user.id) || 0;
       await takeEmployeeRequestActionApi(requestId, userId, actionData);
-      alert('Request put on hold successfully');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'success',
+          message: 'Request put on hold successfully',
+          title: 'On Hold',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-yellow-500 text-yellow-700 shadow-lg notification-red-close'
+        });
+      }, 100);
       fetchFilteredRequests();
       setDrawerOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error putting request on hold:', error);
-      alert('Failed to put request on hold');
+      notification.hide();
+      setTimeout(() => {
+        notification.show({
+          type: 'error',
+          message: 'Failed to put request on hold',
+          title: 'Error',
+          autoDismiss: true,
+          dismissTimeout: 2000,
+          position: 'top-right',
+          className: 'bg-white border-2 border-red-500 text-red-700 shadow-lg notification-red-close'
+        });
+      }, 100);
     }
   };
 
@@ -516,12 +704,22 @@ const EmployeeRequestsManagement: React.FC = () => {
       )
     },
     {
-      title: 'Avg Resolution Time',
-      value: `${statistics.avg_resolution_time.toFixed(1)} days`,
-      color: 'purple' as const,
+      title: 'Rejected',
+      value: statistics.rejected_requests,
+      color: 'red' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+        </svg>
+      )
+    },
+    {
+      title: 'Cancelled',
+      value: statistics.on_hold_requests,
+      color: 'indigo' as const,
+      icon: (
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
         </svg>
       )
     }
@@ -551,12 +749,28 @@ const EmployeeRequestsManagement: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Employee Requests</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {isHROrAdmin ? 'Employee Requests' : 'My Requests'}
+              </h1>
               <p className="mt-2 text-sm text-gray-600">
-                View and manage employee requests and communications
+                {isHROrAdmin 
+                  ? 'View and manage employee requests and communications'
+                  : 'View your requests and submit new ones to HR'
+                }
               </p>
             </div>
             <div className="flex items-center space-x-3">
+              {!isHROrAdmin && (
+                <button
+                  onClick={() => setCreateModalOpen(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Request
+                </button>
+              )}
               <button
                 onClick={() => setShowStatistics(!showStatistics)}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -598,11 +812,14 @@ const EmployeeRequestsManagement: React.FC = () => {
             {/* Additional Statistics Sections */}
             <div className="mt-8">
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Breakdown by Category (Overall)</h3>
-                <p className="text-sm text-gray-600">Statistics from all requests in the system</p>
+                <h3 className="text-lg font-semibold text-gray-900">Breakdown by Category</h3>
+                <p className="text-sm text-gray-600">
+                  {isHROrAdmin ? 'Statistics from all requests in the system' : 'Statistics from your requests'}
+                </p>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Department Breakdown */}
+              <div className={`grid grid-cols-1 ${isHROrAdmin ? 'lg:grid-cols-2' : ''} gap-6`}>
+                {/* Department Breakdown - Only for HR/Admin */}
+                {isHROrAdmin && (
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">By Department</h3>
                   <div className="space-y-3">
@@ -623,6 +840,7 @@ const EmployeeRequestsManagement: React.FC = () => {
                     )}
                   </div>
                 </div>
+                )}
 
                 {/* Request Type Breakdown */}
                 <div className="bg-white p-6 rounded-lg shadow">
@@ -688,6 +906,7 @@ const EmployeeRequestsManagement: React.FC = () => {
           onRequestClick={handleRequestClick}
           onBulkSelect={() => {}}
           selectedRequests={selectedRequests}
+          showDepartmentColumn={isHROrAdmin}
         />
 
         {/* Request Details Drawer */}
@@ -705,6 +924,41 @@ const EmployeeRequestsManagement: React.FC = () => {
           onUpdate={handleUpdate}
           onAssign={handleAssign}
           onHold={handleHold}
+          isHROrAdmin={isHROrAdmin}
+        />
+
+        {/* Create Request Modal */}
+        <CreateRequestModal
+          isOpen={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          onSuccess={() => {
+            fetchFilteredRequests();
+            notification.hide();
+            setTimeout(() => {
+              notification.show({
+                type: 'success',
+                message: 'Request created successfully!',
+                title: 'Success',
+                autoDismiss: true,
+                dismissTimeout: 2000,
+                position: 'top-right',
+                className: 'bg-white notification-red-close',
+                style: {
+                  backgroundColor: '#ffffff',
+                  border: '2px solid #000000',
+                  color: '#000000'
+                }
+              });
+            }, 100);
+          }}
+          employeeId={Number(user.id)}
+        />
+
+        {/* Notification */}
+        <Notification
+          visible={notification.visible}
+          onClose={notification.hide}
+          {...notification.config}
         />
       </div>
     </div>

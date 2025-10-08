@@ -95,12 +95,12 @@ export const getEmployeeRequestsApi = async (query?: GetEmployeeRequestsDto): Pr
   
   if (query?.status) params.append('status', query.status);
   if (query?.priority) params.append('priority', query.priority);
-  if (query?.department_id) params.append('department_id', query.department_id.toString());
-  if (query?.employee_id) params.append('employee_id', query.employee_id.toString());
-  if (query?.assigned_to) params.append('assigned_to', query.assigned_to.toString());
-  if (query?.start_date) params.append('start_date', query.start_date);
-  if (query?.end_date) params.append('end_date', query.end_date);
-  if (query?.request_type) params.append('request_type', query.request_type);
+  if (query?.department_id) params.append('departmentId', query.department_id.toString());
+  if (query?.employee_id) params.append('empId', query.employee_id.toString()); // Changed to empId to match backend
+  if (query?.assigned_to) params.append('assignedTo', query.assigned_to.toString());
+  if (query?.start_date) params.append('startDate', query.start_date);
+  if (query?.end_date) params.append('endDate', query.end_date);
+  if (query?.request_type) params.append('requestType', query.request_type);
 
   const queryString = params.toString();
   const url = queryString ? `/communication/employee/hr-requests?${queryString}` : '/communication/employee/hr-requests';
@@ -117,6 +117,13 @@ export const getEmployeeRequestsByStatusApi = async (status: string): Promise<Em
 
 export const getEmployeeRequestsByPriorityApi = async (priority: string): Promise<EmployeeRequest[]> => {
   return apiGetJson<EmployeeRequest[]>(`/communication/employee/hr-requests/priority/${priority}`);
+};
+
+// Get current employee's own requests
+export const getMyEmployeeRequestsApi = async (employeeId: number): Promise<EmployeeRequest[]> => {
+  const url = `/communication/employee/hr-requests/my-requests?employeeId=${employeeId}`;
+  console.log('API: Fetching my requests from', url);
+  return apiGetJson<EmployeeRequest[]>(url);
 };
 
 export const getEmployeeRequestByIdApi = async (id: number): Promise<EmployeeRequest> => {
@@ -192,4 +199,53 @@ export const exportEmployeeRequestsApi = async (query: GetEmployeeRequestsDto & 
   }
 
   return response.blob();
+};
+
+// Create new employee request
+export interface CreateEmployeeRequestDto {
+  request_type: string;
+  subject: string;
+  description: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+}
+
+export const createEmployeeRequestApi = async (
+  empId: number,
+  requestData: CreateEmployeeRequestDto
+): Promise<EmployeeRequest> => {
+  console.log('API: Creating employee request', { empId, requestData });
+  
+  const requestBody = {
+    empId: empId,
+    requestType: requestData.request_type,
+    subject: requestData.subject,
+    description: requestData.description,
+    priority: requestData.priority,
+  };
+  
+  console.log('API: Request body being sent:', requestBody);
+  
+  const response = await apiRequest('/communication/employee/hr-requests', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    // Try to get error details from response
+    let errorMessage = 'Failed to create employee request';
+    try {
+      const errorData = await response.json();
+      console.error('API Error Response:', errorData);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch (e) {
+      console.error('Could not parse error response');
+    }
+    
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
 };

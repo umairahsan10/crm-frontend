@@ -178,7 +178,12 @@ const Notification: React.FC<NotificationProps> = ({
   
   // Auto-dismiss functionality
   const startAutoDismiss = useCallback(() => {
-    if (!autoDismiss || !visible) return;
+    if (!autoDismiss || !visible) {
+      console.log('Auto-dismiss skipped:', { autoDismiss, visible });
+      return;
+    }
+    
+    console.log('Starting auto-dismiss with timeout:', dismissTimeout);
     
     // Clear existing timeout
     if (timeoutRef.current) {
@@ -204,8 +209,13 @@ const Notification: React.FC<NotificationProps> = ({
     
     // Set dismiss timeout
     timeoutRef.current = setTimeout(() => {
-      hide();
-    }, dismissTimeout);
+      console.log('Auto-dismiss timeout reached, hiding notification');
+      if (onClose) {
+        onClose();
+      } else {
+        hide();
+      }
+    }, dismissTimeout) as any;
   }, [autoDismiss, visible, dismissTimeout, showProgress]);
   
   const stopAutoDismiss = useCallback(() => {
@@ -303,6 +313,13 @@ const Notification: React.FC<NotificationProps> = ({
       stopAutoDismiss();
     };
   }, [stopAutoDismiss]);
+
+  // Start auto-dismiss when notification becomes visible
+  useEffect(() => {
+    if (visible && autoDismiss) {
+      startAutoDismiss();
+    }
+  }, [visible, autoDismiss, startAutoDismiss]);
   
   // Don't render if not visible
   if (!isVisible) {
