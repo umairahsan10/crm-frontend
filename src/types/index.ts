@@ -134,6 +134,189 @@ export interface FinancialRecord {
   status: 'pending' | 'approved' | 'rejected';
 }
 
+// Expense Management Types (from API)
+export interface Expense {
+  id: number;
+  title: string;
+  category: string;
+  amount: number;
+  paidOn: string;
+  paymentMethod: string;
+  vendorId: number;
+  createdBy: number;
+  transactionId: number;
+  createdAt: string;
+  updatedAt: string;
+  transaction?: {
+    id: number;
+    amount: number;
+    transactionType: string;
+    status: string;
+  };
+  vendor?: {
+    id: number;
+    name: string;
+  };
+  employee?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+}
+
+export interface ExpensesResponse {
+  status: string;
+  message: string;
+  data: Expense[];
+  total: number;
+}
+
+export interface ExpenseResponse {
+  status: string;
+  message: string;
+  data: Expense;
+}
+
+// Revenue Management Types (from API)
+export interface Revenue {
+  id: number;
+  source: string;
+  category: string;
+  amount: number;
+  receivedFrom: number;
+  receivedOn: string;
+  paymentMethod: string;
+  relatedInvoiceId: number;
+  createdBy: number;
+  transactionId: number;
+  createdAt: string;
+  updatedAt: string;
+  transaction?: {
+    id: number;
+    amount: number;
+    transactionType: string;
+    status: string;
+  };
+  lead?: {
+    id: number;
+    companyName: string;
+  };
+  invoice?: {
+    id: number;
+    amount: number;
+    notes: string;
+  };
+  employee?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+}
+
+export interface RevenuesResponse {
+  status: string;
+  message: string;
+  data: Revenue[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface RevenueResponse {
+  status: string;
+  message: string;
+  data: Revenue;
+}
+
+// Asset Management Types (from API)
+export interface Asset {
+  id: number;
+  name: string;
+  category: string;
+  purchaseValue: number;
+  currentValue: number;
+  purchaseDate: string;
+  depreciationRate: number;
+  vendorId: number;
+  transactionId: number;
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+  transaction?: {
+    id: number;
+    amount: number;
+    vendor?: {
+      id: number;
+      name: string;
+    };
+  };
+  employee?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+}
+
+export interface AssetsResponse {
+  status: string;
+  message: string;
+  data: Asset[];
+  total: number;
+}
+
+export interface AssetResponse {
+  status: string;
+  message: string;
+  data: Asset;
+}
+
+// Liability Management Types (from API)
+export interface Liability {
+  id: number;
+  name: string;
+  category: string;
+  amount: number;
+  dueDate: string;
+  isPaid: boolean;
+  paidOn: string | null;
+  transactionId: number;
+  relatedVendorId: number;
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+  transaction?: {
+    id: number;
+    amount: number;
+    status: string;
+  };
+  vendor?: {
+    id: number;
+    name: string;
+  };
+  employee?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+}
+
+export interface LiabilitiesResponse {
+  status: string;
+  message: string;
+  data: Liability[];
+  total: number;
+}
+
+export interface LiabilityResponse {
+  status: string;
+  message: string;
+  data: Liability;
+}
+
 export interface ChargebackRequest {
   id: string;
   employeeId: string;
