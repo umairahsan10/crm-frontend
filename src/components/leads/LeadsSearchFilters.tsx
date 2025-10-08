@@ -42,6 +42,26 @@ export interface SearchFiltersConfig {
     phaseOptions?: FilterOption[];
     totalPhasesOptions?: FilterOption[];
   };
+  customLabels?: {
+    statusLabel?: string;
+    typeLabel?: string;
+    salesUnitLabel?: string;
+    assignedToLabel?: string;
+    startDateLabel?: string;
+    endDateLabel?: string;
+    industryLabel?: string;
+    minAmountLabel?: string;
+    maxAmountLabel?: string;
+    closedByLabel?: string;
+    currentPhaseLabel?: string;
+    totalPhasesLabel?: string;
+    sourceLabel?: string;
+    outcomeLabel?: string;
+    qualityRatingLabel?: string;
+    archivedFromLabel?: string;
+    archivedToLabel?: string;
+  };
+  singleRowLayout?: boolean; // Force filters into a single row
 }
 
 interface LeadsSearchFiltersProps {
@@ -384,30 +404,49 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
     currentPhase || totalPhases || selectedSource || selectedOutcome || selectedQualityRating || 
     archivedFrom || archivedTo;
 
-  // Count active filters for grid layout
-  const activeFiltersCount = [
-    config.filters.showStatus,
-    config.filters.showType,
-    config.filters.showSalesUnit,
-    config.filters.showAssignedTo,
-    config.filters.showDateRange,
-    config.filters.showIndustry,
-    config.filters.showAmountRange,
-    config.filters.showClosedBy,
-    config.filters.showCurrentPhase,
-    config.filters.showTotalPhases,
-    config.filters.showSource,
-    config.filters.showOutcome,
-    config.filters.showQualityRating,
-    config.filters.showArchivedDateRange
-  ].filter(Boolean).length;
+  // Count active filters for grid layout (date range and amount range count as 2 fields each)
+  const activeFiltersCount: number = [
+    config.filters.showStatus ? 1 : 0,
+    config.filters.showType ? 1 : 0,
+    config.filters.showSalesUnit ? 1 : 0,
+    config.filters.showAssignedTo ? 1 : 0,
+    config.filters.showDateRange ? 2 : 0, // Start Date + End Date
+    config.filters.showIndustry ? 1 : 0,
+    config.filters.showAmountRange ? 2 : 0, // Min Amount + Max Amount
+    config.filters.showClosedBy ? 1 : 0,
+    config.filters.showCurrentPhase ? 1 : 0,
+    config.filters.showTotalPhases ? 1 : 0,
+    config.filters.showSource ? 1 : 0,
+    config.filters.showOutcome ? 1 : 0,
+    config.filters.showQualityRating ? 1 : 0,
+    config.filters.showArchivedDateRange ? 2 : 0 // Archived From + Archived To
+  ].reduce((sum: number, count: number) => sum + count, 0);
 
   // Determine grid columns based on filter count
   const getGridCols = () => {
+    // Force single row layout if configured
+    if (config.singleRowLayout) {
+      // Use static Tailwind classes that work at build time
+      if (activeFiltersCount <= 1) return 'grid-cols-1';
+      if (activeFiltersCount === 2) return 'grid-cols-2';
+      if (activeFiltersCount === 3) return 'grid-cols-3';
+      if (activeFiltersCount === 4) return 'grid-cols-4';
+      if (activeFiltersCount === 5) return 'grid-cols-5';
+      if (activeFiltersCount === 6) return 'grid-cols-6';
+      if (activeFiltersCount === 7) return 'grid-cols-7';
+      if (activeFiltersCount === 8) return 'grid-cols-8';
+      if (activeFiltersCount === 9) return 'grid-cols-9';
+      if (activeFiltersCount === 10) return 'grid-cols-10';
+      if (activeFiltersCount === 11) return 'grid-cols-11';
+      return 'grid-cols-12';
+    }
+    
+    // Default responsive layout
     if (activeFiltersCount <= 3) return 'xl:grid-cols-3';
     if (activeFiltersCount <= 4) return 'xl:grid-cols-4';
     if (activeFiltersCount <= 5) return 'xl:grid-cols-5';
     if (activeFiltersCount <= 6) return 'xl:grid-cols-6';
+    if (activeFiltersCount === 8) return 'xl:grid-cols-6'; // Special case: 8 fields = 6 cols (6 in row 1, 2 in row 2)
     return 'xl:grid-cols-7';
   };
 
@@ -459,13 +498,13 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
       {/* Filters Panel */}
       {showFilters && (
         <div className="px-6 py-4 bg-gray-50">
-          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${getGridCols()} gap-4`}>
+          <div className={`grid ${config.singleRowLayout ? getGridCols() : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ' + getGridCols()} gap-4`}>
             
             {/* Status Filter */}
             {config.filters.showStatus && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
+                  {config.customLabels?.statusLabel || 'Status'}
                 </label>
                 <select
                   value={selectedStatus}
@@ -488,7 +527,7 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
             {config.filters.showType && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type
+                  {config.customLabels?.typeLabel || 'Type'}
                 </label>
                 <select
                   value={selectedType}
@@ -535,7 +574,7 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
             {config.filters.showAssignedTo && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Assigned To
+                  {config.customLabels?.assignedToLabel || 'Assigned To'}
                 </label>
                 <select
                   value={selectedAssignedTo}
@@ -575,7 +614,7 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Date
+                    {config.customLabels?.startDateLabel || 'Start Date'}
                   </label>
                   <input
                     type="date"
@@ -587,7 +626,7 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Date
+                    {config.customLabels?.endDateLabel || 'End Date'}
                   </label>
                   <input
                     type="date"
@@ -632,7 +671,7 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Min Amount
+                    {config.customLabels?.minAmountLabel || 'Min Amount'}
                   </label>
                   <input
                     type="text"
@@ -644,7 +683,7 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Max Amount
+                    {config.customLabels?.maxAmountLabel || 'Max Amount'}
                   </label>
                   <input
                     type="text"
@@ -695,22 +734,35 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
             {config.filters.showCurrentPhase && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Phase
+                  {config.customLabels?.currentPhaseLabel || 'Current Phase'}
                 </label>
-                <select
-                  value={currentPhase}
-                  onChange={(e) => {
-                    setCurrentPhase(e.target.value);
-                    if (onCurrentPhaseFilter) onCurrentPhaseFilter(e.target.value);
-                  }}
-                  className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${config.theme.ring} focus:${config.theme.primary} sm:text-sm`}
-                >
-                  {phaseOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                {config.customLabels?.currentPhaseLabel && (config.customLabels.currentPhaseLabel === 'minCurrentValue') ? (
+                  <input
+                    type="text"
+                    value={currentPhase}
+                    onChange={(e) => {
+                      setCurrentPhase(e.target.value);
+                      if (onCurrentPhaseFilter) onCurrentPhaseFilter(e.target.value);
+                    }}
+                    placeholder="0.00"
+                    className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${config.theme.ring} focus:${config.theme.primary} sm:text-sm`}
+                  />
+                ) : (
+                  <select
+                    value={currentPhase}
+                    onChange={(e) => {
+                      setCurrentPhase(e.target.value);
+                      if (onCurrentPhaseFilter) onCurrentPhaseFilter(e.target.value);
+                    }}
+                    className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${config.theme.ring} focus:${config.theme.primary} sm:text-sm`}
+                  >
+                    {phaseOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
 
@@ -718,22 +770,35 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
             {config.filters.showTotalPhases && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Total Phases
+                  {config.customLabels?.totalPhasesLabel || 'Total Phases'}
                 </label>
-                <select
-                  value={totalPhases}
-                  onChange={(e) => {
-                    setTotalPhases(e.target.value);
-                    if (onTotalPhasesFilter) onTotalPhasesFilter(e.target.value);
-                  }}
-                  className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${config.theme.ring} focus:${config.theme.primary} sm:text-sm`}
-                >
-                  {totalPhasesOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                {config.customLabels?.totalPhasesLabel && (config.customLabels.totalPhasesLabel === 'maxCurrentValue') ? (
+                  <input
+                    type="text"
+                    value={totalPhases}
+                    onChange={(e) => {
+                      setTotalPhases(e.target.value);
+                      if (onTotalPhasesFilter) onTotalPhasesFilter(e.target.value);
+                    }}
+                    placeholder="0.00"
+                    className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${config.theme.ring} focus:${config.theme.primary} sm:text-sm`}
+                  />
+                ) : (
+                  <select
+                    value={totalPhases}
+                    onChange={(e) => {
+                      setTotalPhases(e.target.value);
+                      if (onTotalPhasesFilter) onTotalPhasesFilter(e.target.value);
+                    }}
+                    className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${config.theme.ring} focus:${config.theme.primary} sm:text-sm`}
+                  >
+                    {totalPhasesOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
 
