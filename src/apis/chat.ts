@@ -2,230 +2,202 @@ import type {
   ProjectChat, 
   ChatMessage, 
   ChatParticipant, 
-  ChatUser, 
-  CreateChatData,
-  ChatApiResponse,
-  PaginatedResponse,
-  ChatFilters,
-  ChatSortOptions
+  ChatUser
 } from '../components/common/chat/types';
+import { getAuthData } from '../utils/cookieUtils';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Helper function to handle API responses
-const handleResponse = async <T>(response: Response): Promise<ChatApiResponse<T>> => {
+const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Network error' }));
     throw new Error(error.message || `HTTP error! status: ${response.status}`);
   }
   
   const data = await response.json();
-  return {
-    data: data.data || data,
-    success: true,
-    message: data.message
-  };
+  return data;
 };
 
 // Chat API functions
 export const chatApi = {
-  // Get all chats for current user
-  getChats: async (filters?: ChatFilters, sort?: ChatSortOptions): Promise<ChatApiResponse<ProjectChat[]>> => {
-    const params = new URLSearchParams();
-    
-    if (filters?.search) params.append('search', filters.search);
-    if (filters?.projectId) params.append('projectId', filters.projectId.toString());
-    if (filters?.participantId) params.append('participantId', filters.participantId.toString());
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
-    
-    if (sort?.field) params.append('sortField', sort.field);
-    if (sort?.direction) params.append('sortDirection', sort.direction);
+  // Get all chats for current user (participant-based filtering happens on backend)
+  getChats: async (): Promise<ProjectChat[]> => {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
 
-    const response = await fetch(`${API_BASE_URL}/chats?${params.toString()}`, {
+    console.log('🔵 Fetching chats from:', `${API_BASE_URL}/project-chats`);
+    console.log('🔑 Token (first 20 chars):', token?.substring(0, 20) + '...');
+
+    const response = await fetch(`${API_BASE_URL}/project-chats`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
-    return handleResponse<ProjectChat[]>(response);
+    console.log('📥 Response status:', response.status, response.statusText);
+    
+    const data = await handleResponse<ProjectChat[]>(response);
+    console.log('✅ Chats received:', data.length, 'chats');
+    
+    return data;
   },
 
   // Get specific chat by ID
-  getChat: async (chatId: number): Promise<ChatApiResponse<ProjectChat>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}`, {
+  getChat: async (chatId: number): Promise<ProjectChat> => {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/project-chats/${chatId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       }
-    });
-
-    return handleResponse<ProjectChat>(response);
-  },
-
-  // Create new chat
-  createChat: async (data: CreateChatData): Promise<ChatApiResponse<ProjectChat>> => {
-    const response = await fetch(`${API_BASE_URL}/chats`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      },
-      body: JSON.stringify(data)
     });
 
     return handleResponse<ProjectChat>(response);
   },
 
   // Get messages for a chat
-  getMessages: async (chatId: number, page = 1, limit = 50): Promise<ChatApiResponse<PaginatedResponse<ChatMessage>>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/messages?page=${page}&limit=${limit}`, {
+  getMessages: async (chatId: number, limit = 50, offset = 0): Promise<{ messages: ChatMessage[]; total: number; limit: number; offset: number }> => {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('🔵 Fetching messages for chat:', chatId);
+    console.log('🔵 URL:', `${API_BASE_URL}/chat-messages/chat/${chatId}?limit=${limit}&offset=${offset}`);
+
+    const response = await fetch(`${API_BASE_URL}/chat-messages/chat/${chatId}?limit=${limit}&offset=${offset}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
-    return handleResponse<PaginatedResponse<ChatMessage>>(response);
+    console.log('📥 Messages response status:', response.status);
+    
+    const data = await handleResponse<{ messages: ChatMessage[]; total: number; limit: number; offset: number }>(response);
+    console.log('✅ Messages received:', data.messages?.length || 0, 'messages');
+    
+    return data;
   },
 
   // Send message to chat
-  sendMessage: async (chatId: number, message: string): Promise<ChatApiResponse<ChatMessage>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/messages`, {
+  sendMessage: async (chatId: number, content: string): Promise<ChatMessage> => {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('🔵 Sending message to chat:', chatId);
+    console.log('📤 Message content:', content);
+
+    const response = await fetch(`${API_BASE_URL}/chat-messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ message })
+      body: JSON.stringify({ 
+        chatId,
+        content,
+        messageType: 'text',
+        attachmentUrl: null
+      })
     });
 
-    return handleResponse<ChatMessage>(response);
+    console.log('📥 Send message response:', response.status);
+    
+    const data = await handleResponse<ChatMessage>(response);
+    console.log('✅ Message sent successfully:', data);
+    
+    return data;
   },
 
   // Get chat participants
-  getParticipants: async (chatId: number): Promise<ChatApiResponse<ChatParticipant[]>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/participants`, {
+  getParticipants: async (chatId: number): Promise<ChatParticipant[]> => {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/chat-participants/chat/${chatId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
     return handleResponse<ChatParticipant[]>(response);
   },
 
-  // Add participant to chat
-  addParticipant: async (chatId: number, employeeId: number): Promise<ChatApiResponse<ChatParticipant>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/participants`, {
+  // Add participant to chat (Owner only)
+  addParticipant: async (chatId: number, employeeId: number): Promise<ChatParticipant> => {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/chat-participants`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ employeeId })
+      body: JSON.stringify({ 
+        chatId,
+        employeeId,
+        memberType: 'participant'
+      })
     });
 
     return handleResponse<ChatParticipant>(response);
   },
 
-  // Remove participant from chat
-  removeParticipant: async (chatId: number, participantId: number): Promise<ChatApiResponse<void>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/participants/${participantId}`, {
+  // Remove participant from chat (Owner only)
+  removeParticipant: async (participantId: number): Promise<void> => {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/chat-participants/${participantId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
     return handleResponse<void>(response);
   },
 
-  // Transfer chat to another employee
-  transferChat: async (chatId: number, toEmployeeId: number): Promise<ChatApiResponse<ProjectChat>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/transfer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      },
-      body: JSON.stringify({ toEmployeeId })
-    });
+  // Get available employees
+  getAvailableEmployees: async (): Promise<ChatUser[]> => {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
 
-    return handleResponse<ProjectChat>(response);
-  },
-
-  // Get available employees for chat
-  getAvailableEmployees: async (): Promise<ChatApiResponse<ChatUser[]>> => {
-    const response = await fetch(`${API_BASE_URL}/employees`, {
+    const response = await fetch(`${API_BASE_URL}/hr/employees`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
     return handleResponse<ChatUser[]>(response);
-  },
-
-  // Get available projects for chat
-  getAvailableProjects: async (): Promise<ChatApiResponse<Array<{ id: number; description?: string; status?: string }>>> => {
-    const response = await fetch(`${API_BASE_URL}/projects`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      }
-    });
-
-    return handleResponse<Array<{ id: number; description?: string; status?: string }>>(response);
-  },
-
-  // Mark messages as read
-  markAsRead: async (chatId: number, messageIds: number[]): Promise<ChatApiResponse<void>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/messages/read`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      },
-      body: JSON.stringify({ messageIds })
-    });
-
-    return handleResponse<void>(response);
-  },
-
-  // Get typing status
-  getTypingStatus: async (chatId: number): Promise<ChatApiResponse<Array<{ userId: number; isTyping: boolean }>>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/typing`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      }
-    });
-
-    return handleResponse<Array<{ userId: number; isTyping: boolean }>>(response);
-  },
-
-  // Send typing status
-  sendTypingStatus: async (chatId: number, isTyping: boolean): Promise<ChatApiResponse<void>> => {
-    const response = await fetch(`${API_BASE_URL}/chats/${chatId}/typing`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      },
-      body: JSON.stringify({ isTyping })
-    });
-
-    return handleResponse<void>(response);
   }
 };
 

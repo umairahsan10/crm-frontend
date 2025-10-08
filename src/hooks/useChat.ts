@@ -6,7 +6,7 @@ import type {
   ChatUser, 
   CreateChatData
 } from '../components/common/chat/types';
-import { mockChatData } from '../apis/chat';
+import { chatApi } from '../apis/chat';
 
 // Custom hook for chat functionality
 export const useChat = (currentUser: ChatUser) => {
@@ -17,35 +17,45 @@ export const useChat = (currentUser: ChatUser) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load chats on component mount
+  // Load chats on component mount - fetches all chats where user is a participant
   const loadChats = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // For now, use mock data. Replace with actual API call when backend is ready
-      setChats(mockChatData.chats);
+      const data = await chatApi.getChats();
+      setChats(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load chats');
+      console.error('Failed to load chats:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Select a chat
+  // Select a chat and load its messages and participants
   const selectChat = useCallback(async (chatId: number) => {
     setLoading(true);
     setError(null);
     
     try {
+      // Find chat from existing list
       const chat = chats.find(c => c.id === chatId);
       if (chat) {
         setCurrentChat(chat);
-        setMessages(chat.chatMessages || []);
-        setParticipants(chat.chatParticipants || []);
       }
+
+      // Load messages for this chat
+      const messagesData = await chatApi.getMessages(chatId, 50, 0);
+      setMessages(messagesData.messages);
+
+      // Load participants for this chat
+      const participantsData = await chatApi.getParticipants(chatId);
+      setParticipants(participantsData);
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to select chat');
+      console.error('Failed to select chat:', err);
     } finally {
       setLoading(false);
     }
@@ -55,94 +65,53 @@ export const useChat = (currentUser: ChatUser) => {
   const sendMessage = useCallback(async (message: string) => {
     if (!currentChat || !message.trim()) return;
     
-    setLoading(true);
     setError(null);
     
     try {
-      // Create new message object
-      const newMessage: ChatMessage = {
-        id: Date.now(), // Temporary ID
-        chatId: currentChat.id,
-        senderId: currentUser.id,
-        message: message.trim(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        sender: currentUser
-      };
+      // Send message to backend
+      const newMessage = await chatApi.sendMessage(currentChat.id, message.trim());
       
       // Add message to current messages
       setMessages(prev => [...prev, newMessage]);
       
-      // Update chat's last message
-      setCurrentChat(prev => prev ? {
-        ...prev,
-        updatedAt: new Date().toISOString(),
-        chatMessages: [...(prev.chatMessages || []), newMessage]
-      } : null);
-      
-      // Update chats list
+      // Update chat's last message in the list
       setChats(prev => prev.map(chat => 
         chat.id === currentChat.id 
-          ? { ...chat, updatedAt: new Date().toISOString() }
+          ? { 
+              ...chat, 
+              updatedAt: newMessage.createdAt,
+              chatMessages: [newMessage] // Update with latest message
+            }
           : chat
       ));
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
-    } finally {
-      setLoading(false);
+      console.error('Failed to send message:', err);
     }
-  }, [currentChat, currentUser]);
+  }, [currentChat]);
 
-  // Create a new chat
+  // Create a new chat (typically done automatically, but available for manual creation)
   const createChat = useCallback(async (data: CreateChatData) => {
     setLoading(true);
     setError(null);
     
     try {
-      // Create new chat object
-      const newChat: ProjectChat = {
-        id: Date.now(), // Temporary ID
-        projectId: data.projectId,
-        participants: data.participantIds.length + 1, // +1 for current user
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        project: data.projectId ? { id: data.projectId, description: 'Project', status: 'in_progress' } : undefined,
-        chatMessages: data.message ? [{
-          id: Date.now(),
-          chatId: Date.now(),
-          senderId: currentUser.id,
-          message: data.message,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          sender: currentUser
-        }] : [],
-        chatParticipants: [
-          {
-            id: Date.now(),
-            chatId: Date.now(),
-            employeeId: currentUser.id,
-            memberType: 'owner',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            employee: currentUser
-          }
-        ]
-      };
+      // This would require a proper create chat endpoint
+      console.log('Create chat functionality not yet implemented on backend', data);
       
-      setChats(prev => [newChat, ...prev]);
-      setCurrentChat(newChat);
-      setMessages(newChat.chatMessages || []);
-      setParticipants(newChat.chatParticipants || []);
+      // Reload chats to get the new one
+      await loadChats();
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create chat');
+      console.error('Failed to create chat:', err);
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [loadChats]);
 
-  // Add participant to current chat
+  // Add participant to current chat (Owner only)
   const addParticipant = useCallback(async (employeeId: number) => {
     if (!currentChat) return;
     
@@ -150,37 +119,26 @@ export const useChat = (currentUser: ChatUser) => {
     setError(null);
     
     try {
-      // Find employee from mock data
-      const employee = mockChatData.users.find(u => u.id === employeeId);
-      if (!employee) throw new Error('Employee not found');
+      const newParticipant = await chatApi.addParticipant(currentChat.id, employeeId);
       
-      const newParticipant: ChatParticipant = {
-        id: Date.now(),
-        chatId: currentChat.id,
-        employeeId: employeeId,
-        memberType: 'participant',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        employee: employee
-      };
-      
+      // Add to participants list
       setParticipants(prev => [...prev, newParticipant]);
       
-      // Update current chat
+      // Update current chat participant count
       setCurrentChat(prev => prev ? {
         ...prev,
-        participants: (prev.participants || 0) + 1,
-        chatParticipants: [...(prev.chatParticipants || []), newParticipant]
+        participants: (prev.participants || 0) + 1
       } : null);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add participant');
+      console.error('Failed to add participant:', err);
     } finally {
       setLoading(false);
     }
   }, [currentChat]);
 
-  // Remove participant from current chat
+  // Remove participant from current chat (Owner only)
   const removeParticipant = useCallback(async (participantId: number) => {
     if (!currentChat) return;
     
@@ -188,23 +146,26 @@ export const useChat = (currentUser: ChatUser) => {
     setError(null);
     
     try {
+      await chatApi.removeParticipant(participantId);
+      
+      // Remove from participants list
       setParticipants(prev => prev.filter(p => p.id !== participantId));
       
-      // Update current chat
+      // Update current chat participant count
       setCurrentChat(prev => prev ? {
         ...prev,
-        participants: Math.max(0, (prev.participants || 0) - 1),
-        chatParticipants: (prev.chatParticipants || []).filter(p => p.id !== participantId)
+        participants: Math.max(0, (prev.participants || 0) - 1)
       } : null);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove participant');
+      console.error('Failed to remove participant:', err);
     } finally {
       setLoading(false);
     }
   }, [currentChat]);
 
-  // Transfer chat to another employee
+  // Transfer chat to another employee (kept for future use)
   const transferChat = useCallback(async (toEmployeeId: number) => {
     if (!currentChat) return;
     
@@ -212,32 +173,12 @@ export const useChat = (currentUser: ChatUser) => {
     setError(null);
     
     try {
-      // Find employee from mock data
-      const employee = mockChatData.users.find(u => u.id === toEmployeeId);
-      if (!employee) throw new Error('Employee not found');
-      
-      // Update current chat
-      setCurrentChat(prev => prev ? {
-        ...prev,
-        transferredTo: toEmployeeId,
-        transferredToEmployee: employee,
-        updatedAt: new Date().toISOString()
-      } : null);
-      
-      // Update chats list
-      setChats(prev => prev.map(chat => 
-        chat.id === currentChat.id 
-          ? { 
-              ...chat, 
-              transferredTo: toEmployeeId,
-              transferredToEmployee: employee,
-              updatedAt: new Date().toISOString() 
-            }
-          : chat
-      ));
+      console.log('Transfer chat functionality not yet implemented', toEmployeeId);
+      // This would require a transfer endpoint
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to transfer chat');
+      console.error('Failed to transfer chat:', err);
     } finally {
       setLoading(false);
     }
@@ -260,6 +201,7 @@ export const useChat = (currentUser: ChatUser) => {
     createChat,
     addParticipant,
     removeParticipant,
-    transferChat
+    transferChat,
+    refreshChats: loadChats
   };
 };

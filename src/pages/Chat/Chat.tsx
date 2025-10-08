@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { ChatUser } from '../../components/common/chat/types';
 import { useChat } from '../../hooks/useChat';
+import { useAuth } from '../../context/AuthContext';
 import ChatList from '../../components/common/chat/ChatList';
 import ChatRoom from '../../components/common/chat/ChatRoom';
-import CreateChatModal from '../../components/common/chat/CreateChatModal';
-import { mockChatData } from '../../apis/chat';
 
 interface ChatProps {
   currentUser: ChatUser;
@@ -17,13 +16,6 @@ const Chat: React.FC<ChatProps> = ({
   className = '',
   style = {}
 }) => {
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [availableEmployees] = useState(mockChatData.users);
-  const [availableProjects] = useState([
-    { id: 1, description: 'E-commerce Platform Development', status: 'in_progress' },
-    { id: 2, description: 'Mobile App Development', status: 'completed' },
-    { id: 3, description: 'Website Redesign', status: 'in_progress' }
-  ]);
 
   const {
     chats,
@@ -34,7 +26,6 @@ const Chat: React.FC<ChatProps> = ({
     error,
     selectChat,
     sendMessage,
-    createChat,
     addParticipant,
     removeParticipant,
     transferChat
@@ -42,15 +33,6 @@ const Chat: React.FC<ChatProps> = ({
 
   const handleChatSelect = (chat: any) => {
     selectChat(chat.id);
-  };
-
-  const handleCreateChat = async (data: any) => {
-    try {
-      await createChat(data);
-      setShowCreateModal(false);
-    } catch (error) {
-      console.error('Failed to create chat:', error);
-    }
   };
 
   const handleAddParticipant = async (employeeId: number) => {
@@ -124,22 +106,43 @@ const Chat: React.FC<ChatProps> = ({
           </div>
         </div>
       )}
-
-      <CreateChatModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onCreateChat={handleCreateChat}
-        availableEmployees={availableEmployees}
-        availableProjects={availableProjects}
-      />
     </div>
   );
 };
 
 // ChatPage component that uses the main Chat component
 const ChatPage: React.FC = () => {
-  // Get the current user from mock data (in a real app, this would come from auth context)
-  const currentUser = mockChatData.users[0]; // Using first user as current user
+  const { user } = useAuth();
+
+  // Convert user from AuthContext to ChatUser format
+  const currentUser: ChatUser = user ? {
+    id: user.id,
+    firstName: user.firstName || '',
+    lastName: user.lastName || '',
+    email: user.email || '',
+    avatar: user.avatar || '/default-avatar.svg',
+    department: user.department || '',
+    role: user.role || ''
+  } : {
+    id: 0,
+    firstName: 'Guest',
+    lastName: 'User',
+    email: 'guest@company.com',
+    avatar: '/default-avatar.svg',
+    department: '',
+    role: ''
+  };
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-full w-full bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Not Authenticated</h2>
+          <p className="text-gray-500">Please log in to access the chat.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full">

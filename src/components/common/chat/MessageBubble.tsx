@@ -8,8 +8,22 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   showTimestamp = true,
   isConsecutive = false
 }) => {
-  const isOwnMessage = message.senderId === currentUser.id;
+  // Ensure proper comparison by converting both to numbers
+  const isOwnMessage = Number(message.senderId) === Number(currentUser.id);
   const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
+  
+  // Debug logging (remove after testing)
+  if (!isConsecutive) {
+    console.log('💬 Message Details:');
+    console.log('  - Sender Name:', senderName);
+    console.log('  - Sender ID:', message.senderId, '(type:', typeof message.senderId, ')');
+    console.log('  - Current User ID:', currentUser.id, '(type:', typeof currentUser.id, ')');
+    console.log('  - Current User Name:', currentUser.firstName, currentUser.lastName);
+    console.log('  - Current User Role:', currentUser.role);
+    console.log('  - Is Own Message:', isOwnMessage);
+    console.log('  - Message Position:', isOwnMessage ? 'RIGHT (Blue)' : 'LEFT (White)');
+    console.log('---');
+  }
   
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -22,50 +36,114 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   };
 
   return (
-    <div className={`flex items-end gap-2 mb-2 animate-[messageSlideIn_0.3s_ease-out] ${
+    <div className={`flex items-end gap-2 mb-3 animate-[messageSlideIn_0.3s_ease-out] ${
       isOwnMessage ? 'justify-end' : 'justify-start'
-    } ${isConsecutive ? 'mb-0.5' : ''} ${isConsecutive && isOwnMessage ? '-mt-1.5' : ''} ${isConsecutive && !isOwnMessage ? '-mt-1.5' : ''}`}>
-      {!isOwnMessage && showAvatar && !isConsecutive && (
-        <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 overflow-hidden">
-          {message.sender.avatar ? (
-            <img 
-              src={message.sender.avatar} 
-              alt={senderName}
-              className="w-full h-full object-cover rounded-full"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-gray-500 bg-gray-200 rounded-full">
-              {getInitials(message.sender.firstName, message.sender.lastName)}
+    } ${isConsecutive ? 'mb-1' : ''}`}>
+      {/* For LEFT side messages (other users) */}
+      {!isOwnMessage && (
+        <>
+          {/* Avatar on LEFT side */}
+          {showAvatar && !isConsecutive && (
+            <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500 overflow-hidden shadow-sm">
+              {message.sender.avatar ? (
+                <img 
+                  src={message.sender.avatar} 
+                  alt={senderName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white">
+                  {getInitials(message.sender.firstName, message.sender.lastName)}
+                </div>
+              )}
             </div>
           )}
-        </div>
+          
+          {/* Spacer when avatar is not shown */}
+          {(!showAvatar || isConsecutive) && (
+            <div className="w-9 flex-shrink-0"></div>
+          )}
+          
+          {/* Message container */}
+          <div className="flex flex-col gap-0.5 items-start max-w-[70%] md:max-w-[60%]">
+            {/* Sender name */}
+            {!isConsecutive && (
+              <div className="text-xs font-semibold text-gray-600 mb-0.5 px-2">
+                {senderName}
+              </div>
+            )}
+            
+            {/* Message bubble */}
+            <div className="relative px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed break-words shadow-sm bg-white text-gray-900 rounded-bl-md border border-gray-100">
+              <div className="whitespace-pre-wrap break-words">
+                {message.message}
+              </div>
+              
+              {/* Timestamp */}
+              {showTimestamp && (
+                <div className="text-[11px] mt-1 flex items-center gap-1 text-gray-500 justify-start">
+                  {formatTime(message.createdAt)}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
       
-      <div className={`flex flex-col gap-1 ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[80%]`}>
-        {!isOwnMessage && !isConsecutive && (
-          <div className="text-xs font-semibold text-gray-500 mb-0.5 px-1">
-            {senderName}
-          </div>
-        )}
-        
-        <div className={`relative px-4 py-3 rounded-2xl text-sm leading-relaxed break-words flex flex-col gap-1 ${
-          isOwnMessage 
-            ? 'bg-blue-500 text-white rounded-br-sm' 
-            : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-        }`}>
-          <div className="whitespace-pre-wrap break-words">
-            {message.message}
+      {/* For RIGHT side messages (current user) */}
+      {isOwnMessage && (
+        <>
+          {/* Message container */}
+          <div className="flex flex-col gap-0.5 items-end max-w-[70%] md:max-w-[60%]">
+            {/* Sender name */}
+            {!isConsecutive && (
+              <div className="text-xs font-semibold text-gray-600 mb-0.5 px-2">
+                {senderName}
+              </div>
+            )}
+            
+            {/* Message bubble */}
+            <div className="relative px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed break-words shadow-sm bg-blue-500 text-white rounded-br-md">
+              <div className="whitespace-pre-wrap break-words">
+                {message.message}
+              </div>
+              
+              {/* Timestamp */}
+              {showTimestamp && (
+                <div className="text-[11px] mt-1 flex items-center gap-1 text-blue-50 justify-end">
+                  {formatTime(message.createdAt)}
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="opacity-80">
+                    <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M15 4L7.5 11.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+                  </svg>
+                </div>
+              )}
+            </div>
           </div>
           
-          {showTimestamp && (
-            <div className={`text-xs mt-1 self-end ${
-              isOwnMessage ? 'text-blue-100' : 'text-gray-500'
-            }`}>
-              {formatTime(message.createdAt)}
+          {/* Avatar on RIGHT side */}
+          {showAvatar && !isConsecutive && (
+            <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500 overflow-hidden shadow-sm">
+              {message.sender.avatar ? (
+                <img 
+                  src={message.sender.avatar} 
+                  alt={senderName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white">
+                  {getInitials(message.sender.firstName, message.sender.lastName)}
+                </div>
+              )}
             </div>
           )}
-        </div>
-      </div>
+          
+          {/* Spacer when avatar is not shown */}
+          {(!showAvatar || isConsecutive) && (
+            <div className="w-9 flex-shrink-0"></div>
+          )}
+        </>
+      )}
     </div>
   );
 };

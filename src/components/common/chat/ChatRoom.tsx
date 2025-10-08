@@ -4,8 +4,6 @@ import ChatHeader from './ChatHeader';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import ParticipantList from './ParticipantList';
-import CreateChatModal from './CreateChatModal';
-import { chatApi, mockChatData } from '../../../apis/chat';
 
 const ChatRoom: React.FC<ChatRoomProps> = ({
   chat,
@@ -17,13 +15,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   loading = false
 }) => {
   const [showParticipants, setShowParticipants] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [availableEmployees, setAvailableEmployees] = useState(mockChatData.users);
-  const [availableProjects, setAvailableProjects] = useState([
-    { id: 1, description: 'E-commerce Platform Development', status: 'in_progress' },
-    { id: 2, description: 'Mobile App Development', status: 'completed' },
-    { id: 3, description: 'Website Redesign', status: 'in_progress' }
-  ]);
   const [typingUsers] = useState<number[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -33,29 +24,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Load available employees and projects
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        if (import.meta.env.DEV) {
-          setAvailableEmployees(mockChatData.users);
-          return;
-        }
-
-        const [employeesResponse, projectsResponse] = await Promise.all([
-          chatApi.getAvailableEmployees(),
-          chatApi.getAvailableProjects()
-        ]);
-
-        setAvailableEmployees(employeesResponse.data);
-        setAvailableProjects(projectsResponse.data as Array<{ id: number; description: string; status: string }>);
-      } catch (error) {
-        console.error('Failed to load data:', error);
-      }
-    };
-
-    loadData();
-  }, []);
 
   // Group consecutive messages from the same sender
   const groupedMessages = messages.reduce((groups: any[], message, index) => {
@@ -72,18 +40,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
 
     return groups;
   }, []);
-
-
-  const handleCreateChat = async (data: any) => {
-    try {
-      // This would be handled by the parent component
-      console.log('Create chat:', data);
-      setShowCreateModal(false);
-    } catch (error) {
-      console.error('Failed to create chat:', error);
-    }
-  };
-
 
   const getTypingText = () => {
     if (typingUsers.length === 0) return '';
@@ -109,14 +65,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
           </div>
           <h3 className="text-xl font-semibold text-gray-700 mb-3 m-0">Select a chat to start messaging</h3>
           <p className="text-sm m-0 mb-6 leading-relaxed">
-            Choose a conversation from the sidebar or create a new one to get started.
+            Choose a conversation from the sidebar to get started.
           </p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-500 text-white border-none px-6 py-3 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-blue-600 focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
-          >
-            Create New Chat
-          </button>
         </div>
       </div>
     );
@@ -140,7 +90,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
 
       <div className="flex-1 flex min-h-0 overflow-hidden">
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto min-h-0 p-4 scrollbar-hide flex flex-col" ref={messagesContainerRef}>
+          <div className="flex-1 overflow-y-auto min-h-0 p-4 scrollbar-hide flex flex-col bg-gradient-to-b from-gray-50 to-gray-100" ref={messagesContainerRef}>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-10 text-gray-500">
                 <div className="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
@@ -230,17 +180,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
           </div>
         )}
       </div>
-
-      {/* Create Chat Modal */}
-      {showCreateModal && (
-        <CreateChatModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onCreateChat={handleCreateChat}
-          availableEmployees={availableEmployees}
-          availableProjects={availableProjects}
-        />
-      )}
     </div>
   );
 };

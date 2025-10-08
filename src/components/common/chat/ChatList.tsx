@@ -9,7 +9,6 @@ const ChatList: React.FC<ChatListProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredChats, setFilteredChats] = useState<ProjectChat[]>(chats);
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Filter chats based on search term
   useEffect(() => {
@@ -85,15 +84,6 @@ const ChatList: React.FC<ChatListProps> = ({
     <div className="flex flex-col h-full bg-white overflow-hidden">
       <div className="flex items-center justify-between p-5 bg-gray-50">
         <h2 className="text-lg font-semibold text-gray-900 m-0">Chats</h2>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center w-9 h-9 bg-blue-500 text-white border-none rounded-lg cursor-pointer transition-all hover:bg-blue-600 hover:scale-105 focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
-          title="Create new chat"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
       </div>
 
       <div className="p-4 bg-gray-50">
@@ -131,17 +121,9 @@ const ChatList: React.FC<ChatListProps> = ({
             <p className="text-sm m-0 mb-5 leading-relaxed">
               {searchTerm 
                 ? 'Try adjusting your search terms'
-                : 'Start a conversation by creating a new chat'
+                : 'No chats available. Chats are created automatically with projects.'
               }
             </p>
-            {!searchTerm && (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-blue-500 text-white border-none px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-blue-600 focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
-              >
-                Create Chat
-              </button>
-            )}
           </div>
         ) : (
           <div className="py-2">
@@ -202,34 +184,6 @@ const ChatList: React.FC<ChatListProps> = ({
           </div>
         )}
       </div>
-
-      {/* Create Chat Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-5">
-          <div className="bg-white rounded-xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] w-full max-w-lg max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 m-0">Create New Chat</h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex items-center justify-center w-8 h-8 bg-none border-none rounded-md cursor-pointer text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-            <div className="p-5">
-              <p className="mb-4">Modal content would go here...</p>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="bg-blue-500 text-white border-none px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-blue-600 focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
