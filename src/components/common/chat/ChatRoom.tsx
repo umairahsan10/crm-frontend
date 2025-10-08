@@ -4,8 +4,6 @@ import ChatHeader from './ChatHeader';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import ParticipantList from './ParticipantList';
-import CreateChatModal from './CreateChatModal';
-import { chatApi, mockChatData } from '../../../apis/chat';
 
 const ChatRoom: React.FC<ChatRoomProps> = ({
   chat,
@@ -17,51 +15,62 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   loading = false
 }) => {
   const [showParticipants, setShowParticipants] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [availableEmployees, setAvailableEmployees] = useState(mockChatData.users);
-  const [availableProjects, setAvailableProjects] = useState([
-    { id: 1, description: 'E-commerce Platform Development', status: 'in_progress' },
-    { id: 2, description: 'Mobile App Development', status: 'completed' },
-    { id: 3, description: 'Website Redesign', status: 'in_progress' }
-  ]);
   const [typingUsers] = useState<number[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length > 0) {
+      // Use setTimeout to ensure DOM is updated before scrolling
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
   }, [messages]);
 
-  // Load available employees and projects
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        if (import.meta.env.DEV) {
-          setAvailableEmployees(mockChatData.users);
-          return;
-        }
 
-        const [employeesResponse, projectsResponse] = await Promise.all([
-          chatApi.getAvailableEmployees(),
-          chatApi.getAvailableProjects()
-        ]);
+  // Helper function to format date separator
+  const formatDateSeparator = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    if (messageDate.getTime() === today.getTime()) {
+      return 'Today';
+    } else if (messageDate.getTime() === yesterday.getTime()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    }
+  };
 
-        setAvailableEmployees(employeesResponse.data);
-        setAvailableProjects(projectsResponse.data as Array<{ id: number; description: string; status: string }>);
-      } catch (error) {
-        console.error('Failed to load data:', error);
-      }
-    };
+  // Helper function to check if two dates are on different days
+  const isDifferentDay = (date1: string, date2: string) => {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return d1.getDate() !== d2.getDate() || 
+           d1.getMonth() !== d2.getMonth() || 
+           d1.getFullYear() !== d2.getFullYear();
+  };
 
-    loadData();
-  }, []);
-
-  // Group consecutive messages from the same sender
+  // Group consecutive messages from the same sender and add date separators
   const groupedMessages = messages.reduce((groups: any[], message, index) => {
     const prevMessage = index > 0 ? messages[index - 1] : null;
+    
+    // Check if we need a date separator
+    if (prevMessage && isDifferentDay(prevMessage.createdAt, message.createdAt)) {
+      groups.push({ type: 'date-separator', date: message.createdAt });
+    } else if (index === 0) {
+      // Add date separator for the first message
+      groups.push({ type: 'date-separator', date: message.createdAt });
+    }
+    
     const isConsecutive = prevMessage && 
       prevMessage.senderId === message.senderId &&
+      !isDifferentDay(prevMessage.createdAt, message.createdAt) &&
       new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() < 5 * 60 * 1000; // 5 minutes
 
     if (isConsecutive) {
@@ -72,18 +81,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
 
     return groups;
   }, []);
-
-
-  const handleCreateChat = async (data: any) => {
-    try {
-      // This would be handled by the parent component
-      console.log('Create chat:', data);
-      setShowCreateModal(false);
-    } catch (error) {
-      console.error('Failed to create chat:', error);
-    }
-  };
-
 
   const getTypingText = () => {
     if (typingUsers.length === 0) return '';
@@ -109,14 +106,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
           </div>
           <h3 className="text-xl font-semibold text-gray-700 mb-3 m-0">Select a chat to start messaging</h3>
           <p className="text-sm m-0 mb-6 leading-relaxed">
-            Choose a conversation from the sidebar or create a new one to get started.
+            Choose a conversation from the sidebar to get started.
           </p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-500 text-white border-none px-6 py-3 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-blue-600 focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
-          >
-            Create New Chat
-          </button>
         </div>
       </div>
     );
@@ -127,20 +118,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
       <ChatHeader
         chat={chat}
         participants={participants}
-        onAddParticipant={() => setShowParticipants(true)}
-        onTransferChat={() => {
-          // This would open a transfer modal
-          console.log('Transfer chat');
-        }}
-        onCloseChat={() => {
-          // This would be handled by the parent component
-          console.log('Close chat');
-        }}
       />
 
       <div className="flex-1 flex min-h-0 overflow-hidden">
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto min-h-0 p-4 scrollbar-hide flex flex-col" ref={messagesContainerRef}>
+          <div className="flex-1 overflow-y-auto min-h-0 p-3 scrollbar-hide flex flex-col bg-gradient-to-b from-gray-50 to-gray-100" ref={messagesContainerRef}>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-10 text-gray-500">
                 <div className="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
@@ -160,31 +142,46 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
               </div>
             ) : (
               <>
-                <div className="flex flex-col space-y-4">
-                  {groupedMessages.map((messageGroup, groupIndex) => (
-                    <div key={groupIndex} className="flex flex-col space-y-2">
-                      {messageGroup.map((message: any, messageIndex: number) => (
-                        <MessageBubble
-                          key={message.id}
-                          message={message}
-                          currentUser={currentUser}
-                          showAvatar={messageIndex === 0}
-                          showTimestamp={messageIndex === messageGroup.length - 1}
-                          isConsecutive={messageIndex > 0}
-                        />
-                      ))}
-                    </div>
-                  ))}
+                <div className="flex flex-col space-y-2">
+                  {groupedMessages.map((item, groupIndex) => {
+                    // Check if this is a date separator
+                    if (item.type === 'date-separator') {
+                      return (
+                        <div key={`separator-${groupIndex}`} className="flex items-center justify-center py-2">
+                          <div className="bg-gray-200 text-gray-600 text-[11px] font-medium px-3 py-1 rounded-full shadow-sm">
+                            {formatDateSeparator(item.date)}
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    // Otherwise, it's a message group
+                    const messageGroup = item;
+                    return (
+                      <div key={groupIndex} className="flex flex-col space-y-1">
+                        {messageGroup.map((message: any, messageIndex: number) => (
+                          <MessageBubble
+                            key={message.id}
+                            message={message}
+                            currentUser={currentUser}
+                            showAvatar={messageIndex === 0}
+                            showTimestamp={messageIndex === messageGroup.length - 1}
+                            isConsecutive={messageIndex > 0}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
                 
                 {typingUsers.length > 0 && (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg mb-4">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg mb-2">
                     <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-xs text-gray-500">
                       {getTypingText()}
                     </span>
                   </div>
@@ -223,24 +220,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
               <ParticipantList
                 participants={participants}
                 currentUser={currentUser}
-                onRemoveParticipant={onRemoveParticipant}
-                canManage={true}
+                onRemoveParticipant={onRemoveParticipant || (() => {})}
+                canManage={!!onRemoveParticipant}
               />
             </div>
           </div>
         )}
       </div>
-
-      {/* Create Chat Modal */}
-      {showCreateModal && (
-        <CreateChatModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onCreateChat={handleCreateChat}
-          availableEmployees={availableEmployees}
-          availableProjects={availableProjects}
-        />
-      )}
     </div>
   );
 };
