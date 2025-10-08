@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext'; // Commented out - not currently used
 import LeadsSearchFilters from '../../components/leads/LeadsSearchFilters';
 import LiabilitiesTable from '../../components/liabilities/LiabilitiesTable';
 import LiabilitiesStatistics from '../../components/liabilities/LiabilitiesStatistics';
@@ -24,7 +24,7 @@ interface LiabilitiesFilters {
 }
 
 const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // Commented out - not currently used
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);

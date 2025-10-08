@@ -12,12 +12,6 @@ const categoryBadgeConfig = {
   'Other': { className: 'bg-gray-100 text-gray-800', text: 'OTHER' }
 };
 
-const statusBadgeConfig = {
-  paid: { className: 'bg-green-100 text-green-800', text: 'PAID' },
-  unpaid: { className: 'bg-red-100 text-red-800', text: 'UNPAID' },
-  overdue: { className: 'bg-orange-100 text-orange-800', text: 'OVERDUE' }
-};
-
 // Liabilities Table Configuration (matching API structure)
 export const liabilitiesTableConfig: ColumnConfig[] = [
   {

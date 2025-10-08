@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Asset } from '../../types';
-import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext'; // Commented out - not currently used
 import { useNavbar } from '../../context/NavbarContext';
 
 interface AssetDetailsDrawerProps {
@@ -53,7 +53,7 @@ const AssetDetailsDrawer: React.FC<AssetDetailsDrawerProps> = ({
   onAssetUpdated,
   viewMode = 'full'
 }) => {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // Commented out - not currently used
   const { isNavbarOpen } = useNavbar();
   const [activeTab, setActiveTab] = useState<'details' | 'timeline' | 'comments' | 'update'>('details');
   const [isMobile, setIsMobile] = useState(false);

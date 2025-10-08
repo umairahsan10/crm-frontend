@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Liability } from '../../types';
-import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext'; // Commented out - not currently used
 import { useNavbar } from '../../context/NavbarContext';
 
 interface LiabilityDetailsDrawerProps {
@@ -53,7 +53,7 @@ const LiabilityDetailsDrawer: React.FC<LiabilityDetailsDrawerProps> = ({
   onLiabilityUpdated,
   viewMode = 'full'
 }) => {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // Commented out - not currently used
   const { isNavbarOpen } = useNavbar();
   const [activeTab, setActiveTab] = useState<'details' | 'timeline' | 'comments' | 'update'>('details');
   const [isMobile, setIsMobile] = useState(false);
