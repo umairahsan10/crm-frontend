@@ -6,7 +6,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   currentUser,
   showAvatar = true,
   showTimestamp = true,
-  isConsecutive = false
+  isConsecutive = false,
+  showSenderName = true
 }) => {
   // Ensure proper comparison by converting both to numbers
   const isOwnMessage = Number(message.senderId) === Number(currentUser.id);
@@ -62,7 +63,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {/* Message container */}
           <div className="flex flex-col gap-0.5 items-start max-w-[70%] md:max-w-[60%]">
             {/* Sender name */}
-            {!isConsecutive && (
+            {showSenderName && (
               <div className="text-[10px] font-semibold text-gray-600 mb-0.5 px-2">
                 {senderName}
               </div>
@@ -91,7 +92,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {/* Message container */}
           <div className="flex flex-col gap-0.5 items-end max-w-[70%] md:max-w-[60%]">
             {/* Sender name */}
-            {!isConsecutive && (
+            {showSenderName && (
               <div className="text-[10px] font-semibold text-gray-600 mb-0.5 px-2">
                 {senderName}
               </div>

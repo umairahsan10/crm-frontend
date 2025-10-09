@@ -24,9 +24,14 @@ const Chat: React.FC<ChatProps> = ({
     participants,
     loading,
     error,
+    typingUsers,
+    availableEmployees,
+    loadingEmployees,
     selectChat,
     sendMessage,
-    removeParticipant
+    addParticipant,
+    removeParticipant,
+    sendTypingIndicator
   } = useChat(currentUser);
 
   const handleChatSelect = (chat: any) => {
@@ -62,6 +67,11 @@ const Chat: React.FC<ChatProps> = ({
               participants={participants}
               onSendMessage={sendMessage}
               onRemoveParticipant={handleRemoveParticipant}
+              onAddParticipant={addParticipant}
+              onTypingChange={sendTypingIndicator}
+              availableEmployees={availableEmployees}
+              loadingEmployees={loadingEmployees}
+              typingUsers={typingUsers}
               loading={loading}
             />
           )}

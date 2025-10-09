@@ -74,12 +74,6 @@ const ChatList: React.FC<ChatListProps> = ({
     return `Chat ${chat.id}`;
   };
 
-  const getParticipantCount = (chat: ProjectChat) => {
-    return chat.chatParticipants?.length || 0;
-  };
-
-
-
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
@@ -160,16 +154,13 @@ const ChatList: React.FC<ChatListProps> = ({
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-1 mb-0.5 text-[10px] text-gray-500">
-                    <span className="font-medium">
-                      {getParticipantCount(chat)} participant{getParticipantCount(chat) !== 1 ? 's' : ''}
-                    </span>
-                    {chat.project && (
+                  {chat.project && (
+                    <div className="flex items-center gap-1 mb-0.5 text-[10px] text-gray-500">
                       <span className="text-gray-400 capitalize">
-                        • {chat.project.status || 'Unknown'}
+                        {chat.project.status || 'Unknown'}
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   
                   <p className="text-[11px] text-gray-500 m-0 whitespace-nowrap overflow-hidden text-ellipsis leading-relaxed">
                     {getLastMessage(chat)}
