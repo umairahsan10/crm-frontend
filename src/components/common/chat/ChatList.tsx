@@ -75,7 +75,8 @@ const ChatList: React.FC<ChatListProps> = ({
   };
 
   const getParticipantCount = (chat: ProjectChat) => {
-    return chat.chatParticipants?.length || 0;
+    // Prefer the count from backend, fallback to array length
+    return chat.participants ?? chat.chatParticipants?.length ?? 0;
   };
 
 

@@ -211,15 +211,55 @@ export const chatApi = {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/hr/employees`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    try {
+      console.log('🔵 Fetching employees from /employee/all-employees...');
+      const response = await fetch(`${API_BASE_URL}/employee/all-employees`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
-    return handleResponse<ChatUser[]>(response);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      console.log('📥 Raw response from /employee/all-employees:', responseData);
+
+      // Extract employees from the response
+      const employeesData = responseData.data || [];
+      console.log('📊 Found employees:', employeesData.length);
+
+      // Transform the employee data to ChatUser format
+      const employees: ChatUser[] = employeesData.map((emp: any) => ({
+        id: emp.id,
+        firstName: emp.firstName || '',
+        lastName: emp.lastName || '',
+        email: emp.email || '',
+        avatar: '/default-avatar.svg', // Default avatar since not provided in API
+        department: emp.department?.name || '',
+        role: emp.role?.name || ''
+      }));
+
+      console.log('✅ Employees transformed successfully:', employees.length);
+      return employees;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load employees';
+      console.error('❌ Failed to load employees:', errorMessage);
+      
+      // Check if it's a permission error
+      if (errorMessage.includes('Forbidden') || errorMessage.includes('403')) {
+        throw new Error('You need Department Manager or Unit Head role to access employee data. Contact your administrator for access.');
+      } else if (errorMessage.includes('Unauthorized') || errorMessage.includes('401')) {
+        throw new Error('Authentication required. Please log in again.');
+      } else {
+        throw new Error(`Unable to load employee list: ${errorMessage}`);
+      }
+    }
   }
 };
 

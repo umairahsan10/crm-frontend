@@ -18,6 +18,24 @@ interface SocketUserEvent {
   userId: number;
 }
 
+interface SocketParticipantEvent {
+  chatId: number;
+  participant: any;
+  participantCount?: number;
+}
+
+interface SocketParticipantRemovedEvent {
+  chatId: number;
+  participantId: number;
+  participantCount?: number;
+}
+
+interface SocketUserOnlineEvent {
+  chatId: number;
+  userId: number;
+  timestamp: string;
+}
+
 class SocketService {
   private socket: Socket | null = null;
   private connected: boolean = false;
@@ -44,7 +62,12 @@ class SocketService {
       this.connected = true;
       
       // Authenticate after connection
-      this.socket?.emit('authenticate');
+      this.socket?.emit('authenticate', {}, (response: any) => {
+        console.log('🔐 Authentication response:', response);
+        if (response?.autoJoinedChats) {
+          console.log(`✅ Auto-joined ${response.autoJoinedChats.length} chats:`, response.autoJoinedChats);
+        }
+      });
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -147,6 +170,33 @@ class SocketService {
   onUserLeft(callback: (data: SocketUserEvent) => void): void {
     if (!this.socket) return;
     this.socket.on('userLeft', callback);
+  }
+
+  // Listen for participant added
+  onParticipantAdded(callback: (data: SocketParticipantEvent) => void): void {
+    if (!this.socket) return;
+    this.socket.on('participantAdded', (data) => {
+      console.log('🔵 Socket received participantAdded event:', data);
+      callback(data);
+    });
+  }
+
+  // Listen for participant removed
+  onParticipantRemoved(callback: (data: SocketParticipantRemovedEvent) => void): void {
+    if (!this.socket) return;
+    this.socket.on('participantRemoved', (data) => {
+      console.log('🔵 Socket received participantRemoved event:', data);
+      callback(data);
+    });
+  }
+
+  // Listen for user online
+  onUserOnline(callback: (data: SocketUserOnlineEvent) => void): void {
+    if (!this.socket) return;
+    this.socket.on('userOnline', (data) => {
+      console.log('🟢 User came online:', data);
+      callback(data);
+    });
   }
 
   // Remove all listeners

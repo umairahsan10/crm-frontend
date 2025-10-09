@@ -19,6 +19,9 @@ export const useChat = (_currentUser: ChatUser) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<number[]>([]);
+  const [availableEmployees, setAvailableEmployees] = useState<ChatUser[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<Set<number>>(new Set());
   
   const previousChatIdRef = useRef<number | null>(null);
   const typingTimeoutRef = useRef<Record<number, number>>({});
@@ -152,16 +155,12 @@ export const useChat = (_currentUser: ChatUser) => {
     setError(null);
     
     try {
-      const newParticipant = await chatApi.addParticipant(currentChat.id, employeeId);
+      // Call REST API - backend will emit WebSocket event to update state
+      await chatApi.addParticipant(currentChat.id, employeeId);
       
-      // Add to participants list
-      setParticipants(prev => [...prev, newParticipant]);
-      
-      // Update current chat participant count
-      setCurrentChat(prev => prev ? {
-        ...prev,
-        participants: (prev.participants || 0) + 1
-      } : null);
+      // DO NOT manually update state here!
+      // The WebSocket 'participantAdded' event will handle state updates
+      // This prevents duplicate participants and double-counting
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add participant');
@@ -179,16 +178,12 @@ export const useChat = (_currentUser: ChatUser) => {
     setError(null);
     
     try {
+      // Call REST API - backend will emit WebSocket event to update state
       await chatApi.removeParticipant(participantId);
       
-      // Remove from participants list
-      setParticipants(prev => prev.filter(p => p.id !== participantId));
-      
-      // Update current chat participant count
-      setCurrentChat(prev => prev ? {
-        ...prev,
-        participants: Math.max(0, (prev.participants || 0) - 1)
-      } : null);
+      // DO NOT manually update state here!
+      // The WebSocket 'participantRemoved' event will handle state updates
+      // This prevents count mismatches and inconsistent state
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove participant');
@@ -317,6 +312,86 @@ export const useChat = (_currentUser: ChatUser) => {
       // Optionally reload participants
     };
 
+    const handleUserOnline = (data: { chatId: number; userId: number; timestamp: string }) => {
+      console.log('🟢 User came online:', data);
+      
+      // Add user to online users set
+      setOnlineUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.add(data.userId);
+        return newSet;
+      });
+      
+      // Optionally show a notification or update UI
+      // You could also add a toast notification here if needed
+    };
+
+    const handleParticipantAdded = (data: { chatId: number; participant: any; participantCount?: number }) => {
+      console.log('📨 Participant added:', data);
+      
+      if (data.chatId === currentChat?.id) {
+        // Add new participant to participants list
+        setParticipants(prev => {
+          // Check if participant already exists to avoid duplicates
+          if (prev.some(p => p.id === data.participant.id)) {
+            return prev;
+          }
+          return [...prev, data.participant];
+        });
+        
+        // Update chat participant count using the count from backend
+        setCurrentChat(prev => prev ? {
+          ...prev,
+          participants: data.participantCount ?? (prev.participants || 0) + 1
+        } : null);
+      }
+      
+      // Update chats list with new participant (for all users)
+      setChats(prev => prev.map(chat => {
+        if (chat.id === data.chatId) {
+          // Check if participant already exists to avoid duplicates
+          const existingParticipant = chat.chatParticipants?.find(p => p.id === data.participant.id);
+          if (existingParticipant) {
+            return chat; // Don't add duplicate
+          }
+          
+          return {
+            ...chat,
+            participants: data.participantCount ?? (chat.participants || 0) + 1,
+            chatParticipants: [...(chat.chatParticipants || []), data.participant]
+          };
+        }
+        return chat;
+      }));
+    };
+
+    const handleParticipantRemoved = (data: { chatId: number; participantId: number; participantCount?: number }) => {
+      console.log('📨 Participant removed:', data);
+      
+      if (data.chatId === currentChat?.id) {
+        // Remove participant from participants list
+        setParticipants(prev => prev.filter(p => p.id !== data.participantId));
+        
+        // Update chat participant count using the count from backend
+        setCurrentChat(prev => prev ? {
+          ...prev,
+          participants: data.participantCount ?? Math.max(0, (prev.participants || 0) - 1)
+        } : null);
+      }
+      
+      // Update chats list with removed participant (for all users)
+      setChats(prev => prev.map(chat => {
+        if (chat.id === data.chatId) {
+          return {
+            ...chat,
+            participants: data.participantCount ?? Math.max(0, (chat.participants || 0) - 1),
+            chatParticipants: (chat.chatParticipants || []).filter(p => p.id !== data.participantId)
+          };
+        }
+        return chat;
+      }));
+    };
+
     // Register event listeners
     socketService.onNewMessage(handleNewMessage);
     socketService.onMessageUpdated(handleMessageUpdated);
@@ -324,6 +399,9 @@ export const useChat = (_currentUser: ChatUser) => {
     socketService.onUserTyping(handleUserTyping);
     socketService.onUserJoined(handleUserJoined);
     socketService.onUserLeft(handleUserLeft);
+    socketService.onUserOnline(handleUserOnline);
+    socketService.onParticipantAdded(handleParticipantAdded);
+    socketService.onParticipantRemoved(handleParticipantRemoved);
 
     // Cleanup
     return () => {
@@ -338,6 +416,9 @@ export const useChat = (_currentUser: ChatUser) => {
       socketService.off('userTyping', handleUserTyping);
       socketService.off('userJoined', handleUserJoined);
       socketService.off('userLeft', handleUserLeft);
+      socketService.off('userOnline', handleUserOnline);
+      socketService.off('participantAdded', handleParticipantAdded);
+      socketService.off('participantRemoved', handleParticipantRemoved);
       
       // Leave current chat room
       if (currentChat?.id) {
@@ -349,10 +430,41 @@ export const useChat = (_currentUser: ChatUser) => {
     };
   }, [currentChat, _currentUser]);
 
+  // Load available employees
+  const loadAvailableEmployees = useCallback(async () => {
+    setLoadingEmployees(true);
+    setError(null);
+    
+    try {
+      const employees = await chatApi.getAvailableEmployees();
+      setAvailableEmployees(employees);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load employees';
+      console.error('Failed to load employees:', err);
+      
+      // Don't set this as a global error if it's a permission issue
+      // Just log it and leave availableEmployees empty
+      if (errorMessage.includes('Department Manager') || 
+          errorMessage.includes('Unit Head') || 
+          errorMessage.includes('permission') || 
+          errorMessage.includes('role') ||
+          errorMessage.includes('403') ||
+          errorMessage.includes('Forbidden')) {
+        console.warn('Permission denied for employee list:', errorMessage);
+        setAvailableEmployees([]);
+      } else {
+        setError(errorMessage);
+      }
+    } finally {
+      setLoadingEmployees(false);
+    }
+  }, []);
+
   // Load chats on mount
   useEffect(() => {
     loadChats();
-  }, [loadChats]);
+    loadAvailableEmployees();
+  }, [loadChats, loadAvailableEmployees]);
 
   return {
     chats,
@@ -362,6 +474,9 @@ export const useChat = (_currentUser: ChatUser) => {
     loading,
     error,
     typingUsers,
+    availableEmployees,
+    loadingEmployees,
+    onlineUsers,
     selectChat,
     sendMessage,
     createChat,
@@ -369,6 +484,7 @@ export const useChat = (_currentUser: ChatUser) => {
     removeParticipant,
     transferChat,
     sendTypingIndicator,
-    refreshChats: loadChats
+    refreshChats: loadChats,
+    refreshEmployees: loadAvailableEmployees
   };
 };

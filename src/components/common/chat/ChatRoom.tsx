@@ -4,6 +4,8 @@ import ChatHeader from './ChatHeader';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import ParticipantList from './ParticipantList';
+import AddParticipantModal from './AddParticipantModal';
+import RemoveParticipantModal from './RemoveParticipantModal';
 
 const ChatRoom: React.FC<ChatRoomProps> = ({
   chat,
@@ -13,10 +15,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   onSendMessage,
   onRemoveParticipant,
   onTypingChange,
+  onAddParticipant,
+  availableEmployees = [],
+  loadingEmployees = false,
   typingUsers = [],
   loading = false
 }) => {
   const [showParticipants, setShowParticipants] = useState(false);
+  const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
+  const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
+  const [participantToRemove, setParticipantToRemove] = useState<{ id: number; name: string } | null>(null);
+  const [isRemovingParticipant, setIsRemovingParticipant] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -96,6 +105,46 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
     return `${typingUserNames} ${typingUsers.length === 1 ? 'is' : 'are'} typing...`;
   };
 
+  // Check if current user is an owner (can manage participants)
+  const isOwner = participants.some(p => 
+    p.employeeId === currentUser.id && p.memberType === 'owner'
+  );
+
+  // Handle adding participant
+  const handleAddParticipant = async (employeeId: number) => {
+    if (onAddParticipant) {
+      await onAddParticipant(employeeId);
+    }
+  };
+
+  // Handle removing participant
+  const handleRemoveParticipant = (participantId: number) => {
+    const participant = participants.find(p => p.id === participantId);
+    if (participant) {
+      setParticipantToRemove({
+        id: participantId,
+        name: `${participant.employee.firstName} ${participant.employee.lastName}`
+      });
+      setShowRemoveParticipantModal(true);
+    }
+  };
+
+  // Confirm participant removal
+  const confirmRemoveParticipant = async () => {
+    if (!participantToRemove || !onRemoveParticipant) return;
+
+    setIsRemovingParticipant(true);
+    try {
+      await onRemoveParticipant(participantToRemove.id);
+      setShowRemoveParticipantModal(false);
+      setParticipantToRemove(null);
+    } catch (error) {
+      console.error('Failed to remove participant:', error);
+    } finally {
+      setIsRemovingParticipant(false);
+    }
+  };
+
   if (!chat) {
     return (
       <div className="flex items-center justify-center bg-gray-50 h-full">
@@ -119,6 +168,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
       <ChatHeader
         chat={chat}
         participants={participants}
+        onAddParticipant={() => setShowAddParticipantModal(true)}
+        onRemoveParticipant={handleRemoveParticipant}
+        canManageParticipants={isOwner}
       />
 
       <div className="flex-1 flex min-h-0 overflow-hidden">
@@ -156,22 +208,23 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
                       );
                     }
                     
-                    // Otherwise, it's a message group
-                    const messageGroup = item;
-                    return (
-                      <div key={groupIndex} className="flex flex-col space-y-1">
-                        {messageGroup.map((message: any, messageIndex: number) => (
-                          <MessageBubble
-                            key={message.id}
-                            message={message}
-                            currentUser={currentUser}
-                            showAvatar={messageIndex === 0}
-                            showTimestamp={messageIndex === messageGroup.length - 1}
-                            isConsecutive={messageIndex > 0}
-                          />
-                        ))}
-                      </div>
-                    );
+                     // Otherwise, it's a message group
+                     const messageGroup = item;
+                     return (
+                       <div key={groupIndex} className="flex flex-col space-y-1">
+                         {messageGroup.map((message: any, messageIndex: number) => (
+                           <MessageBubble
+                             key={message.id}
+                             message={message}
+                             currentUser={currentUser}
+                             showAvatar={messageIndex === messageGroup.length - 1}
+                             showTimestamp={messageIndex === messageGroup.length - 1}
+                             showSenderName={messageIndex === 0}
+                             isConsecutive={messageIndex !== messageGroup.length - 1}
+                           />
+                         ))}
+                       </div>
+                     );
                   })}
                 </div>
                 
@@ -229,6 +282,28 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
           </div>
         )}
       </div>
+
+      {/* Add Participant Modal */}
+      <AddParticipantModal
+        isOpen={showAddParticipantModal}
+        onClose={() => setShowAddParticipantModal(false)}
+        onAddParticipant={handleAddParticipant}
+        currentParticipants={participants.map(p => p.employee)}
+        availableEmployees={availableEmployees}
+        loading={loadingEmployees}
+      />
+
+      {/* Remove Participant Modal */}
+      <RemoveParticipantModal
+        isOpen={showRemoveParticipantModal}
+        onClose={() => {
+          setShowRemoveParticipantModal(false);
+          setParticipantToRemove(null);
+        }}
+        onConfirm={confirmRemoveParticipant}
+        participantName={participantToRemove?.name || ''}
+        isRemoving={isRemovingParticipant}
+      />
     </div>
   );
 };

@@ -62,7 +62,10 @@ export interface ChatRoomProps {
   participants: ChatParticipant[];
   onSendMessage: (message: string) => void;
   onRemoveParticipant?: (participantId: number) => void;
+  onAddParticipant?: (employeeId: number) => Promise<void>;
   onTypingChange?: (isTyping: boolean) => void;
+  availableEmployees?: ChatUser[];
+  loadingEmployees?: boolean;
   typingUsers?: number[];
   loading?: boolean;
 }
@@ -73,6 +76,7 @@ export interface MessageBubbleProps {
   showAvatar?: boolean;
   showTimestamp?: boolean;
   isConsecutive?: boolean;
+  showSenderName?: boolean;
 }
 
 export interface MessageInputProps {
@@ -86,6 +90,9 @@ export interface MessageInputProps {
 export interface ChatHeaderProps {
   chat: ProjectChat;
   participants: ChatParticipant[];
+  onAddParticipant?: () => void;
+  onRemoveParticipant?: (participantId: number) => void;
+  canManageParticipants?: boolean;
 }
 
 export interface ParticipantListProps {
@@ -146,7 +153,7 @@ export interface PaginatedResponse<T> {
 
 // Real-time Events
 export interface ChatEvent {
-  type: 'message' | 'participant_added' | 'participant_removed' | 'chat_transferred' | 'typing';
+  type: 'message' | 'participant_added' | 'participant_removed' | 'chat_transferred' | 'typing' | 'user_online';
   chatId: number;
   data: any;
   timestamp: string;
@@ -156,6 +163,26 @@ export interface TypingEvent {
   chatId: number;
   userId: number;
   isTyping: boolean;
+}
+
+export interface UserOnlineEvent {
+  chatId: number;
+  userId: number;
+  timestamp: string;
+}
+
+export interface ParticipantAddedEvent {
+  chatId: number;
+  participant: ChatParticipant;
+  participantCount: number;
+  timestamp: string;
+}
+
+export interface ParticipantRemovedEvent {
+  chatId: number;
+  participantId: number;
+  participantCount: number;
+  timestamp: string;
 }
 
 // Filter and Search
