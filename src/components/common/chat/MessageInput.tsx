@@ -3,6 +3,7 @@ import type { MessageInputProps } from './types';
 
 const MessageInput: React.FC<MessageInputProps> = ({
   onSendMessage,
+  onTypingChange,
   disabled = false,
   placeholder = 'Type a message...',
   maxLength = 1000
@@ -26,7 +27,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const handleTyping = useCallback(() => {
     if (!isTyping) {
       setIsTyping(true);
-      // You can add typing indicator logic here
+      // Notify parent component that user started typing
+      onTypingChange?.(true);
     }
 
     if (typingTimeoutRef.current) {
@@ -35,8 +37,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
-    }, 1000);
-  }, [isTyping]);
+      // Notify parent component that user stopped typing
+      onTypingChange?.(false);
+    }, 2000);
+  }, [isTyping, onTypingChange]);
 
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -60,6 +64,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
         await onSendMessage(message.trim());
         setMessage('');
         setIsTyping(false);
+        // Notify parent that user stopped typing
+        onTypingChange?.(false);
+        
+        // Clear typing timeout
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
         
         if (textareaRef.current) {
           textareaRef.current.style.height = 'auto';

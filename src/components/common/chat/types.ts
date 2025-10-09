@@ -62,6 +62,8 @@ export interface ChatRoomProps {
   participants: ChatParticipant[];
   onSendMessage: (message: string) => void;
   onRemoveParticipant?: (participantId: number) => void;
+  onTypingChange?: (isTyping: boolean) => void;
+  typingUsers?: number[];
   loading?: boolean;
 }
 
@@ -75,6 +77,7 @@ export interface MessageBubbleProps {
 
 export interface MessageInputProps {
   onSendMessage: (message: string) => void;
+  onTypingChange?: (isTyping: boolean) => void;
   disabled?: boolean;
   placeholder?: string;
   maxLength?: number;

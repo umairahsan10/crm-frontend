@@ -12,10 +12,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   participants,
   onSendMessage,
   onRemoveParticipant,
+  onTypingChange,
+  typingUsers = [],
   loading = false
 }) => {
   const [showParticipants, setShowParticipants] = useState(false);
-  const [typingUsers] = useState<number[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -195,6 +196,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
           <div className="flex-shrink-0">
             <MessageInput
               onSendMessage={onSendMessage}
+              onTypingChange={onTypingChange}
               disabled={loading}
               placeholder="Type a message..."
               maxLength={1000}
