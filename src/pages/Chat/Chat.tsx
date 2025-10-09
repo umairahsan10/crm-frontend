@@ -27,7 +27,6 @@ const Chat: React.FC<ChatProps> = ({
     typingUsers,
     availableEmployees,
     loadingEmployees,
-    onlineUsers,
     selectChat,
     sendMessage,
     addParticipant,
