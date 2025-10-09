@@ -12,9 +12,10 @@ import {
   type BulkMarkPresentDto,
   type UpdateAttendanceLogStatusDto
 } from '../../../apis/attendance';
-import DataTable, { type Column } from '../../../components/common/DataTable/DataTable';
-import BulkActions, { type BulkAction } from '../../../components/common/BulkActions/BulkActions';
+import DynamicTable, { type ColumnConfig } from '../../../components/common/DynamicTable/DynamicTable';
 import DataStatistics from '../../../components/common/Statistics/DataStatistics';
+import LeadsSearchFilters from '../../../components/leads/LeadsSearchFilters';
+import { attendanceFilterConfig } from './attendanceFilterConfigs';
 import './AttendanceManagement.css';
 
 interface AttendanceRecord {
@@ -53,9 +54,20 @@ const AttendanceManagement: React.FC = () => {
 
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [filteredRecords, setFilteredRecords] = useState<AttendanceRecord[]>([]);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showBulkMarkModal, setShowBulkMarkModal] = useState(false);
   const [bulkMarkReason, setBulkMarkReason] = useState('');
+  const [showStatistics, setShowStatistics] = useState(false);
+  
+  // Search & Filter State
+  const [filters, setFilters] = useState({
+    search: '',
+    department: '',
+    status: '',
+    fromDate: '',
+    toDate: ''
+  });
   
   // Status Management State
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -90,6 +102,51 @@ const AttendanceManagement: React.FC = () => {
       fetchAttendanceData();
     }
   }, [employees, selectedDate]);
+
+  // Apply filters to attendance records
+  useEffect(() => {
+    let filtered = [...attendanceRecords];
+
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(record => 
+        record.employeeName.toLowerCase().includes(searchLower) ||
+        record.department.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Department filter
+    if (filters.department) {
+      filtered = filtered.filter(record => record.department === filters.department);
+    }
+
+    // Status filter
+    if (filters.status) {
+      filtered = filtered.filter(record => record.status === filters.status);
+    }
+
+    // Date range filter (fromDate)
+    if (filters.fromDate) {
+      filtered = filtered.filter(record => {
+        if (!record.checkin) return false;
+        const recordDate = new Date(record.checkin).toISOString().split('T')[0];
+        return recordDate >= filters.fromDate;
+      });
+    }
+
+    // Date range filter (toDate)
+    if (filters.toDate) {
+      filtered = filtered.filter(record => {
+        if (!record.checkin) return false;
+        const recordDate = new Date(record.checkin).toISOString().split('T')[0];
+        return recordDate <= filters.toDate;
+      });
+    }
+
+    setFilteredRecords(filtered);
+    updateStatistics(filtered);
+  }, [attendanceRecords, filters]);
 
   const fetchEmployees = async () => {
     try {
@@ -349,18 +406,46 @@ const AttendanceManagement: React.FC = () => {
     setSelectedEmployees(employeeIds);
   };
 
-  // Table columns configuration
-  const columns: Column<AttendanceRecord>[] = [
+  // Filter handlers for search bar
+  const handleSearch = (search: string) => {
+    setFilters(prev => ({ ...prev, search }));
+  };
+
+  const handleDepartmentFilter = (department: string) => {
+    setFilters(prev => ({ ...prev, department }));
+  };
+
+  const handleStatusFilter = (status: string) => {
+    setFilters(prev => ({ ...prev, status }));
+  };
+
+  const handleDateRangeFilter = (fromDate: string, toDate: string) => {
+    setFilters(prev => ({ ...prev, fromDate, toDate }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      search: '',
+      department: '',
+      status: '',
+      fromDate: '',
+      toDate: ''
+    });
+  };
+
+  // Table columns configuration (DynamicTable format)
+  const columns: ColumnConfig[] = [
     {
-      header: 'Employee',
-      accessor: 'employeeName',
+      key: 'employeeName',
+      label: 'Employee',
+      type: 'custom',
       sortable: true,
-      render: (_, row) => (
+      render: (_value, row) => (
         <div className="flex items-center">
           <div className="flex-shrink-0 h-10 w-10">
             <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
               <span className="text-sm font-medium text-gray-700">
-                {row.employeeName.split(' ').map(n => n[0]).join('')}
+                {row.employeeName.split(' ').map((n: string) => n[0]).join('')}
               </span>
             </div>
           </div>
@@ -374,8 +459,9 @@ const AttendanceManagement: React.FC = () => {
       )
     },
     {
-      header: 'Status',
-      accessor: 'status',
+      key: 'status',
+      label: 'Status',
+      type: 'custom',
       sortable: true,
       render: (value) => (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -397,8 +483,9 @@ const AttendanceManagement: React.FC = () => {
       )
     },
     {
-      header: 'Check In',
-      accessor: 'checkin',
+      key: 'checkin',
+      label: 'Check In',
+      type: 'custom',
       render: (value) => (
         <span className="text-sm text-gray-900">
           {value ? new Date(value).toLocaleTimeString() : 'N/A'}
@@ -406,8 +493,9 @@ const AttendanceManagement: React.FC = () => {
       )
     },
     {
-      header: 'Check Out',
-      accessor: 'checkout',
+      key: 'checkout',
+      label: 'Check Out',
+      type: 'custom',
       render: (value) => (
         <span className="text-sm text-gray-900">
           {value ? new Date(value).toLocaleTimeString() : 'N/A'}
@@ -415,8 +503,9 @@ const AttendanceManagement: React.FC = () => {
       )
     },
     {
-      header: 'Total Hours',
-      accessor: 'totalHours',
+      key: 'totalHours',
+      label: 'Total Hours',
+      type: 'custom',
       render: (value) => (
         <span className="text-sm text-gray-900">
           {value ? `${value}h` : 'N/A'}
@@ -424,9 +513,10 @@ const AttendanceManagement: React.FC = () => {
       )
     },
     {
-      header: 'Actions',
-      accessor: 'employeeId',
-      render: (_, row) => (
+      key: 'employeeId',
+      label: 'Actions',
+      type: 'custom',
+      render: (_value, row) => (
         <div className="flex items-center space-x-2">
           {row.status === 'not_marked' && (
             <button
@@ -554,18 +644,6 @@ const AttendanceManagement: React.FC = () => {
     }
   ];
 
-  // Bulk actions configuration
-  const bulkActions: BulkAction[] = [
-    {
-      id: 'bulk-attendance',
-      label: 'Mark Selected Attendance',
-      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
-      variant: 'primary',
-      onClick: () => setShowBulkMarkModal(true),
-      confirmMessage: `Are you sure you want to mark attendance for the selected employees?`
-    }
-  ];
-
   const handleCloseNotification = () => {
     setNotification(null);
   };
@@ -644,15 +722,15 @@ const AttendanceManagement: React.FC = () => {
               {/* HR Buttons */}
               {user && (user.role === 'admin' || user.role === 'dep_manager' || user.role === 'team_lead' || user.role === 'unit_head') && (
                 <div className="flex items-center space-x-2">
-                  {/* Employee Requests - Visible to managers and leads only */}
+                  {/* Statistics Toggle - Visible to managers and leads only */}
                   <button
-                    onClick={() => navigate('/employee-requests')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                    onClick={() => setShowStatistics(!showStatistics)}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    Employee Requests
+                    {showStatistics ? 'Hide Stats' : 'Show Stats'}
                   </button>
                   
                   {/* Logs - Visible to all users with appropriate permissions */}
@@ -671,38 +749,75 @@ const AttendanceManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Statistics Dashboard */}
-        <div className="mb-8">
-          <DataStatistics 
-            title={`Attendance Statistics for ${new Date(selectedDate).toLocaleDateString()}`}
-            cards={statisticsCards} 
-            loading={isLoading}
-          />
-        </div>
+        {/* Statistics Dashboard - Conditionally rendered */}
+        {showStatistics && (
+          <div className="mb-8">
+            <DataStatistics 
+              title={`Attendance Statistics for ${new Date(selectedDate).toLocaleDateString()}`}
+              cards={statisticsCards} 
+              loading={isLoading}
+            />
+          </div>
+        )}
 
-        {/* Bulk Actions */}
-        <div className="mb-6">
-          <BulkActions
-            selectedItems={selectedEmployees}
-            actions={bulkActions}
-            onClearSelection={() => setSelectedEmployees([])}
-          />
-        </div>
+        {/* Search Filters */}
+        <LeadsSearchFilters
+          config={attendanceFilterConfig}
+          onSearch={handleSearch}
+          onTypeFilter={handleDepartmentFilter}
+          onStatusFilter={handleStatusFilter}
+          onDateRangeFilter={handleDateRangeFilter}
+          onClearFilters={handleClearFilters}
+        />
+
+        {/* Bulk Selection Bar */}
+        {selectedEmployees.length > 0 && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <span className="text-sm font-medium text-blue-900">
+                  {selectedEmployees.length} {selectedEmployees.length === 1 ? 'employee' : 'employees'} selected
+                </span>
+                <button
+                  onClick={() => setSelectedEmployees([])}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Clear selection
+                </button>
+              </div>
+              <button
+                onClick={() => setShowBulkMarkModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Mark Selected Attendance
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Attendance Table */}
-        <DataTable
+        <DynamicTable
           columns={columns}
-          data={attendanceRecords}
-          searchable={true}
-          sortable={true}
-          paginated={true}
-          serverSidePagination={false}
-          rowsPerPage={20}
+          data={filteredRecords}
+          isLoading={isLoading}
+          currentPage={1}
+          totalPages={1}
+          totalItems={filteredRecords.length}
+          itemsPerPage={20}
+          selectedItems={selectedEmployees}
+          onPageChange={() => {}}
+          onRowClick={() => {}}
+          onBulkSelect={handleBulkSelect}
           selectable={true}
           emptyMessage="No employees found"
-          loading={isLoading}
-          onBulkSelect={handleBulkSelect}
-          selectedRows={selectedEmployees}
+          theme={{
+            primary: 'blue',
+            secondary: 'gray',
+            accent: 'blue'
+          }}
         />
 
         {/* Bulk Mark Present Modal */}

@@ -24,14 +24,15 @@ export interface DynamicTableProps {
   totalPages: number;
   totalItems: number;
   itemsPerPage: number;
-  selectedItems: string[];
+  selectedItems?: string[];
   onPageChange: (page: number) => void;
   onRowClick: (row: any) => void;
-  onBulkSelect: (selectedIds: string[]) => void;
+  onBulkSelect?: (selectedIds: string[]) => void;
   onSelectAll?: () => void;
   onDeselectAll?: () => void;
   className?: string;
   emptyMessage?: string;
+  selectable?: boolean; // New prop to enable/disable selection
   theme?: {
     primary: string;
     secondary: string;
@@ -47,17 +48,47 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
   totalPages,
   totalItems,
   itemsPerPage,
+  selectedItems = [],
   onPageChange,
   onRowClick,
+  onBulkSelect,
   className = '',
   emptyMessage = 'No data available',
+  selectable = false,
   theme = {
     primary: 'blue',
     secondary: 'gray',
     accent: 'blue'
   }
 }) => {
-  // Removed bulk selection functionality as it's no longer used
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (!onBulkSelect) return;
+    
+    if (selectedItems.length === data.length) {
+      // Deselect all
+      onBulkSelect([]);
+    } else {
+      // Select all
+      const allIds = data.map(row => row.id?.toString() || '');
+      onBulkSelect(allIds);
+    }
+  };
+
+  const handleSelectRow = (rowId: string) => {
+    if (!onBulkSelect) return;
+    
+    if (selectedItems.includes(rowId)) {
+      // Deselect
+      onBulkSelect(selectedItems.filter(id => id !== rowId));
+    } else {
+      // Select
+      onBulkSelect([...selectedItems, rowId]);
+    }
+  };
+
+  const isAllSelected = data.length > 0 && selectedItems.length === data.length;
+  const isPartiallySelected = selectedItems.length > 0 && selectedItems.length < data.length;
 
   // Helper function to get badge styling
   const getBadgeClass = (value: string, badgeConfig?: { [key: string]: { className: string; text: string } }) => {
@@ -287,6 +318,22 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
         <table className="min-w-full divide-y divide-gray-100">
           <thead className="bg-gray-50">
             <tr>
+              {/* Select All Checkbox - Only show if selectable */}
+              {selectable && (
+                <th className="px-4 py-2 w-12">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(input) => {
+                      if (input) {
+                        input.indeterminate = isPartiallySelected;
+                      }
+                    }}
+                    onChange={handleSelectAll}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                  />
+                </th>
+              )}
               {/* Data Columns */}
               {columns.map((column) => (
                 <th
@@ -301,23 +348,45 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
           </thead>
           
           <tbody className="bg-white divide-y divide-gray-100">
-            {data.map((row: any, index: number) => (
-              <tr
-                key={row.id || index}
-                className="hover:bg-gray-50/30 transition-colors duration-200 cursor-pointer group"
-                onClick={() => onRowClick(row)}
-              >
-                {/* Data Cells */}
-                {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className={`px-4 py-2 whitespace-nowrap ${column.className || ''}`}
-                  >
-                    {renderCellContent(column, row[column.key], row)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {data.map((row: any, index: number) => {
+              const rowId = row.id?.toString() || '';
+              const isSelected = selectedItems.includes(rowId);
+              
+              return (
+                <tr
+                  key={row.id || index}
+                  className={`hover:bg-gray-50/30 transition-colors duration-200 cursor-pointer group ${
+                    isSelected && selectable ? 'bg-blue-50/50' : ''
+                  }`}
+                  onClick={() => onRowClick(row)}
+                >
+                  {/* Checkbox Cell - Only show if selectable */}
+                  {selectable && (
+                    <td className="px-4 py-2 w-12">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleSelectRow(rowId);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                      />
+                    </td>
+                  )}
+                  {/* Data Cells */}
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`px-4 py-2 whitespace-nowrap ${column.className || ''}`}
+                    >
+                      {renderCellContent(column, row[column.key], row)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

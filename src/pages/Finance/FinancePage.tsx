@@ -192,36 +192,36 @@ const FinancePage: React.FC = () => {
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-semibold text-gray-700">Revenue</span>
                       <span className="text-sm font-medium text-gray-900">$2.8M / $3.0M</span>
-                    </div>
+                  </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{width: '93.3%'}}></div>
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1 text-right">93.3%</div>
                   </div>
-                  
+                    <div className="text-xs text-gray-600 mt-1 text-right">93.3%</div>
+                </div>
+                
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-semibold text-gray-700">Operating Expenses</span>
                       <span className="text-sm font-medium text-gray-900">$1.2M / $1.5M</span>
-                    </div>
+                  </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div className="bg-gradient-to-r from-blue-400 to-blue-600 h-2.5 rounded-full" style={{width: '80%'}}></div>
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1 text-right">80%</div>
                   </div>
-                  
+                    <div className="text-xs text-gray-600 mt-1 text-right">80%</div>
+                </div>
+                
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-semibold text-gray-700">Marketing Budget</span>
                       <span className="text-sm font-medium text-gray-900">$180K / $200K</span>
-                    </div>
+                  </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div className="bg-gradient-to-r from-purple-400 to-purple-600 h-2.5 rounded-full" style={{width: '90%'}}></div>
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1 text-right">90%</div>
                   </div>
+                    <div className="text-xs text-gray-600 mt-1 text-right">90%</div>
                 </div>
               </div>
+            </div>
 
               {/* Recent Transactions */}
               <div className="bg-white rounded-lg border border-gray-200">
@@ -241,9 +241,9 @@ const FinancePage: React.FC = () => {
                           Completed
                         </span>
                       </div>
-                    </div>
                   </div>
-                  
+                </div>
+                
                   <div className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -256,24 +256,24 @@ const FinancePage: React.FC = () => {
                           Completed
                         </span>
                       </div>
-                    </div>
                   </div>
-                  
+                </div>
+                
                   <div className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h4 className="text-sm font-semibold text-gray-900">Software License Renewal</h4>
                         <p className="text-xs text-gray-500 mt-1">2024-01-13 • 9:00 AM</p>
-                      </div>
+                  </div>
                       <div className="text-right ml-4">
                         <div className="text-base font-bold text-red-600">-$2,400</div>
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                           Completed
                         </span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
               </div>
             </div>
           )}
