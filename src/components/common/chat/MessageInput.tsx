@@ -147,7 +147,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         </div>
       )}
       
-      <div className="flex items-end gap-2 bg-white border border-gray-300 rounded-2xl px-3 py-1.5 transition-colors focus-within:border-blue-500 focus-within:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]">
+      <div className="flex items-end gap-3 bg-white border border-gray-300 rounded-full px-3 py-1 transition-colors focus-within:border-blue-500 focus-within:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]">
         <div className="flex-1 relative flex flex-col">
           <textarea
             ref={textareaRef}
@@ -157,7 +157,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             onPaste={handlePaste}
             placeholder={placeholder}
             disabled={disabled}
-            className="w-full border-none outline-none bg-transparent text-[13px] leading-relaxed resize-none min-h-[20px] max-h-[100px] font-inherit text-gray-900 placeholder:text-gray-400 disabled:text-gray-500 disabled:cursor-not-allowed"
+            className="w-full border-none outline-none bg-transparent text-[13px] leading-tight resize-none min-h-[18px] max-h-[100px] font-inherit text-gray-900 placeholder:text-gray-400 disabled:text-gray-500 disabled:cursor-not-allowed"
             rows={1}
             maxLength={maxLength}
           />
@@ -169,11 +169,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
           )}
         </div>
         
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0 ml-1">
           <button
             onClick={handleSend}
             disabled={!canSend}
-            className="flex items-center justify-center w-7 h-7 bg-blue-500 text-white border-none rounded-full cursor-pointer transition-all hover:bg-blue-600 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
+            className="flex items-center justify-center w-6 h-6 bg-blue-500 text-white border-none rounded-full cursor-pointer transition-all hover:bg-blue-600 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
             type="button"
             aria-label={isSending ? "Sending message..." : "Send message"}
           >
