@@ -26,6 +26,7 @@ const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
   const requestTypes = [
     'Leave Request',
     'Half-Day Request',
+    'Late Request',
     'Complaint',
     'Salary Query',
     'Other'

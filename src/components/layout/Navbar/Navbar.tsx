@@ -54,6 +54,7 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
         { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
         { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
+        { id: 'hr-requests', label: 'HR Requests', icon: '📋', path: '/admin-hr-requests' },
         { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
         { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
         { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
@@ -87,6 +88,7 @@ const Navbar: React.FC<NavbarProps> = ({
         case 'hr':
           return [
             ...baseItems,
+            { id: 'request-admin', label: 'Request Admin', icon: '📋', path: '/hr-request-admin' },
             { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
             { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
             { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },

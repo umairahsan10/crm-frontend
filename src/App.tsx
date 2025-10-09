@@ -19,6 +19,8 @@ import CampaignLogsPage from './pages/LogFiles/subpages/CampaignLogsPage';
 import SalaryLogsPage from './pages/LogFiles/subpages/SalaryLogsPage';
 import ProjectLogsPage from './pages/LogFiles/subpages/ProjectLogsPage';
 import EmployeeRequestsPage from './pages/EmployeeRequests/EmployeeRequestsPage';
+import HRRequestAdminPage from './pages/HRManagement/HRRequestAdminPage';
+import AdminHRRequestsPage from './pages/Admin/AdminHRRequestsPage';
 import DealsPage from './pages/Deals/DealsPage';
 import ReportsPage from './pages/Sales/ReportsPage';
 import LeadsManagementPage from './pages/Leads/LeadsManagementPage';
@@ -195,6 +197,14 @@ function AppLayout() {
         <Route 
           path="/employee-requests" 
           element={canAccessPage('employee-requests') ? <EmployeeRequestsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/hr-request-admin" 
+          element={canAccessPage('hr-request-admin') ? <HRRequestAdminPage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/admin-hr-requests" 
+          element={canAccessPage('admin-hr-requests') ? <AdminHRRequestsPage /> : <Navigate to="/login" replace />}
         />
         <Route 
           path="/deals" 

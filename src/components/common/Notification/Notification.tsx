@@ -176,6 +176,38 @@ const Notification: React.FC<NotificationProps> = ({
   const currentExitAnimation = exitAnimation || getDefaultExitAnimation(position);
   const displayIcon = icon || defaultIcons[type];
   
+  const stopAutoDismiss = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (progressRef.current) {
+      clearInterval(progressRef.current);
+      progressRef.current = null;
+    }
+  }, []);
+  
+  // Show/hide functions
+  const hide = useCallback(() => {
+    if (!isVisible || isExiting) return;
+    
+    setIsExiting(true);
+    stopAutoDismiss();
+    
+    // Wait for exit animation to complete
+    const timeoutId = setTimeout(() => {
+      setIsVisible(false);
+      setIsExiting(false);
+      
+      if (onHide) {
+        onHide();
+      }
+    }, animationDuration);
+    
+    // Store timeout ID for cleanup
+    return () => clearTimeout(timeoutId);
+  }, [isVisible, isExiting, stopAutoDismiss, onHide, animationDuration]);
+  
   // Auto-dismiss functionality
   const startAutoDismiss = useCallback(() => {
     if (!autoDismiss || !visible) {
@@ -216,20 +248,8 @@ const Notification: React.FC<NotificationProps> = ({
         hide();
       }
     }, dismissTimeout) as any;
-  }, [autoDismiss, visible, dismissTimeout, showProgress]);
+  }, [autoDismiss, visible, dismissTimeout, showProgress, onClose, hide]);
   
-  const stopAutoDismiss = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    if (progressRef.current) {
-      clearInterval(progressRef.current);
-      progressRef.current = null;
-    }
-  }, []);
-  
-  // Show/hide functions
   const show = useCallback(() => {
     setIsVisible(true);
     setIsExiting(false);
@@ -241,23 +261,6 @@ const Notification: React.FC<NotificationProps> = ({
     
     startAutoDismiss();
   }, [onShow, startAutoDismiss]);
-  
-  const hide = useCallback(() => {
-    if (!isVisible) return;
-    
-    setIsExiting(true);
-    stopAutoDismiss();
-    
-    // Wait for exit animation to complete
-    setTimeout(() => {
-      setIsVisible(false);
-      setIsExiting(false);
-      
-      if (onHide) {
-        onHide();
-      }
-    }, animationDuration);
-  }, [isVisible, stopAutoDismiss, onHide, animationDuration]);
   
   const handleClose = useCallback(() => {
     stopAutoDismiss();
@@ -316,10 +319,10 @@ const Notification: React.FC<NotificationProps> = ({
 
   // Start auto-dismiss when notification becomes visible
   useEffect(() => {
-    if (visible && autoDismiss) {
+    if (visible && autoDismiss && !isExiting) {
       startAutoDismiss();
     }
-  }, [visible, autoDismiss, startAutoDismiss]);
+  }, [visible, autoDismiss, isExiting, startAutoDismiss]);
   
   // Don't render if not visible
   if (!isVisible) {

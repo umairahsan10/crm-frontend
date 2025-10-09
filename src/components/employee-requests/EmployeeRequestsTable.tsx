@@ -33,6 +33,7 @@ interface EmployeeRequestsTableProps {
   onBulkSelect: (requestIds: string[]) => void;
   selectedRequests: string[];
   showDepartmentColumn?: boolean;
+  showRequestIdColumn?: boolean;
 }
 
 const EmployeeRequestsTable: React.FC<EmployeeRequestsTableProps> = ({
@@ -46,12 +47,19 @@ const EmployeeRequestsTable: React.FC<EmployeeRequestsTableProps> = ({
   onRequestClick,
   onBulkSelect,
   selectedRequests,
-  showDepartmentColumn = true
+  showDepartmentColumn = true,
+  showRequestIdColumn = true
 }) => {
-  // Filter columns based on showDepartmentColumn prop
-  const columns = showDepartmentColumn 
-    ? employeeRequestsTableConfig 
-    : employeeRequestsTableConfig.filter(col => col.key !== 'department_name');
+  // Filter columns based on props
+  let columns = employeeRequestsTableConfig;
+  
+  if (!showDepartmentColumn) {
+    columns = columns.filter(col => col.key !== 'department_name');
+  }
+  
+  if (!showRequestIdColumn) {
+    columns = columns.filter(col => col.key !== 'request_id');
+  }
 
   return (
     <DynamicTable

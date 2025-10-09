@@ -595,7 +595,7 @@ const EmployeeRequestsManagement: React.FC = () => {
     if (!user) return;
     try {
       const actionData: EmployeeRequestAction = {
-        status: 'Cancelled',
+        status: 'Pending',
         responseNotes: notes
       };
       const userId = Number(user.id) || 0;
@@ -609,7 +609,7 @@ const EmployeeRequestsManagement: React.FC = () => {
           autoDismiss: true,
           dismissTimeout: 2000,
           position: 'top-right',
-          className: 'bg-white border-2 border-yellow-500 text-yellow-700 shadow-lg notification-red-close'
+          className: 'bg-white border-2 border-yellow-500 text-yellow-700 shadow-lg notification-yellow-close'
         });
       }, 100);
       fetchFilteredRequests();
@@ -907,6 +907,7 @@ const EmployeeRequestsManagement: React.FC = () => {
           onBulkSelect={() => {}}
           selectedRequests={selectedRequests}
           showDepartmentColumn={isHROrAdmin}
+          showRequestIdColumn={false}
         />
 
         {/* Request Details Drawer */}
