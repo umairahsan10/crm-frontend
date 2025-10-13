@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createEmployeeRequestApi, type CreateEmployeeRequestDto } from '../../../apis/employee-requests';
+import { createLeaveRequestApi, type CreateLeaveRequestDto } from '../../../apis/leave-logs';
 
 interface CreateRequestModalProps {
   isOpen: boolean;
@@ -20,6 +21,14 @@ const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
     description: '',
     priority: 'Medium'
   });
+  
+  // Additional state for leave requests
+  const [leaveData, setLeaveData] = useState({
+    leave_type: 'sick',
+    start_date: '',
+    end_date: '',
+    reason: ''
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,6 +42,16 @@ const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
   ];
 
   const priorities: Array<'Low' | 'Medium' | 'High' | 'Urgent'> = ['Low', 'Medium', 'High', 'Urgent'];
+  
+  const leaveTypes = [
+    'sick',
+    'vacation',
+    'personal',
+    'emergency',
+    'maternity',
+    'paternity',
+    'bereavement'
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,48 +64,134 @@ const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
       return;
     }
 
-    if (!formData.subject.trim()) {
-      setError('Please enter a subject');
-      return;
-    }
-
-    if (!formData.description.trim()) {
-      setError('Please enter a description');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      console.log('Creating request with data:', {
-        employeeId,
-        formData
-      });
-      
-      await createEmployeeRequestApi(employeeId, formData);
-      
-      // Reset form
-      setFormData({
-        request_type: 'Leave Request',
-        subject: '',
-        description: '',
-        priority: 'Medium'
-      });
-      
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      console.error('Error creating request:', err);
-      console.error('Error details:', err.message, err.response);
-      
-      // Try to get more specific error message
-      let errorMessage = 'Failed to create request. Please try again.';
-      if (err.message) {
-        errorMessage = `Error: ${err.message}`;
+    // Handle Leave Request differently
+    if (formData.request_type === 'Leave Request') {
+      // Validate leave request fields
+      if (!leaveData.start_date) {
+        setError('Please select a start date');
+        return;
       }
       
-      setError(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+      if (!leaveData.end_date) {
+        setError('Please select an end date');
+        return;
+      }
+      
+      if (!leaveData.reason.trim()) {
+        setError('Please enter a reason for your leave');
+        return;
+      }
+      
+      if (new Date(leaveData.start_date) > new Date(leaveData.end_date)) {
+        setError('End date must be after start date');
+        return;
+      }
+
+      try {
+        setIsSubmitting(true);
+        console.log('Creating leave request with data:', {
+          employeeId,
+          leaveData
+        });
+        
+        // Step 1: Create leave log in attendance system
+        const leaveRequestData: CreateLeaveRequestDto = {
+          emp_id: employeeId,
+          leave_type: leaveData.leave_type,
+          start_date: leaveData.start_date,
+          end_date: leaveData.end_date,
+          reason: leaveData.reason
+        };
+        
+        await createLeaveRequestApi(leaveRequestData);
+        console.log('Leave log created successfully');
+        
+        // Step 2: Create employee request for HR tracking
+        const duration = Math.ceil((new Date(leaveData.end_date).getTime() - new Date(leaveData.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const employeeRequestData: CreateEmployeeRequestDto = {
+          request_type: 'Leave Request',
+          subject: `${leaveData.leave_type.charAt(0).toUpperCase() + leaveData.leave_type.slice(1)} Leave Request - ${duration} day${duration > 1 ? 's' : ''}`,
+          description: `Leave Type: ${leaveData.leave_type}\nStart Date: ${leaveData.start_date}\nEnd Date: ${leaveData.end_date}\nDuration: ${duration} day${duration > 1 ? 's' : ''}\nReason: ${leaveData.reason}`,
+          priority: 'Medium'
+        };
+        
+        await createEmployeeRequestApi(employeeId, employeeRequestData);
+        console.log('Employee request created successfully');
+        
+        // Reset forms
+        setFormData({
+          request_type: 'Leave Request',
+          subject: '',
+          description: '',
+          priority: 'Medium'
+        });
+        setLeaveData({
+          leave_type: 'sick',
+          start_date: '',
+          end_date: '',
+          reason: ''
+        });
+        
+        onSuccess();
+        onClose();
+      } catch (err: any) {
+        console.error('Error creating leave request:', err);
+        console.error('Error details:', err.message, err.response);
+        
+        let errorMessage = 'Failed to create leave request. Please try again.';
+        if (err.message) {
+          errorMessage = `Error: ${err.message}`;
+        }
+        
+        setError(errorMessage);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // Handle other request types (existing logic)
+      if (!formData.subject.trim()) {
+        setError('Please enter a subject');
+        return;
+      }
+
+      if (!formData.description.trim()) {
+        setError('Please enter a description');
+        return;
+      }
+
+      try {
+        setIsSubmitting(true);
+        console.log('Creating request with data:', {
+          employeeId,
+          formData
+        });
+        
+        await createEmployeeRequestApi(employeeId, formData);
+        
+        // Reset form
+        setFormData({
+          request_type: 'Leave Request',
+          subject: '',
+          description: '',
+          priority: 'Medium'
+        });
+        
+        onSuccess();
+        onClose();
+      } catch (err: any) {
+        console.error('Error creating request:', err);
+        console.error('Error details:', err.message, err.response);
+        
+        // Try to get more specific error message
+        let errorMessage = 'Failed to create request. Please try again.';
+        if (err.message) {
+          errorMessage = `Error: ${err.message}`;
+        }
+        
+        setError(errorMessage);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -98,6 +203,12 @@ const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
         subject: '',
         description: '',
         priority: 'Medium'
+      });
+      setLeaveData({
+        leave_type: 'sick',
+        start_date: '',
+        end_date: '',
+        reason: ''
       });
       onClose();
     }
@@ -173,6 +284,81 @@ const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
                 </select>
               </div>
 
+              {/* Leave Request Specific Fields */}
+              {formData.request_type === 'Leave Request' && (
+                <>
+                  {/* Leave Type */}
+                  <div>
+                    <label htmlFor="leave_type" className="block text-sm font-medium text-gray-700 mb-1">
+                      Leave Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="leave_type"
+                      value={leaveData.leave_type}
+                      onChange={(e) => setLeaveData({ ...leaveData, leave_type: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isSubmitting}
+                      required
+                    >
+                      {leaveTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Start Date */}
+                  <div>
+                    <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="start_date"
+                      value={leaveData.start_date}
+                      onChange={(e) => setLeaveData({ ...leaveData, start_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isSubmitting}
+                      required
+                    />
+                  </div>
+
+                  {/* End Date */}
+                  <div>
+                    <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="end_date"
+                      value={leaveData.end_date}
+                      onChange={(e) => setLeaveData({ ...leaveData, end_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isSubmitting}
+                      required
+                    />
+                  </div>
+
+                  {/* Leave Reason */}
+                  <div>
+                    <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-1">
+                      Reason for Leave <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      id="reason"
+                      value={leaveData.reason}
+                      onChange={(e) => setLeaveData({ ...leaveData, reason: e.target.value })}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Please provide a reason for your leave request"
+                      disabled={isSubmitting}
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
               {/* Priority */}
               <div>
                 <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
@@ -194,39 +380,43 @@ const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
                 </select>
               </div>
 
-              {/* Subject */}
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="subject"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Brief summary of your request"
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
+              {/* Subject - Only show for non-leave requests */}
+              {formData.request_type !== 'Leave Request' && (
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+                    Subject <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Brief summary of your request"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+              )}
 
-              {/* Description */}
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={5}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Provide detailed information about your request"
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
+              {/* Description - Only show for non-leave requests */}
+              {formData.request_type !== 'Leave Request' && (
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                    Description <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={5}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Provide detailed information about your request"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             {/* Footer */}
