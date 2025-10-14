@@ -9,7 +9,7 @@ export interface ApiError {
   status?: number;
 }
 
-// Get all expenses with filters
+// Get all expenses with filters (backend doesn't use pagination params in query)
 export const getExpensesApi = async (
   page: number = 1,
   limit: number = 20,
@@ -21,6 +21,7 @@ export const getExpensesApi = async (
     minAmount?: string;
     maxAmount?: string;
     paymentMethod?: string;
+    processedByRole?: string;
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
@@ -32,25 +33,28 @@ export const getExpensesApi = async (
       throw new Error('No authentication token found');
     }
 
-    // Build query parameters
-    const queryParams = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      ...(filters.category && { category: filters.category }),
-      ...(filters.fromDate && { fromDate: filters.fromDate }),
-      ...(filters.toDate && { toDate: filters.toDate }),
-      ...(filters.createdBy && { createdBy: filters.createdBy }),
-      ...(filters.minAmount && { minAmount: filters.minAmount }),
-      ...(filters.maxAmount && { maxAmount: filters.maxAmount }),
-      ...(filters.paymentMethod && { paymentMethod: filters.paymentMethod }),
-      ...(filters.search && { search: filters.search }),
-      ...(filters.sortBy && { sortBy: filters.sortBy }),
-      ...(filters.sortOrder && { sortOrder: filters.sortOrder })
+    // Build query parameters (backend doesn't use page/limit)
+    const queryParams = new URLSearchParams();
+    if (filters.category) queryParams.append('category', filters.category);
+    if (filters.fromDate) queryParams.append('fromDate', filters.fromDate);
+    if (filters.toDate) queryParams.append('toDate', filters.toDate);
+    if (filters.createdBy) queryParams.append('createdBy', filters.createdBy);
+    if (filters.minAmount) queryParams.append('minAmount', filters.minAmount);
+    if (filters.maxAmount) queryParams.append('maxAmount', filters.maxAmount);
+    if (filters.paymentMethod) queryParams.append('paymentMethod', filters.paymentMethod);
+    if (filters.processedByRole) queryParams.append('processedByRole', filters.processedByRole);
+
+    const url = queryParams.toString() 
+      ? `${API_BASE_URL}/accountant/expense?${queryParams.toString()}`
+      : `${API_BASE_URL}/accountant/expense`;
+
+    console.log('📤 Fetching expenses:', {
+      url,
+      filters,
+      queryParams: queryParams.toString()
     });
 
-    console.log('Fetching expenses with filters:', filters);
-
-    const response = await fetch(`${API_BASE_URL}/accountant/expense?${queryParams.toString()}`, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -60,11 +64,18 @@ export const getExpensesApi = async (
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch expenses');
+      console.error('❌ Expenses API HTTP Error:', response.status, errorData);
+      throw new Error(errorData.message || `HTTP ${response.status}: Failed to fetch expenses`);
     }
 
     const data: ExpensesResponse = await response.json();
-    console.log('Expenses response:', data);
+    console.log('✅ Expenses API Response:', data);
+    
+    // Backend returns { status, message, data: [], total }
+    if (data.status === 'error') {
+      console.error('❌ Backend Error:', data);
+      throw new Error(data.message || 'Backend error: Failed to fetch expenses');
+    }
     
     return {
       success: true,
@@ -88,8 +99,62 @@ export const getExpensesApi = async (
   }
 };
 
+// Create expense
+export const createExpenseApi = async (expenseData: {
+  title: string;
+  category: string;
+  amount: number;
+  paidOn?: string;
+  notes?: string;
+  paymentMethod?: 'cash' | 'bank' | 'online';
+  processedByRole?: 'Employee' | 'Admin';
+  vendorId?: number;
+}): Promise<ApiResponse<Expense>> => {
+  try {
+    const { token } = getAuthData();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('Creating expense with data:', expenseData);
+
+    const response = await fetch(`${API_BASE_URL}/accountant/expense`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(expenseData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to create expense');
+    }
+
+    const data = await response.json();
+    console.log('Create expense response:', data);
+    
+    if (data.status === 'error') {
+      throw new Error(data.message || 'Failed to create expense');
+    }
+    
+    return {
+      success: true,
+      data: data.data.expense,
+      message: data.message || 'Expense created successfully'
+    };
+  } catch (error) {
+    console.error('Create expense error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while creating expense');
+  }
+};
+
 // Get expense by ID
-export const getExpenseByIdApi = async (expenseId: string): Promise<ApiResponse<Expense>> => {
+export const getExpenseByIdApi = async (expenseId: string | number): Promise<ApiResponse<Expense>> => {
   try {
     const { token } = getAuthData();
     if (!token) {
@@ -114,6 +179,10 @@ export const getExpenseByIdApi = async (expenseId: string): Promise<ApiResponse<
     const data: ExpenseResponse = await response.json();
     console.log('Expense detail response:', data);
     
+    if (data.status === 'error') {
+      throw new Error(data.message || 'Failed to fetch expense');
+    }
+    
     return {
       success: true,
       data: data.data,
@@ -128,8 +197,20 @@ export const getExpenseByIdApi = async (expenseId: string): Promise<ApiResponse<
   }
 };
 
-// Update expense
-export const updateExpenseApi = async (expenseId: string, updates: Partial<Expense>): Promise<ApiResponse<Expense>> => {
+// Update expense (PATCH method with expense_id in body)
+export const updateExpenseApi = async (
+  expenseId: number,
+  updates: {
+    title?: string;
+    category?: string;
+    amount?: number;
+    paidOn?: string;
+    notes?: string;
+    paymentMethod?: 'cash' | 'bank' | 'online';
+    processedByRole?: 'Employee' | 'Admin';
+    vendorId?: number;
+  }
+): Promise<ApiResponse<Expense>> => {
   try {
     const { token } = getAuthData();
     if (!token) {
@@ -138,13 +219,17 @@ export const updateExpenseApi = async (expenseId: string, updates: Partial<Expen
 
     console.log('Updating expense:', expenseId, 'with data:', updates);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/expense/${expenseId}`, {
-      method: 'PUT',
+    // Backend expects PATCH to /accountant/expense with expense_id in body
+    const response = await fetch(`${API_BASE_URL}/accountant/expense`, {
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify(updates),
+      body: JSON.stringify({
+        expense_id: expenseId,
+        ...updates
+      }),
     });
 
     if (!response.ok) {
@@ -155,9 +240,13 @@ export const updateExpenseApi = async (expenseId: string, updates: Partial<Expen
     const data = await response.json();
     console.log('Update expense response:', data);
     
+    if (data.status === 'error') {
+      throw new Error(data.message || 'Failed to update expense');
+    }
+    
     return {
       success: true,
-      data: data.data || data,
+      data: data.data.expense,
       message: data.message || 'Expense updated successfully'
     };
   } catch (error) {
