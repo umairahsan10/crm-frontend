@@ -112,7 +112,100 @@ export interface GetLeaveLogsDto {
   end_date?: string;
 }
 
+// Create Leave Request DTO
+export interface CreateLeaveRequestDto {
+  emp_id: number;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  reason: string;
+}
+
 // API Functions
+export const createLeaveRequestApi = async (leaveData: CreateLeaveRequestDto): Promise<LeaveLog> => {
+  console.log('API: Creating leave request', leaveData);
+  
+  const response = await apiRequest('/hr/attendance/leave-logs', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(leaveData),
+  });
+
+  if (!response.ok) {
+    let errorMessage = 'Failed to create leave request';
+    try {
+      const errorData = await response.json();
+      console.error('API Error Response:', errorData);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch (e) {
+      console.error('Could not parse error response');
+    }
+    
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+};
+
+// Leave Action Request DTO
+export interface LeaveActionRequest {
+  action: 'Approved' | 'Rejected';
+  reviewer_id: number;
+  confirmation_reason?: string;
+}
+
+// Approve/Reject Leave Request
+export const approveRejectLeaveRequestApi = async (
+  leaveLogId: number, 
+  actionData: LeaveActionRequest
+): Promise<LeaveLog> => {
+  console.log('API: Taking action on leave request', { leaveLogId, actionData });
+  
+  const response = await apiRequest(`/hr/attendance/leave-logs/${leaveLogId}/action`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(actionData),
+  });
+
+  if (!response.ok) {
+    let errorMessage = 'Failed to process leave request';
+    try {
+      const errorData = await response.json();
+      console.error('API Error Response:', errorData);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch (e) {
+      console.error('Could not parse error response');
+    }
+    
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+};
+
+// Get pending leave requests for HR review
+export const getPendingLeaveRequestsApi = async (): Promise<LeaveLog[]> => {
+  try {
+    const url = `${getApiBaseUrl()}/hr/attendance/leave-logs?status=Pending`;
+    console.log('Fetching pending leave requests from:', url);
+    
+    const response = await apiGetJson<LeaveLog[]>(url);
+    console.log('Pending leave requests API response:', response);
+    
+    return response;
+  } catch (error: any) {
+    console.error('Error fetching pending leave requests:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
+    throw new Error(`Failed to fetch pending leave requests: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
 export const getLeaveLogsApi = async (query: GetLeaveLogsDto = {}): Promise<LeaveLog[]> => {
   try {
     const params = new URLSearchParams();

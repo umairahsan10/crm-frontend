@@ -81,6 +81,63 @@
   color: #2563eb;
 }
 
+/* Override for custom white background notifications */
+.notification.bg-white {
+  background: #ffffff !important;
+  border: 2px solid #16a34a !important;
+  color: #16a34a !important;
+}
+
+/* Override for success notifications with custom styling */
+.notification.bg-white.notification--success {
+  background: #ffffff !important;
+  border: 2px solid #16a34a !important;
+  color: #16a34a !important;
+}
+
+.notification.bg-white.notification--success .notification__title {
+  color: #16a34a !important;
+}
+
+.notification.bg-white.notification--success .notification__message {
+  color: #16a34a !important;
+}
+
+.notification.bg-white.notification--success .notification__icon {
+  color: #16a34a !important;
+}
+
+/* Red close button for custom notifications */
+.notification-red-close .notification__close {
+  color: #dc2626 !important;
+}
+
+.notification-red-close .notification__close:hover {
+  color: #991b1b !important;
+  background: rgba(220, 38, 38, 0.1) !important;
+}
+
+/* Custom dark green styles for success notifications */
+.notification.border-green-900 {
+  border-color: #001a0f !important;
+}
+
+.notification.text-green-950 {
+  color: #001a0f !important;
+}
+
+.notification.text-green-950 .notification__title {
+  color: #001a0f !important;
+}
+
+.notification.text-green-950 .notification__message {
+  color: #001a0f !important;
+}
+
+.notification.text-green-950 .notification__icon {
+  color: #001a0f !important;
+}
+
 /* Size variants */
 .notification--sm {
   padding: 12px;
@@ -246,35 +303,35 @@
 
 /* Exit animations */
 .notification--slide-out-right {
-  animation: slideOutRight 0.3s ease-in;
+  animation: slideOutRight 0.3s ease-in forwards;
 }
 
 .notification--slide-out-left {
-  animation: slideOutLeft 0.3s ease-in;
+  animation: slideOutLeft 0.3s ease-in forwards;
 }
 
 .notification--slide-out-top {
-  animation: slideOutTop 0.3s ease-in;
+  animation: slideOutTop 0.3s ease-in forwards;
 }
 
 .notification--slide-out-bottom {
-  animation: slideOutBottom 0.3s ease-in;
+  animation: slideOutBottom 0.3s ease-in forwards;
 }
 
 .notification--slide-out-center {
-  animation: slideOutCenter 0.3s ease-in;
+  animation: slideOutCenter 0.3s ease-in forwards;
 }
 
 .notification--fade-out {
-  animation: fadeOut 0.3s ease-in;
+  animation: fadeOut 0.3s ease-in forwards;
 }
 
 .notification--bounce-out {
-  animation: bounceOut 0.5s ease-in;
+  animation: bounceOut 0.5s ease-in forwards;
 }
 
 .notification--zoom-out {
-  animation: zoomOut 0.3s ease-in;
+  animation: zoomOut 0.3s ease-in forwards;
 }
 
 /* Animation keyframes */
