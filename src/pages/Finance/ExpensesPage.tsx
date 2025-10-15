@@ -203,10 +203,6 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
     setFilters(prev => ({ ...prev, processedByRole }));
   };
 
-  const handleCreatedByFilter = (createdBy: string) => {
-    setFilters(prev => ({ ...prev, createdBy }));
-  };
-
   const handleDateRangeFilter = (fromDate: string, toDate: string) => {
     setFilters(prev => ({ ...prev, fromDate, toDate }));
   };

@@ -231,10 +231,6 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
     setFilters(prev => ({ ...prev, source }));
   };
 
-  const handleCreatedByFilter = (createdBy: string) => {
-    setFilters(prev => ({ ...prev, createdBy }));
-  };
-
   const handleDateRangeFilter = (fromDate: string, toDate: string) => {
     setFilters(prev => ({ ...prev, fromDate, toDate }));
   };
