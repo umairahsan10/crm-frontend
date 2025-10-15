@@ -190,3 +190,143 @@ export const getAttendanceListApi = async (): Promise<AttendanceListResponseDto[
     throw new Error('Failed to fetch attendance list');
   }
 };
+
+// Late Logs APIs
+export const getLateLogs = async (query: any): Promise<any[]> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query.employee_id) queryParams.append('employee_id', query.employee_id.toString());
+    if (query.start_date) queryParams.append('start_date', query.start_date);
+    if (query.end_date) queryParams.append('end_date', query.end_date);
+    if (query.action_taken) queryParams.append('action_taken', query.action_taken);
+    if (query.justified !== undefined) queryParams.append('justified', query.justified.toString());
+    
+    const url = `/hr/attendance/late-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return await apiGetJson<any[]>(url);
+  } catch (error: any) {
+    console.error('Get late logs error:', error);
+    throw new Error('Failed to fetch late logs');
+  }
+};
+
+export const updateLateLogAction = async (logId: number, data: any): Promise<any> => {
+  try {
+    return await apiPutJson<any>(`/hr/attendance/late-logs/${logId}/action`, data);
+  } catch (error: any) {
+    console.error('Update late log action error:', error);
+    throw new Error('Failed to update late log');
+  }
+};
+
+export const getLateLogsStats = async (query: any): Promise<any> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query.employee_id) queryParams.append('employee_id', query.employee_id.toString());
+    if (query.start_date) queryParams.append('start_date', query.start_date);
+    if (query.end_date) queryParams.append('end_date', query.end_date);
+    
+    const url = `/hr/attendance/late-logs/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return await apiGetJson<any>(url);
+  } catch (error: any) {
+    console.error('Get late logs stats error:', error);
+    throw new Error('Failed to fetch late logs statistics');
+  }
+};
+
+// Half-Day Logs APIs
+export const getHalfDayLogs = async (query: any): Promise<any[]> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query.employee_id) queryParams.append('employee_id', query.employee_id.toString());
+    if (query.start_date) queryParams.append('start_date', query.start_date);
+    if (query.end_date) queryParams.append('end_date', query.end_date);
+    if (query.action_taken) queryParams.append('action_taken', query.action_taken);
+    if (query.justified !== undefined) queryParams.append('justified', query.justified.toString());
+    
+    const url = `/hr/attendance/half-day-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return await apiGetJson<any[]>(url);
+  } catch (error: any) {
+    console.error('Get half-day logs error:', error);
+    throw new Error('Failed to fetch half-day logs');
+  }
+};
+
+export const updateHalfDayLogAction = async (logId: number, data: any): Promise<any> => {
+  try {
+    return await apiPutJson<any>(`/hr/attendance/half-day-logs/${logId}/action`, data);
+  } catch (error: any) {
+    console.error('Update half-day log action error:', error);
+    throw new Error('Failed to update half-day log');
+  }
+};
+
+export const getHalfDayLogsStats = async (query: any): Promise<any> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query.employee_id) queryParams.append('employee_id', query.employee_id.toString());
+    if (query.start_date) queryParams.append('start_date', query.start_date);
+    if (query.end_date) queryParams.append('end_date', query.end_date);
+    
+    const url = `/hr/attendance/half-day-logs/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return await apiGetJson<any>(url);
+  } catch (error: any) {
+    console.error('Get half-day logs stats error:', error);
+    throw new Error('Failed to fetch half-day logs statistics');
+  }
+};
+
+// Leave Logs APIs
+export const getLeaveLogs = async (query: any): Promise<any[]> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query.employee_id) queryParams.append('employee_id', query.employee_id.toString());
+    if (query.start_date) queryParams.append('start_date', query.start_date);
+    if (query.end_date) queryParams.append('end_date', query.end_date);
+    if (query.status) queryParams.append('status', query.status);
+    if (query.leave_type) queryParams.append('leave_type', query.leave_type);
+    
+    const url = `/hr/attendance/leave-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return await apiGetJson<any[]>(url);
+  } catch (error: any) {
+    console.error('Get leave logs error:', error);
+    throw new Error('Failed to fetch leave logs');
+  }
+};
+
+export const updateLeaveLogAction = async (logId: number, data: any): Promise<any> => {
+  try {
+    return await apiPutJson<any>(`/hr/attendance/leave-logs/${logId}/action`, data);
+  } catch (error: any) {
+    console.error('Update leave log action error:', error);
+    throw new Error('Failed to update leave log');
+  }
+};
+
+export const getLeaveLogsStats = async (query: any): Promise<any> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query.employee_id) queryParams.append('employee_id', query.employee_id.toString());
+    if (query.start_date) queryParams.append('start_date', query.start_date);
+    if (query.end_date) queryParams.append('end_date', query.end_date);
+    
+    const url = `/hr/attendance/leave-logs/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return await apiGetJson<any>(url);
+  } catch (error: any) {
+    console.error('Get leave logs stats error:', error);
+    throw new Error('Failed to fetch leave logs statistics');
+  }
+};
+
+// Monthly Attendance APIs
+export const getMonthlyAttendance = async (employeeId: number, query: any): Promise<any> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query.month) queryParams.append('month', query.month);
+    
+    const url = `/hr/attendance/month/${employeeId}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return await apiGetJson<any>(url);
+  } catch (error: any) {
+    console.error('Get monthly attendance error:', error);
+    throw new Error('Failed to fetch monthly attendance');
+  }
+};

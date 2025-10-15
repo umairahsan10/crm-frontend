@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavbar } from '../../../context/NavbarContext';
 import { getEmployeesApi, type Employee } from '../../../apis/hr-employees';
+import EmployeeAttendanceDrawer from '../../../components/attendance/EmployeeAttendanceDrawer';
 import { 
   checkinApi, 
   bulkMarkPresentApi,
@@ -37,7 +37,6 @@ interface AttendanceRecord {
 const AttendanceManagement: React.FC = () => {
   const { user } = useAuth();
   const { isNavbarOpen } = useNavbar();
-  const navigate = useNavigate();
   
   // State management
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -80,6 +79,10 @@ const AttendanceManagement: React.FC = () => {
   const [selectedEmployeeForLate, setSelectedEmployeeForLate] = useState<{id: number, name: string, lateDetails: any} | null>(null);
   const [lateAction, setLateAction] = useState<'approve' | 'reject'>('approve');
   const [lateActionReason, setLateActionReason] = useState('');
+  
+  // Employee Attendance Drawer State
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedEmployeeForDrawer, setSelectedEmployeeForDrawer] = useState<{id: number, name: string} | null>(null);
 
   // Statistics
   const [statistics, setStatistics] = useState({
@@ -732,17 +735,6 @@ const AttendanceManagement: React.FC = () => {
                     </svg>
                     {showStatistics ? 'Hide Stats' : 'Show Stats'}
                   </button>
-                  
-                  {/* Logs - Visible to all users with appropriate permissions */}
-                  <button
-                    onClick={() => navigate('/logs')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                    Logs
-                  </button>
                 </div>
               )}
             </div>
@@ -809,7 +801,13 @@ const AttendanceManagement: React.FC = () => {
           itemsPerPage={20}
           selectedItems={selectedEmployees}
           onPageChange={() => {}}
-          onRowClick={() => {}}
+          onRowClick={(row) => {
+            setSelectedEmployeeForDrawer({
+              id: row.employeeId,
+              name: row.employeeName
+            });
+            setIsDrawerOpen(true);
+          }}
           onBulkSelect={handleBulkSelect}
           selectable={true}
           emptyMessage="No employees found"
@@ -1115,6 +1113,22 @@ const AttendanceManagement: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Employee Attendance Drawer */}
+        {selectedEmployeeForDrawer && (
+          <EmployeeAttendanceDrawer
+            isOpen={isDrawerOpen}
+            onClose={() => {
+              setIsDrawerOpen(false);
+              setSelectedEmployeeForDrawer(null);
+              // Refresh attendance data when drawer closes
+              fetchAttendanceData();
+            }}
+            employeeId={selectedEmployeeForDrawer.id}
+            employeeName={selectedEmployeeForDrawer.name}
+            currentDate={selectedDate}
+          />
         )}
       </div>
     </div>
