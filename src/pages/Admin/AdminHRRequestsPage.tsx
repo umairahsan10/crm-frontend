@@ -187,21 +187,16 @@ const AdminHRRequestsPage: React.FC = () => {
     // Find the full request object
     const fullRequest: AdminRequestResponseDto = {
       id: request.request_id,
+      hrId: 1, // Default value, not critical for the modal action
       description: request.description,
       type: request.type,
       hrLogId: request.hrLogId,
       status: request.status as any,
       createdAt: request.created_at,
       updatedAt: request.updated_at,
-      hrEmployee: {
-        id: 0, // Not needed for this action
-        firstName: request.hr_employee_name.split(' ')[0] || '',
-        lastName: request.hr_employee_name.split(' ').slice(1).join(' ') || '',
-        email: request.hr_employee_email,
-        department: {
-          id: 0,
-          name: request.hr_department
-        }
+      hr: {
+        id: 1,
+        employeeId: 1
       }
     };
     
@@ -275,7 +270,7 @@ const AdminHRRequestsPage: React.FC = () => {
     {
       title: 'Others',
       value: statistics.others_requests,
-      color: 'gray' as const,
+      color: 'blue' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
@@ -451,7 +446,7 @@ const AdminHRRequestsPage: React.FC = () => {
                       </h3>
                       <div className="mt-2">
                         <p className="text-sm text-gray-500">
-                          Are you sure you want to {actionType} this request from {selectedRequest?.hrEmployee.firstName} {selectedRequest?.hrEmployee.lastName}?
+                          Are you sure you want to {actionType} this request?
                         </p>
                         <div className="mt-4">
                           <label htmlFor="notes" className="block text-sm font-medium text-gray-700">

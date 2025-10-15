@@ -5,14 +5,13 @@ interface CreateHRAdminRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  hrEmployeeId: number;
+  hrEmployeeId?: number;
 }
 
 const CreateHRAdminRequestModal: React.FC<CreateHRAdminRequestModalProps> = ({
   isOpen,
   onClose,
-  onSuccess,
-  hrEmployeeId
+  onSuccess
 }) => {
   const [formData, setFormData] = useState({
     type: 'salary_increase' as const,

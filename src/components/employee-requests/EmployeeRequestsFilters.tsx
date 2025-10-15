@@ -18,7 +18,6 @@ const EmployeeRequestsFilters: React.FC<EmployeeRequestsFiltersProps> = ({
   search,
   statusFilter,
   priorityFilter,
-  departmentFilter,
   requestTypeFilter,
   onSearchChange,
   onStatusFilter,

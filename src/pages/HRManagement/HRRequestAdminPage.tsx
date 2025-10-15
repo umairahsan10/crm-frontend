@@ -5,8 +5,7 @@ import CreateHRAdminRequestModal from '../../components/common/requests/CreateHR
 import Notification from '../../components/common/Notification/Notification';
 import { useNotification } from '../../hooks/useNotification';
 import { 
-  getMyHRAdminRequestsApi,
-  type AdminRequestResponseDto
+  getMyHRAdminRequestsApi
 } from '../../apis/hr-admin-requests';
 
 // Local interface for component
@@ -216,7 +215,7 @@ const HRRequestAdminPage: React.FC = () => {
     {
       title: 'Others',
       value: statistics.others_requests,
-      color: 'gray' as const,
+      color: 'blue' as const,
       icon: (
         <svg fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
