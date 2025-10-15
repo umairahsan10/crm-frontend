@@ -277,15 +277,6 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
     }
   };
 
-  const getStatusIcon = (status: string | null) => {
-    switch (status) {
-      case 'present': return '✅';
-      case 'late': return '⏰';
-      case 'half_day': return '🕐';
-      case 'absent': return '❌';
-      default: return '⚪';
-    }
-  };
 
   const monthName = currentCalendarDate.toLocaleString('default', { month: 'long', year: 'numeric' });
   const days = generateCalendarDays();
@@ -310,9 +301,9 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
         }}
       >
         <div className="flex h-full flex-col">
-          {/* Header */}
+            {/* Header */}
           <div className={`${isMobile ? 'px-4 py-3' : 'px-6 py-4'} border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg`}>
-            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
                   <span className="text-sm font-semibold text-blue-700">
@@ -323,20 +314,20 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
                   <h2 className="text-lg font-semibold text-gray-900">{employeeName}</h2>
                   <p className="text-sm text-gray-600">Employee ID: {employeeId}</p>
                 </div>
-              </div>
-              <button
-                onClick={onClose}
+                </div>
+                <button
+                  onClick={onClose}
                 className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100"
-              >
+                >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
             {/* Month Selector */}
             <div className="mt-4">
-              <input
+                  <input
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => {
@@ -346,10 +337,10 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
                 }}
                 className="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              </div>
             </div>
-          </div>
 
-          {/* Tabs */}
+            {/* Tabs */}
           <div className="border-b border-gray-200">
             <nav className={`-mb-px flex space-x-8 ${isMobile ? 'px-4' : 'px-6'}`}>
               {[
@@ -360,33 +351,33 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
                 { id: 'monthly', name: 'Monthly' },
                 { id: 'statistics', name: 'Statistics' }
               ].map((tab) => (
-                <button
-                  key={tab.id}
+                  <button
+                    key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
+                      activeTab === tab.id
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
                   {tab.name}
-                </button>
-              ))}
+                  </button>
+                ))}
             </nav>
-          </div>
+            </div>
 
-          {/* Content */}
+            {/* Content */}
           <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
-            {loading ? (
+              {loading ? (
               <div className="text-center py-8">
                 <svg className="animate-spin mx-auto h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 <p className="mt-2 text-sm text-gray-500">Loading...</p>
-              </div>
-            ) : (
-              <>
+                </div>
+              ) : (
+                <>
                 {activeTab === 'calendar' && (
                   <div className="space-y-6">
                     {/* Calendar View */}
@@ -447,8 +438,7 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
                                         key={event.date}
                                         className={`text-xs px-2 py-1.5 rounded-md border ${getStatusColor(event.status)}`}
                                       >
-                                        <div className="flex items-center gap-1 mb-0.5">
-                                          <span>{getStatusIcon(event.status)}</span>
+                                        <div className="mb-0.5">
                                           <span className="font-semibold truncate">
                                             {event.status ? event.status.replace('_', ' ').toUpperCase() : 'N/A'}
                                           </span>
@@ -482,15 +472,39 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
                       <div className="mt-6 pt-6 border-t border-gray-200">
                         <div className="flex flex-wrap gap-4 text-sm">
                           {[
-                            { status: 'present', label: 'Present', icon: '✅' },
-                            { status: 'late', label: 'Late', icon: '⏰' },
-                            { status: 'half_day', label: 'Half Day', icon: '🕐' },
-                            { status: 'absent', label: 'Absent', icon: '❌' }
+                            { 
+                              status: 'present', 
+                              label: 'Present',
+                              icon: <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            },
+                            { 
+                              status: 'late', 
+                              label: 'Late',
+                              icon: <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            },
+                            { 
+                              status: 'half_day', 
+                              label: 'Half Day',
+                              icon: <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v9l4 4m4-4a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            },
+                            { 
+                              status: 'absent', 
+                              label: 'Absent',
+                              icon: <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                              </svg>
+                            }
                           ].map(({ status, label, icon }) => (
                             <div key={status} className="flex items-center gap-2">
                               <div className={`w-4 h-4 rounded-full border-2 ${getStatusColor(status)}`}></div>
                               <span className="font-medium text-slate-700 flex items-center gap-1">
-                                <span>{icon}</span>
+                                {icon}
                                 {label}
                               </span>
                             </div>
@@ -534,36 +548,36 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
                 {activeTab === 'statistics' && (
                   <StatisticsTab stats={statistics} />
                 )}
-              </>
-            )}
+                </>
+              )}
           </div>
-        </div>
+            </div>
 
-        {/* Notification */}
-        {notification && (
+            {/* Notification */}
+            {notification && (
           <div className={`fixed ${isMobile ? 'bottom-4 left-4 right-4' : 'top-4 right-4'} z-50 max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden ${
-            notification.type === 'success' ? 'border-l-4 border-green-400' : 'border-l-4 border-red-400'
-          }`}>
-            <div className="p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  {notification.type === 'success' ? (
-                    <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </div>
-                <div className="ml-3 w-0 flex-1 pt-0.5">
-                  <p className={`text-sm font-medium ${
-                    notification.type === 'success' ? 'text-green-800' : 'text-red-800'
-                  }`}>
-                    {notification.message}
-                  </p>
-                </div>
+                notification.type === 'success' ? 'border-l-4 border-green-400' : 'border-l-4 border-red-400'
+              }`}>
+                <div className="p-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      {notification.type === 'success' ? (
+                        <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="ml-3 w-0 flex-1 pt-0.5">
+                      <p className={`text-sm font-medium ${
+                        notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                      }`}>
+                        {notification.message}
+                      </p>
+                    </div>
                 <div className="ml-4 flex-shrink-0 flex">
                   <button
                     onClick={() => setNotification(null)}

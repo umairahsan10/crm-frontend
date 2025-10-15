@@ -44,7 +44,7 @@ const ProfilePage: React.FC = () => {
       return;
     }
     
-    let timeoutId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     
     try {
       isFetchingRef.current = true;

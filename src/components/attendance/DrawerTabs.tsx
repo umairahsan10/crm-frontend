@@ -614,12 +614,60 @@ interface MonthlySummaryTabProps {
 
 export const MonthlySummaryTab: React.FC<MonthlySummaryTabProps> = ({ data }) => {
   const summaryItems = [
-    { label: 'Total Present', value: data?.total_present || 0, color: 'text-green-600', bgColor: 'bg-green-100', icon: '✅' },
-    { label: 'Total Absent', value: data?.total_absent || 0, color: 'text-red-600', bgColor: 'bg-red-100', icon: '❌' },
-    { label: 'Total Late Days', value: data?.total_late_days || 0, color: 'text-yellow-600', bgColor: 'bg-yellow-100', icon: '⏰' },
-    { label: 'Total Leave Days', value: data?.total_leave_days || 0, color: 'text-blue-600', bgColor: 'bg-blue-100', icon: '🌴' },
-    { label: 'Total Remote Days', value: data?.total_remote_days || 0, color: 'text-purple-600', bgColor: 'bg-purple-100', icon: '🏠' },
-    { label: 'Total Half Days', value: data?.total_half_days || 0, color: 'text-orange-600', bgColor: 'bg-orange-100', icon: '🕐' },
+    { 
+      label: 'Total Present', 
+      value: data?.total_present || 0, 
+      color: 'text-green-600', 
+      bgColor: 'bg-green-100',
+      icon: <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+      </svg>
+    },
+    { 
+      label: 'Total Absent', 
+      value: data?.total_absent || 0, 
+      color: 'text-red-600', 
+      bgColor: 'bg-red-100',
+      icon: <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+      </svg>
+    },
+    { 
+      label: 'Total Late Days', 
+      value: data?.total_late_days || 0, 
+      color: 'text-yellow-600', 
+      bgColor: 'bg-yellow-100',
+      icon: <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    },
+    { 
+      label: 'Total Leave Days', 
+      value: data?.total_leave_days || 0, 
+      color: 'text-blue-600', 
+      bgColor: 'bg-blue-100',
+      icon: <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    },
+    { 
+      label: 'Total Remote Days', 
+      value: data?.total_remote_days || 0, 
+      color: 'text-purple-600', 
+      bgColor: 'bg-purple-100',
+      icon: <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    },
+    { 
+      label: 'Total Half Days', 
+      value: data?.total_half_days || 0, 
+      color: 'text-orange-600', 
+      bgColor: 'bg-orange-100',
+      icon: <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v9l4 4m4-4a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    },
   ];
 
   return (
@@ -642,7 +690,7 @@ export const MonthlySummaryTab: React.FC<MonthlySummaryTabProps> = ({ data }) =>
             {summaryItems.map((item) => (
               <div key={item.label} className={`${item.bgColor} rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-2xl">{item.icon}</span>
+                  <div>{item.icon}</div>
                   <p className={`text-3xl font-bold ${item.color}`}>{item.value}</p>
                 </div>
                 <p className="text-sm text-gray-700 font-medium">{item.label}</p>
@@ -683,7 +731,9 @@ export const StatisticsTab: React.FC<StatisticsTabProps> = ({ stats }) => {
             {stats.lateStats && (
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                  <span className="text-lg mr-2">⏰</span>
+                  <svg className="w-5 h-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   Late Statistics
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -711,7 +761,9 @@ export const StatisticsTab: React.FC<StatisticsTabProps> = ({ stats }) => {
             {stats.halfDayStats && (
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                  <span className="text-lg mr-2">🕐</span>
+                  <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v9l4 4m4-4a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   Half-Day Statistics
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -739,7 +791,9 @@ export const StatisticsTab: React.FC<StatisticsTabProps> = ({ stats }) => {
             {stats.leaveStats && (
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                  <span className="text-lg mr-2">🌴</span>
+                  <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                   Leave Statistics
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
