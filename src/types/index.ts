@@ -233,12 +233,11 @@ export interface RevenueResponse {
 // Asset Management Types (from API)
 export interface Asset {
   id: number;
-  name: string;
+  title: string;
   category: string;
   purchaseValue: number;
   currentValue: number;
   purchaseDate: string;
-  depreciationRate: number;
   vendorId: number;
   transactionId: number;
   createdBy: number;
@@ -246,17 +245,38 @@ export interface Asset {
   updatedAt: string;
   transaction?: {
     id: number;
+    employeeId: number;
+    vendorId: number;
+    clientId: number | null;
+    invoiceId: number | null;
     amount: number;
-    vendor?: {
-      id: number;
-      name: string;
-    };
+    transactionType: string;
+    paymentMethod: string;
+    transactionDate: string;
+    status: string;
+    notes: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  vendor?: {
+    id: number;
+    name: string;
+    contactPerson?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+    bankAccount?: string;
+    status?: string;
+    notes?: string;
+    createdAt?: string;
+    updatedAt?: string;
   };
   employee?: {
     id: number;
     firstName?: string;
     lastName?: string;
-    email?: string;
   };
 }
 

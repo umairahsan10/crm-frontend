@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ExpensesTable from '../../components/expenses/ExpensesTable';
-import LeadsSearchFilters from '../../components/leads/LeadsSearchFilters';
-import { regularExpensesConfig } from '../../components/expenses/filterConfigs';
+import ExpensesSearchFilters from '../../components/expenses/ExpensesSearchFilters';
 import ExpenseDetailsDrawer from '../../components/expenses/ExpenseDetailsDrawer';
+import AddExpenseDrawer from '../../components/expenses/AddExpenseDrawer';
 import ExpensesStatistics from '../../components/expenses/ExpensesStatistics';
-// import { getExpensesApi } from '../../apis/expenses'; // Uncomment when using real API
+import { getExpensesApi } from '../../apis/expenses';
 import type { Expense } from '../../types';
 
 interface ExpensesPageProps {
@@ -17,6 +17,7 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showAddExpenseDrawer, setShowAddExpenseDrawer] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Expenses state
@@ -41,6 +42,7 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
     minAmount: '',
     maxAmount: '',
     paymentMethod: '',
+    processedByRole: '',
     sortBy: 'paidOn',
     sortOrder: 'desc' as 'asc' | 'desc'
   });
@@ -75,102 +77,13 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
     }
   });
 
-  // Mock data generation (matching API structure)
-  const generateMockExpenses = (): Expense[] => {
-    const categories = ['Office Expenses', 'Salary', 'Marketing', 'Utilities', 'Travel', 'Equipment', 'Rent', 'Software', 'Other'];
-    const paymentMethods = ['bank', 'cash', 'credit_card', 'online'];
-    const transactionStatuses = ['completed', 'pending', 'failed'];
-    const vendors = [
-      { id: 1, name: 'ABC Company' },
-      { id: 2, name: 'XYZ Suppliers' },
-      { id: 3, name: 'Tech Solutions Inc' },
-      { id: 4, name: 'Office Depot' },
-      { id: 5, name: 'Marketing Agency Pro' }
-    ];
-    const employees = [
-      { id: 50, firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
-      { id: 51, firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com' },
-      { id: 52, firstName: 'Mike', lastName: 'Johnson', email: 'mike@example.com' },
-      { id: 53, firstName: 'Sarah', lastName: 'Williams', email: 'sarah@example.com' }
-    ];
-    
-    const mockExpenses: Expense[] = [];
-
-    for (let i = 1; i <= 50; i++) {
-      const randomVendor = vendors[Math.floor(Math.random() * vendors.length)];
-      const randomEmployee = employees[Math.floor(Math.random() * employees.length)];
-      const randomStatus = transactionStatuses[Math.floor(Math.random() * transactionStatuses.length)];
-      const amount = Math.floor(Math.random() * 10000) + 100;
-      const paidDate = new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000);
-      
-      mockExpenses.push({
-        id: i,
-        title: `${categories[Math.floor(Math.random() * categories.length)]} - Item ${i}`,
-        category: categories[Math.floor(Math.random() * categories.length)],
-        amount: amount,
-        paidOn: paidDate.toISOString(),
-        paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-        vendorId: randomVendor.id,
-        createdBy: randomEmployee.id,
-        transactionId: 20 + i,
-        createdAt: paidDate.toISOString(),
-        updatedAt: paidDate.toISOString(),
-        transaction: {
-          id: 20 + i,
-          amount: amount,
-          transactionType: 'expense',
-          status: randomStatus
-        },
-        vendor: randomVendor,
-        employee: randomEmployee
-      });
-    }
-
-    return mockExpenses;
-  };
-
-  // Fetch expenses
+  // Fetch expenses from database
   const fetchExpenses = async (page: number = 1) => {
     try {
       setIsLoading(true);
       
-      // Using mock data for now - uncomment below to use real API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const mockData = generateMockExpenses();
+      console.log('📤 Fetching expenses with filters:', filters);
       
-      // Apply filters to mock data
-      let filteredData = mockData;
-      if (filters.category) {
-        filteredData = filteredData.filter(e => e.category === filters.category);
-      }
-      if (filters.paymentMethod) {
-        filteredData = filteredData.filter(e => e.paymentMethod === filters.paymentMethod);
-      }
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredData = filteredData.filter(e => 
-          e.title.toLowerCase().includes(searchLower) ||
-          e.category.toLowerCase().includes(searchLower) ||
-          e.vendor?.name.toLowerCase().includes(searchLower)
-        );
-      }
-      if (filters.minAmount) {
-        filteredData = filteredData.filter(e => e.amount >= parseFloat(filters.minAmount));
-      }
-      if (filters.maxAmount) {
-        filteredData = filteredData.filter(e => e.amount <= parseFloat(filters.maxAmount));
-      }
-      
-      setExpenses(filteredData.slice(0, 20)); // Show first 20
-      setPagination({
-        currentPage: page,
-        totalPages: Math.ceil(filteredData.length / 20),
-        totalItems: filteredData.length,
-        itemsPerPage: 20
-      });
-
-      // Real API call - uncomment when ready
-      /*
       const response = await getExpensesApi(page, pagination.itemsPerPage, {
         category: filters.category,
         fromDate: filters.fromDate,
@@ -179,10 +92,13 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
         minAmount: filters.minAmount,
         maxAmount: filters.maxAmount,
         paymentMethod: filters.paymentMethod,
+        processedByRole: filters.processedByRole,
         search: filters.search,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder
       });
+      
+      console.log('✅ Expenses response:', response);
       
       if (response.success && response.data) {
         setExpenses(response.data);
@@ -196,9 +112,8 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
           });
         }
       }
-      */
     } catch (error) {
-      console.error('Error fetching expenses:', error);
+      console.error('❌ Error fetching expenses:', error);
       setNotification({
         type: 'error',
         message: error instanceof Error ? error.message : 'Failed to load expenses'
@@ -284,8 +199,8 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
     setFilters(prev => ({ ...prev, paymentMethod }));
   };
 
-  const handleCreatedByFilter = (createdBy: string) => {
-    setFilters(prev => ({ ...prev, createdBy }));
+  const handleProcessedByRoleFilter = (processedByRole: string) => {
+    setFilters(prev => ({ ...prev, processedByRole }));
   };
 
   const handleDateRangeFilter = (fromDate: string, toDate: string) => {
@@ -310,6 +225,7 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
       minAmount: '',
       maxAmount: '',
       paymentMethod: '',
+      processedByRole: '',
       sortBy: 'paidOn',
       sortOrder: 'desc'
     });
@@ -354,6 +270,7 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
                 {showStatistics ? 'Hide Stats' : 'Show Stats'}
               </button>
               <button
+                onClick={() => setShowAddExpenseDrawer(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -373,15 +290,14 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
         )}
 
         {/* Search Filters */}
-        <LeadsSearchFilters
-          config={regularExpensesConfig}
+        <ExpensesSearchFilters
           onSearch={handleSearch}
-          onTypeFilter={handleCategoryFilter}
-          onStatusFilter={handlePaymentMethodFilter}
-          onAssignedToFilter={handleCreatedByFilter}
+          onCategoryFilter={handleCategoryFilter}
           onDateRangeFilter={handleDateRangeFilter}
           onMinAmountFilter={handleMinAmountFilter}
           onMaxAmountFilter={handleMaxAmountFilter}
+          onPaymentMethodFilter={handlePaymentMethodFilter}
+          onProcessedByRoleFilter={handleProcessedByRoleFilter}
           onClearFilters={handleClearFilters}
         />
 
@@ -397,6 +313,28 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
           onExpenseClick={handleExpenseClick}
           onBulkSelect={handleBulkSelect}
           selectedExpenses={selectedExpenses}
+        />
+
+        {/* Add Expense Drawer */}
+        <AddExpenseDrawer
+          isOpen={showAddExpenseDrawer}
+          onClose={() => setShowAddExpenseDrawer(false)}
+          onExpenseCreated={(newExpense) => {
+            // Add the new expense to the list
+            setExpenses(prev => [newExpense, ...prev]);
+            
+            // Update pagination
+            setPagination(prev => ({
+              ...prev,
+              totalItems: prev.totalItems + 1
+            }));
+            
+            setNotification({
+              type: 'success',
+              message: 'Expense created successfully!'
+            });
+            setTimeout(() => setNotification(null), 3000);
+          }}
         />
 
         {/* Expense Details Drawer */}

@@ -32,7 +32,7 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
   const transformedAssets = assets.map(asset => ({
     ...asset,
     // Transform vendor for assignment type
-    vendor: asset.transaction?.vendor?.name || 'N/A'
+    vendor: asset.vendor?.name || 'N/A'
   }));
     
   return (

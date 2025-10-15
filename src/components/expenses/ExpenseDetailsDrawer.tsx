@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import type { Expense } from '../../types';
-import { useAuth } from '../../context/AuthContext';
+import { updateExpenseApi, getExpenseByIdApi } from '../../apis/expenses';
+import { getVendorsApi, createVendorApi, type Vendor, type CreateVendorRequest } from '../../apis/vendors';
 import { useNavbar } from '../../context/NavbarContext';
-// import { getExpenseByIdApi, updateExpenseApi } from '../../apis/expenses'; // Uncomment when using real API
 
 interface ExpenseDetailsDrawerProps {
   expense: Expense | null;
@@ -12,41 +12,6 @@ interface ExpenseDetailsDrawerProps {
   viewMode?: 'full' | 'details-only';
 }
 
-interface ExpenseComment {
-  id: number;
-  expenseId: number;
-  commentBy: number;
-  commentText: string;
-  createdAt: string;
-  updatedAt: string;
-  employee: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-}
-
-interface StatusHistoryItem {
-  id: number;
-  expenseId: number;
-  status: string;
-  changedBy: number;
-  commentId: number;
-  createdAt: string;
-  changedByUser: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  comment: {
-    id: number;
-    commentText: string;
-    createdAt: string;
-  };
-}
-
 const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
   expense,
   isOpen,
@@ -54,21 +19,44 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
   onExpenseUpdated,
   viewMode = 'full'
 }) => {
-  const { user } = useAuth();
   const { isNavbarOpen } = useNavbar();
-  const [activeTab, setActiveTab] = useState<'details' | 'timeline' | 'comments' | 'update'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'update'>('details');
   const [isMobile, setIsMobile] = useState(false);
-  const [comments, setComments] = useState<ExpenseComment[]>([]);
-  const [statusHistory, setStatusHistory] = useState<StatusHistoryItem[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoadingExpenseData, setIsLoadingExpenseData] = useState(false);
   
+  // Store complete expense data with vendor details
+  const [completeExpenseData, setCompleteExpenseData] = useState<Expense | null>(null);
+  
   // Update expense form state
   const [updateForm, setUpdateForm] = useState({
-    transactionStatus: '' as 'completed' | 'pending' | 'failed' | 'cancelled' | '',
-    comment: '',
+    title: '',
+    category: '',
+    amount: '',
+    paidOn: '',
+    notes: '',
+    paymentMethod: '' as 'cash' | 'bank' | 'online' | '',
+    processedByRole: '' as 'Employee' | 'Admin' | '',
+    vendorId: ''
+  });
+
+  // Vendor management state
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [isLoadingVendors, setIsLoadingVendors] = useState(false);
+  const [showCreateVendorModal, setShowCreateVendorModal] = useState(false);
+  const [newVendorForm, setNewVendorForm] = useState({
+    name: '',
+    contact_person: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    country: '',
+    bank_account: '',
+    status: 'active',
     notes: ''
   });
+  const [isCreatingVendor, setIsCreatingVendor] = useState(false);
 
   // Notification state
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -79,68 +67,20 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
       setIsLoadingExpenseData(true);
       console.log('🔄 Fetching complete expense details for ID:', expenseId);
       
-      // Real API call - uncomment when backend is ready
-      /*
       const response = await getExpenseByIdApi(expenseId);
+      console.log('🔍 fetchExpenseDetails - Response received:', response);
       
       if (response.success && response.data) {
-        const expenseData = response.data;
-        console.log('✅ Complete expense data fetched:', expenseData);
-        
-        // Extract comments and history if available
-        const expenseComments = (expenseData as any).comments || [];
-        setComments(expenseComments);
-        
-        const history = (expenseData as any).statusHistory || [];
-        setStatusHistory(history);
+        console.log('✅ Complete expense data fetched:', response.data);
+        console.log('🏢 Vendor data:', response.data.vendor);
+        // Store the complete expense data with vendor details
+        setCompleteExpenseData(response.data);
       }
-      */
-      
-      // Mock data for now
-      setComments([
-        {
-          id: 1,
-          expenseId: parseInt(expenseId),
-          commentBy: expense?.createdBy || 50,
-          commentText: `Expense submitted for ${expense?.category || 'general'} payment`,
-          createdAt: expense?.createdAt || new Date().toISOString(),
-          updatedAt: expense?.updatedAt || new Date().toISOString(),
-          employee: {
-            id: expense?.employee?.id || 50,
-            firstName: expense?.employee?.firstName || 'John',
-            lastName: expense?.employee?.lastName || 'Doe',
-            email: expense?.employee?.email || 'john@example.com'
-          }
-        }
-      ]);
-      
-      setStatusHistory([
-        {
-          id: 1,
-          expenseId: parseInt(expenseId),
-          status: expense?.transaction?.status || 'completed',
-          changedBy: expense?.createdBy || 50,
-          commentId: 1,
-          createdAt: expense?.createdAt || new Date().toISOString(),
-          changedByUser: {
-            id: expense?.employee?.id || 50,
-            firstName: expense?.employee?.firstName || 'John',
-            lastName: expense?.employee?.lastName || 'Doe',
-            email: expense?.employee?.email || 'john@example.com'
-          },
-          comment: {
-            id: 1,
-            commentText: `Expense created with ${expense?.paymentMethod} payment method`,
-            createdAt: expense?.createdAt || new Date().toISOString()
-          }
-        }
-      ]);
     } catch (error) {
       console.error('❌ Error fetching expense details:', error);
-      setComments([]);
-      setStatusHistory([]);
     } finally {
       setIsLoadingExpenseData(false);
+      console.log('✅ fetchExpenseDetails completed');
     }
   };
 
@@ -148,19 +88,26 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
   useEffect(() => {
     if (expense && isOpen) {
       console.log('🔍 ExpenseDetailsDrawer received expense:', expense);
-      console.log('🔍 Expense Transaction:', expense.transaction);
-      console.log('🔍 Expense Vendor:', expense.vendor);
-      console.log('🔍 Expense Employee:', expense.employee);
       
-      // Reset update form
+      // Initialize with the prop expense first
+      setCompleteExpenseData(expense);
+      
+      // Reset update form with null checks
       setUpdateForm({
-        transactionStatus: '',
-        comment: '',
-        notes: ''
+        title: expense.title || '',
+        category: expense.category || '',
+        amount: expense.amount ? expense.amount.toString() : '',
+        paidOn: expense.paidOn ? expense.paidOn.split('T')[0] : '',
+        notes: '',
+        paymentMethod: (expense.paymentMethod as 'cash' | 'bank' | 'online') || '',
+        processedByRole: '' as 'Employee' | 'Admin' | '',
+        vendorId: expense.vendorId ? expense.vendorId.toString() : ''
       });
       
-      // Fetch complete expense details (including comments and timeline)
+      // Fetch complete expense details only if expense.id exists
+      if (expense.id) {
       fetchExpenseDetails(expense.id.toString());
+      }
     }
   }, [expense, isOpen]);
 
@@ -180,8 +127,37 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setNotification(null);
+      setShowCreateVendorModal(false);
     }
   }, [isOpen]);
+
+  // Load vendors when update tab opens
+  useEffect(() => {
+    if (activeTab === 'update' && vendors.length === 0) {
+      loadVendors();
+    }
+  }, [activeTab]);
+
+  const loadVendors = async () => {
+    try {
+      setIsLoadingVendors(true);
+      const response = await getVendorsApi();
+      
+      if (response.success && response.data) {
+        setVendors(response.data);
+        console.log('Vendors loaded:', response.data);
+      }
+    } catch (error) {
+      console.error('Error loading vendors:', error);
+      setNotification({ 
+        type: 'error', 
+        message: 'Failed to load vendors. You can still enter vendor ID manually.' 
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsLoadingVendors(false);
+    }
+  };
 
   const handleUpdateFormChange = (field: string, value: string) => {
     setUpdateForm(prev => ({
@@ -190,13 +166,93 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
     }));
   };
 
-  // Check if expense can be updated
-  const canUpdateStatus = expense?.transaction?.status === 'pending' || user?.role === 'admin';
+  // Handle create new vendor
+  const handleCreateVendor = async () => {
+    if (!newVendorForm.name.trim()) {
+      setNotification({ type: 'error', message: 'Vendor name is required' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
 
-  // Handle status update
-  const handleStatusUpdate = async () => {
-    if (!expense || !updateForm.transactionStatus || !updateForm.comment.trim()) {
-      setNotification({ type: 'error', message: 'Please select a status and provide a comment' });
+    // Email validation if provided
+    if (newVendorForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newVendorForm.email)) {
+      setNotification({ type: 'error', message: 'Please provide a valid email address' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    try {
+      setIsCreatingVendor(true);
+
+      const vendorData: CreateVendorRequest = {
+        name: newVendorForm.name.trim(),
+        contact_person: newVendorForm.contact_person.trim() || undefined,
+        email: newVendorForm.email.trim() || undefined,
+        phone: newVendorForm.phone.trim() || undefined,
+        address: newVendorForm.address.trim() || undefined,
+        city: newVendorForm.city.trim() || undefined,
+        country: newVendorForm.country.trim() || undefined,
+        bank_account: newVendorForm.bank_account.trim() || undefined,
+        status: newVendorForm.status || 'active',
+        notes: newVendorForm.notes.trim() || undefined
+      };
+
+      const response = await createVendorApi(vendorData);
+
+      if (response.success && response.data) {
+        // Add new vendor to list
+        setVendors(prev => [...prev, response.data!]);
+        
+        // Auto-select the new vendor
+        setUpdateForm(prev => ({ ...prev, vendorId: response.data!.id.toString() }));
+        
+        // Close create modal and reset form
+        setShowCreateVendorModal(false);
+        setNewVendorForm({
+          name: '',
+          contact_person: '',
+          email: '',
+          phone: '',
+          address: '',
+          city: '',
+          country: '',
+          bank_account: '',
+          status: 'active',
+          notes: ''
+        });
+
+        setNotification({ type: 'success', message: `Vendor "${response.data.name}" created successfully!` });
+        setTimeout(() => setNotification(null), 3000);
+      }
+    } catch (error) {
+      setNotification({ 
+        type: 'error', 
+        message: error instanceof Error ? error.message : 'Failed to create vendor' 
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsCreatingVendor(false);
+    }
+  };
+
+  // Handle expense update
+  const handleUpdateExpense = async () => {
+    if (!expense || !updateForm.title.trim()) {
+      setNotification({ type: 'error', message: 'Please enter expense title' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    if (!updateForm.category) {
+      setNotification({ type: 'error', message: 'Please select a category' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    const newAmount = parseFloat(updateForm.amount);
+
+    if (isNaN(newAmount) || newAmount < 0) {
+      setNotification({ type: 'error', message: 'Please enter a valid amount' });
       setTimeout(() => setNotification(null), 5000);
       return;
     }
@@ -204,67 +260,58 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
     try {
       setIsUpdating(true);
       
-      const updateData = {
-        transactionStatus: updateForm.transactionStatus,
-        comment: updateForm.comment,
-        notes: updateForm.notes
+      const updateData: any = {
+        title: updateForm.title,
+        category: updateForm.category,
+        amount: newAmount,
+        paidOn: updateForm.paidOn || undefined,
+        notes: updateForm.notes || undefined,
+        paymentMethod: updateForm.paymentMethod || undefined,
+        processedByRole: updateForm.processedByRole || undefined
       };
 
-      console.log('Updating expense transaction status:', {
+      // Only include vendorId if it's provided and valid
+      if (updateForm.vendorId && !isNaN(parseInt(updateForm.vendorId))) {
+        updateData.vendorId = parseInt(updateForm.vendorId);
+      }
+
+      console.log('Updating expense:', {
         expenseId: expense.id,
         updateData: updateData
       });
 
-      // Real API call - uncomment when backend is ready
-      /*
-      const response = await updateExpenseApi(expense.id.toString(), updateData);
+      const response = await updateExpenseApi(expense.id, updateData);
+      console.log('✅ Update response:', response);
       
       if (response.success && response.data) {
-        if (onExpenseUpdated) {
-          onExpenseUpdated(response.data);
+        console.log('📦 Updated expense data from update API:', response.data);
+        console.log('🏢 Vendor in update response:', response.data.vendor);
+        
+        // Refetch complete expense details with vendor information
+        const detailsResponse = await getExpenseByIdApi(expense.id.toString());
+        console.log('📦 Refetched expense data:', detailsResponse.data);
+        console.log('🏢 Vendor in refetch response:', detailsResponse.data?.vendor);
+        
+        if (detailsResponse.success && detailsResponse.data) {
+          // Update both parent component and local state with complete expense data including vendor
+          console.log('✅ Updating parent and local state with complete expense data');
+          setCompleteExpenseData(detailsResponse.data);
+          onExpenseUpdated?.(detailsResponse.data);
+        } else {
+          // Fallback to update response data
+          console.log('⚠️ Using fallback update response data');
+          setCompleteExpenseData(response.data);
+          onExpenseUpdated?.(response.data);
         }
         
-        // Refresh expense details
-        await fetchExpenseDetails(expense.id.toString());
-      }
-      */
-      
-      // Mock success for now
-      const updatedExpense: Expense = {
-        ...expense,
-        transaction: expense.transaction ? {
-          ...expense.transaction,
-          status: updateForm.transactionStatus
-        } : {
-          id: expense.transactionId,
-          amount: expense.amount,
-          transactionType: 'expense',
-          status: updateForm.transactionStatus
-        },
-        updatedAt: new Date().toISOString()
-      };
-
-      if (onExpenseUpdated) {
-        onExpenseUpdated(updatedExpense);
-      }
-      
-      // Reset comment but keep status
-      setUpdateForm({
-        transactionStatus: updateForm.transactionStatus,
-        comment: '',
-        notes: ''
-      });
-      
-      // Refresh expense details to get updated comments and timeline
-      await fetchExpenseDetails(expense.id.toString());
-      
-      setNotification({ type: 'success', message: 'Transaction status updated successfully!' });
+        setNotification({ type: 'success', message: 'Expense updated successfully!' });
       setTimeout(() => setNotification(null), 3000);
       
-      // Switch to timeline tab to show the new status
-      setActiveTab('timeline');
+        // Switch to details tab
+        setActiveTab('details');
+      }
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error('Error updating expense:', error);
       setNotification({ 
         type: 'error', 
         message: error instanceof Error ? error.message : 'Unknown error' 
@@ -275,33 +322,14 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
     }
   };
 
-  const getTransactionStatusBadge = (status: string | null | undefined) => {
-    if (!status) {
+  const getCategoryBadge = (category: string | null | undefined) => {
+    if (!category) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
           UNKNOWN
         </span>
       );
     }
-
-    const statusClasses = {
-      completed: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      failed: 'bg-red-100 text-red-800',
-      cancelled: 'bg-gray-100 text-gray-800'
-    };
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        statusClasses[status as keyof typeof statusClasses] || 'bg-gray-100 text-gray-800'
-      }`}>
-        {status.toUpperCase()}
-      </span>
-    );
-  };
-
-  const getCategoryBadge = (category: string | null | undefined) => {
-    if (!category) return null;
 
     const categoryClasses: Record<string, string> = {
       'Office Expenses': 'bg-blue-100 text-blue-800',
@@ -325,32 +353,31 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
   };
 
   const getPaymentMethodBadge = (method: string | null | undefined) => {
-    if (!method) return null;
+    if (!method) return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+        N/A
+      </span>
+    );
 
     const methodClasses: Record<string, string> = {
       bank: 'bg-blue-100 text-blue-800',
       cash: 'bg-green-100 text-green-800',
-      credit_card: 'bg-purple-100 text-purple-800',
       online: 'bg-indigo-100 text-indigo-800'
-    };
-
-    const methodLabels: Record<string, string> = {
-      bank: 'BANK TRANSFER',
-      cash: 'CASH',
-      credit_card: 'CREDIT CARD',
-      online: 'ONLINE'
     };
     
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
         methodClasses[method] || 'bg-gray-100 text-gray-800'
       }`}>
-        {methodLabels[method] || method.toUpperCase()}
+        {method.toUpperCase()}
       </span>
     );
   };
 
   if (!isOpen || !expense) return null;
+
+  // Use completeExpenseData if available (has vendor info), otherwise fall back to expense prop
+  const displayExpense = completeExpenseData || expense;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -405,14 +432,12 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
               ) : (
                 [
                   { id: 'details', name: 'Details' },
-                  { id: 'timeline', name: 'Timeline' },
-                  { id: 'comments', name: 'Comments' },
                   { id: 'update', name: 'Update' }
                 ].map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => {
-                      setActiveTab(tab.id as any);
+                      setActiveTab(tab.id as 'details' | 'update');
                     }}
                     className={`py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === tab.id
@@ -429,9 +454,21 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
 
           {/* Content */}
           <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
-            {(viewMode === 'details-only' || activeTab === 'details') && (
+            {isLoadingExpenseData && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <svg className="animate-spin h-10 w-10 mx-auto text-blue-600" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <p className="mt-3 text-sm text-gray-600">Loading complete expense details...</p>
+                </div>
+              </div>
+            )}
+            
+            {!isLoadingExpenseData && (viewMode === 'details-only' || activeTab === 'details') && (
               <div className="space-y-6">
-                {/* Basic Information */}
+                {/* Expense Information */}
                 <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
                   <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                     <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -440,62 +477,38 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
                     Expense Information
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                      <p className="text-lg text-gray-900 font-medium">{expense.title}</p>
-                    </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-                      <p className="text-2xl text-red-600 font-bold">
-                        ${expense.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                      <p className="text-lg text-gray-900 font-medium">{displayExpense.title}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                       <div className="mt-1">
-                        {getCategoryBadge(expense.category)}
+                        {getCategoryBadge(displayExpense.category)}
                       </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                      <p className="text-xl text-red-600 font-bold">
+                        ${displayExpense.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
                       <div className="mt-1">
-                        {getPaymentMethodBadge(expense.paymentMethod)}
+                        {getPaymentMethodBadge(displayExpense.paymentMethod)}
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Paid On</label>
                       <p className="text-lg text-gray-900 font-medium">
-                        {new Date(expense.paidOn).toLocaleDateString()}
+                        {new Date(displayExpense.paidOn).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
                       <p className="text-lg text-gray-900 font-medium">
-                        {expense.vendor?.name || 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Transaction & Status Information */}
-                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <svg className="h-5 w-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Transaction Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Status</label>
-                      <div className="mt-1">
-                        {getTransactionStatusBadge(expense.transaction?.status)}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
-                      <p className="text-lg text-gray-900 font-medium capitalize">
-                        {expense.transaction?.transactionType || 'expense'}
+                        {displayExpense.vendor?.name || 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -514,169 +527,31 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Created At</label>
                         <p className="text-lg text-gray-900 font-medium">
-                          {new Date(expense.createdAt).toLocaleString()}
+                          {new Date(displayExpense.createdAt).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
                         <p className="text-lg text-gray-900 font-medium">
-                          {new Date(expense.updatedAt).toLocaleString()}
+                          {new Date(displayExpense.updatedAt).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Created By</label>
                         <p className="text-lg text-gray-900 font-medium">
-                          {expense.employee 
-                            ? `${expense.employee.firstName} ${expense.employee.lastName}`
+                          {displayExpense.employee 
+                            ? `${displayExpense.employee.firstName} ${displayExpense.employee.lastName}`
                             : 'N/A'
                           }
                         </p>
-                        {expense.employee?.email && (
-                          <div className="text-sm text-gray-500 mt-1">
-                            {expense.employee.email}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {viewMode === 'full' && activeTab === 'timeline' && (
-              <div className="space-y-4">
-                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <svg className="h-5 w-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Activity Timeline
-                  </h3>
-                  <div className="flow-root">
-                    <ul className="-mb-8">
-                      {isLoadingExpenseData ? (
-                        <div className="text-center py-8">
-                          <svg className="animate-spin mx-auto h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          <p className="mt-2 text-sm text-gray-500">Loading timeline...</p>
-                        </div>
-                      ) : statusHistory.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <p className="mt-2 text-sm">No activity history yet</p>
-                        </div>
-                      ) : (
-                        statusHistory.map((event, eventIdx) => (
-                          <li key={event.id}>
-                            <div className="relative pb-8">
-                              {eventIdx !== statusHistory.length - 1 ? (
-                                <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
-                              ) : null}
-                              <div className="relative flex space-x-4">
                                 <div>
-                                  <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
-                                    event.status === 'approved' ? 'bg-green-500' :
-                                    event.status === 'rejected' ? 'bg-red-500' :
-                                    event.status === 'pending' ? 'bg-yellow-500' :
-                                    event.status === 'paid' ? 'bg-blue-500' :
-                                    'bg-purple-500'
-                                  }`}>
-                                    <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                  </span>
-                                </div>
-                                <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                  <div className="flex-1">
-                                    <p className="text-base text-gray-900 font-medium">
-                                      Status: <span className="font-semibold text-gray-900">{event.status.toUpperCase()}</span>
-                                    </p>
-                                    {event.comment && event.comment.commentText && (
-                                      <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                                        "{event.comment.commentText}"
-                                      </p>
-                                    )}
-                                    <p className="mt-2 text-sm text-gray-500">
-                                      by {event.changedByUser.firstName} {event.changedByUser.lastName}
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {displayExpense.vendor?.name || 'N/A'}
                                     </p>
                                   </div>
-                                  <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                                    <time dateTime={event.createdAt}>
-                                      {new Date(event.createdAt).toLocaleDateString()}
-                                    </time>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                      {new Date(event.createdAt).toLocaleTimeString()}
-                                    </p>
                                   </div>
-                                </div>
-                              </div>
-                            </div>
-                          </li>
-                        ))
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {viewMode === 'full' && activeTab === 'comments' && (
-              <div className="space-y-4">
-                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <svg className="h-5 w-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    Comments & Notes
-                  </h3>
-
-                  {/* Comments List */}
-                  <div className="space-y-4">
-                    {isLoadingExpenseData ? (
-                      <div className="text-center py-8">
-                        <svg className="animate-spin mx-auto h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p className="mt-2 text-sm text-gray-500">Loading comments...</p>
-                      </div>
-                    ) : comments.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                        <p className="mt-2 text-sm">No comments yet</p>
-                      </div>
-                    ) : (
-                      comments.map((comment) => (
-                        <div key={comment.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                          <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0">
-                              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                <span className="text-sm font-medium text-blue-700">
-                                  {comment.employee.firstName.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2">
-                                <p className="text-sm font-medium text-gray-900">
-                                  {comment.employee.firstName} {comment.employee.lastName}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {new Date(comment.createdAt).toLocaleString()}
-                                </p>
-                              </div>
-                              <p className="mt-2 text-sm text-gray-700 leading-relaxed">{comment.commentText}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
                   </div>
                 </div>
               </div>
@@ -689,28 +564,9 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
                     <svg className="h-5 w-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Update Transaction Status
+                    Update Expense
                   </h3>
                   
-                  {!canUpdateStatus ? (
-                    <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <h3 className="text-sm font-medium text-red-800">
-                            Cannot Update Status
-                          </h3>
-                          <div className="mt-2 text-sm text-red-700">
-                            <p>Transaction status can only be updated by authorized users. Current status: <span className="font-semibold">{expense.transaction?.status || 'N/A'}</span></p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
                     <div className="space-y-6">
                       <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                         <div className="flex">
@@ -721,129 +577,425 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
                           </div>
                           <div className="ml-3">
                             <h3 className="text-sm font-medium text-blue-800">
-                              Update Transaction Status
+                            Update Expense Information
                             </h3>
                             <div className="mt-2 text-sm text-blue-700">
-                              <p>Change the transaction status and add a comment to explain the change. Comments help maintain a clear audit trail.</p>
+                            <p>Update expense details. All fields are optional - only changed values will be updated.</p>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Transaction Status Selection */}
+                    <form className="space-y-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Transaction Status <span className="text-red-500">*</span>
+                          Title <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={updateForm.title}
+                          onChange={(e) => handleUpdateFormChange('title', e.target.value)}
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter expense title"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Category <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={updateForm.category}
+                          onChange={(e) => handleUpdateFormChange('category', e.target.value)}
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter category (e.g., Office Expenses, Utilities)"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Amount <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="text-gray-500 sm:text-sm">$</span>
+                          </div>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={updateForm.amount}
+                            onChange={(e) => handleUpdateFormChange('amount', e.target.value)}
+                            className="block w-full pl-7 pr-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Paid On
+                        </label>
+                        <input
+                          type="date"
+                          value={updateForm.paidOn}
+                          onChange={(e) => handleUpdateFormChange('paidOn', e.target.value)}
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Payment Method
                         </label>
                         <select
-                          value={updateForm.transactionStatus}
-                          onChange={(e) => handleUpdateFormChange('transactionStatus', e.target.value)}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                          value={updateForm.paymentMethod}
+                          onChange={(e) => handleUpdateFormChange('paymentMethod', e.target.value)}
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">Select transaction status...</option>
-                          <option value="pending">Pending</option>
-                          <option value="completed">Completed</option>
-                          <option value="failed">Failed</option>
-                          <option value="cancelled">Cancelled</option>
+                          <option value="">Select payment method</option>
+                          <option value="cash">Cash</option>
+                          <option value="bank">Bank</option>
+                          <option value="online">Online</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Processed By
+                        </label>
+                        <select
+                          value={updateForm.processedByRole}
+                          onChange={(e) => handleUpdateFormChange('processedByRole', e.target.value)}
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select who processed</option>
+                          <option value="Employee">Employee</option>
+                          <option value="Admin">Admin</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Vendor
+                        </label>
+                        <select
+                          value={updateForm.vendorId}
+                          onChange={(e) => {
+                            if (e.target.value === 'create_new') {
+                              setShowCreateVendorModal(true);
+                            } else {
+                              handleUpdateFormChange('vendorId', e.target.value);
+                            }
+                          }}
+                          disabled={isLoadingVendors}
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                        >
+                          <option value="">
+                            {isLoadingVendors ? 'Loading vendors...' : 'Select vendor'}
+                          </option>
+                          {vendors.map((vendor) => (
+                            <option key={vendor.id} value={vendor.id}>
+                              {vendor.name}
+                            </option>
+                          ))}
+                          <option value="create_new" className="font-semibold text-blue-600">
+                            ➕ Create New Vendor
+                          </option>
                         </select>
                         <p className="mt-1 text-xs text-gray-500">
-                          Current status: <span className="font-medium">{expense.transaction?.status || 'Unknown'}</span>
+                          Current vendor: {displayExpense.vendor?.name || 'N/A'}
                         </p>
                       </div>
 
-                      {/* Comment */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Comment <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          value={updateForm.comment}
-                          onChange={(e) => handleUpdateFormChange('comment', e.target.value)}
-                          rows={4}
-                          placeholder="Add a comment explaining this status change..."
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                        />
-                        <p className="mt-1 text-xs text-gray-500">
-                          Comments are required to maintain audit trail
-                        </p>
-                      </div>
-
-                      {/* Additional Notes */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Additional Notes (Optional)
+                          Notes
                         </label>
                         <textarea
                           value={updateForm.notes}
                           onChange={(e) => handleUpdateFormChange('notes', e.target.value)}
                           rows={3}
-                          placeholder="Add any additional notes or details..."
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Add any additional notes..."
                         />
                       </div>
 
-                      {/* Update Button */}
-                      <div className="flex space-x-3">
+                      <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
                         <button
-                          onClick={handleStatusUpdate}
-                          disabled={isUpdating || !updateForm.transactionStatus || !updateForm.comment.trim()}
-                          className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-base transition-colors"
+                          type="button"
+                          onClick={() => setActiveTab('details')}
+                          className="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleUpdateExpense}
+                          disabled={isUpdating || !updateForm.title.trim() || !updateForm.category}
+                          className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isUpdating ? (
-                            <span className="flex items-center justify-center">
-                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                            <>
+                              <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
                               Updating...
-                            </span>
+                            </>
                           ) : (
-                            'Update Transaction Status'
+                            'Update Expense'
                           )}
                         </button>
                       </div>
+                    </form>
                     </div>
-                  )}
                 </div>
               </div>
             )}
+
           </div>
         </div>
 
         {/* Notification */}
         {notification && (
-          <div className={`fixed ${isMobile ? 'bottom-4 left-4 right-4' : 'top-4 right-4'} z-50 max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden ${
-            notification.type === 'success' ? 'border-l-4 border-green-400' : 'border-l-4 border-red-400'
-          }`}>
-            <div className="p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  {notification.type === 'success' ? (
-                    <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          <div 
+            className={`
+              fixed top-5 right-5 px-5 py-4 rounded-lg text-white font-medium z-[1100]
+              flex items-center gap-3 min-w-[300px] shadow-lg
+              ${notification.type === 'success' 
+                ? 'bg-gradient-to-r from-green-500 to-green-600' 
+                : 'bg-gradient-to-r from-red-500 to-red-600'
+              }
+            `}
+          >
+            <span className="flex-1">{notification.message}</span>
+            <button 
+              className="bg-transparent border-none text-white text-xl cursor-pointer p-0 w-6 h-6 flex items-center justify-center rounded-full transition-colors duration-200 hover:bg-white/20"
+              onClick={() => setNotification(null)}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* Create Vendor Modal */}
+        {showCreateVendorModal && (
+          <div className="fixed inset-0 z-[1200] overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-gray-900 bg-opacity-75" onClick={() => setShowCreateVendorModal(false)}></div>
+              
+              <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                      <svg className="h-6 w-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                  ) : (
-                    <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      Create New Vendor
+                    </h3>
+                    <button 
+                      onClick={() => {
+                        setShowCreateVendorModal(false);
+                        setNewVendorForm({
+                          name: '',
+                          contact_person: '',
+                          email: '',
+                          phone: '',
+                          address: '',
+                          city: '',
+                          country: '',
+                          bank_account: '',
+                          status: 'active',
+                          notes: ''
+                        });
+                      }} 
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                  )}
+                    </button>
                 </div>
-                <div className="ml-3 w-0 flex-1 pt-0.5">
-                  <p className={`text-sm font-medium ${
-                    notification.type === 'success' ? 'text-green-800' : 'text-red-800'
-                  }`}>
-                    {notification.message}
+                </div>
+
+                <div className="px-6 py-4 space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <p className="text-sm text-blue-700">
+                      Create a new vendor to track your expense payments. All fields are optional except the name.
                   </p>
                 </div>
-                <div className="ml-4 flex-shrink-0 flex">
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Vendor Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newVendorForm.name}
+                      onChange={(e) => setNewVendorForm({...newVendorForm, name: e.target.value})}
+                      placeholder="e.g., Office Supplies Inc"
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      maxLength={255}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Contact Person
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.contact_person}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, contact_person: e.target.value})}
+                        placeholder="John Smith"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        maxLength={255}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={newVendorForm.email}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, email: e.target.value})}
+                        placeholder="vendor@example.com"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        maxLength={255}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.phone}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, phone: e.target.value})}
+                        placeholder="+1-555-0123"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        maxLength={50}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Bank Account
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.bank_account}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, bank_account: e.target.value})}
+                        placeholder="1234567890"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        maxLength={255}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      value={newVendorForm.address}
+                      onChange={(e) => setNewVendorForm({...newVendorForm, address: e.target.value})}
+                      placeholder="123 Business Street, Suite 100"
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.city}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, city: e.target.value})}
+                        placeholder="New York"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        maxLength={100}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.country}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, country: e.target.value})}
+                        placeholder="United States"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        maxLength={100}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Notes
+                    </label>
+                    <textarea
+                      value={newVendorForm.notes}
+                      onChange={(e) => setNewVendorForm({...newVendorForm, notes: e.target.value})}
+                      rows={3}
+                      placeholder="Additional notes about this vendor..."
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
                   <button
-                    onClick={() => setNotification(null)}
-                    className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
+                    type="button"
+                    onClick={() => {
+                      setShowCreateVendorModal(false);
+                      setNewVendorForm({
+                        name: '',
+                        contact_person: '',
+                        email: '',
+                        phone: '',
+                        address: '',
+                        city: '',
+                        country: '',
+                        bank_account: '',
+                        status: 'active',
+                        notes: ''
+                      });
+                    }}
+                    className="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                   >
-                    <span className="sr-only">Close</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateVendor}
+                    disabled={isCreatingVendor || !newVendorForm.name.trim()}
+                    className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCreatingVendor ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Vendor'
+                    )}
                   </button>
                 </div>
               </div>

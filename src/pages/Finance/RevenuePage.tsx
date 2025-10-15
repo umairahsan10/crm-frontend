@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import RevenueTable from '../../components/revenue/RevenueTable';
-import LeadsSearchFilters from '../../components/leads/LeadsSearchFilters';
-import { revenueFilterConfig } from '../../components/revenue/filterConfigs';
 import RevenueDetailsDrawer from '../../components/revenue/RevenueDetailsDrawer';
+import AddRevenueDrawer from '../../components/revenue/AddRevenueDrawer';
+import RevenuesSearchFilters from '../../components/revenue/RevenuesSearchFilters';
 import RevenueStatistics from '../../components/revenue/RevenueStatistics';
-// import { getRevenuesApi } from '../../apis/revenue'; // Uncomment when using real API
+import { getRevenuesApi } from '../../apis/revenue';
 import type { Revenue } from '../../types';
 
 interface RevenuePageProps {
@@ -17,6 +17,7 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
   const [selectedRevenue, setSelectedRevenue] = useState<Revenue | null>(null);
   const [selectedRevenues, setSelectedRevenues] = useState<string[]>([]);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showAddRevenueDrawer, setShowAddRevenueDrawer] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Revenues state
@@ -78,118 +79,64 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
     }
   });
 
-  // Mock data generation (matching API structure)
-  const generateMockRevenues = (): Revenue[] => {
-    const categories = ['Software Development', 'Consulting', 'Product Sales', 'Subscription', 'Support', 'Training', 'License', 'Other'];
-    const paymentMethods = ['bank', 'cash', 'credit_card', 'online'];
-    const transactionStatuses = ['completed', 'pending', 'failed'];
-    const sources = ['Project Payment', 'Invoice Payment', 'Subscription Payment', 'Service Payment', 'Product Sale', 'Other'];
-    const clients = [
-      { id: 123, companyName: 'ABC Corp' },
-      { id: 124, companyName: 'Tech Solutions Inc' },
-      { id: 125, companyName: 'Digital Innovations' },
-      { id: 126, companyName: 'Enterprise Systems Ltd' },
-      { id: 127, companyName: 'Global Services Group' }
-    ];
-    const employees = [
-      { id: 50, firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
-      { id: 51, firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com' },
-      { id: 52, firstName: 'Mike', lastName: 'Johnson', email: 'mike@example.com' },
-      { id: 53, firstName: 'Sarah', lastName: 'Williams', email: 'sarah@example.com' }
-    ];
-    
-    const mockRevenues: Revenue[] = [];
-
-    for (let i = 1; i <= 50; i++) {
-      const randomClient = clients[Math.floor(Math.random() * clients.length)];
-      const randomEmployee = employees[Math.floor(Math.random() * employees.length)];
-      const randomStatus = transactionStatuses[Math.floor(Math.random() * transactionStatuses.length)];
-      const amount = Math.floor(Math.random() * 100000) + 5000;
-      const receivedDate = new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000);
-      const invoiceId = 400 + i;
-      
-      mockRevenues.push({
-        id: i,
-        source: sources[Math.floor(Math.random() * sources.length)],
-        category: categories[Math.floor(Math.random() * categories.length)],
-        amount: amount,
-        receivedFrom: randomClient.id,
-        receivedOn: receivedDate.toISOString(),
-        paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-        relatedInvoiceId: invoiceId,
-        createdBy: randomEmployee.id,
-        transactionId: 100 + i,
-        createdAt: receivedDate.toISOString(),
-        updatedAt: receivedDate.toISOString(),
-        transaction: {
-          id: 100 + i,
-          amount: amount,
-          transactionType: 'income',
-          status: randomStatus
-        },
-        lead: randomClient,
-        invoice: {
-          id: invoiceId,
-          amount: amount,
-          notes: `Payment for ${categories[Math.floor(Math.random() * categories.length)]} services`
-        },
-        employee: randomEmployee
-      });
-    }
-
-    return mockRevenues;
-  };
-
-  // Fetch revenues
+  // Fetch revenues from database
   const fetchRevenues = async (page: number = 1) => {
     try {
       setIsLoading(true);
       
-      // Using mock data for now
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const mockData = generateMockRevenues();
+      console.log('📤 [REVENUE] Fetching revenues - Page:', page, 'Filters:', filters);
+      console.log('📤 [REVENUE] Calling getRevenuesApi...');
       
-      // Apply filters to mock data
-      let filteredData = mockData;
-      if (filters.category) {
-        filteredData = filteredData.filter(r => r.category === filters.category);
-      }
-      if (filters.paymentMethod) {
-        filteredData = filteredData.filter(r => r.paymentMethod === filters.paymentMethod);
-      }
-      if (filters.source) {
-        filteredData = filteredData.filter(r => r.source === filters.source);
-      }
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredData = filteredData.filter(r => 
-          r.source.toLowerCase().includes(searchLower) ||
-          r.category.toLowerCase().includes(searchLower) ||
-          r.lead?.companyName.toLowerCase().includes(searchLower)
-        );
-      }
-      if (filters.minAmount) {
-        filteredData = filteredData.filter(r => r.amount >= parseFloat(filters.minAmount));
-      }
-      if (filters.maxAmount) {
-        filteredData = filteredData.filter(r => r.amount <= parseFloat(filters.maxAmount));
-      }
-      
-      setRevenues(filteredData.slice(0, 20));
-      setPagination({
-        currentPage: page,
-        totalPages: Math.ceil(filteredData.length / 20),
-        totalItems: filteredData.length,
-        itemsPerPage: 20
+      const response = await getRevenuesApi(page, pagination.itemsPerPage, {
+        category: filters.category || undefined,
+        source: filters.source || undefined,
+        fromDate: filters.fromDate || undefined,
+        toDate: filters.toDate || undefined,
+        createdBy: filters.createdBy || undefined,
+        minAmount: filters.minAmount || undefined,
+        maxAmount: filters.maxAmount || undefined,
+        paymentMethod: filters.paymentMethod || undefined,
+        receivedFrom: filters.receivedFrom || undefined,
+        relatedInvoiceId: filters.relatedInvoiceId || undefined,
+        search: filters.search || undefined,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
       });
+      
+      console.log('✅ [REVENUE] API Response received:', response);
+      console.log('✅ [REVENUE] Response data:', response.data);
+      console.log('✅ [REVENUE] Response pagination:', response.pagination);
+      
+      if (response.success && response.data) {
+        console.log(`✅ [REVENUE] Setting ${response.data.length} revenues to state`);
+        setRevenues(response.data);
+        
+        if (response.pagination) {
+          setPagination({
+            currentPage: response.pagination.page,
+            totalPages: response.pagination.totalPages,
+            totalItems: response.pagination.total,
+            itemsPerPage: pagination.itemsPerPage
+          });
+          console.log('✅ [REVENUE] Pagination updated:', response.pagination);
+        }
+      } else {
+        console.warn('⚠️ [REVENUE] Response not successful or no data');
+      }
     } catch (error) {
-      console.error('Error fetching revenues:', error);
+      console.error('❌ [REVENUE] Error fetching revenues:', error);
+      console.error('❌ [REVENUE] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       setNotification({
         type: 'error',
         message: error instanceof Error ? error.message : 'Failed to load revenues'
       });
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsLoading(false);
+      console.log('✅ [REVENUE] Fetch complete. Loading state set to false');
     }
   };
 
@@ -233,14 +180,26 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
 
   // Load data on component mount
   useEffect(() => {
-    fetchRevenues();
+    console.log('🔵 [REVENUE] Component mounted - fetching revenues...');
+    console.log('🔵 [REVENUE] Initial state - isLoading:', isLoading);
+    console.log('🔵 [REVENUE] Initial state - revenues:', revenues);
+    fetchRevenues(1).then(() => {
+      console.log('🔵 [REVENUE] Initial fetch completed');
+    });
     fetchStatistics();
   }, []);
 
-  // Refetch when filters change
+  // Refetch when filters change (skip on initial mount)
+  const [isInitialMount, setIsInitialMount] = useState(true);
+  
   useEffect(() => {
+    if (isInitialMount) {
+      setIsInitialMount(false);
+      return;
+    }
+    console.log('🔄 [REVENUE] Filters changed - refetching...');
     fetchRevenues(1);
-  }, [filters]);
+  }, [filters.category, filters.source, filters.fromDate, filters.toDate, filters.createdBy, filters.minAmount, filters.maxAmount, filters.paymentMethod, filters.receivedFrom, filters.relatedInvoiceId]);
 
   // Handlers
   const handlePageChange = (page: number) => {
@@ -272,10 +231,6 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
     setFilters(prev => ({ ...prev, source }));
   };
 
-  const handleCreatedByFilter = (createdBy: string) => {
-    setFilters(prev => ({ ...prev, createdBy }));
-  };
-
   const handleDateRangeFilter = (fromDate: string, toDate: string) => {
     setFilters(prev => ({ ...prev, fromDate, toDate }));
   };
@@ -286,6 +241,14 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
 
   const handleMaxAmountFilter = (maxAmount: string) => {
     setFilters(prev => ({ ...prev, maxAmount }));
+  };
+
+  const handleReceivedFromFilter = (receivedFrom: string) => {
+    setFilters(prev => ({ ...prev, receivedFrom }));
+  };
+
+  const handleRelatedInvoiceIdFilter = (relatedInvoiceId: string) => {
+    setFilters(prev => ({ ...prev, relatedInvoiceId }));
   };
 
   const handleClearFilters = () => {
@@ -345,6 +308,7 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
                 {showStatistics ? 'Hide Stats' : 'Show Stats'}
               </button>
               <button
+                onClick={() => setShowAddRevenueDrawer(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -364,16 +328,16 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
         )}
 
         {/* Search Filters */}
-        <LeadsSearchFilters
-          config={revenueFilterConfig}
+        <RevenuesSearchFilters
           onSearch={handleSearch}
-          onTypeFilter={handleCategoryFilter}
-          onStatusFilter={handlePaymentMethodFilter}
+          onCategoryFilter={handleCategoryFilter}
           onSourceFilter={handleSourceFilter}
-          onAssignedToFilter={handleCreatedByFilter}
           onDateRangeFilter={handleDateRangeFilter}
           onMinAmountFilter={handleMinAmountFilter}
           onMaxAmountFilter={handleMaxAmountFilter}
+          onPaymentMethodFilter={handlePaymentMethodFilter}
+          onReceivedFromFilter={handleReceivedFromFilter}
+          onRelatedInvoiceIdFilter={handleRelatedInvoiceIdFilter}
           onClearFilters={handleClearFilters}
         />
 
@@ -389,6 +353,28 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
           onRevenueClick={handleRevenueClick}
           onBulkSelect={handleBulkSelect}
           selectedRevenues={selectedRevenues}
+        />
+
+        {/* Add Revenue Drawer */}
+        <AddRevenueDrawer
+          isOpen={showAddRevenueDrawer}
+          onClose={() => setShowAddRevenueDrawer(false)}
+          onRevenueCreated={(newRevenue) => {
+            // Add the new revenue to the list
+            setRevenues(prev => [newRevenue, ...prev]);
+            
+            // Update pagination
+            setPagination(prev => ({
+              ...prev,
+              totalItems: prev.totalItems + 1
+            }));
+            
+            setNotification({
+              type: 'success',
+              message: 'Revenue created successfully!'
+            });
+            setTimeout(() => setNotification(null), 3000);
+          }}
         />
 
         {/* Revenue Details Drawer */}

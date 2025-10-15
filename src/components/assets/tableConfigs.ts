@@ -15,8 +15,8 @@ const categoryBadgeConfig = {
 // Assets Table Configuration (matching API structure)
 export const assetsTableConfig: ColumnConfig[] = [
   {
-    key: 'name',
-    label: 'Asset Name',
+    key: 'title',
+    label: 'Asset Title',
     type: 'text',
     width: '25%'
   },
@@ -48,7 +48,7 @@ export const assetsTableConfig: ColumnConfig[] = [
   {
     key: 'vendor',
     label: 'Vendor',
-    type: 'assignment',
+    type: 'text',
     width: '15%'
   }
 ];

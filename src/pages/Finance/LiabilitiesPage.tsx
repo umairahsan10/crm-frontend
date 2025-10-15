@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-// import { useAuth } from '../../context/AuthContext'; // Commented out - not currently used
-import LeadsSearchFilters from '../../components/leads/LeadsSearchFilters';
 import LiabilitiesTable from '../../components/liabilities/LiabilitiesTable';
 import LiabilitiesStatistics from '../../components/liabilities/LiabilitiesStatistics';
 import LiabilityDetailsDrawer from '../../components/liabilities/LiabilityDetailsDrawer';
-import { liabilitiesFilterConfig } from '../../components/liabilities/filterConfigs';
+import AddLiabilityDrawer from '../../components/liabilities/AddLiabilityDrawer';
+import LiabilitiesSearchFilters from '../../components/liabilities/LiabilitiesSearchFilters';
+import { getLiabilitiesApi } from '../../apis/liabilities';
 import type { Liability } from '../../types';
 
 interface LiabilitiesPageProps {
@@ -24,10 +24,11 @@ interface LiabilitiesFilters {
 }
 
 const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
-  // const { user } = useAuth(); // Commented out - not currently used
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showAddLiabilityDrawer, setShowAddLiabilityDrawer] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -81,219 +82,135 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
     }
   });
 
-  // Generate mock liabilities data
-  const generateMockLiabilities = (count: number): Liability[] => {
-    const categories = ['Rent', 'Loan', 'Credit Card', 'Utilities', 'Salary', 'Vendor Payment', 'Tax', 'Other'];
-    const vendors = [
-      { id: 10, name: 'Property Management Co' },
-      { id: 11, name: 'Bank of America' },
-      { id: 12, name: 'Chase Credit Card' },
-      { id: 13, name: 'Electric Company' },
-      { id: 14, name: 'Tax Authority' },
-      { id: 15, name: 'Supplier Inc' }
-    ];
-    
-    const mockData: Liability[] = [];
-    const today = new Date();
-    
-    for (let i = 1; i <= count; i++) {
-      const category = categories[Math.floor(Math.random() * categories.length)];
-      const vendor = vendors[Math.floor(Math.random() * vendors.length)];
-      const amount = Math.floor(Math.random() * 50000) + 1000;
-      const isPaid = Math.random() > 0.6;
-      const daysFromNow = Math.floor(Math.random() * 60) - 30; // -30 to +30 days
-      const dueDate = new Date(today);
-      dueDate.setDate(today.getDate() + daysFromNow);
-      
-      const createdDate = new Date(today);
-      createdDate.setDate(today.getDate() - Math.floor(Math.random() * 30));
-      
-      const paidDate = isPaid ? new Date(dueDate.getTime() + Math.random() * 7 * 24 * 60 * 60 * 1000) : null;
-      
-      mockData.push({
-        id: i,
-        name: `${category} Payment #${1000 + i}`,
-        category,
-        amount,
-        dueDate: dueDate.toISOString(),
-        isPaid,
-        paidOn: paidDate ? paidDate.toISOString() : null,
-        transactionId: 200 + i,
-        relatedVendorId: vendor.id,
-        createdBy: 50,
-        createdAt: createdDate.toISOString(),
-        updatedAt: (paidDate || createdDate).toISOString(),
-        transaction: {
-          id: 200 + i,
-          amount,
-          status: isPaid ? 'completed' : 'pending'
-        },
-        vendor,
-        employee: {
-          id: 50,
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john@example.com'
-        }
-      });
-    }
-    
-    return mockData;
-  };
-
-  // Load liabilities
-  useEffect(() => {
-    loadLiabilities();
-  }, [pagination.currentPage, filters]);
-
-  const loadLiabilities = async () => {
+  // Load liabilities from database
+  const loadLiabilities = async (page: number = 1) => {
     try {
       setIsLoading(true);
       
-      // Generate mock data
-      const allLiabilities = generateMockLiabilities(50);
+      console.log('📤 Fetching liabilities with filters:', filters);
       
-      // Apply filters
-      let filteredLiabilities = allLiabilities;
-      
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredLiabilities = filteredLiabilities.filter(liability => 
-          liability.name.toLowerCase().includes(searchLower) ||
-          liability.category.toLowerCase().includes(searchLower) ||
-          liability.vendor?.name.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      if (filters.isPaid) {
-        const isPaidValue = filters.isPaid === 'true';
-        filteredLiabilities = filteredLiabilities.filter(liability => liability.isPaid === isPaidValue);
-      }
-      
-      if (filters.category) {
-        filteredLiabilities = filteredLiabilities.filter(liability => liability.category === filters.category);
-      }
-      
-      if (filters.relatedVendorId) {
-        filteredLiabilities = filteredLiabilities.filter(liability => 
-          liability.relatedVendorId === parseInt(filters.relatedVendorId)
-        );
-      }
-      
-      if (filters.createdBy) {
-        filteredLiabilities = filteredLiabilities.filter(liability => 
-          liability.createdBy === parseInt(filters.createdBy)
-        );
-      }
-      
-      if (filters.fromDate) {
-        filteredLiabilities = filteredLiabilities.filter(liability => 
-          new Date(liability.dueDate) >= new Date(filters.fromDate)
-        );
-      }
-      
-      if (filters.toDate) {
-        filteredLiabilities = filteredLiabilities.filter(liability => 
-          new Date(liability.dueDate) <= new Date(filters.toDate)
-        );
-      }
-      
-      // Calculate statistics
-      const totalAmount = filteredLiabilities.reduce((sum, l) => sum + l.amount, 0);
-      const paidAmount = filteredLiabilities.filter(l => l.isPaid).reduce((sum, l) => sum + l.amount, 0);
-      const unpaidAmount = totalAmount - paidAmount;
-      
-      const today = new Date();
-      const overdue = filteredLiabilities.filter(l => !l.isPaid && new Date(l.dueDate) < today).length;
-      
-      const categoryCount = filteredLiabilities.reduce((acc, l) => {
-        const key = l.category.toLowerCase().replace(/\s+/g, '');
-        if (key === 'rent') acc.rent++;
-        else if (key === 'loan') acc.loan++;
-        else if (key === 'creditcard') acc.creditCard++;
-        else if (key === 'utilities') acc.utilities++;
-        else if (key === 'salary') acc.salary++;
-        else if (key === 'vendorpayment') acc.vendorPayment++;
-        else if (key === 'tax') acc.tax++;
-        else acc.other++;
-        return acc;
-      }, { rent: 0, loan: 0, creditCard: 0, utilities: 0, salary: 0, vendorPayment: 0, tax: 0, other: 0 });
-      
-      const todayStr = today.toISOString().split('T')[0];
-      const todayNew = filteredLiabilities.filter(l => 
-        l.createdAt.split('T')[0] === todayStr
-      ).length;
-      const todayPaid = filteredLiabilities.filter(l => 
-        l.isPaid && l.paidOn && l.paidOn.split('T')[0] === todayStr
-      ).length;
-      const todayDue = filteredLiabilities.filter(l => 
-        l.dueDate.split('T')[0] === todayStr
-      ).length;
-      
-      setStatistics({
-        totalLiabilities: filteredLiabilities.length,
-        paidLiabilities: filteredLiabilities.filter(l => l.isPaid).length,
-        unpaidLiabilities: filteredLiabilities.filter(l => !l.isPaid).length,
-        overdueLiabilities: overdue,
-        totalAmount: totalAmount.toFixed(2),
-        paidAmount: paidAmount.toFixed(2),
-        unpaidAmount: unpaidAmount.toFixed(2),
-        byCategory: categoryCount,
-        today: {
-          new: todayNew,
-          paid: todayPaid,
-          due: todayDue
-        }
+      const response = await getLiabilitiesApi(page, pagination.itemsPerPage, {
+        isPaid: filters.isPaid || undefined,
+        relatedVendorId: filters.relatedVendorId || undefined,
+        category: filters.category || undefined,
+        fromDate: filters.fromDate || undefined,
+        toDate: filters.toDate || undefined,
+        createdBy: filters.createdBy || undefined,
+        search: filters.search || undefined,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
       });
       
-      // Apply pagination
-      const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
-      const endIndex = startIndex + pagination.itemsPerPage;
-      const paginatedLiabilities = filteredLiabilities.slice(startIndex, endIndex);
+      console.log('✅ Liabilities response:', response);
       
-      setLiabilities(paginatedLiabilities);
-      setPagination(prev => ({
-        ...prev,
-        totalItems: filteredLiabilities.length,
-        totalPages: Math.ceil(filteredLiabilities.length / prev.itemsPerPage)
-      }));
+      if (response.success && response.data) {
+        setLiabilities(response.data);
+        
+        if (response.pagination) {
+          setPagination({
+            currentPage: response.pagination.page,
+            totalPages: response.pagination.totalPages,
+            totalItems: response.pagination.total,
+            itemsPerPage: pagination.itemsPerPage
+          });
+        }
+
+        // Calculate statistics from data
+        const totalAmount = response.data.reduce((sum, l) => sum + l.amount, 0);
+        const paidAmount = response.data.filter(l => l.isPaid).reduce((sum, l) => sum + l.amount, 0);
+        const unpaidAmount = totalAmount - paidAmount;
+        
+        const today = new Date();
+        const overdue = response.data.filter(l => !l.isPaid && new Date(l.dueDate) < today).length;
+        
+        const categoryCount = response.data.reduce((acc, l) => {
+          const key = l.category.toLowerCase().replace(/\s+/g, '');
+          if (key === 'rent') acc.rent++;
+          else if (key === 'loan') acc.loan++;
+          else if (key === 'creditcard') acc.creditCard++;
+          else if (key === 'utilities') acc.utilities++;
+          else if (key === 'salary') acc.salary++;
+          else if (key === 'vendorpayment') acc.vendorPayment++;
+          else if (key === 'tax') acc.tax++;
+          else acc.other++;
+          return acc;
+        }, { rent: 0, loan: 0, creditCard: 0, utilities: 0, salary: 0, vendorPayment: 0, tax: 0, other: 0 });
+        
+        const todayStr = today.toISOString().split('T')[0];
+        const todayNew = response.data.filter(l => 
+          l.createdAt.split('T')[0] === todayStr
+        ).length;
+        const todayPaid = response.data.filter(l => 
+          l.isPaid && l.paidOn && l.paidOn.split('T')[0] === todayStr
+        ).length;
+        const todayDue = response.data.filter(l => 
+          l.dueDate.split('T')[0] === todayStr
+        ).length;
+        
+        setStatistics({
+          totalLiabilities: response.data.length,
+          paidLiabilities: response.data.filter(l => l.isPaid).length,
+          unpaidLiabilities: response.data.filter(l => !l.isPaid).length,
+          overdueLiabilities: overdue,
+          totalAmount: totalAmount.toFixed(2),
+          paidAmount: paidAmount.toFixed(2),
+          unpaidAmount: unpaidAmount.toFixed(2),
+          byCategory: categoryCount,
+          today: {
+            new: todayNew,
+            paid: todayPaid,
+            due: todayDue
+          }
+        });
+      }
       
     } catch (error) {
-      console.error('Error loading liabilities:', error);
+      console.error('❌ Error loading liabilities:', error);
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to load liabilities'
+      });
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Load liabilities on mount
+  useEffect(() => {
+    loadLiabilities(pagination.currentPage);
+  }, []);
+
+  // Refetch when filters change
+  const [isInitialMount, setIsInitialMount] = useState(true);
+  
+  useEffect(() => {
+    if (isInitialMount) {
+      setIsInitialMount(false);
+      return;
+    }
+    loadLiabilities(1);
+  }, [filters.isPaid, filters.relatedVendorId, filters.category, filters.fromDate, filters.toDate, filters.createdBy]);
+
   // Filter handlers
   const handleSearch = (search: string) => {
     setFilters(prev => ({ ...prev, search }));
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
-  const handleStatusFilter = (isPaid: string) => {
+  const handleIsPaidFilter = (isPaid: string) => {
     setFilters(prev => ({ ...prev, isPaid }));
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
-  const handleVendorFilter = (relatedVendorId: string) => {
+  const handleRelatedVendorIdFilter = (relatedVendorId: string) => {
     setFilters(prev => ({ ...prev, relatedVendorId }));
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
   const handleCategoryFilter = (category: string) => {
     setFilters(prev => ({ ...prev, category }));
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
-  const handleDateRangeFilter = (startDate: string, endDate: string) => {
-    setFilters(prev => ({ ...prev, fromDate: startDate, toDate: endDate }));
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
-  };
-
-  const handleCreatedByFilter = (createdBy: string) => {
-    setFilters(prev => ({ ...prev, createdBy }));
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+  const handleDateRangeFilter = (fromDate: string, toDate: string) => {
+    setFilters(prev => ({ ...prev, fromDate, toDate }));
   };
 
   const handleClearFilters = () => {
@@ -308,11 +225,10 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
       sortBy: 'dueDate',
       sortOrder: 'desc'
     });
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
   const handlePageChange = (page: number) => {
-    setPagination(prev => ({ ...prev, currentPage: page }));
+    loadLiabilities(page);
   };
 
   const handleLiabilityClick = (liability: Liability) => {
@@ -361,25 +277,26 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
                 Track and manage all company liabilities and payments
               </p>
             </div>
-            <button
-              onClick={() => setShowStatistics(!showStatistics)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <svg 
-                className="h-5 w-5 mr-2 text-gray-500" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowStatistics(!showStatistics)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" 
-                />
-              </svg>
-              {showStatistics ? 'Hide Stats' : 'Show Stats'}
-            </button>
+                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                {showStatistics ? 'Hide Stats' : 'Show Stats'}
+              </button>
+              <button
+                onClick={() => setShowAddLiabilityDrawer(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add Liability
+              </button>
+            </div>
           </div>
         </div>
 
@@ -391,14 +308,12 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
         )}
 
         {/* Search Filters */}
-        <LeadsSearchFilters
-          config={liabilitiesFilterConfig}
+        <LiabilitiesSearchFilters
           onSearch={handleSearch}
-          onStatusFilter={handleStatusFilter}
-          onClosedByFilter={handleVendorFilter}
-          onTypeFilter={handleCategoryFilter}
+          onCategoryFilter={handleCategoryFilter}
+          onIsPaidFilter={handleIsPaidFilter}
           onDateRangeFilter={handleDateRangeFilter}
-          onAssignedToFilter={handleCreatedByFilter}
+          onRelatedVendorIdFilter={handleRelatedVendorIdFilter}
           onClearFilters={handleClearFilters}
         />
 
@@ -416,6 +331,28 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
           selectedLiabilities={selectedLiabilities}
         />
 
+        {/* Add Liability Drawer */}
+        <AddLiabilityDrawer
+          isOpen={showAddLiabilityDrawer}
+          onClose={() => setShowAddLiabilityDrawer(false)}
+          onLiabilityCreated={(newLiability) => {
+            // Add the new liability to the list
+            setLiabilities(prev => [newLiability, ...prev]);
+            
+            // Update pagination
+            setPagination(prev => ({
+              ...prev,
+              totalItems: prev.totalItems + 1
+            }));
+            
+            setNotification({
+              type: 'success',
+              message: 'Liability created successfully!'
+            });
+            setTimeout(() => setNotification(null), 3000);
+          }}
+        />
+
         {/* Liability Details Drawer */}
         <LiabilityDetailsDrawer
           liability={selectedLiability}
@@ -423,6 +360,49 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
           onClose={handleCloseDrawer}
           onLiabilityUpdated={handleLiabilityUpdated}
         />
+
+        {/* Notification */}
+        {notification && (
+          <div className={`fixed top-4 right-4 z-50 max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden ${
+            notification.type === 'success' ? 'border-l-4 border-green-400' : 'border-l-4 border-red-400'
+          }`}>
+            <div className="p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  {notification.type === 'success' ? (
+                    <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div className="ml-3 w-0 flex-1 pt-0.5">
+                  <p className={`text-sm font-medium ${
+                    notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {notification.message}
+                  </p>
+                </div>
+                <div className="ml-4 flex-shrink-0 flex">
+                  <button
+                    onClick={() => setNotification(null)}
+                    className={`bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                      notification.type === 'success' ? 'focus:ring-green-500' : 'focus:ring-red-500'
+                    }`}
+                  >
+                    <span className="sr-only">Close</span>
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

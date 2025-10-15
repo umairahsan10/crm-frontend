@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import AssetsTable from '../../components/assets/AssetsTable';
-import LeadsSearchFilters from '../../components/leads/LeadsSearchFilters';
-import { assetsFilterConfig } from '../../components/assets/filterConfigs';
+import AssetsSearchFilters from '../../components/assets/AssetsSearchFilters';
 import AssetDetailsDrawer from '../../components/assets/AssetDetailsDrawer';
 import AssetsStatistics from '../../components/assets/AssetsStatistics';
-// import { getAssetsApi } from '../../apis/assets'; // Uncomment when using real API
+import { getAssetsApi, createAssetApi } from '../../apis/assets';
+import { getVendorsApi, createVendorApi, type Vendor, type CreateVendorRequest } from '../../apis/vendors';
 import type { Asset } from '../../types';
 
 interface AssetsPageProps {
   onBack?: () => void;
+}
+
+interface CreateAssetForm {
+  title: string;
+  category: string;
+  purchaseDate: string;
+  purchaseValue: string;
+  currentValue: string;
+  vendorId: string;
 }
 
 const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
@@ -17,11 +26,31 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Vendor management for create modal
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [isLoadingVendors, setIsLoadingVendors] = useState(false);
+  const [showCreateVendorModal, setShowCreateVendorModal] = useState(false);
+  const [newVendorForm, setNewVendorForm] = useState({
+    name: '',
+    contact_person: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    country: '',
+    bank_account: '',
+    status: 'active',
+    notes: ''
+  });
+  const [isCreatingVendor, setIsCreatingVendor] = useState(false);
 
   // Assets state
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Pagination
   const [pagination, setPagination] = useState({
@@ -44,6 +73,16 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
     maxCurrentValue: '',
     sortBy: 'purchaseDate',
     sortOrder: 'desc' as 'asc' | 'desc'
+  });
+
+  // Create form state
+  const [createForm, setCreateForm] = useState<CreateAssetForm>({
+    title: '',
+    category: '',
+    purchaseDate: '',
+    purchaseValue: '',
+    currentValue: '',
+    vendorId: ''
   });
 
   // Data state
@@ -69,158 +108,196 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
     }
   });
 
-  // Mock data generation (matching API structure)
-  const generateMockAssets = (): Asset[] => {
-    const categories = ['IT Equipment', 'Furniture', 'Vehicles', 'Machinery', 'Office Equipment', 'Software', 'Property', 'Other'];
-    const assetNames = [
-      'Dell Laptop', 'HP Desktop', 'Office Chair', 'Conference Table', 'Toyota Camry', 'Ford Truck',
-      'Printer', 'Scanner', 'Server Rack', 'Network Switch', 'Standing Desk', 'Office Cubicle',
-      'Company Van', 'Warehouse Forklift', 'Software License', 'Cloud Storage', 'Building Property'
-    ];
-    const vendors = [
-      { id: 5, name: 'Tech Supplier Inc' },
-      { id: 6, name: 'Office Furniture Pro' },
-      { id: 7, name: 'Auto Dealership' },
-      { id: 8, name: 'Equipment Solutions' },
-      { id: 9, name: 'Software Vendor Co' }
-    ];
-    const employees = [
-      { id: 50, firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
-      { id: 51, firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com' },
-      { id: 52, firstName: 'Mike', lastName: 'Johnson', email: 'mike@example.com' },
-      { id: 53, firstName: 'Sarah', lastName: 'Williams', email: 'sarah@example.com' }
-    ];
-    
-    const mockAssets: Asset[] = [];
-
-    for (let i = 1; i <= 50; i++) {
-      const randomVendor = vendors[Math.floor(Math.random() * vendors.length)];
-      const randomEmployee = employees[Math.floor(Math.random() * employees.length)];
-      const purchaseValue = Math.floor(Math.random() * 50000) + 500;
-      const depreciationRate = Math.floor(Math.random() * 30) + 10; // 10-40%
-      const yearsOld = Math.random() * 3; // 0-3 years
-      const currentValue = purchaseValue * (1 - (depreciationRate / 100) * yearsOld);
-      const purchaseDate = new Date(Date.now() - Math.floor(Math.random() * 1095) * 24 * 60 * 60 * 1000); // Up to 3 years ago
-      
-      mockAssets.push({
-        id: i,
-        name: assetNames[Math.floor(Math.random() * assetNames.length)] + ` #${i}`,
-        category: categories[Math.floor(Math.random() * categories.length)],
-        purchaseValue: purchaseValue,
-        currentValue: Math.max(currentValue, purchaseValue * 0.2), // At least 20% of purchase value
-        purchaseDate: purchaseDate.toISOString(),
-        depreciationRate: depreciationRate,
-        vendorId: randomVendor.id,
-        transactionId: 100 + i,
-        createdBy: randomEmployee.id,
-        createdAt: purchaseDate.toISOString(),
-        updatedAt: purchaseDate.toISOString(),
-        transaction: {
-          id: 100 + i,
-          amount: purchaseValue,
-          vendor: randomVendor
-        },
-        employee: randomEmployee
-      });
-    }
-
-    return mockAssets;
-  };
-
   // Fetch assets
   const fetchAssets = async (page: number = 1) => {
     try {
       setIsLoading(true);
+      console.log('🔄 Fetching assets - page:', page);
       
-      // Using mock data for now
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const mockData = generateMockAssets();
-      
-      // Apply filters to mock data
-      let filteredData = mockData;
-      if (filters.category) {
-        filteredData = filteredData.filter(a => a.category === filters.category);
-      }
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredData = filteredData.filter(a => 
-          a.name.toLowerCase().includes(searchLower) ||
-          a.category.toLowerCase().includes(searchLower) ||
-          a.transaction?.vendor?.name.toLowerCase().includes(searchLower)
-        );
-      }
-      if (filters.minPurchaseValue) {
-        filteredData = filteredData.filter(a => a.purchaseValue >= parseFloat(filters.minPurchaseValue));
-      }
-      if (filters.maxPurchaseValue) {
-        filteredData = filteredData.filter(a => a.purchaseValue <= parseFloat(filters.maxPurchaseValue));
-      }
-      if (filters.minCurrentValue) {
-        filteredData = filteredData.filter(a => a.currentValue >= parseFloat(filters.minCurrentValue));
-      }
-      if (filters.maxCurrentValue) {
-        filteredData = filteredData.filter(a => a.currentValue <= parseFloat(filters.maxCurrentValue));
-      }
-      
-      setAssets(filteredData.slice(0, 20));
-      setPagination({
-        currentPage: page,
-        totalPages: Math.ceil(filteredData.length / 20),
-        totalItems: filteredData.length,
-        itemsPerPage: 20
+      const response = await getAssetsApi(page, pagination.itemsPerPage, {
+        category: filters.category || undefined,
+        fromDate: filters.fromDate || undefined,
+        toDate: filters.toDate || undefined,
+        createdBy: filters.createdBy || undefined,
+        minPurchaseValue: filters.minPurchaseValue || undefined,
+        maxPurchaseValue: filters.maxPurchaseValue || undefined,
+        minCurrentValue: filters.minCurrentValue || undefined,
+        maxCurrentValue: filters.maxCurrentValue || undefined,
       });
+
+      console.log('✅ Assets fetched successfully:', response);
+
+      if (response.success && response.data) {
+        setAssets(response.data);
+        if (response.pagination) {
+          setPagination({
+            currentPage: response.pagination.page,
+            totalPages: response.pagination.totalPages,
+            totalItems: response.pagination.total,
+            itemsPerPage: response.pagination.limit
+          });
+        }
+
+        // Calculate statistics from data
+        calculateStatistics(response.data);
+      }
     } catch (error) {
-      console.error('Error fetching assets:', error);
+      console.error('❌ Error fetching assets:', error);
+      setAssets([]);
       setNotification({
         type: 'error',
         message: error instanceof Error ? error.message : 'Failed to load assets'
       });
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch statistics
-  const fetchStatistics = async () => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setStatistics({
-        totalAssets: 120,
-        totalPurchaseValue: '1,250,000.00',
-        totalCurrentValue: '875,000.00',
-        totalDepreciation: '375,000.00',
-        depreciationRate: '70.0',
-        byCategory: {
-          itEquipment: 45,
-          furniture: 25,
-          vehicles: 15,
-          machinery: 10,
-          officeEquipment: 12,
-          software: 8,
-          property: 3,
-          other: 2
-        },
-        today: {
-          new: 3,
-          updated: 5
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
-    }
+  // Calculate statistics from assets
+  const calculateStatistics = (assetsData: Asset[]) => {
+    const totalPurchaseValue = assetsData.reduce((sum, asset) => sum + asset.purchaseValue, 0);
+    const totalCurrentValue = assetsData.reduce((sum, asset) => sum + asset.currentValue, 0);
+    const totalDepreciation = totalPurchaseValue - totalCurrentValue;
+    const depreciationRate = totalPurchaseValue > 0 ? (totalCurrentValue / totalPurchaseValue * 100) : 0;
+
+    const categoryCounts: Record<string, number> = {
+      itEquipment: 0,
+      furniture: 0,
+      vehicles: 0,
+      machinery: 0,
+      officeEquipment: 0,
+      software: 0,
+      property: 0,
+      other: 0
+    };
+
+    assetsData.forEach(asset => {
+      const categoryKey = asset.category.toLowerCase().replace(/\s+/g, '');
+      if (categoryKey in categoryCounts) {
+        categoryCounts[categoryKey as keyof typeof categoryCounts]++;
+      } else {
+        categoryCounts.other++;
+      }
+    });
+
+    setStatistics({
+      totalAssets: assetsData.length,
+      totalPurchaseValue: totalPurchaseValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      totalCurrentValue: totalCurrentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      totalDepreciation: totalDepreciation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      depreciationRate: depreciationRate.toFixed(1),
+      byCategory: categoryCounts as any,
+      today: {
+        new: 0,
+        updated: 0
+      }
+    });
   };
 
   // Load data on component mount
   useEffect(() => {
     fetchAssets();
-    fetchStatistics();
   }, []);
+
+  // Load vendors when create modal opens
+  useEffect(() => {
+    if (showCreateModal && vendors.length === 0) {
+      loadVendors();
+    }
+  }, [showCreateModal]);
+
+  const loadVendors = async () => {
+    try {
+      setIsLoadingVendors(true);
+      const response = await getVendorsApi();
+      
+      if (response.success && response.data) {
+        setVendors(response.data);
+        console.log('Vendors loaded:', response.data);
+      }
+    } catch (error) {
+      console.error('Error loading vendors:', error);
+    } finally {
+      setIsLoadingVendors(false);
+    }
+  };
+
+  // Handle create new vendor
+  const handleCreateVendor = async () => {
+    if (!newVendorForm.name.trim()) {
+      setNotification({ type: 'error', message: 'Vendor name is required' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    // Email validation if provided
+    if (newVendorForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newVendorForm.email)) {
+      setNotification({ type: 'error', message: 'Please provide a valid email address' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    try {
+      setIsCreatingVendor(true);
+
+      const vendorData: CreateVendorRequest = {
+        name: newVendorForm.name.trim(),
+        contact_person: newVendorForm.contact_person.trim() || undefined,
+        email: newVendorForm.email.trim() || undefined,
+        phone: newVendorForm.phone.trim() || undefined,
+        address: newVendorForm.address.trim() || undefined,
+        city: newVendorForm.city.trim() || undefined,
+        country: newVendorForm.country.trim() || undefined,
+        bank_account: newVendorForm.bank_account.trim() || undefined,
+        status: newVendorForm.status || 'active',
+        notes: newVendorForm.notes.trim() || undefined
+      };
+
+      const response = await createVendorApi(vendorData);
+
+      if (response.success && response.data) {
+        // Add new vendor to list
+        setVendors(prev => [...prev, response.data!]);
+        
+        // Auto-select the new vendor
+        setCreateForm(prev => ({ ...prev, vendorId: response.data!.id.toString() }));
+        
+        // Close create modal and reset form
+        setShowCreateVendorModal(false);
+        setNewVendorForm({
+          name: '',
+          contact_person: '',
+          email: '',
+          phone: '',
+          address: '',
+          city: '',
+          country: '',
+          bank_account: '',
+          status: 'active',
+          notes: ''
+        });
+
+        setNotification({ type: 'success', message: `Vendor "${response.data.name}" created successfully!` });
+        setTimeout(() => setNotification(null), 3000);
+      }
+    } catch (error) {
+      setNotification({ 
+        type: 'error', 
+        message: error instanceof Error ? error.message : 'Failed to create vendor' 
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsCreatingVendor(false);
+    }
+  };
 
   // Refetch when filters change
   useEffect(() => {
-    fetchAssets(1);
-  }, [filters]);
+    if (!isLoading) {
+      fetchAssets(1);
+    }
+  }, [filters.category, filters.fromDate, filters.toDate, filters.createdBy, filters.minPurchaseValue, filters.maxPurchaseValue, filters.minCurrentValue, filters.maxCurrentValue]);
 
   // Handlers
   const handlePageChange = (page: number) => {
@@ -244,19 +321,15 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
     setFilters(prev => ({ ...prev, category }));
   };
 
-  const handleCreatedByFilter = (createdBy: string) => {
-    setFilters(prev => ({ ...prev, createdBy }));
-  };
-
   const handleDateRangeFilter = (fromDate: string, toDate: string) => {
     setFilters(prev => ({ ...prev, fromDate, toDate }));
   };
 
-  const handleMinAmountFilter = (minPurchaseValue: string) => {
+  const handleMinPurchaseValueFilter = (minPurchaseValue: string) => {
     setFilters(prev => ({ ...prev, minPurchaseValue }));
   };
 
-  const handleMaxAmountFilter = (maxPurchaseValue: string) => {
+  const handleMaxPurchaseValueFilter = (maxPurchaseValue: string) => {
     setFilters(prev => ({ ...prev, maxPurchaseValue }));
   };
 
@@ -286,6 +359,105 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
 
   const handleCloseNotification = () => {
     setNotification(null);
+  };
+
+  // Create asset handlers
+  const handleCreateFormChange = (field: keyof CreateAssetForm, value: string) => {
+    setCreateForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreateAsset = async () => {
+    console.log('🔵 Creating asset with form data:', createForm);
+    
+    // Validation
+    if (!createForm.title.trim()) {
+      setNotification({ type: 'error', message: 'Please enter asset title' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    if (!createForm.category.trim()) {
+      setNotification({ type: 'error', message: 'Please enter category' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    const purchaseValue = parseFloat(createForm.purchaseValue);
+    const currentValue = parseFloat(createForm.currentValue);
+    const vendorId = parseInt(createForm.vendorId);
+
+    console.log('🔍 Parsed values:', { purchaseValue, currentValue, vendorId });
+
+    if (isNaN(purchaseValue) || purchaseValue <= 0) {
+      setNotification({ type: 'error', message: 'Please enter valid purchase value' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    if (isNaN(currentValue) || currentValue <= 0) {
+      setNotification({ type: 'error', message: 'Please enter valid current value' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    if (isNaN(vendorId) || vendorId <= 0) {
+      setNotification({ type: 'error', message: 'Please select a vendor' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    try {
+      setIsCreating(true);
+
+      console.log('📤 Calling createAssetApi with:', {
+        title: createForm.title,
+        category: createForm.category,
+        purchaseDate: createForm.purchaseDate || undefined,
+        purchaseValue,
+        currentValue,
+        vendorId
+      });
+
+      const response = await createAssetApi({
+        title: createForm.title,
+        category: createForm.category,
+        purchaseDate: createForm.purchaseDate || undefined,
+        purchaseValue,
+        currentValue,
+        vendorId
+      });
+
+      console.log('✅ Create asset response:', response);
+
+      if (response.success) {
+        setNotification({ type: 'success', message: response.message || 'Asset created successfully!' });
+        setTimeout(() => setNotification(null), 3000);
+        
+        // Reset form and close modal
+        setCreateForm({
+          title: '',
+          category: '',
+          purchaseDate: '',
+          purchaseValue: '',
+          currentValue: '',
+          vendorId: ''
+        });
+        setShowCreateModal(false);
+
+        // Refresh assets list
+        console.log('🔄 Refreshing assets list...');
+        fetchAssets(pagination.currentPage);
+      }
+    } catch (error) {
+      console.error('❌ Error creating asset:', error);
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to create asset'
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -323,6 +495,7 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
                 {showStatistics ? 'Hide Stats' : 'Show Stats'}
               </button>
               <button
+                onClick={() => setShowCreateModal(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,16 +515,14 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
         )}
 
         {/* Search Filters */}
-        <LeadsSearchFilters
-          config={assetsFilterConfig}
+        <AssetsSearchFilters
           onSearch={handleSearch}
-          onTypeFilter={handleCategoryFilter}
-          onAssignedToFilter={handleCreatedByFilter}
+          onCategoryFilter={handleCategoryFilter}
           onDateRangeFilter={handleDateRangeFilter}
-          onMinAmountFilter={handleMinAmountFilter}
-          onMaxAmountFilter={handleMaxAmountFilter}
-          onCurrentPhaseFilter={handleMinCurrentValueFilter}
-          onTotalPhasesFilter={handleMaxCurrentValueFilter}
+          onMinPurchaseValueFilter={handleMinPurchaseValueFilter}
+          onMaxPurchaseValueFilter={handleMaxPurchaseValueFilter}
+          onMinCurrentValueFilter={handleMinCurrentValueFilter}
+          onMaxCurrentValueFilter={handleMaxCurrentValueFilter}
           onClearFilters={handleClearFilters}
         />
 
@@ -389,6 +560,174 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
             setTimeout(() => setNotification(null), 3000);
           }}
         />
+
+        {/* Create Asset Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => !isCreating && setShowCreateModal(false)}></div>
+
+              <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium leading-6 text-gray-900">Create New Asset</h3>
+                    <button
+                      onClick={() => !isCreating && setShowCreateModal(false)}
+                      className="text-gray-400 hover:text-gray-500"
+                    >
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Title */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Asset Title <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.title}
+                        onChange={(e) => handleCreateFormChange('title', e.target.value)}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Enter asset title"
+                      />
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Category <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.category}
+                        onChange={(e) => handleCreateFormChange('category', e.target.value)}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Enter category (e.g., IT Equipment, Furniture)"
+                      />
+                    </div>
+
+                    {/* Purchase Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Purchase Date (Optional)
+                      </label>
+                      <input
+                        type="date"
+                        value={createForm.purchaseDate}
+                        onChange={(e) => handleCreateFormChange('purchaseDate', e.target.value)}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+
+                    {/* Purchase Value */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Purchase Value <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">$</span>
+                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={createForm.purchaseValue}
+                          onChange={(e) => handleCreateFormChange('purchaseValue', e.target.value)}
+                          className="block w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Current Value */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Current Value <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">$</span>
+                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={createForm.currentValue}
+                          onChange={(e) => handleCreateFormChange('currentValue', e.target.value)}
+                          className="block w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Vendor */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Vendor <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={createForm.vendorId}
+                        onChange={(e) => {
+                          if (e.target.value === 'create_new') {
+                            setShowCreateVendorModal(true);
+                          } else {
+                            handleCreateFormChange('vendorId', e.target.value);
+                          }
+                        }}
+                        disabled={isLoadingVendors}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
+                      >
+                        <option value="">
+                          {isLoadingVendors ? 'Loading vendors...' : 'Select vendor'}
+                        </option>
+                        {vendors.map((vendor) => (
+                          <option key={vendor.id} value={vendor.id}>
+                            {vendor.name}
+                          </option>
+                        ))}
+                        <option value="create_new" className="font-semibold text-indigo-600">
+                          ➕ Create New Vendor
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => !isCreating && setShowCreateModal(false)}
+                      disabled={isCreating}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCreateAsset}
+                      disabled={isCreating}
+                      className="flex-1 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                    >
+                      {isCreating ? (
+                        <span className="flex items-center justify-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Creating...
+                        </span>
+                      ) : (
+                        'Create Asset'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Notification */}
         {notification && (
@@ -432,10 +771,205 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
             </div>
           </div>
         )}
+
+        {/* Create Vendor Modal */}
+        {showCreateVendorModal && (
+          <div className="fixed inset-0 z-[60] overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-gray-900 bg-opacity-75" onClick={() => setShowCreateVendorModal(false)}></div>
+              
+              <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                      <svg className="h-6 w-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Create New Vendor
+                    </h3>
+                    <button 
+                      onClick={() => setShowCreateVendorModal(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 space-y-4">
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-md p-3">
+                    <p className="text-sm text-indigo-700">
+                      Create a new vendor to track your asset purchases and expenses. All fields are optional except the name.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Vendor Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newVendorForm.name}
+                      onChange={(e) => setNewVendorForm({...newVendorForm, name: e.target.value})}
+                      placeholder="e.g., Tech Suppliers Inc"
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      maxLength={255}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Contact Person
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.contact_person}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, contact_person: e.target.value})}
+                        placeholder="John Smith"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        maxLength={255}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={newVendorForm.email}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, email: e.target.value})}
+                        placeholder="vendor@example.com"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        maxLength={255}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.phone}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, phone: e.target.value})}
+                        placeholder="+1-555-0123"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        maxLength={50}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Bank Account
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.bank_account}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, bank_account: e.target.value})}
+                        placeholder="1234567890"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        maxLength={255}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      value={newVendorForm.address}
+                      onChange={(e) => setNewVendorForm({...newVendorForm, address: e.target.value})}
+                      placeholder="123 Business Street, Suite 100"
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.city}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, city: e.target.value})}
+                        placeholder="New York"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        maxLength={100}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        value={newVendorForm.country}
+                        onChange={(e) => setNewVendorForm({...newVendorForm, country: e.target.value})}
+                        placeholder="United States"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        maxLength={100}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Notes
+                    </label>
+                    <textarea
+                      value={newVendorForm.notes}
+                      onChange={(e) => setNewVendorForm({...newVendorForm, notes: e.target.value})}
+                      rows={3}
+                      placeholder="Additional notes about this vendor..."
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateVendorModal(false)}
+                    className="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateVendor}
+                    disabled={isCreatingVendor || !newVendorForm.name.trim()}
+                    className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCreatingVendor ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Vendor'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default AssetsPage;
-
