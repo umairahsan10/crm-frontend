@@ -36,6 +36,7 @@ export const getRevenuesApi = async (
     const queryParams = new URLSearchParams();
     queryParams.append('page', page.toString());
     queryParams.append('limit', limit.toString());
+    if (filters.search) queryParams.append('search', filters.search);
     if (filters.category) queryParams.append('category', filters.category);
     if (filters.source) queryParams.append('source', filters.source);
     if (filters.fromDate) queryParams.append('fromDate', filters.fromDate);

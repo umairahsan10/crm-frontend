@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AssetsTable from '../../components/assets/AssetsTable';
-import AssetsSearchFilters from '../../components/assets/AssetsSearchFilters';
+import GenericAssetFilters from '../../components/assets/GenericAssetFilters';
 import AssetDetailsDrawer from '../../components/assets/AssetDetailsDrawer';
 import AssetsStatistics from '../../components/assets/AssetsStatistics';
 import { getAssetsApi, createAssetApi } from '../../apis/assets';
@@ -297,7 +297,7 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
     if (!isLoading) {
       fetchAssets(1);
     }
-  }, [filters.category, filters.fromDate, filters.toDate, filters.createdBy, filters.minPurchaseValue, filters.maxPurchaseValue, filters.minCurrentValue, filters.maxCurrentValue]);
+  }, [filters.search, filters.category, filters.fromDate, filters.toDate, filters.createdBy, filters.minPurchaseValue, filters.maxPurchaseValue, filters.minCurrentValue, filters.maxCurrentValue]);
 
   // Handlers
   const handlePageChange = (page: number) => {
@@ -312,36 +312,12 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
     setSelectedAssets(assetIds);
   };
 
-  // Filter handlers (matching API query parameters)
-  const handleSearch = (search: string) => {
-    setFilters(prev => ({ ...prev, search }));
-  };
+  // Simplified filter handlers using generic system
+  const handleFiltersChange = useCallback((newFilters: any) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
 
-  const handleCategoryFilter = (category: string) => {
-    setFilters(prev => ({ ...prev, category }));
-  };
-
-  const handleDateRangeFilter = (fromDate: string, toDate: string) => {
-    setFilters(prev => ({ ...prev, fromDate, toDate }));
-  };
-
-  const handleMinPurchaseValueFilter = (minPurchaseValue: string) => {
-    setFilters(prev => ({ ...prev, minPurchaseValue }));
-  };
-
-  const handleMaxPurchaseValueFilter = (maxPurchaseValue: string) => {
-    setFilters(prev => ({ ...prev, maxPurchaseValue }));
-  };
-
-  const handleMinCurrentValueFilter = (minCurrentValue: string) => {
-    setFilters(prev => ({ ...prev, minCurrentValue }));
-  };
-
-  const handleMaxCurrentValueFilter = (maxCurrentValue: string) => {
-    setFilters(prev => ({ ...prev, maxCurrentValue }));
-  };
-
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
       category: '',
@@ -355,7 +331,7 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
       sortBy: 'purchaseDate',
       sortOrder: 'desc'
     });
-  };
+  }, []);
 
   const handleCloseNotification = () => {
     setNotification(null);
@@ -514,15 +490,9 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
           </div>
         )}
 
-        {/* Search Filters */}
-        <AssetsSearchFilters
-          onSearch={handleSearch}
-          onCategoryFilter={handleCategoryFilter}
-          onDateRangeFilter={handleDateRangeFilter}
-          onMinPurchaseValueFilter={handleMinPurchaseValueFilter}
-          onMaxPurchaseValueFilter={handleMaxPurchaseValueFilter}
-          onMinCurrentValueFilter={handleMinCurrentValueFilter}
-          onMaxCurrentValueFilter={handleMaxCurrentValueFilter}
+        {/* Search Filters - NEW GENERIC SYSTEM */}
+        <GenericAssetFilters
+          onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
         />
 

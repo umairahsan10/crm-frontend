@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ExpensesTable from '../../components/expenses/ExpensesTable';
-import ExpensesSearchFilters from '../../components/expenses/ExpensesSearchFilters';
+import GenericExpenseFilters from '../../components/expenses/GenericExpenseFilters';
 import ExpenseDetailsDrawer from '../../components/expenses/ExpenseDetailsDrawer';
 import AddExpenseDrawer from '../../components/expenses/AddExpenseDrawer';
 import ExpensesStatistics from '../../components/expenses/ExpensesStatistics';
@@ -186,36 +186,12 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
     setSelectedExpenses(expenseIds);
   };
 
-  // Filter handlers (matching API query parameters)
-  const handleSearch = (search: string) => {
-    setFilters(prev => ({ ...prev, search }));
-  };
+  // Simplified filter handlers using generic system
+  const handleFiltersChange = useCallback((newFilters: any) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
 
-  const handleCategoryFilter = (category: string) => {
-    setFilters(prev => ({ ...prev, category }));
-  };
-
-  const handlePaymentMethodFilter = (paymentMethod: string) => {
-    setFilters(prev => ({ ...prev, paymentMethod }));
-  };
-
-  const handleProcessedByRoleFilter = (processedByRole: string) => {
-    setFilters(prev => ({ ...prev, processedByRole }));
-  };
-
-  const handleDateRangeFilter = (fromDate: string, toDate: string) => {
-    setFilters(prev => ({ ...prev, fromDate, toDate }));
-  };
-
-  const handleMinAmountFilter = (minAmount: string) => {
-    setFilters(prev => ({ ...prev, minAmount }));
-  };
-
-  const handleMaxAmountFilter = (maxAmount: string) => {
-    setFilters(prev => ({ ...prev, maxAmount }));
-  };
-
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
       category: '',
@@ -229,7 +205,7 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
       sortBy: 'paidOn',
       sortOrder: 'desc'
     });
-  };
+  }, []);
 
   const handleCloseNotification = () => {
     setNotification(null);
@@ -289,15 +265,9 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
           </div>
         )}
 
-        {/* Search Filters */}
-        <ExpensesSearchFilters
-          onSearch={handleSearch}
-          onCategoryFilter={handleCategoryFilter}
-          onDateRangeFilter={handleDateRangeFilter}
-          onMinAmountFilter={handleMinAmountFilter}
-          onMaxAmountFilter={handleMaxAmountFilter}
-          onPaymentMethodFilter={handlePaymentMethodFilter}
-          onProcessedByRoleFilter={handleProcessedByRoleFilter}
+        {/* Search Filters - NEW GENERIC SYSTEM */}
+        <GenericExpenseFilters
+          onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
         />
 

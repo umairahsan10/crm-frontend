@@ -30,6 +30,7 @@ export const getLiabilitiesApi = async (
   try {
     // Build query parameters (backend doesn't use page/limit)
     const queryParams = new URLSearchParams();
+    if (filters.search) queryParams.append('search', filters.search);
     if (filters.isPaid) queryParams.append('isPaid', filters.isPaid);
     if (filters.relatedVendorId) queryParams.append('relatedVendorId', filters.relatedVendorId);
     if (filters.category) queryParams.append('category', filters.category);

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import LeadsTable from '../../components/leads/LeadsTable';
 import CrackLeadsTable from '../../components/leads/CrackLeadsTable';
 import ArchiveLeadsTable from '../../components/leads/ArchiveLeadsTable';
-import LeadsSearchFilters from '../../components/leads/LeadsSearchFilters';
-import { regularLeadsConfig, crackedLeadsConfig, archivedLeadsConfig } from '../../components/leads/filterConfigs';
+import GenericLeadsFilters from '../../components/leads/GenericLeadsFilters';
 import LeadDetailsDrawer from '../../components/leads/LeadDetailsDrawer';
 import BulkActions from '../../components/leads/BulkActions';
 import LeadsStatistics from '../../components/leads/LeadsStatistics';
@@ -365,90 +364,20 @@ const LeadsManagementPage: React.FC = () => {
     setSelectedLeads(leadIds);
   };
 
-  // Regular leads filter handlers
-  const handleRegularSearch = (search: string) => {
-    setRegularFilters(prev => ({ ...prev, search }));
-  };
+  // Simplified filter handlers using generic system
+  const handleRegularFiltersChange = useCallback((newFilters: any) => {
+    setRegularFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
 
-  const handleStatusFilter = (status: string) => {
-    setRegularFilters(prev => ({ ...prev, status }));
-  };
+  const handleCrackedFiltersChange = useCallback((newFilters: any) => {
+    setCrackedFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
 
-  const handleTypeFilter = (type: string) => {
-    setRegularFilters(prev => ({ ...prev, type }));
-  };
+  const handleArchivedFiltersChange = useCallback((newFilters: any) => {
+    setArchivedFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
 
-  const handleSalesUnitFilter = (salesUnitId: string) => {
-    setRegularFilters(prev => ({ ...prev, salesUnitId }));
-  };
-
-  const handleAssignedToFilter = (assignedTo: string) => {
-    setRegularFilters(prev => ({ ...prev, assignedTo }));
-  };
-
-  const handleDateRangeFilter = (startDate: string, endDate: string) => {
-    setRegularFilters(prev => ({ ...prev, startDate, endDate }));
-  };
-
-  // Cracked leads filter handlers
-  const handleCrackedSearch = (search: string) => {
-    setCrackedFilters(prev => ({ ...prev, search }));
-  };
-
-  const handleIndustryFilter = (industryId: string) => {
-    setCrackedFilters(prev => ({ ...prev, industryId }));
-  };
-
-  const handleMinAmountFilter = (minAmount: string) => {
-    setCrackedFilters(prev => ({ ...prev, minAmount }));
-  };
-
-  const handleMaxAmountFilter = (maxAmount: string) => {
-    setCrackedFilters(prev => ({ ...prev, maxAmount }));
-  };
-
-  const handleClosedByFilter = (closedBy: string) => {
-    setCrackedFilters(prev => ({ ...prev, closedBy }));
-  };
-
-  const handleCurrentPhaseFilter = (currentPhase: string) => {
-    setCrackedFilters(prev => ({ ...prev, currentPhase }));
-  };
-
-  const handleTotalPhasesFilter = (totalPhases: string) => {
-    setCrackedFilters(prev => ({ ...prev, totalPhases }));
-  };
-
-  // Archived leads filter handlers
-  const handleArchivedSearch = (search: string) => {
-    setArchivedFilters(prev => ({ ...prev, search }));
-  };
-
-  const handleArchivedUnitFilter = (unitId: string) => {
-    setArchivedFilters(prev => ({ ...prev, unitId }));
-  };
-
-  const handleArchivedAssignedToFilter = (assignedTo: string) => {
-    setArchivedFilters(prev => ({ ...prev, assignedTo }));
-  };
-
-  const handleSourceFilter = (source: string) => {
-    setArchivedFilters(prev => ({ ...prev, source }));
-  };
-
-  const handleOutcomeFilter = (outcome: string) => {
-    setArchivedFilters(prev => ({ ...prev, outcome }));
-  };
-
-  const handleQualityRatingFilter = (qualityRating: string) => {
-    setArchivedFilters(prev => ({ ...prev, qualityRating }));
-  };
-
-  const handleArchivedDateRangeFilter = (archivedFrom: string, archivedTo: string) => {
-    setArchivedFilters(prev => ({ ...prev, archivedFrom, archivedTo }));
-  };
-
-  const handleRegularClearFilters = () => {
+  const handleRegularClearFilters = useCallback(() => {
     setRegularFilters({
       search: '',
       status: '',
@@ -460,9 +389,9 @@ const LeadsManagementPage: React.FC = () => {
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });
-  };
+  }, []);
 
-  const handleCrackedClearFilters = () => {
+  const handleCrackedClearFilters = useCallback(() => {
     setCrackedFilters({
       search: '',
       industryId: '',
@@ -474,9 +403,9 @@ const LeadsManagementPage: React.FC = () => {
       sortBy: 'crackedAt',
       sortOrder: 'desc'
     });
-  };
+  }, []);
 
-  const handleArchivedClearFilters = () => {
+  const handleArchivedClearFilters = useCallback(() => {
     setArchivedFilters({
       search: '',
       unitId: '',
@@ -489,7 +418,7 @@ const LeadsManagementPage: React.FC = () => {
       sortBy: 'archivedOn',
       sortOrder: 'desc'
     });
-  };
+  }, []);
 
   const handleBulkAssign = async (leadIds: string[], assignedTo: string) => {
     try {
@@ -664,45 +593,71 @@ const LeadsManagementPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Dynamic Tab-specific Filters */}
+        {/* Dynamic Tab-specific Filters - NEW GENERIC SYSTEM */}
         {activeTab === 'leads' && (
-          <LeadsSearchFilters
-            config={regularLeadsConfig}
-            onSearch={handleRegularSearch}
-            onStatusFilter={handleStatusFilter}
-            onTypeFilter={handleTypeFilter}
-            onSalesUnitFilter={handleSalesUnitFilter}
-            onAssignedToFilter={handleAssignedToFilter}
-            onDateRangeFilter={handleDateRangeFilter}
+          <GenericLeadsFilters
+            showFilters={{
+              status: true,
+              type: true,
+              salesUnit: true,
+              assignedTo: true,
+              dateRange: true
+            }}
+            onFiltersChange={handleRegularFiltersChange}
             onClearFilters={handleRegularClearFilters}
+            searchPlaceholder="Search leads by name, email, phone..."
+            theme={{
+              primary: 'bg-indigo-600',
+              secondary: 'hover:bg-indigo-700',
+              ring: 'ring-indigo-500',
+              bg: 'bg-indigo-100',
+              text: 'text-indigo-800'
+            }}
           />
         )}
         
         {activeTab === 'crack' && (
-          <LeadsSearchFilters
-            config={crackedLeadsConfig}
-            onSearch={handleCrackedSearch}
-            onIndustryFilter={handleIndustryFilter}
-            onMinAmountFilter={handleMinAmountFilter}
-            onMaxAmountFilter={handleMaxAmountFilter}
-            onClosedByFilter={handleClosedByFilter}
-            onCurrentPhaseFilter={handleCurrentPhaseFilter}
-            onTotalPhasesFilter={handleTotalPhasesFilter}
+          <GenericLeadsFilters
+            showFilters={{
+              industry: true,
+              amountRange: true,
+              closedBy: true,
+              currentPhase: true,
+              totalPhases: true
+            }}
+            onFiltersChange={handleCrackedFiltersChange}
             onClearFilters={handleCrackedClearFilters}
+            searchPlaceholder="Search cracked leads..."
+            theme={{
+              primary: 'bg-green-600',
+              secondary: 'hover:bg-green-700',
+              ring: 'ring-green-500',
+              bg: 'bg-green-100',
+              text: 'text-green-800'
+            }}
           />
         )}
         
         {activeTab === 'archive' && canAccessArchiveLeads() && (
-          <LeadsSearchFilters
-            config={archivedLeadsConfig}
-            onSearch={handleArchivedSearch}
-            onSalesUnitFilter={handleArchivedUnitFilter}
-            onAssignedToFilter={handleArchivedAssignedToFilter}
-            onSourceFilter={handleSourceFilter}
-            onOutcomeFilter={handleOutcomeFilter}
-            onQualityRatingFilter={handleQualityRatingFilter}
-            onArchivedDateRangeFilter={handleArchivedDateRangeFilter}
+          <GenericLeadsFilters
+            showFilters={{
+              salesUnit: true,
+              assignedTo: true,
+              source: true,
+              outcome: true,
+              qualityRating: true,
+              archivedDateRange: true
+            }}
+            onFiltersChange={handleArchivedFiltersChange}
             onClearFilters={handleArchivedClearFilters}
+            searchPlaceholder="Search archived leads..."
+            theme={{
+              primary: 'bg-gray-600',
+              secondary: 'hover:bg-gray-700',
+              ring: 'ring-gray-500',
+              bg: 'bg-gray-100',
+              text: 'text-gray-800'
+            }}
           />
         )}
 

@@ -32,6 +32,7 @@ export const getAssetsApi = async (
   try {
     // Build query parameters (backend doesn't use pagination params)
     const queryParams = new URLSearchParams();
+    if (filters.search) queryParams.append('search', filters.search);
     if (filters.category) queryParams.append('category', filters.category);
     if (filters.fromDate) queryParams.append('fromDate', filters.fromDate);
     if (filters.toDate) queryParams.append('toDate', filters.toDate);

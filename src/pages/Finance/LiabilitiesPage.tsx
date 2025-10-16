@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import LiabilitiesTable from '../../components/liabilities/LiabilitiesTable';
 import LiabilitiesStatistics from '../../components/liabilities/LiabilitiesStatistics';
 import LiabilityDetailsDrawer from '../../components/liabilities/LiabilityDetailsDrawer';
 import AddLiabilityDrawer from '../../components/liabilities/AddLiabilityDrawer';
-import LiabilitiesSearchFilters from '../../components/liabilities/LiabilitiesSearchFilters';
+import GenericLiabilityFilters from '../../components/liabilities/GenericLiabilityFilters';
 import { getLiabilitiesApi } from '../../apis/liabilities';
 import type { Liability } from '../../types';
 
@@ -190,30 +190,14 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
       return;
     }
     loadLiabilities(1);
-  }, [filters.isPaid, filters.relatedVendorId, filters.category, filters.fromDate, filters.toDate, filters.createdBy]);
+  }, [filters.search, filters.isPaid, filters.relatedVendorId, filters.category, filters.fromDate, filters.toDate, filters.createdBy]);
 
-  // Filter handlers
-  const handleSearch = (search: string) => {
-    setFilters(prev => ({ ...prev, search }));
-  };
+  // Simplified filter handlers using generic system
+  const handleFiltersChange = useCallback((newFilters: any) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
 
-  const handleIsPaidFilter = (isPaid: string) => {
-    setFilters(prev => ({ ...prev, isPaid }));
-  };
-
-  const handleRelatedVendorIdFilter = (relatedVendorId: string) => {
-    setFilters(prev => ({ ...prev, relatedVendorId }));
-  };
-
-  const handleCategoryFilter = (category: string) => {
-    setFilters(prev => ({ ...prev, category }));
-  };
-
-  const handleDateRangeFilter = (fromDate: string, toDate: string) => {
-    setFilters(prev => ({ ...prev, fromDate, toDate }));
-  };
-
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
       isPaid: '',
@@ -225,7 +209,7 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
       sortBy: 'dueDate',
       sortOrder: 'desc'
     });
-  };
+  }, []);
 
   const handlePageChange = (page: number) => {
     loadLiabilities(page);
@@ -307,13 +291,9 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
           </div>
         )}
 
-        {/* Search Filters */}
-        <LiabilitiesSearchFilters
-          onSearch={handleSearch}
-          onCategoryFilter={handleCategoryFilter}
-          onIsPaidFilter={handleIsPaidFilter}
-          onDateRangeFilter={handleDateRangeFilter}
-          onRelatedVendorIdFilter={handleRelatedVendorIdFilter}
+        {/* Search Filters - NEW GENERIC SYSTEM */}
+        <GenericLiabilityFilters
+          onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
         />
 

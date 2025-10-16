@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import RevenueTable from '../../components/revenue/RevenueTable';
 import RevenueDetailsDrawer from '../../components/revenue/RevenueDetailsDrawer';
 import AddRevenueDrawer from '../../components/revenue/AddRevenueDrawer';
-import RevenuesSearchFilters from '../../components/revenue/RevenuesSearchFilters';
+import GenericRevenueFilters from '../../components/revenue/GenericRevenueFilters';
 import RevenueStatistics from '../../components/revenue/RevenueStatistics';
 import { getRevenuesApi } from '../../apis/revenue';
 import type { Revenue } from '../../types';
@@ -199,7 +199,7 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
     }
     console.log('🔄 [REVENUE] Filters changed - refetching...');
     fetchRevenues(1);
-  }, [filters.category, filters.source, filters.fromDate, filters.toDate, filters.createdBy, filters.minAmount, filters.maxAmount, filters.paymentMethod, filters.receivedFrom, filters.relatedInvoiceId]);
+  }, [filters.search, filters.category, filters.source, filters.fromDate, filters.toDate, filters.createdBy, filters.minAmount, filters.maxAmount, filters.paymentMethod, filters.receivedFrom, filters.relatedInvoiceId]);
 
   // Handlers
   const handlePageChange = (page: number) => {
@@ -214,44 +214,12 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
     setSelectedRevenues(revenueIds);
   };
 
-  // Filter handlers (matching API query parameters)
-  const handleSearch = (search: string) => {
-    setFilters(prev => ({ ...prev, search }));
-  };
+  // Simplified filter handlers using generic system
+  const handleFiltersChange = useCallback((newFilters: any) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
 
-  const handleCategoryFilter = (category: string) => {
-    setFilters(prev => ({ ...prev, category }));
-  };
-
-  const handlePaymentMethodFilter = (paymentMethod: string) => {
-    setFilters(prev => ({ ...prev, paymentMethod }));
-  };
-
-  const handleSourceFilter = (source: string) => {
-    setFilters(prev => ({ ...prev, source }));
-  };
-
-  const handleDateRangeFilter = (fromDate: string, toDate: string) => {
-    setFilters(prev => ({ ...prev, fromDate, toDate }));
-  };
-
-  const handleMinAmountFilter = (minAmount: string) => {
-    setFilters(prev => ({ ...prev, minAmount }));
-  };
-
-  const handleMaxAmountFilter = (maxAmount: string) => {
-    setFilters(prev => ({ ...prev, maxAmount }));
-  };
-
-  const handleReceivedFromFilter = (receivedFrom: string) => {
-    setFilters(prev => ({ ...prev, receivedFrom }));
-  };
-
-  const handleRelatedInvoiceIdFilter = (relatedInvoiceId: string) => {
-    setFilters(prev => ({ ...prev, relatedInvoiceId }));
-  };
-
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
       category: '',
@@ -267,7 +235,7 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
       sortBy: 'receivedOn',
       sortOrder: 'desc'
     });
-  };
+  }, []);
 
   const handleCloseNotification = () => {
     setNotification(null);
@@ -327,17 +295,9 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
           </div>
         )}
 
-        {/* Search Filters */}
-        <RevenuesSearchFilters
-          onSearch={handleSearch}
-          onCategoryFilter={handleCategoryFilter}
-          onSourceFilter={handleSourceFilter}
-          onDateRangeFilter={handleDateRangeFilter}
-          onMinAmountFilter={handleMinAmountFilter}
-          onMaxAmountFilter={handleMaxAmountFilter}
-          onPaymentMethodFilter={handlePaymentMethodFilter}
-          onReceivedFromFilter={handleReceivedFromFilter}
-          onRelatedInvoiceIdFilter={handleRelatedInvoiceIdFilter}
+        {/* Search Filters - NEW GENERIC SYSTEM */}
+        <GenericRevenueFilters
+          onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
         />
 
