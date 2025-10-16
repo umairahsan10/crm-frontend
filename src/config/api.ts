@@ -1,15 +1,18 @@
 /**
  * API Configuration
- * Set your backend server URL here
+ * Now using centralized constants from ./constants.ts
  */
 
-export const API_CONFIG = {
-  // Change this to your backend server URL
-  BASE_URL: 'http://localhost:3000', // Default backend port
+import { API_BASE_URL, API_TIMEOUT, API_VERSION } from './constants';
 
+// Legacy config object - kept for backward compatibility
+export const API_CONFIG = {
+  BASE_URL: API_BASE_URL,
+  TIMEOUT: API_TIMEOUT,
+  VERSION: API_VERSION,
 };
 
-// You can also use environment variables
+// Helper function to get API base URL
 export const getApiBaseUrl = () => {
-  return import.meta.env.VITE_API_BASE_URL || API_CONFIG.BASE_URL;
+  return API_BASE_URL;
 };

@@ -1,8 +1,6 @@
 import { getAuthData } from '../utils/cookieUtils';
 import { apiPostJson, apiGetJson, ApiError as ApiClientError } from '../utils/apiClient';
-
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { API_BASE_URL } from '../config/constants';
 
 export interface LoginRequest {
   email: string;

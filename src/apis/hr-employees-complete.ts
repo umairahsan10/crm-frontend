@@ -1,4 +1,5 @@
 import { apiPostJson, ApiError } from '../utils/apiClient';
+import { API_BASE_URL } from '../config/constants';
 
 /**
  * HR Complete Employee Creation API
@@ -6,9 +7,6 @@ import { apiPostJson, ApiError } from '../utils/apiClient';
  * This module contains the API function for creating an employee with all related data
  * in a single atomic transaction using the /hr/employees/complete endpoint.
  */
-
-// API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // ==========================================
 // TYPE DEFINITIONS

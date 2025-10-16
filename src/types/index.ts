@@ -439,8 +439,8 @@ export interface ApiResponse<T> {
     limit: number;
     total: number;
     totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
+    hasNext?: boolean;
+    hasPrev?: boolean;
   };
 }
 
