@@ -1,8 +1,10 @@
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 import type { Asset, AssetsResponse, AssetResponse, ApiResponse } from '../types';
-import { getAuthData } from '../utils/cookieUtils';
+import { 
+  apiGetJson, 
+  apiPostJson, 
+  apiPatchJson, 
+  apiDeleteJson
+} from '../utils/apiClient';
 
 export interface ApiError {
   message: string;
@@ -28,11 +30,6 @@ export const getAssetsApi = async (
   } = {}
 ): Promise<ApiResponse<Asset[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters (backend doesn't use pagination params)
     const queryParams = new URLSearchParams();
     if (filters.category) queryParams.append('category', filters.category);
@@ -45,8 +42,8 @@ export const getAssetsApi = async (
     if (filters.maxCurrentValue) queryParams.append('maxCurrentValue', filters.maxCurrentValue);
 
     const url = queryParams.toString() 
-      ? `${API_BASE_URL}/accountant/assets?${queryParams.toString()}`
-      : `${API_BASE_URL}/accountant/assets`;
+      ? `/accountant/assets?${queryParams.toString()}`
+      : `/accountant/assets`;
 
     console.log('📤 Fetching assets:', {
       url,
@@ -54,21 +51,7 @@ export const getAssetsApi = async (
       queryParams: queryParams.toString()
     });
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Assets API HTTP Error:', response.status, errorData);
-      throw new Error(errorData.message || `HTTP ${response.status}: Failed to fetch assets`);
-    }
-
-    const data: AssetsResponse = await response.json();
+    const data: AssetsResponse = await apiGetJson<AssetsResponse>(url);
     console.log('✅ Assets API Response:', data);
     
     // Backend returns { status, message, data: [], total }
@@ -102,27 +85,9 @@ export const getAssetsApi = async (
 // Get asset by ID
 export const getAssetByIdApi = async (assetId: string | number): Promise<ApiResponse<Asset>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Fetching asset by ID:', assetId);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/assets/${assetId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch asset');
-    }
-
-    const data: AssetResponse = await response.json();
+    const data: AssetResponse = await apiGetJson<AssetResponse>(`/accountant/assets/${assetId}`);
     console.log('Asset detail response:', data);
     
     if (data.status === 'error') {
@@ -153,28 +118,9 @@ export const createAssetApi = async (assetData: {
   vendorId: number;
 }): Promise<ApiResponse<Asset>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Creating asset with data:', assetData);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/assets`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(assetData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create asset');
-    }
-
-    const data = await response.json();
+    const data = await apiPostJson<any>('/accountant/assets', assetData);
     console.log('Create asset response:', data);
     
     if (data.status === 'error') {
@@ -208,32 +154,13 @@ export const updateAssetApi = async (
   }
 ): Promise<ApiResponse<Asset>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Updating asset:', assetId, 'with data:', updates);
 
     // Backend expects PATCH to /accountant/assets with asset_id in body
-    const response = await fetch(`${API_BASE_URL}/accountant/assets`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        asset_id: assetId,
-        ...updates
-      }),
+    const data = await apiPatchJson<any>('/accountant/assets', {
+      asset_id: assetId,
+      ...updates
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update asset');
-    }
-
-    const data = await response.json();
     console.log('Update asset response:', data);
     
     if (data.status === 'error') {
@@ -257,25 +184,7 @@ export const updateAssetApi = async (
 // Delete asset (if needed in future)
 export const deleteAssetApi = async (assetId: string): Promise<ApiResponse<void>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/accountant/assets/${assetId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete asset');
-    }
-
-    const data: ApiResponse<void> = await response.json();
+    const data: ApiResponse<void> = await apiDeleteJson<ApiResponse<void>>(`/accountant/assets/${assetId}`);
     return data;
   } catch (error) {
     if (error instanceof Error) {

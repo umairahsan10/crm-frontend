@@ -1,8 +1,10 @@
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 import type { Expense, ExpensesResponse, ExpenseResponse, ApiResponse } from '../types';
-import { getAuthData } from '../utils/cookieUtils';
+import { 
+  apiGetJson, 
+  apiPostJson, 
+  apiPatchJson, 
+  apiDeleteJson
+} from '../utils/apiClient';
 
 export interface ApiError {
   message: string;
@@ -28,11 +30,6 @@ export const getExpensesApi = async (
   } = {}
 ): Promise<ApiResponse<Expense[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters (backend doesn't use page/limit)
     const queryParams = new URLSearchParams();
     if (filters.category) queryParams.append('category', filters.category);
@@ -45,8 +42,8 @@ export const getExpensesApi = async (
     if (filters.processedByRole) queryParams.append('processedByRole', filters.processedByRole);
 
     const url = queryParams.toString() 
-      ? `${API_BASE_URL}/accountant/expense?${queryParams.toString()}`
-      : `${API_BASE_URL}/accountant/expense`;
+      ? `/accountant/expense?${queryParams.toString()}`
+      : `/accountant/expense`;
 
     console.log('📤 Fetching expenses:', {
       url,
@@ -54,21 +51,7 @@ export const getExpensesApi = async (
       queryParams: queryParams.toString()
     });
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Expenses API HTTP Error:', response.status, errorData);
-      throw new Error(errorData.message || `HTTP ${response.status}: Failed to fetch expenses`);
-    }
-
-    const data: ExpensesResponse = await response.json();
+    const data: ExpensesResponse = await apiGetJson<ExpensesResponse>(url);
     console.log('✅ Expenses API Response:', data);
     
     // Backend returns { status, message, data: [], total }
@@ -111,28 +94,9 @@ export const createExpenseApi = async (expenseData: {
   vendorId?: number;
 }): Promise<ApiResponse<Expense>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Creating expense with data:', expenseData);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/expense`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(expenseData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create expense');
-    }
-
-    const data = await response.json();
+    const data = await apiPostJson<any>('/accountant/expense', expenseData);
     console.log('Create expense response:', data);
     
     if (data.status === 'error') {
@@ -156,27 +120,9 @@ export const createExpenseApi = async (expenseData: {
 // Get expense by ID
 export const getExpenseByIdApi = async (expenseId: string | number): Promise<ApiResponse<Expense>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Fetching expense by ID:', expenseId);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/expense/${expenseId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch expense');
-    }
-
-    const data: ExpenseResponse = await response.json();
+    const data: ExpenseResponse = await apiGetJson<ExpenseResponse>(`/accountant/expense/${expenseId}`);
     console.log('Expense detail response:', data);
     
     if (data.status === 'error') {
@@ -212,32 +158,13 @@ export const updateExpenseApi = async (
   }
 ): Promise<ApiResponse<Expense>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Updating expense:', expenseId, 'with data:', updates);
 
     // Backend expects PATCH to /accountant/expense with expense_id in body
-    const response = await fetch(`${API_BASE_URL}/accountant/expense`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        expense_id: expenseId,
-        ...updates
-      }),
+    const data = await apiPatchJson<any>('/accountant/expense', {
+      expense_id: expenseId,
+      ...updates
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update expense');
-    }
-
-    const data = await response.json();
     console.log('Update expense response:', data);
     
     if (data.status === 'error') {
@@ -261,25 +188,7 @@ export const updateExpenseApi = async (
 // Delete expense
 export const deleteExpenseApi = async (expenseId: string): Promise<ApiResponse<void>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/accountant/expense/${expenseId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete expense');
-    }
-
-    const data: ApiResponse<void> = await response.json();
+    const data: ApiResponse<void> = await apiDeleteJson<ApiResponse<void>>(`/accountant/expense/${expenseId}`);
     return data;
   } catch (error) {
     if (error instanceof Error) {
