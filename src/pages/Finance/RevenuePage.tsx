@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import RevenueTable from '../../components/revenue/RevenueTable';
 import RevenueDetailsDrawer from '../../components/revenue/RevenueDetailsDrawer';
 import AddRevenueDrawer from '../../components/revenue/AddRevenueDrawer';
 import GenericRevenueFilters from '../../components/revenue/GenericRevenueFilters';
 import RevenueStatistics from '../../components/revenue/RevenueStatistics';
-import { getRevenuesApi } from '../../apis/revenue';
+import { useRevenue, useRevenueStatistics } from '../../hooks/queries/useFinanceQueries';
 import type { Revenue } from '../../types';
 
 interface RevenuePageProps {
@@ -20,11 +20,7 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
   const [showAddRevenueDrawer, setShowAddRevenueDrawer] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Revenues state
-  const [revenues, setRevenues] = useState<Revenue[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Pagination
+  // Pagination state
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -49,161 +45,43 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
     sortOrder: 'desc' as 'asc' | 'desc'
   });
 
-  // Data state
-  const [statistics, setStatistics] = useState({
-    totalRevenue: 0,
-    pendingRevenue: 0,
-    completedRevenue: 0,
-    totalAmount: '0',
-    collectionRate: '0%',
-    byStatus: {
-      pending: 0,
-      completed: 0,
-      failed: 0,
-      cancelled: 0
-    },
-    byCategory: {
-      softwareDevelopment: 0,
-      consulting: 0,
-      productSales: 0,
-      subscription: 0,
-      support: 0,
-      training: 0,
-      license: 0,
-      other: 0
-    },
-    today: {
-      new: 0,
-      completed: 0,
-      pending: 0
-    }
-  });
+  // React Query hooks - Data fetching with automatic caching
+  const revenueQuery = useRevenue(
+    pagination.currentPage, 
+    pagination.itemsPerPage, 
+    filters
+  );
+  const statisticsQuery = useRevenueStatistics();
 
-  // Fetch revenues from database
-  const fetchRevenues = async (page: number = 1) => {
-    try {
-      setIsLoading(true);
-      
-      console.log('📤 [REVENUE] Fetching revenues - Page:', page, 'Filters:', filters);
-      console.log('📤 [REVENUE] Calling getRevenuesApi...');
-      
-      const response = await getRevenuesApi(page, pagination.itemsPerPage, {
-        category: filters.category || undefined,
-        source: filters.source || undefined,
-        fromDate: filters.fromDate || undefined,
-        toDate: filters.toDate || undefined,
-        createdBy: filters.createdBy || undefined,
-        minAmount: filters.minAmount || undefined,
-        maxAmount: filters.maxAmount || undefined,
-        paymentMethod: filters.paymentMethod || undefined,
-        receivedFrom: filters.receivedFrom || undefined,
-        relatedInvoiceId: filters.relatedInvoiceId || undefined,
-        search: filters.search || undefined,
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder
-      });
-      
-      console.log('✅ [REVENUE] API Response received:', response);
-      console.log('✅ [REVENUE] Response data:', response.data);
-      console.log('✅ [REVENUE] Response pagination:', response.pagination);
-      
-      if (response.success && response.data) {
-        console.log(`✅ [REVENUE] Setting ${response.data.length} revenues to state`);
-        setRevenues(response.data);
-        
-        if (response.pagination) {
-          setPagination({
-            currentPage: response.pagination.page,
-            totalPages: response.pagination.totalPages,
-            totalItems: response.pagination.total,
-            itemsPerPage: pagination.itemsPerPage
-          });
-          console.log('✅ [REVENUE] Pagination updated:', response.pagination);
-        }
-      } else {
-        console.warn('⚠️ [REVENUE] Response not successful or no data');
-      }
-    } catch (error) {
-      console.error('❌ [REVENUE] Error fetching revenues:', error);
-      console.error('❌ [REVENUE] Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      setNotification({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to load revenues'
-      });
-      setTimeout(() => setNotification(null), 5000);
-    } finally {
-      setIsLoading(false);
-      console.log('✅ [REVENUE] Fetch complete. Loading state set to false');
-    }
+  // Extract data and loading states from queries
+  const revenues = (revenueQuery.data as any)?.data || [];
+  const statistics = (statisticsQuery.data as any)?.data || {
+    totalRevenues: 0,
+    totalAmount: 0,
+    thisMonthAmount: 0,
+    lastMonthAmount: 0,
+    growthRate: 0,
+    byCategory: {},
+    byPaymentMethod: {},
+    recentRevenues: []
   };
+  const isLoading = revenueQuery.isLoading;
 
-  // Fetch statistics
-  const fetchStatistics = async () => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setStatistics({
-        totalRevenue: 200,
-        pendingRevenue: 25,
-        completedRevenue: 165,
-        totalAmount: '2,456,789.00',
-        collectionRate: '92.5%',
-        byStatus: {
-          pending: 25,
-          completed: 165,
-          failed: 8,
-          cancelled: 2
-        },
-        byCategory: {
-          softwareDevelopment: 80,
-          consulting: 45,
-          productSales: 30,
-          subscription: 20,
-          support: 10,
-          training: 8,
-          license: 5,
-          other: 2
-        },
-        today: {
-          new: 12,
-          completed: 18,
-          pending: 5
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
+  // Update pagination when React Query data changes
+  React.useEffect(() => {
+    if ((revenueQuery.data as any)?.pagination) {
+      setPagination(prev => ({
+        ...prev,
+        currentPage: (revenueQuery.data as any).pagination.page,
+        totalPages: (revenueQuery.data as any).pagination.totalPages,
+        totalItems: (revenueQuery.data as any).pagination.total,
+      }));
     }
-  };
-
-  // Load data on component mount
-  useEffect(() => {
-    console.log('🔵 [REVENUE] Component mounted - fetching revenues...');
-    console.log('🔵 [REVENUE] Initial state - isLoading:', isLoading);
-    console.log('🔵 [REVENUE] Initial state - revenues:', revenues);
-    fetchRevenues(1).then(() => {
-      console.log('🔵 [REVENUE] Initial fetch completed');
-    });
-    fetchStatistics();
-  }, []);
-
-  // Refetch when filters change (skip on initial mount)
-  const [isInitialMount, setIsInitialMount] = useState(true);
-  
-  useEffect(() => {
-    if (isInitialMount) {
-      setIsInitialMount(false);
-      return;
-    }
-    console.log('🔄 [REVENUE] Filters changed - refetching...');
-    fetchRevenues(1);
-  }, [filters.search, filters.category, filters.source, filters.fromDate, filters.toDate, filters.createdBy, filters.minAmount, filters.maxAmount, filters.paymentMethod, filters.receivedFrom, filters.relatedInvoiceId]);
+  }, [revenueQuery.data]);
 
   // Handlers
   const handlePageChange = (page: number) => {
-    fetchRevenues(page);
+    setPagination(prev => ({ ...prev, currentPage: page }));
   };
 
   const handleRevenueClick = (revenue: Revenue) => {
@@ -262,22 +140,25 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
               )}
               <h1 className="text-3xl font-bold text-gray-900">Revenue Management</h1>
               <p className="mt-2 text-sm text-gray-600">
-                Track and manage revenue with advanced filtering and transaction monitoring
+                Track and manage revenue streams with comprehensive reporting and analytics
               </p>
             </div>
+            
+            {/* Action Buttons */}
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowStatistics(!showStatistics)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                {showStatistics ? 'Hide Stats' : 'Show Stats'}
+                {showStatistics ? 'Hide Statistics' : 'Show Statistics'}
               </button>
+              
               <button
                 onClick={() => setShowAddRevenueDrawer(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -288,14 +169,17 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
           </div>
         </div>
 
-        {/* Statistics Dashboard */}
+        {/* Statistics Panel */}
         {showStatistics && (
           <div className="mb-8">
-            <RevenueStatistics statistics={statistics} isLoading={false} />
+            <RevenueStatistics 
+              statistics={statistics}
+              isLoading={statisticsQuery.isLoading}
+            />
           </div>
         )}
 
-        {/* Search Filters - NEW GENERIC SYSTEM */}
+        {/* Filters */}
         <GenericRevenueFilters
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
@@ -319,16 +203,8 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
         <AddRevenueDrawer
           isOpen={showAddRevenueDrawer}
           onClose={() => setShowAddRevenueDrawer(false)}
-          onRevenueCreated={(newRevenue) => {
-            // Add the new revenue to the list
-            setRevenues(prev => [newRevenue, ...prev]);
-            
-            // Update pagination
-            setPagination(prev => ({
-              ...prev,
-              totalItems: prev.totalItems + 1
-            }));
-            
+          onRevenueCreated={() => {
+            // React Query will automatically refetch and update the UI
             setNotification({
               type: 'success',
               message: 'Revenue created successfully!'
@@ -344,11 +220,7 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
           onClose={() => setSelectedRevenue(null)}
           viewMode="full"
           onRevenueUpdated={(updatedRevenue) => {
-            // Update the revenues array
-            setRevenues(prev => prev.map(revenue => 
-              revenue.id === updatedRevenue.id ? updatedRevenue : revenue
-            ));
-            
+            // React Query will automatically refetch and update the UI
             setSelectedRevenue(updatedRevenue);
             setNotification({
               type: 'success',
@@ -367,28 +239,24 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
               <div className="flex items-start">
                 <div className="flex-shrink-0">
                   {notification.type === 'success' ? (
-                    <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    <svg className="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   ) : (
-                    <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    <svg className="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   )}
                 </div>
                 <div className="ml-3 w-0 flex-1 pt-0.5">
-                  <p className={`text-sm font-medium ${
-                    notification.type === 'success' ? 'text-green-800' : 'text-red-800'
-                  }`}>
+                  <p className="text-sm font-medium text-gray-900">
                     {notification.message}
                   </p>
                 </div>
                 <div className="ml-4 flex-shrink-0 flex">
                   <button
+                    className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     onClick={handleCloseNotification}
-                    className={`bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                      notification.type === 'success' ? 'focus:ring-green-500' : 'focus:ring-red-500'
-                    }`}
                   >
                     <span className="sr-only">Close</span>
                     <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -406,4 +274,3 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
 };
 
 export default RevenuePage;
-

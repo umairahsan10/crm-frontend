@@ -203,3 +203,31 @@ export const deleteRevenueApi = async (revenueId: string): Promise<ApiResponse<v
   }
 };
 
+// Statistics API
+export const getRevenuesStatisticsApi = async (): Promise<ApiResponse<{
+  totalRevenues: number;
+  totalAmount: number;
+  thisMonthAmount: number;
+  lastMonthAmount: number;
+  growthRate: number;
+  byCategory: { [key: string]: number };
+  byPaymentMethod: { [key: string]: number };
+  recentRevenues: Revenue[];
+}>> => {
+  try {
+    console.log('📊 Fetching revenue statistics...');
+    
+    const data = await apiGetJson<any>('/accountant/revenue/statistics');
+    console.log('✅ Revenue statistics received:', data);
+    
+    return {
+      success: true,
+      data: data.data || data,
+      message: 'Revenue statistics fetched successfully'
+    };
+  } catch (error) {
+    console.error('❌ Revenue statistics API error:', error);
+    throw new Error('Failed to fetch revenue statistics');
+  }
+};
+

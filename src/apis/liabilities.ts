@@ -225,3 +225,30 @@ export const deleteLiabilityApi = async (liabilityId: string): Promise<ApiRespon
     throw new Error('An unexpected error occurred while deleting liability');
   }
 };
+
+// Statistics API
+export const getLiabilitiesStatisticsApi = async (): Promise<ApiResponse<{
+  totalLiabilities: number;
+  totalAmount: number;
+  paidAmount: number;
+  unpaidAmount: number;
+  overdueAmount: number;
+  byCategory: { [key: string]: number };
+  recentLiabilities: Liability[];
+}>> => {
+  try {
+    console.log('📊 Fetching liabilities statistics...');
+    
+    const data = await apiGetJson<any>('/accountant/liabilities/statistics');
+    console.log('✅ Liabilities statistics received:', data);
+    
+    return {
+      success: true,
+      data: data.data || data,
+      message: 'Liabilities statistics fetched successfully'
+    };
+  } catch (error) {
+    console.error('❌ Liabilities statistics API error:', error);
+    throw new Error('Failed to fetch liabilities statistics');
+  }
+};

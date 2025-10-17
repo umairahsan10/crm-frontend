@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import ExpensesTable from '../../components/expenses/ExpensesTable';
 import GenericExpenseFilters from '../../components/expenses/GenericExpenseFilters';
 import ExpenseDetailsDrawer from '../../components/expenses/ExpenseDetailsDrawer';
 import AddExpenseDrawer from '../../components/expenses/AddExpenseDrawer';
 import ExpensesStatistics from '../../components/expenses/ExpensesStatistics';
-import { getExpensesApi } from '../../apis/expenses';
+import { useExpenses, useExpensesStatistics } from '../../hooks/queries/useFinanceQueries';
 import type { Expense } from '../../types';
 
 interface ExpensesPageProps {
@@ -20,11 +20,7 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
   const [showAddExpenseDrawer, setShowAddExpenseDrawer] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Expenses state
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Pagination
+  // Pagination state
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -47,135 +43,43 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
     sortOrder: 'desc' as 'asc' | 'desc'
   });
 
-  // Data state
-  const [statistics, setStatistics] = useState({
+  // React Query hooks - Data fetching with automatic caching
+  const expensesQuery = useExpenses(
+    pagination.currentPage, 
+    pagination.itemsPerPage, 
+    filters
+  );
+  const statisticsQuery = useExpensesStatistics();
+
+  // Extract data and loading states from queries
+  const expenses = (expensesQuery.data as any)?.data || [];
+  const statistics = (statisticsQuery.data as any)?.data || {
     totalExpenses: 0,
-    pendingExpenses: 0,
-    approvedExpenses: 0,
-    rejectedExpenses: 0,
-    totalAmount: '0',
-    approvalRate: '0%',
-    byStatus: {
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-      paid: 0
-    },
-    byCategory: {
-      salary: 0,
-      office: 0,
-      marketing: 0,
-      utilities: 0,
-      travel: 0,
-      equipment: 0,
-      other: 0
-    },
-    today: {
-      new: 0,
-      approved: 0,
-      rejected: 0
-    }
-  });
-
-  // Fetch expenses from database
-  const fetchExpenses = async (page: number = 1) => {
-    try {
-      setIsLoading(true);
-      
-      console.log('📤 Fetching expenses with filters:', filters);
-      
-      const response = await getExpensesApi(page, pagination.itemsPerPage, {
-        category: filters.category,
-        fromDate: filters.fromDate,
-        toDate: filters.toDate,
-        createdBy: filters.createdBy,
-        minAmount: filters.minAmount,
-        maxAmount: filters.maxAmount,
-        paymentMethod: filters.paymentMethod,
-        processedByRole: filters.processedByRole,
-        search: filters.search,
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder
-      });
-      
-      console.log('✅ Expenses response:', response);
-      
-      if (response.success && response.data) {
-        setExpenses(response.data);
-        
-        if (response.pagination) {
-          setPagination({
-            currentPage: response.pagination.page,
-            totalPages: response.pagination.totalPages,
-            totalItems: response.pagination.total,
-            itemsPerPage: pagination.itemsPerPage
-          });
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error fetching expenses:', error);
-      setNotification({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to load expenses'
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    totalAmount: 0,
+    thisMonthAmount: 0,
+    lastMonthAmount: 0,
+    growthRate: 0,
+    byCategory: {},
+    byPaymentMethod: {},
+    recentExpenses: []
   };
+  const isLoading = expensesQuery.isLoading;
 
-  // Fetch statistics
-  const fetchStatistics = async () => {
-    try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      setStatistics({
-        totalExpenses: 150,
-        pendingExpenses: 45,
-        approvedExpenses: 80,
-        rejectedExpenses: 25,
-        totalAmount: '456,789.00',
-        approvalRate: '76.2%',
-        byStatus: {
-          pending: 45,
-          approved: 80,
-          rejected: 20,
-          paid: 5
-        },
-        byCategory: {
-          salary: 60,
-          office: 30,
-          marketing: 25,
-          utilities: 15,
-          travel: 10,
-          equipment: 5,
-          other: 5
-        },
-        today: {
-          new: 8,
-          approved: 12,
-          rejected: 3
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
+  // Update pagination when React Query data changes
+  React.useEffect(() => {
+    if ((expensesQuery.data as any)?.pagination) {
+      setPagination(prev => ({
+        ...prev,
+        currentPage: (expensesQuery.data as any).pagination.page,
+        totalPages: (expensesQuery.data as any).pagination.totalPages,
+        totalItems: (expensesQuery.data as any).pagination.total,
+      }));
     }
-  };
-
-  // Load data on component mount
-  useEffect(() => {
-    fetchExpenses();
-    fetchStatistics();
-  }, []);
-
-  // Refetch when filters change
-  useEffect(() => {
-    fetchExpenses(1);
-  }, [filters]);
+  }, [expensesQuery.data]);
 
   // Handlers
   const handlePageChange = (page: number) => {
-    fetchExpenses(page);
+    setPagination(prev => ({ ...prev, currentPage: page }));
   };
 
   const handleExpenseClick = (expense: Expense) => {
@@ -289,16 +193,8 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
         <AddExpenseDrawer
           isOpen={showAddExpenseDrawer}
           onClose={() => setShowAddExpenseDrawer(false)}
-          onExpenseCreated={(newExpense) => {
-            // Add the new expense to the list
-            setExpenses(prev => [newExpense, ...prev]);
-            
-            // Update pagination
-            setPagination(prev => ({
-              ...prev,
-              totalItems: prev.totalItems + 1
-            }));
-            
+          onExpenseCreated={() => {
+            // React Query will automatically refetch and update the UI
             setNotification({
               type: 'success',
               message: 'Expense created successfully!'
@@ -314,11 +210,7 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
           onClose={() => setSelectedExpense(null)}
           viewMode="full"
           onExpenseUpdated={(updatedExpense) => {
-            // Update the expenses array
-            setExpenses(prev => prev.map(expense => 
-              expense.id === updatedExpense.id ? updatedExpense : expense
-            ));
-            
+            // React Query will automatically refetch and update the UI
             setSelectedExpense(updatedExpense);
             setNotification({
               type: 'success',

@@ -194,3 +194,29 @@ export const deleteAssetApi = async (assetId: string): Promise<ApiResponse<void>
     throw new Error('An unexpected error occurred while deleting asset');
   }
 };
+
+// Statistics API
+export const getAssetsStatisticsApi = async (): Promise<ApiResponse<{
+  totalAssets: number;
+  totalValue: number;
+  totalPurchaseValue: number;
+  totalDepreciation: number;
+  byCategory: { [key: string]: number };
+  recentAssets: Asset[];
+}>> => {
+  try {
+    console.log('📊 Fetching assets statistics...');
+    
+    const data = await apiGetJson<any>('/accountant/assets/statistics');
+    console.log('✅ Assets statistics received:', data);
+    
+    return {
+      success: true,
+      data: data.data || data,
+      message: 'Assets statistics fetched successfully'
+    };
+  } catch (error) {
+    console.error('❌ Assets statistics API error:', error);
+    throw new Error('Failed to fetch assets statistics');
+  }
+};

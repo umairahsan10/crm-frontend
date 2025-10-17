@@ -199,3 +199,31 @@ export const deleteExpenseApi = async (expenseId: string): Promise<ApiResponse<v
   }
 };
 
+// Statistics API
+export const getExpensesStatisticsApi = async (): Promise<ApiResponse<{
+  totalExpenses: number;
+  totalAmount: number;
+  thisMonthAmount: number;
+  lastMonthAmount: number;
+  growthRate: number;
+  byCategory: { [key: string]: number };
+  byPaymentMethod: { [key: string]: number };
+  recentExpenses: Expense[];
+}>> => {
+  try {
+    console.log('📊 Fetching expenses statistics...');
+    
+    const data = await apiGetJson<any>('/accountant/expense/statistics');
+    console.log('✅ Expenses statistics received:', data);
+    
+    return {
+      success: true,
+      data: data.data || data,
+      message: 'Expenses statistics fetched successfully'
+    };
+  } catch (error) {
+    console.error('❌ Expenses statistics API error:', error);
+    throw new Error('Failed to fetch expenses statistics');
+  }
+};
+
