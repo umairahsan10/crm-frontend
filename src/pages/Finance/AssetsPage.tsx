@@ -167,7 +167,7 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
   const handleCreateVendor = async () => {
     try {
       setIsCreatingVendor(true);
-      
+
       const vendorData: CreateVendorRequest = {
         name: newVendorForm.name,
         contact_person: newVendorForm.contact_person,
@@ -183,29 +183,29 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
 
       await createVendorApi(vendorData);
       
-      setShowCreateVendorModal(false);
-      setNewVendorForm({
-        name: '',
-        contact_person: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        country: '',
-        bank_account: '',
-        status: 'active',
-        notes: ''
-      });
-      
+        setShowCreateVendorModal(false);
+        setNewVendorForm({
+          name: '',
+          contact_person: '',
+          email: '',
+          phone: '',
+          address: '',
+          city: '',
+          country: '',
+          bank_account: '',
+          status: 'active',
+          notes: ''
+        });
+
       setNotification({
         type: 'success',
         message: 'Vendor created successfully!'
       });
-      setTimeout(() => setNotification(null), 3000);
+        setTimeout(() => setNotification(null), 3000);
     } catch (error) {
-      setNotification({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to create vendor'
+      setNotification({ 
+        type: 'error', 
+        message: error instanceof Error ? error.message : 'Failed to create vendor' 
       });
       setTimeout(() => setNotification(null), 5000);
     } finally {
@@ -362,39 +362,39 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Purchase Value</label>
-                      <input
-                        type="number"
+                        <input
+                          type="number"
                         name="purchaseValue"
-                        step="0.01"
+                          step="0.01"
                         required
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                    </div>
+                        />
+                      </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Current Value</label>
-                      <input
-                        type="number"
+                        <input
+                          type="number"
                         name="currentValue"
-                        step="0.01"
+                          step="0.01"
                         required
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                    </div>
+                        />
+                      </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Vendor</label>
                       <div className="flex space-x-2">
-                        <select
+                      <select
                           name="vendorId"
                           required
                           className="mt-1 block flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         >
                           <option value="">Select Vendor</option>
                           {vendors.map((vendor: any) => (
-                            <option key={vendor.id} value={vendor.id}>
-                              {vendor.name}
-                            </option>
-                          ))}
-                        </select>
+                          <option key={vendor.id} value={vendor.id}>
+                            {vendor.name}
+                          </option>
+                        ))}
+                      </select>
                         <button
                           type="button"
                           onClick={() => setShowCreateVendorModal(true)}
