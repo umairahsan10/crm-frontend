@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { DateRangePicker, DateRangeValue } from './DateRangePicker';
-import { AmountRangePicker, AmountRangeValue } from './AmountRangePicker';
+import { DateRangePicker } from './DateRangePicker';
+import { AmountRangePicker } from './AmountRangePicker';
 
 /**
  * All supported filter field types
@@ -57,7 +57,6 @@ export interface FilterFieldProps {
  * 100% Generic - works with any data type!
  */
 export const FilterField: React.FC<FilterFieldProps> = ({
-  name,
   value,
   config,
   onChange,

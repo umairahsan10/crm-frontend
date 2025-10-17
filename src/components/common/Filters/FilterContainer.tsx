@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FilterField, FilterFieldConfig } from './FilterField';
+import { FilterField, type FilterFieldConfig } from './FilterField';
 
 /**
  * Generic FilterContainer Props
