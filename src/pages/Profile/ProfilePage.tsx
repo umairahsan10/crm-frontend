@@ -22,7 +22,7 @@ interface ProfileData {
 
 const ProfilePage: React.FC = () => {
   const { user, hasPermission } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   
@@ -155,8 +155,8 @@ const ProfilePage: React.FC = () => {
      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
     {/* Header */}
     <div className="mb-8">
-      <h1 className="text-4xl font-bold text-white dark:text-gray-950">Profile</h1>
-      <p className="mt-3 text-gray-400 dark:text-gray-900">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Profile</h1>
+      <p className="mt-3 text-gray-600 dark:text-gray-300">
         Manage your account settings and preferences
       </p>
     </div>
@@ -366,40 +366,6 @@ const ProfilePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Preferences */}
-                <div className="dark:bg-gray-271 rounded-lg shadow-lg border border-gray-100">
-                  <div className="p-6 border-b border-gray-200 dark:border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-900">Preferences</h3>
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-sm font-bold text-gray-900 dark:text-gray-900">Theme</h4>
-                        <p className="text-sm text-gray-500 font-medium dark:text-gray-600">Choose your preferred theme</p>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className={`text-sm ${theme === 'light' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                          Light
-                        </span>
-                        <button
-                          onClick={toggleTheme}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            theme === 'dark' ? 'bg-blue-600' : 'bg-gray-200'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                        <span className={`text-sm ${theme === 'dark' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                          Dark
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
           </div>

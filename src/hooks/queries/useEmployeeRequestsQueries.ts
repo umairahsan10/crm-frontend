@@ -99,20 +99,16 @@ export const useExportRequests = () => {
 
 /**
  * Hook to fetch employee requests statistics
- * Calculates stats from the data directly instead of separate API call
+ * Calculates stats from existing data instead of separate API call
  */
 export const useEmployeeRequestsStatistics = (
-  isHROrAdmin: boolean,
+  requests: EmployeeRequest[] = [],
   options?: Omit<UseQueryOptions<EmployeeRequestStats>, 'queryKey' | 'queryFn'>
 ) => {
   return useQuery({
-    queryKey: [...employeeRequestsQueryKeys.stats()],
+    queryKey: [...employeeRequestsQueryKeys.stats(), requests.length],
     queryFn: async (): Promise<EmployeeRequestStats> => {
-      // Fetch all requests without filters to calculate stats
-      const response: any = await getEmployeeRequestsApi({});
-      const requests: EmployeeRequest[] = response.requests || [];
-
-      // Calculate statistics
+      // Calculate statistics from the provided requests data
       return {
         total_requests: requests.length,
         pending_requests: requests.filter(r => r.status === 'Pending').length,
@@ -131,7 +127,7 @@ export const useEmployeeRequestsStatistics = (
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    enabled: isHROrAdmin && (options?.enabled !== false),
+    enabled: requests.length > 0 && (options?.enabled !== false),
     ...options,
   });
 };

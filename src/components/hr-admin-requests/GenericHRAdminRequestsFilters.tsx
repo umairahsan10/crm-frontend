@@ -1,9 +1,10 @@
 /**
- * Generic HR Admin Requests Filters Component (HR view)
- * Following the exact pattern of GenericLeadsFilters
+ * Generic HR Admin Requests Filters (HR view)
+ * Following EXACT pattern of GenericLeadsFilters
  */
 
 import React, { useState } from 'react';
+import { useFilters } from '../../hooks/useFilters';
 
 interface GenericHRAdminRequestsFiltersProps {
   onFiltersChange: (filters: any) => void;
@@ -14,157 +15,152 @@ const GenericHRAdminRequestsFilters: React.FC<GenericHRAdminRequestsFiltersProps
   onFiltersChange,
   onClearFilters
 }) => {
-  const [localFilters, setLocalFilters] = useState({
-    search: '',
-    status: '',
-    type: '',
-    fromDate: '',
-    toDate: ''
-  });
-
-  const handleInputChange = (field: string, value: string) => {
-    setLocalFilters(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleApplyFilters = () => {
-    onFiltersChange(localFilters);
-  };
-
-  const handleClearFilters = () => {
-    setLocalFilters({
+  const { 
+    filters, 
+    updateFilter, 
+    resetFilters, 
+    hasActiveFilters,
+    activeCount 
+  } = useFilters(
+    {
       search: '',
       status: '',
       type: '',
       fromDate: '',
       toDate: ''
-    });
+    },
+    (newFilters) => onFiltersChange(newFilters)
+  );
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const handleClearAll = () => {
+    resetFilters();
     onClearFilters();
   };
 
-  const requestTypes = [
-    { value: 'salary_increase', label: 'Salary Increase' },
-    { value: 'late_approval', label: 'Late Approval' },
-    { value: 'others', label: 'Others' }
-  ];
+  const theme = {
+    primary: 'bg-purple-600',
+    secondary: 'hover:bg-purple-700',
+    ring: 'ring-purple-500',
+    bg: 'bg-purple-100',
+    text: 'text-purple-800'
+  };
 
-  const statuses = [
+  // Render helper for select fields - EXACT same as Leads
+  const renderSelect = (
+    key: keyof typeof filters,
+    label: string,
+    options: Array<{value: string | number; label: string}>
+  ) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <select
+        value={(filters[key] as string) || ''}
+        onChange={(e) => updateFilter(key as any, e.target.value)}
+        className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${theme.ring} sm:text-sm`}
+      >
+        <option value="">All {label}</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+
+  const renderInput = (key: keyof typeof filters, label: string, type: 'text' | 'date' | 'number' = 'text', placeholder?: string) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <input
+        type={type}
+        value={(filters[key] as string) || ''}
+        onChange={(e) => updateFilter(key as any, e.target.value)}
+        placeholder={placeholder}
+        className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${theme.ring} sm:text-sm`}
+      />
+    </div>
+  );
+
+  const statusOptions = [
     { value: 'pending', label: 'Pending' },
     { value: 'approved', label: 'Approved' },
     { value: 'rejected', label: 'Rejected' }
   ];
 
+  const typeOptions = [
+    { value: 'salary_increase', label: 'Salary Increase' },
+    { value: 'late_approval', label: 'Late Approval' },
+    { value: 'others', label: 'Others' }
+  ];
+
   return (
-    <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="space-y-4">
-        {/* Search */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Search
-          </label>
-          <input
-            type="text"
-            placeholder="Search by description..."
-            value={localFilters.search}
-            onChange={(e) => handleInputChange('search', e.target.value)}
-            className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-          />
-        </div>
-
-        {/* Filters Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <select
-              value={localFilters.status}
-              onChange={(e) => handleInputChange('status', e.target.value)}
-              className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-            >
-              <option value="">All Statuses</option>
-              {statuses.map(status => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
+    <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
+      {/* Search Bar */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center space-x-4">
+          <div className="flex-1">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={(filters.search as string) || ''}
+                onChange={(e) => updateFilter('search' as any, e.target.value)}
+                placeholder="Search admin requests by description..."
+                className={`block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:${theme.ring} sm:text-sm`}
+              />
+            </div>
           </div>
-
-          {/* Type Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Request Type
-            </label>
-            <select
-              value={localFilters.type}
-              onChange={(e) => handleInputChange('type', e.target.value)}
-              className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-            >
-              <option value="">All Types</option>
-              {requestTypes.map(type => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* From Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              From Date
-            </label>
-            <input
-              type="date"
-              value={localFilters.fromDate}
-              onChange={(e) => handleInputChange('fromDate', e.target.value)}
-              className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-
-          {/* To Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              To Date
-            </label>
-            <input
-              type="date"
-              value={localFilters.toDate}
-              onChange={(e) => handleInputChange('toDate', e.target.value)}
-              className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          
           <button
-            onClick={handleClearFilters}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
           >
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
             </svg>
-            Clear Filters
-          </button>
-          <button
-            onClick={handleApplyFilters}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-          >
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            Apply Filters
+            Filters
+            {hasActiveFilters && (
+              <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${theme.bg} ${theme.text}`}>
+                {activeCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Advanced Filters - Collapsible */}
+      {showAdvanced && (
+        <div className="px-6 py-4 bg-gray-50">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {renderSelect('status', 'Status', statusOptions)}
+            {renderSelect('type', 'Type', typeOptions)}
+            {renderInput('fromDate', 'From Date', 'date')}
+            {renderInput('toDate', 'To Date', 'date')}
+          </div>
+
+          {/* Actions - EXACT same as Leads */}
+          <div className="mt-4 flex justify-end gap-3">
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearAll}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <svg className="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                </svg>
+                Clear All ({activeCount})
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default GenericHRAdminRequestsFilters;
-

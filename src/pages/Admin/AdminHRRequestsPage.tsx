@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import DataTable from '../../components/common/DataTable/DataTable';
+import AdminHRRequestsTable from '../../components/hr-admin-requests/AdminHRRequestsTable';
 import DataStatistics from '../../components/common/Statistics/DataStatistics';
 import GenericAdminHRRequestsFilters from '../../components/hr-admin-requests/GenericAdminHRRequestsFilters';
 import AdminHRRequestDetailsDrawer from '../../components/hr-admin-requests/AdminHRRequestDetailsDrawer';
@@ -175,66 +175,6 @@ const AdminHRRequestsPage: React.FC = () => {
     }
   };
 
-  // DataTable columns
-  const columns = [
-    {
-      header: 'ID',
-      accessor: 'request_id',
-      sortable: true,
-      render: (value: any) => `#${value}`
-    },
-    {
-      header: 'Request Type',
-      accessor: 'type',
-      sortable: true,
-      render: (value: any) => (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          value === 'salary_increase' ? 'bg-purple-100 text-purple-800' :
-          value === 'late_approval' ? 'bg-indigo-100 text-indigo-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {value.replace('_', ' ').toUpperCase()}
-        </span>
-      )
-    },
-    {
-      header: 'Description',
-      accessor: 'description',
-      sortable: false
-    },
-    {
-      header: 'Status',
-      accessor: 'status',
-      sortable: true,
-      render: (value: any) => (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-          value === 'approved' ? 'bg-green-100 text-green-800' :
-          'bg-red-100 text-red-800'
-        }`}>
-          {value.toUpperCase()}
-        </span>
-      )
-    },
-    {
-      header: 'HR Employee',
-      accessor: 'hr_employee_name',
-      sortable: true
-    },
-    {
-      header: 'Created At',
-      accessor: 'created_at',
-      sortable: true,
-      render: (value: any) => new Date(value).toLocaleDateString()
-    },
-    {
-      header: 'Last Updated',
-      accessor: 'updated_at',
-      sortable: true,
-      render: (value: any) => new Date(value).toLocaleDateString()
-    }
-  ];
-
   // Statistics cards
   const statisticsCards = [
     {
@@ -340,21 +280,17 @@ const AdminHRRequestsPage: React.FC = () => {
           onClearFilters={handleClearFilters}
         />
 
-        {/* DataTable */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-          <DataTable
-            data={adminRequests}
-            columns={columns}
-            loading={loading}
-            currentPage={pagination.currentPage}
-            totalPages={Math.ceil(adminRequests.length / pagination.itemsPerPage)}
-            totalItems={adminRequests.length}
-            onPageChange={handlePageChange}
-            serverSidePagination={false}
-            paginated={true}
-            onRowClick={handleRequestClick}
-          />
-        </div>
+        {/* Table */}
+        <AdminHRRequestsTable
+          requests={adminRequests}
+          isLoading={loading}
+          currentPage={pagination.currentPage}
+          totalPages={Math.ceil(adminRequests.length / pagination.itemsPerPage)}
+          totalItems={adminRequests.length}
+          itemsPerPage={pagination.itemsPerPage}
+          onPageChange={handlePageChange}
+          onRequestClick={handleRequestClick}
+        />
 
         {/* Details Drawer */}
         <AdminHRRequestDetailsDrawer

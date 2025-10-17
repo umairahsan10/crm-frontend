@@ -1,17 +1,17 @@
 /**
- * Generic Admin HR Requests Filters
+ * Generic Employee Requests Filters
  * Following EXACT pattern of GenericLeadsFilters
  */
 
 import React, { useState } from 'react';
 import { useFilters } from '../../hooks/useFilters';
 
-interface GenericAdminHRRequestsFiltersProps {
+interface GenericEmployeeRequestsFiltersProps {
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
 }
 
-const GenericAdminHRRequestsFilters: React.FC<GenericAdminHRRequestsFiltersProps> = ({
+const GenericEmployeeRequestsFilters: React.FC<GenericEmployeeRequestsFiltersProps> = ({
   onFiltersChange,
   onClearFilters
 }) => {
@@ -25,7 +25,9 @@ const GenericAdminHRRequestsFilters: React.FC<GenericAdminHRRequestsFiltersProps
     {
       search: '',
       status: '',
-      type: '',
+      priority: '',
+      requestType: '',
+      department: '',
       fromDate: '',
       toDate: ''
     },
@@ -82,15 +84,26 @@ const GenericAdminHRRequestsFilters: React.FC<GenericAdminHRRequestsFiltersProps
   );
 
   const statusOptions = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' }
+    { value: 'Pending', label: 'Pending' },
+    { value: 'In_Progress', label: 'In Progress' },
+    { value: 'Resolved', label: 'Resolved' },
+    { value: 'Rejected', label: 'Rejected' },
+    { value: 'Cancelled', label: 'Cancelled' }
+  ];
+
+  const priorityOptions = [
+    { value: 'Low', label: 'Low' },
+    { value: 'Medium', label: 'Medium' },
+    { value: 'High', label: 'High' },
+    { value: 'Critical', label: 'Critical' }
   ];
 
   const typeOptions = [
-    { value: 'salary_increase', label: 'Salary Increase' },
-    { value: 'late_approval', label: 'Late Approval' },
-    { value: 'others', label: 'Others' }
+    { value: 'Leave Request', label: 'Leave Request' },
+    { value: 'Half-Day Request', label: 'Half-Day Request' },
+    { value: 'Complaint', label: 'Complaint' },
+    { value: 'Salary Query', label: 'Salary Query' },
+    { value: 'Other', label: 'Other' }
   ];
 
   return (
@@ -109,7 +122,7 @@ const GenericAdminHRRequestsFilters: React.FC<GenericAdminHRRequestsFiltersProps
                 type="text"
                 value={(filters.search as string) || ''}
                 onChange={(e) => updateFilter('search' as any, e.target.value)}
-                placeholder="Search HR requests by description..."
+                placeholder="Search requests by subject, employee name..."
                 className={`block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:${theme.ring} sm:text-sm`}
               />
             </div>
@@ -138,7 +151,8 @@ const GenericAdminHRRequestsFilters: React.FC<GenericAdminHRRequestsFiltersProps
         <div className="px-6 py-4 bg-gray-50">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {renderSelect('status', 'Status', statusOptions)}
-            {renderSelect('type', 'Type', typeOptions)}
+            {renderSelect('priority', 'Priority', priorityOptions)}
+            {renderSelect('requestType', 'Request Type', typeOptions)}
             {renderInput('fromDate', 'From Date', 'date')}
             {renderInput('toDate', 'To Date', 'date')}
           </div>
@@ -163,4 +177,5 @@ const GenericAdminHRRequestsFilters: React.FC<GenericAdminHRRequestsFiltersProps
   );
 };
 
-export default GenericAdminHRRequestsFilters;
+export default GenericEmployeeRequestsFilters;
+

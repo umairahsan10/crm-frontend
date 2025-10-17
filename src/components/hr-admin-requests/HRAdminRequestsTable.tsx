@@ -1,38 +1,37 @@
 /**
- * Payroll Table Component - Wraps DynamicTable
+ * HR Admin Requests Table Component (HR view) - Wraps DynamicTable
  * Following EXACT pattern of LeadsTable
  */
 
 import React from 'react';
 import DynamicTable from '../common/DynamicTable/DynamicTable';
-import { payrollTableConfig } from './tableConfig';
+import { adminHRRequestsTableConfig } from './tableConfig';
 
-interface PayrollTableProps {
-  salaries: any[];
+interface HRAdminRequestsTableProps {
+  requests: any[];
   isLoading: boolean;
   currentPage: number;
   totalPages: number;
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
-  onRowClick: (salary: any) => void;
-  onMarkAsPaid?: (salaryId: number) => Promise<void>;
+  onRequestClick: (request: any) => void;
 }
 
-const PayrollTable: React.FC<PayrollTableProps> = ({
-  salaries,
+const HRAdminRequestsTable: React.FC<HRAdminRequestsTableProps> = ({
+  requests,
   isLoading,
   currentPage,
   totalPages,
   totalItems,
   itemsPerPage,
   onPageChange,
-  onRowClick
+  onRequestClick
 }) => {
   return (
     <DynamicTable
-      data={salaries}
-      columns={payrollTableConfig}
+      data={requests}
+      columns={adminHRRequestsTableConfig}
       isLoading={isLoading}
       currentPage={currentPage}
       totalPages={totalPages}
@@ -40,16 +39,17 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
       itemsPerPage={itemsPerPage}
       selectedItems={[]}
       onPageChange={onPageChange}
-      onRowClick={onRowClick}
+      onRowClick={onRequestClick}
       onBulkSelect={() => {}}
       theme={{
-        primary: 'green',
+        primary: 'purple',
         secondary: 'gray',
-        accent: 'green'
+        accent: 'purple'
       }}
-      emptyMessage="No payroll records found"
+      emptyMessage="No admin requests found"
     />
   );
 };
 
-export default PayrollTable;
+export default HRAdminRequestsTable;
+
