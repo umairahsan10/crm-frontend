@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+/**
+ * Add Client Drawer - Following EXACT style of ClientDetailsDrawer
+ */
+
+import React, { useState, useEffect } from 'react';
+import { useNavbar } from '../../context/NavbarContext';
 import type { CreateClientRequest, ClientType, ClientStatus } from '../../types';
 
 interface AddClientModalProps {
@@ -12,6 +17,8 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   onClose,
   onClientCreated
 }) => {
+  const { isNavbarOpen } = useNavbar();
+  const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<CreateClientRequest>({
     clientType: 'individual',
@@ -32,6 +39,18 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const clientTypes: { value: ClientType; label: string }[] = [
     { value: 'individual', label: 'Individual' },
@@ -147,6 +166,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
         taxId: '',
         notes: ''
       });
+      setErrors({});
       
       onClose();
       
@@ -186,43 +206,63 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-gray-200 bg-opacity-80 flex items-center justify-center p-4"
-      style={{ zIndex: 9999 }}
-      onClick={handleClose}
-    >
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      <div className="absolute inset-0 bg-gray-900 bg-opacity-75" onClick={handleClose}></div>
+      
       <div 
-        className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-        style={{ zIndex: 10000 }}
-        onClick={(e) => e.stopPropagation()}
+        className="relative mx-auto h-full bg-white shadow-2xl rounded-lg border border-gray-200 transform transition-all duration-300 ease-out"
+        style={{
+          marginLeft: isMobile ? '0' : (isNavbarOpen ? '280px' : '100px'),
+          width: isMobile ? '100vw' : (isNavbarOpen ? 'calc(100vw - 350px)' : 'calc(100vw - 150px)'),
+          maxWidth: isMobile ? '100vw' : '1200px',
+          marginRight: isMobile ? '0' : '50px',
+          marginTop: isMobile ? '0' : '20px',
+          marginBottom: isMobile ? '0' : '20px',
+          height: isMobile ? '100vh' : 'calc(100vh - 40px)'
+        }}
       >
-        <form onSubmit={handleSubmit}>
-          {/* Header */}
-          <div className="bg-white px-6 py-4 border-b border-gray-200">
+        <form onSubmit={handleSubmit} className="flex h-full flex-col">
+          {/* Header - EXACT same style as ClientDetailsDrawer */}
+          <div className={`${isMobile ? 'px-4 py-3' : 'px-6 py-4'} border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg`}>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-900">
+              <div className="flex items-center space-x-3">
+                <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg className="h-5 w-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">
                 Add New Client
-              </h3>
+                </h2>
+              </div>
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={isLoading}
-                className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 disabled:opacity-50"
               >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
 
-          {/* Form Content */}
-          <div className="bg-white px-6 py-4 max-h-96 overflow-y-auto">
+          {/* Content */}
+          <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
             <div className="space-y-6">
-              {/* Client Type and Status */}
+              {/* Client Information */}
+              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Client Information
+                </h3>
+                <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="clientType" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="clientType" className="block text-sm font-medium text-gray-700 mb-2">
                     Client Type <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -230,7 +270,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="clientType"
                     value={formData.clientType}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     {clientTypes.map(type => (
                       <option key={type.value} value={type.value}>
@@ -241,7 +281,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                 </div>
 
                 <div>
-                  <label htmlFor="accountStatus" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="accountStatus" className="block text-sm font-medium text-gray-700 mb-2">
                     Account Status <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -249,7 +289,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="accountStatus"
                     value={formData.accountStatus}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     {clientStatuses.map(status => (
                       <option key={status.value} value={status.value}>
@@ -260,10 +300,9 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                 </div>
               </div>
 
-              {/* Client Name and Company Name */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="clientName" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="clientName" className="block text-sm font-medium text-gray-700 mb-2">
                     Client Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -272,7 +311,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="clientName"
                     value={formData.clientName}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                        className={`block w-full px-4 py-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
                       errors.clientName ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="Enter client name"
@@ -283,7 +322,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                 </div>
 
                 <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
                     Company Name {formData.clientType !== 'individual' && <span className="text-red-500">*</span>}
                   </label>
                   <input
@@ -292,7 +331,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="companyName"
                     value={formData.companyName || ''}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                        className={`block w-full px-4 py-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
                       errors.companyName ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="Enter company name"
@@ -300,13 +339,23 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                   {errors.companyName && (
                     <p className="mt-1 text-sm text-red-600">{errors.companyName}</p>
                   )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Email and Phone */}
+              {/* Contact Information */}
+              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="h-5 w-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Contact Information
+                </h3>
+                <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -315,7 +364,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                        className={`block w-full px-4 py-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
                       errors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="Enter email address"
@@ -326,7 +375,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                 </div>
 
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                     Phone <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -335,7 +384,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                        className={`block w-full px-4 py-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
                       errors.phone ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="Enter phone number"
@@ -346,10 +395,9 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                 </div>
               </div>
 
-              {/* Alternative Phone and Industry */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="altPhone" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="altPhone" className="block text-sm font-medium text-gray-700 mb-2">
                     Alternative Phone
                   </label>
                   <input
@@ -358,13 +406,13 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="altPhone"
                     value={formData.altPhone || ''}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter alternative phone"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="industryId" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="industryId" className="block text-sm font-medium text-gray-700 mb-2">
                     Industry
                   </label>
                   <select
@@ -372,7 +420,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="industryId"
                     value={formData.industryId || ''}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select industry</option>
                     {industries.map(industry => (
@@ -381,14 +429,24 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                       </option>
                     ))}
                   </select>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Address Fields */}
+              {/* Address Information */}
+              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="h-5 w-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Address Information
+                </h3>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                    Address
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                      Street Address
                   </label>
                   <input
                     type="text"
@@ -396,14 +454,14 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="address"
                     value={formData.address || ''}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter street address"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
                       City
                     </label>
                     <input
@@ -412,13 +470,13 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                       name="city"
                       value={formData.city || ''}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Enter city"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
                       State
                     </label>
                     <input
@@ -427,13 +485,13 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                       name="state"
                       value={formData.state || ''}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Enter state"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
                       Postal Code
                     </label>
                     <input
@@ -442,14 +500,14 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                       name="postalCode"
                       value={formData.postalCode || ''}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Enter postal code"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
                     Country
                   </label>
                   <input
@@ -458,16 +516,25 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="country"
                     value={formData.country || ''}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter country"
                   />
+                  </div>
                 </div>
               </div>
 
-              {/* Tax ID and Notes */}
+              {/* Additional Information */}
+              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="h-5 w-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Additional Information
+                </h3>
+                <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-2">
                     Tax ID
                   </label>
                   <input
@@ -476,13 +543,14 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="taxId"
                     value={formData.taxId || ''}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter tax ID"
                   />
+                    </div>
                 </div>
 
                 <div>
-                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
                     Notes
                   </label>
                   <textarea
@@ -490,42 +558,45 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     name="notes"
                     value={formData.notes || ''}
                     onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter any additional notes"
-                  />
+                      rows={4}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Add notes about this client..."
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+          {/* Footer - Fixed at bottom */}
+          <div className={`${isMobile ? 'px-4 py-3' : 'px-6 py-4'} border-t border-gray-200 bg-gray-50`}>
+            <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={handleClose}
               disabled={isLoading}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                className="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   Creating...
-                </div>
+                  </>
               ) : (
                 'Create Client'
               )}
             </button>
+            </div>
           </div>
         </form>
       </div>

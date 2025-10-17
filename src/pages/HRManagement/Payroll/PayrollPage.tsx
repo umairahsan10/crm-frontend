@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+/**
+ * Payroll Page - Optimized with React Query
+ * Follows EXACT same structure as LeadsManagementPage
+ */
+
+import React, { useState, useCallback } from 'react';
 import PayrollTable from '../../../components/payroll/PayrollTable';
 import SalaryDetailsDrawer from '../../../components/payroll/SalaryDetailsDrawer';
 import DataStatistics from '../../../components/common/Statistics/DataStatistics';
-import LeadsSearchFilters from '../../../components/leads/LeadsSearchFilters';
-import { payrollFilterConfig } from '../../../components/payroll/payrollFilterConfig';
-import {
-  getPayrollApi,
-  getPayrollStatisticsApi,
-  type NetSalary,
-  type GetPayrollDto,
-  type PayrollStatistics,
-} from '../../../apis/payroll';
-import { getDepartmentsApi, type Department } from '../../../apis/hr-employees';
+import GenericPayrollFilters from '../../../components/payroll/GenericPayrollFilters';
+import { usePayroll, usePayrollStatistics } from '../../../hooks/queries/useFinanceQueries';
+import { useDepartments } from '../../../hooks/queries/useHRQueries';
+import { type NetSalary } from '../../../apis/payroll';
 
 interface PayrollPageProps {
   onBack?: () => void;
@@ -20,33 +19,50 @@ interface PayrollPageProps {
 const PayrollPage: React.FC<PayrollPageProps> = ({ onBack }) => {
   
   // State management
-  const [salaries, setSalaries] = useState<NetSalary[]>([]);
   const [selectedSalary, setSelectedSalary] = useState<NetSalary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error';
-    message: string;
-  } | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [itemsPerPage] = useState(20);
-
-  // Filter state
-  const [filters, setFilters] = useState<GetPayrollDto>({
-    page: 1,
-    limit: 20,
-    sortBy: 'createdAt',
-    sortOrder: 'DESC',
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
   });
 
-  // Data state
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [statistics, setStatistics] = useState<PayrollStatistics>({
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    month: '',
+    year: '',
+    departmentId: '',
+    isPaid: '',
+    sortBy: 'createdAt',
+    sortOrder: 'DESC' as 'ASC' | 'DESC'
+  });
+
+  // React Query hooks - Data fetching with automatic caching
+  const payrollQuery = usePayroll(
+    pagination.currentPage,
+    pagination.itemsPerPage,
+    {
+      month: filters.month ? parseInt(filters.month) : undefined,
+      year: filters.year ? parseInt(filters.year) : undefined,
+      departmentId: filters.departmentId ? parseInt(filters.departmentId) : undefined,
+      isPaid: filters.isPaid ? filters.isPaid === 'true' : undefined,
+      search: filters.search || undefined,
+      sortBy: filters.sortBy,
+      sortOrder: filters.sortOrder
+    }
+  );
+  const statisticsQuery = usePayrollStatistics();
+  const departmentsQuery = useDepartments();
+
+  // Extract data and loading states from queries
+  const salaries = (payrollQuery.data as any)?.data || [];
+  const statistics = (statisticsQuery.data as any)?.data || {
     totalSalaries: 0,
     totalPaid: 0,
     totalPending: 0,
@@ -54,426 +70,215 @@ const PayrollPage: React.FC<PayrollPageProps> = ({ onBack }) => {
     paidAmount: 0,
     pendingAmount: 0,
     byDepartment: {},
-    thisMonth: {
-      total: 0,
-      paid: 0,
-      pending: 0,
-    },
-  });
-
-  // Fetch departments (mock data for now)
-  const fetchDepartments = useCallback(async () => {
-    try {
-      const response = await getDepartmentsApi();
-      setDepartments(response.departments || []);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-      // Use mock departments
-      setDepartments([
-        { id: 1, name: 'Sales', description: 'Sales Department' },
-        { id: 2, name: 'HR', description: 'Human Resources' },
-        { id: 3, name: 'Marketing', description: 'Marketing Department' },
-        { id: 4, name: 'Accounts', description: 'Accounts Department' },
-        { id: 5, name: 'Engineering', description: 'Engineering Department' },
-      ]);
-    }
-  }, []);
-
-  // Fetch payroll data (using mock data for frontend testing)
-  const fetchPayroll = useCallback(async () => {
-    setIsLoading(true);
-    
-    // Try to fetch from API first
-    try {
-      const response = await getPayrollApi(filters);
-      setSalaries(response.data || []);
-      setTotalItems(response.total || 0);
-      setTotalPages(Math.ceil((response.total || 0) / itemsPerPage));
-      console.log('✅ Payroll data loaded from API');
-    } catch (error: any) {
-      console.log('⚠️ API unavailable, using mock data for frontend testing');
-      // Always fallback to mock data if API fails
-      generateMockSalaries();
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters, itemsPerPage]);
-
-  // Fetch statistics (mock data for now)
-  const fetchStatistics = useCallback(async () => {
-    try {
-      const currentDate = new Date();
-      const response = await getPayrollStatisticsApi({
-        month: currentDate.getMonth() + 1,
-        year: currentDate.getFullYear(),
-      });
-      setStatistics(response.data);
-    } catch (error) {
-      console.log('⚠️ Statistics API unavailable, using mock statistics');
-      // Generate mock statistics based on mock data
-      setStatistics({
-        totalSalaries: 25,
-        totalPaid: 15,
-        totalPending: 10,
-        totalAmount: 1250000,
-        paidAmount: 750000,
-        pendingAmount: 500000,
-        byDepartment: {
-          Sales: { total: 8, paid: 5, pending: 3, amount: 400000 },
-          HR: { total: 5, paid: 3, pending: 2, amount: 250000 },
-          Marketing: { total: 6, paid: 4, pending: 2, amount: 300000 },
-          Accounts: { total: 6, paid: 3, pending: 3, amount: 300000 },
-        },
-        thisMonth: {
-          total: 25,
-          paid: 15,
-          pending: 10,
-        },
-      });
-    }
-  }, []);
-
-  // Generate mock salaries for fallback (more comprehensive data)
-  const generateMockSalaries = () => {
-    const departments = ['Sales', 'HR', 'Marketing', 'Accounts', 'Engineering'];
-    const roles = ['Manager', 'Senior', 'Junior', 'Lead', 'Executive'];
-    const firstNames = ['John', 'Jane', 'Michael', 'Sarah', 'David', 'Emily', 'Robert', 'Lisa', 'James', 'Maria', 'Daniel', 'Jessica', 'Christopher', 'Ashley', 'Matthew', 'Amanda', 'Andrew', 'Stephanie', 'Joshua', 'Jennifer', 'William', 'Elizabeth', 'Brian', 'Linda', 'Kevin'];
-    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Thompson', 'White', 'Harris', 'Clark'];
-    
-    const currentDate = new Date();
-    
-    const mockData: NetSalary[] = Array.from({ length: 25 }, (_, i) => {
-      const isPaid = i < 15; // First 15 are paid, rest pending
-      const basicSalary = 40000 + (i * 3000);
-      const allowances = 5000 + (i * 200);
-      const deductions = 2000 + (i * 100);
-      const tax = basicSalary * 0.1; // 10% tax
-      const netAmount = basicSalary + allowances - deductions - tax;
-      
-      return {
-        id: i + 1,
-        employeeId: 1000 + i,
-        month: currentDate.getMonth() + 1,
-        year: currentDate.getFullYear(),
-        basicSalary,
-        allowances,
-        deductions,
-        tax,
-        netAmount,
-        isPaid,
-        paidOn: isPaid ? new Date(currentDate.getFullYear(), currentDate.getMonth(), Math.floor(Math.random() * 15) + 1).toISOString() : undefined,
-        processedBy: isPaid ? 500 : undefined,
-        createdAt: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString(),
-        updatedAt: new Date().toISOString(),
-        employee: {
-          id: 1000 + i,
-          firstName: firstNames[i % firstNames.length],
-          lastName: lastNames[i % lastNames.length],
-          email: `${firstNames[i % firstNames.length].toLowerCase()}.${lastNames[i % lastNames.length].toLowerCase()}@company.com`,
-          department: {
-            id: (i % 5) + 1,
-            name: departments[i % 5],
-          },
-          role: {
-            id: (i % 5) + 1,
-            title: roles[i % 5],
-          },
-        },
-        processor: isPaid ? {
-          id: 500,
-          firstName: 'Admin',
-          lastName: 'User',
-        } : undefined,
-        transaction: isPaid ? {
-          id: 5000 + i,
-          amount: netAmount,
-          transactionType: 'salary',
-          status: 'completed',
-          transactionDate: new Date(currentDate.getFullYear(), currentDate.getMonth(), Math.floor(Math.random() * 15) + 1).toISOString(),
-        } : undefined,
-      };
-    });
-    
-    setSalaries(mockData);
-    setTotalItems(mockData.length);
-    setTotalPages(Math.ceil(mockData.length / itemsPerPage));
+    thisMonth: { total: 0, paid: 0, pending: 0 }
   };
+  const departments = (departmentsQuery.data as any)?.departments || [];
+  const isLoading = payrollQuery.isLoading;
 
-  // Show notification
-  const showNotification = (type: 'success' | 'error', message: string) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 5000);
-  };
+  // Update pagination when React Query data changes
+  React.useEffect(() => {
+    if (payrollQuery.data) {
+      const data = payrollQuery.data as any;
+      setPagination(prev => ({
+        ...prev,
+        currentPage: data.page || prev.currentPage,
+        totalPages: Math.ceil((data.total || 0) / pagination.itemsPerPage),
+        totalItems: data.total || 0,
+      }));
+    }
+  }, [payrollQuery.data, pagination.itemsPerPage]);
 
-  // Initial data fetch
-  useEffect(() => {
-    fetchDepartments();
-    fetchPayroll();
-    fetchStatistics();
-  }, [fetchDepartments, fetchPayroll, fetchStatistics]);
-
-  // Handle page change
+  // Handlers
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    setFilters((prev) => ({ ...prev, page }));
+    setPagination(prev => ({ ...prev, currentPage: page }));
   };
 
-  // Handle row click
-  const handleRowClick = (salary: NetSalary) => {
+  const handleSalaryClick = (salary: NetSalary) => {
     setSelectedSalary(salary);
     setDrawerOpen(true);
   };
 
-  // Handle drawer close
-  const handleDrawerClose = () => {
-    setDrawerOpen(false);
-    setTimeout(() => setSelectedSalary(null), 300);
-  };
+  const handleFiltersChange = useCallback((newFilters: any) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on filter change
+  }, []);
 
-  // Handle salary updated
-  const handleSalaryUpdated = () => {
-    fetchPayroll();
-    fetchStatistics();
-    handleDrawerClose();
-    showNotification('success', 'Salary marked as paid successfully!');
-  };
-
-  // Handle search
-  const handleSearch = (search: string) => {
-    setFilters((prev) => ({ ...prev, search, page: 1 }));
-    setCurrentPage(1);
-  };
-
-  // Handle department filter
-  const handleDepartmentFilter = (departmentId: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      departmentId: departmentId && departmentId !== 'all' ? parseInt(departmentId) : undefined,
-      page: 1,
-    }));
-    setCurrentPage(1);
-  };
-
-  // Handle status filter
-  const handleStatusFilter = (status: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      isPaid: status === 'paid' ? true : status === 'pending' ? false : undefined,
-      page: 1,
-    }));
-    setCurrentPage(1);
-  };
-
-  // Handle date range filter (month/year)
-  const handleDateRangeFilter = (startDate: string) => {
-    if (startDate) {
-      const date = new Date(startDate);
-      setFilters((prev) => ({
-        ...prev,
-        month: date.getMonth() + 1,
-        year: date.getFullYear(),
-        page: 1,
-      }));
-      setCurrentPage(1);
-    } else {
-      setFilters((prev) => {
-        const newFilters = { ...prev };
-        delete newFilters.month;
-        delete newFilters.year;
-        return { ...newFilters, page: 1 };
-      });
-      setCurrentPage(1);
-    }
-  };
-
-  // Handle clear filters
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({
-      page: 1,
-      limit: 20,
+      search: '',
+      month: '',
+      year: '',
+      departmentId: '',
+      isPaid: '',
       sortBy: 'createdAt',
-      sortOrder: 'DESC',
+      sortOrder: 'DESC'
     });
-    setCurrentPage(1);
-  };
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+  }, []);
+
 
   // Statistics cards
   const statisticsCards = [
     {
       title: 'Total Salaries',
       value: statistics.totalSalaries,
-      color: 'indigo' as const,
-      icon: (
-        <svg fill="currentColor" viewBox="0 0 20 20">
-          <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-        </svg>
-      ),
+      color: 'blue' as const,
+      icon: (<svg fill="currentColor" viewBox="0 0 20 20"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" /></svg>)
     },
     {
       title: 'Paid',
       value: statistics.totalPaid,
       color: 'green' as const,
-      icon: (
-        <svg fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-        </svg>
-      ),
+      icon: (<svg fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>)
     },
     {
       title: 'Pending',
       value: statistics.totalPending,
       color: 'yellow' as const,
-      icon: (
-        <svg fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-        </svg>
-      ),
+      icon: (<svg fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>)
     },
     {
       title: 'Total Amount',
-      value: `$${(statistics.totalAmount || 0).toLocaleString()}`,
-      color: 'blue' as const,
-      icon: (
-        <svg fill="currentColor" viewBox="0 0 20 20">
-          <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-          <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
-        </svg>
-      ),
+      value: `$${statistics.totalAmount.toLocaleString()}`,
+      color: 'purple' as const,
+      icon: (<svg fill="currentColor" viewBox="0 0 20 20"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" /><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" /></svg>)
     },
+    {
+      title: 'Paid Amount',
+      value: `$${statistics.paidAmount.toLocaleString()}`,
+      color: 'green' as const,
+      icon: (<svg fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>)
+    }
   ];
 
-  // Update filter config with department options
-  const updatedFilterConfig = {
-    ...payrollFilterConfig,
-    customOptions: {
-      ...payrollFilterConfig.customOptions,
-      typeOptions: [
-        { value: 'all', label: 'All Departments' },
-        ...departments.map((dept) => ({
-          value: dept.id.toString(),
-          label: dept.name,
-        })),
-      ],
-    },
-  };
-
   return (
-    <div className="p-6 space-y-6">
-      {/* Demo Mode Banner */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center space-x-3">
-          <div className="flex-shrink-0">
-            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-blue-900">
-              🎨 Frontend Demo Mode
-            </p>
-            <p className="text-xs text-blue-700 mt-1">
-              Displaying mock salary data for UI testing. Connect backend APIs to see real payroll information.
+              <h1 className="text-3xl font-bold text-gray-900">Payroll Management</h1>
+              <p className="mt-2 text-sm text-gray-600">
+                Manage employee salaries and payment records
             </p>
           </div>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowStatistics(!showStatistics)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                {showStatistics ? 'Hide Statistics' : 'Show Statistics'}
+              </button>
           {onBack && (
             <button
               onClick={onBack}
-              className="mb-3 flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
-              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to HR Management
+                  Back
             </button>
           )}
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <svg
-              className="w-8 h-8 mr-3 text-indigo-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            Payroll Management
-          </h1>
-          <p className="text-gray-600 mt-1">Manage employee salaries and payments</p>
+            </div>
         </div>
-        <button
-          onClick={() => setShowStatistics(!showStatistics)}
-          className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-        >
-          {showStatistics ? 'Hide Stats' : 'Show Stats'}
-        </button>
       </div>
 
-      {/* Notification */}
-      {notification && (
-        <div
-          className={`p-4 rounded-lg ${
-            notification.type === 'success'
-              ? 'bg-green-50 text-green-800 border border-green-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}
-        >
-          <div className="flex items-center">
-            <span className="text-lg mr-2">
-              {notification.type === 'success' ? '✓' : '⚠'}
-            </span>
-            <span className="font-medium">{notification.message}</span>
-          </div>
+        {/* Statistics Dashboard */}
+        {showStatistics && (
+          <div className="mb-8">
+            <DataStatistics
+              title="Payroll Statistics"
+              cards={statisticsCards}
+              loading={statisticsQuery.isLoading}
+            />
         </div>
       )}
 
-      {/* Statistics */}
-      {showStatistics && <DataStatistics cards={statisticsCards} />}
-
       {/* Filters */}
-      <LeadsSearchFilters
-        config={updatedFilterConfig}
-        onSearch={handleSearch}
-        onTypeFilter={handleDepartmentFilter}
-        onStatusFilter={handleStatusFilter}
-        onDateRangeFilter={handleDateRangeFilter}
+        <div className="mb-6">
+          <GenericPayrollFilters
+            onFiltersChange={handleFiltersChange}
         onClearFilters={handleClearFilters}
+            departments={departments}
       />
+        </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        {/* Payroll Table */}
         <PayrollTable
           salaries={salaries}
           isLoading={isLoading}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          itemsPerPage={pagination.itemsPerPage}
           onPageChange={handlePageChange}
-          onRowClick={handleRowClick}
+          onRowClick={handleSalaryClick}
         />
-      </div>
 
       {/* Salary Details Drawer */}
       <SalaryDetailsDrawer
         salary={selectedSalary}
         isOpen={drawerOpen}
-        onClose={handleDrawerClose}
-        onSalaryUpdated={handleSalaryUpdated}
-      />
+          onClose={() => {
+            setDrawerOpen(false);
+            setSelectedSalary(null);
+          }}
+          onSalaryUpdated={() => {
+            setNotification({
+              type: 'success',
+              message: 'Salary updated successfully!'
+            });
+            setTimeout(() => setNotification(null), 3000);
+          }}
+        />
+
+        {/* Notification */}
+        {notification && (
+          <div className={`fixed top-4 right-4 z-50 max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden ${
+            notification.type === 'success' ? 'border-l-4 border-green-400' : 'border-l-4 border-red-400'
+          }`}>
+            <div className="p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  {notification.type === 'success' ? (
+                    <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div className="ml-3 w-0 flex-1 pt-0.5">
+                  <p className={`text-sm font-medium ${
+                    notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {notification.message}
+                  </p>
+                </div>
+                <div className="ml-4 flex-shrink-0 flex">
+                  <button
+                    onClick={() => setNotification(null)}
+                    className={`bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                      notification.type === 'success' ? 'focus:ring-green-500' : 'focus:ring-red-500'
+                    }`}
+                  >
+                    <span className="sr-only">Close</span>
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 export default PayrollPage;
-

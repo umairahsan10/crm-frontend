@@ -1,59 +1,55 @@
 /**
- * Clients Table Component - Wraps DynamicTable
+ * Admin HR Requests Table Component - Wraps DynamicTable
  * Following EXACT pattern of LeadsTable
  */
 
 import React from 'react';
 import DynamicTable from '../common/DynamicTable/DynamicTable';
-import { clientsTableConfig } from './tableConfig';
-import type { Client } from '../../types';
+import { adminHRRequestsTableConfig } from './tableConfig';
 
-interface ClientsTableProps {
-  clients: Client[];
+interface AdminHRRequestsTableProps {
+  requests: any[];
   isLoading: boolean;
   currentPage: number;
   totalPages: number;
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
-  onClientClick: (client: Client) => void;
-  onBulkSelect: (clientIds: string[]) => void;
-  selectedClients: string[];
+  onRequestClick: (request: any) => void;
 }
 
-const ClientsTable: React.FC<ClientsTableProps> = ({
-  clients,
+const AdminHRRequestsTable: React.FC<AdminHRRequestsTableProps> = ({
+  requests,
   isLoading,
   currentPage,
   totalPages,
   totalItems,
   itemsPerPage,
   onPageChange,
-  onClientClick,
-  onBulkSelect,
-  selectedClients
+  onRequestClick
 }) => {
-      return (
+  return (
     <DynamicTable
-      data={clients}
-      columns={clientsTableConfig}
+      data={requests}
+      columns={adminHRRequestsTableConfig}
       isLoading={isLoading}
       currentPage={currentPage}
       totalPages={totalPages}
       totalItems={totalItems}
       itemsPerPage={itemsPerPage}
-      selectedItems={selectedClients}
+      selectedItems={[]}
       onPageChange={onPageChange}
-      onRowClick={onClientClick}
-      onBulkSelect={onBulkSelect}
+      onRowClick={onRequestClick}
+      onBulkSelect={() => {}}
       theme={{
         primary: 'blue',
         secondary: 'gray',
         accent: 'blue'
       }}
-      emptyMessage="No clients found"
+      emptyMessage="No HR requests found"
     />
   );
 };
 
-export default ClientsTable;
+export default AdminHRRequestsTable;
+

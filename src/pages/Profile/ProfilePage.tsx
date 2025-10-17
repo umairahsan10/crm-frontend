@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import ProfileEditForm from './components/ProfileEditForm';
-import { getMyProfileApi } from '../../apis/profile';
-import { getMyAdminProfileApi } from '../../apis/admin';
+import { useProfile, useUpdateProfile, useUpdatePassword } from '../../hooks/queries/useProfileQueries';
 import Loading from '../../components/common/Loading/Loading';
 import './ProfilePage.css';
 
@@ -23,134 +22,73 @@ interface ProfileData {
 
 const ProfilePage: React.FC = () => {
   const { user, hasPermission } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const isFetchingRef = useRef(false);
   
   // Check if user can edit profiles (admin or HR department only)
   const canEditProfile = hasPermission('manage_employees') || 
     user?.role === 'admin' || 
     (user?.department && user.department.toLowerCase().includes('hr'));
 
-  // Fetch profile data from API
-  const fetchProfile = useCallback(async () => {
-    // Prevent multiple simultaneous calls
-    if (isFetchingRef.current) {
-      console.log('Profile fetch already in progress, skipping...');
-      return;
-    }
-    
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    
-    try {
-      isFetchingRef.current = true;
-      console.log('Starting profile fetch for user:', { userId: user?.id, userType: user?.type });
-      setLoading(true);
-      setError(null);
-      
-      // Set a timeout to prevent infinite loading
-      timeoutId = setTimeout(() => {
-        console.error('Profile fetch timeout - taking too long');
-        setError('Profile loading is taking too long. Please try again.');
-        setLoading(false);
-      }, 10000); // 10 second timeout
-      
-      let transformedData: ProfileData;
-      
-      // Check if user is admin or employee
-      if (user?.type === 'admin') {
-        // Fetch admin profile
-        const apiData = await getMyAdminProfileApi();
-        transformedData = {
-          name: `${apiData.firstName} ${apiData.lastName}`,
-          email: apiData.email,
-          phone: '', // Admin doesn't have phone in the API response
-          department: 'Admin', // Admin department
-          role: apiData.role,
-          avatar: '', // Admin doesn't have avatar in the API response
-          address: '', // Admin doesn't have address in the API response
-          employeeId: apiData.id.toString(),
-          startDate: '', // Admin doesn't have start date
-          manager: '', // Admin doesn't have manager
-          theme: theme,
-        };
-      } else {
-        // Fetch employee profile
-        const apiData = await getMyProfileApi();
-        transformedData = {
-          name: `${apiData.firstName} ${apiData.lastName}`,
-          email: apiData.email,
-          phone: apiData.phone || '',
-          department: apiData.department.name,
-          role: apiData.role.name,
-          avatar: apiData.avatar,
-          address: apiData.address || '',
-          employeeId: apiData.id.toString(),
-          startDate: apiData.startDate || '',
-          manager: apiData.manager ? `${apiData.manager.firstName} ${apiData.manager.lastName}` : '',
-          theme: theme,
-        };
-      }
-      
-      setProfileData(transformedData);
-      
-      // Clear timeout on success
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch profile');
-      
-      // Clear timeout on error
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    } finally {
-      setLoading(false);
-      isFetchingRef.current = false;
-    }
-  }, [user?.type, theme]);
+  // React Query hooks - automatic caching and loading states
+  const userType = user?.type === 'admin' ? 'admin' : 'employee';
+  const { data: apiData, isLoading, error, refetch } = useProfile(userType);
+  const updateProfileMutation = useUpdateProfile();
+  const updatePasswordMutation = useUpdatePassword();
 
-  useEffect(() => {
-    console.log('ProfilePage useEffect triggered:', { userId: user?.id, userType: user?.type, loading });
-    
-    // Reset loading state when component mounts
-    setLoading(true);
-    setError(null);
-    
-    if (user?.id) { // Only fetch if user is available
-      fetchProfile();
+  // Transform API data to ProfileData format
+  const profileData: ProfileData | null = useMemo(() => {
+    if (!apiData) return null;
+
+    if (user?.type === 'admin') {
+      return {
+        name: `${apiData.firstName} ${apiData.lastName}`,
+        email: apiData.email,
+        phone: '',
+        department: 'Admin',
+        role: apiData.role,
+        avatar: '',
+        address: '',
+        employeeId: apiData.id.toString(),
+        startDate: '',
+        manager: '',
+        theme: theme,
+      };
     } else {
-      console.log('No user ID available, skipping profile fetch');
-      setLoading(false);
+      return {
+        name: `${apiData.firstName} ${apiData.lastName}`,
+        email: apiData.email,
+        phone: apiData.phone || '',
+        department: apiData.department?.name || '',
+        role: apiData.role?.name || '',
+        avatar: apiData.avatar || '',
+        address: apiData.address || '',
+        employeeId: apiData.id.toString(),
+        startDate: apiData.startDate || '',
+        manager: apiData.manager ? `${apiData.manager.firstName} ${apiData.manager.lastName}` : '',
+        theme: theme,
+      };
     }
-  }, [user?.id, user?.type, theme]);
+  }, [apiData, user?.type, theme]);
 
   const handleSaveProfile = async (updatedData: Partial<ProfileData>) => {
     try {
-      // Here you would typically make an API call to save the profile data
-      // await updateProfileApi(updatedData);
-      console.log('Profile saved:', updatedData);
-      
-      // For now, just update local state
-      setProfileData(prev => prev ? { ...prev, ...updatedData } : null);
+      await updateProfileMutation.mutateAsync(updatedData);
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving profile:', error);
-      setError('Failed to save profile changes');
     }
   };
 
-  const handleSavePassword = (newPassword: string) => {
-    setIsEditingPassword(false);
-    // Here you would typically make an API call to update the password
-    console.log('Password updated for user:', user?.id);
-    console.log('New password length:', newPassword.length);
+  const handleSavePassword = async (newPassword: string) => {
+    try {
+      // For now, we don't have current password in the UI
+      await updatePasswordMutation.mutateAsync({ currentPassword: '', newPassword });
+      setIsEditingPassword(false);
+    } catch (error) {
+      console.error('Error updating password:', error);
+    }
   };
 
   const handleCancel = () => {
@@ -159,7 +97,7 @@ const ProfilePage: React.FC = () => {
   };
 
   // Loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900">
         <Loading
@@ -184,10 +122,12 @@ const ProfilePage: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Error loading profile</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{error}</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {error instanceof Error ? error.message : 'Failed to fetch profile'}
+            </p>
             <div className="mt-4">
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => refetch()}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Try Again
@@ -215,8 +155,8 @@ const ProfilePage: React.FC = () => {
      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
     {/* Header */}
     <div className="mb-8">
-      <h1 className="text-4xl font-bold text-white dark:text-gray-950">Profile</h1>
-      <p className="mt-3 text-gray-400 dark:text-gray-900">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Profile</h1>
+      <p className="mt-3 text-gray-600 dark:text-gray-300">
         Manage your account settings and preferences
       </p>
     </div>
@@ -426,40 +366,6 @@ const ProfilePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Preferences */}
-                <div className="dark:bg-gray-271 rounded-lg shadow-lg border border-gray-100">
-                  <div className="p-6 border-b border-gray-200 dark:border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-900">Preferences</h3>
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-sm font-bold text-gray-900 dark:text-gray-900">Theme</h4>
-                        <p className="text-sm text-gray-500 font-medium dark:text-gray-600">Choose your preferred theme</p>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className={`text-sm ${theme === 'light' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                          Light
-                        </span>
-                        <button
-                          onClick={toggleTheme}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            theme === 'dark' ? 'bg-blue-600' : 'bg-gray-200'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                        <span className={`text-sm ${theme === 'dark' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                          Dark
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
           </div>

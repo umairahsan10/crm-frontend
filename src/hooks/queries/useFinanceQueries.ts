@@ -23,6 +23,11 @@ import {
   getLiabilitiesStatisticsApi
 } from '../../apis/liabilities';
 import { getVendorsApi } from '../../apis/vendors';
+import {
+  getPayrollApi,
+  getPayrollStatisticsApi,
+  type GetPayrollDto
+} from '../../apis/payroll';
 
 // Query Keys - Centralized for consistency
 export const financeQueryKeys = {
@@ -40,6 +45,9 @@ export const financeQueryKeys = {
   liabilitiesList: (filters: any) => [...financeQueryKeys.liabilities(), 'list', filters] as const,
   liabilitiesStats: () => [...financeQueryKeys.liabilities(), 'statistics'] as const,
   vendors: () => [...financeQueryKeys.all, 'vendors'] as const,
+  payroll: () => [...financeQueryKeys.all, 'payroll'] as const,
+  payrollList: (filters: any) => [...financeQueryKeys.payroll(), 'list', filters] as const,
+  payrollStats: () => [...financeQueryKeys.payroll(), 'statistics'] as const,
 };
 
 /**
@@ -203,4 +211,30 @@ export const usePrefetchFinance = () => {
     prefetchAssets,
     prefetchLiabilities,
   };
+};
+
+/**
+ * Hook to fetch payroll with pagination and filters
+ */
+export const usePayroll = (page: number = 1, limit: number = 20, filters: GetPayrollDto = {}, options: any = {}) => {
+  return useQuery({
+    queryKey: financeQueryKeys.payrollList({ page, limit, ...filters }),
+    queryFn: () => getPayrollApi({ page, limit, ...filters }),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options.enabled !== false,
+  });
+};
+
+/**
+ * Hook to fetch payroll statistics
+ */
+export const usePayrollStatistics = (options: any = {}) => {
+  return useQuery({
+    queryKey: financeQueryKeys.payrollStats(),
+    queryFn: () => getPayrollStatisticsApi(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    enabled: options.enabled !== false,
+  });
 };

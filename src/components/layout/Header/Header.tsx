@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import './Header.css';
@@ -30,6 +30,8 @@ const Header: React.FC = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const autoCloseTimeoutRef = useRef<number | null>(null);
 
   // Filter code items based on search query
   const filterItems = useCallback((query: string) => {
@@ -83,21 +85,68 @@ const Header: React.FC = () => {
     }
   }, [searchQuery]);
 
-  // Close search results and profile dropdown when clicking outside
+  // Auto-close profile dropdown after 2 seconds unless mouse is hovering
+  useEffect(() => {
+    if (showProfileDropdown) {
+      console.log('Setting auto-close timer for profile dropdown');
+      // Clear any existing timeout
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+      }
+      
+      // Set new timeout to close after 2 seconds
+      autoCloseTimeoutRef.current = setTimeout(() => {
+        console.log('Auto-closing profile dropdown');
+        setShowProfileDropdown(false);
+      }, 2000);
+    } else {
+      // Clear timeout when dropdown is closed
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+        autoCloseTimeoutRef.current = null;
+      }
+    }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+      }
+    };
+  }, [showProfileDropdown]);
+
+  // Close search results when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (!target.closest('.header-search-container')) {
         setShowSearchResults(false);
       }
-      if (!target.closest('.profile-dropdown-container')) {
-        setShowProfileDropdown(false);
-      }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Handle mouse enter - pause auto-close
+  const handleMouseEnter = () => {
+    console.log('Mouse entered profile dropdown - pausing auto-close');
+    if (autoCloseTimeoutRef.current) {
+      clearTimeout(autoCloseTimeoutRef.current);
+      autoCloseTimeoutRef.current = null;
+    }
+  };
+
+  // Handle mouse leave - resume auto-close
+  const handleMouseLeave = () => {
+    console.log('Mouse left profile dropdown - resuming auto-close');
+    if (showProfileDropdown) {
+      autoCloseTimeoutRef.current = setTimeout(() => {
+        console.log('Auto-closing profile dropdown after mouse leave');
+        setShowProfileDropdown(false);
+      }, 2000);
+    }
+  };
 
   // Handle profile dropdown actions
   const handleProfileAction = (action: string) => {
@@ -205,18 +254,27 @@ const Header: React.FC = () => {
             </svg>
           </button>
           
-          <div className="profile-dropdown-container relative">
+          <div 
+            className="profile-dropdown-container relative" 
+            ref={profileDropdownRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
             <button 
               className="header-btn flex items-center space-x-2" 
               aria-label="User menu"
-              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('Profile button clicked, current state:', showProfileDropdown);
+                setShowProfileDropdown(!showProfileDropdown);
+              }}
             >
               <img
                 src={user?.avatar || '/default-avatar.svg'}
                 alt="Profile"
                 className="w-6 h-6 rounded-full object-cover"
               />
-              <span className="hidden sm:block text-sm font-medium">{user?.name || 'User'}</span>
+              <span className="hidden sm:block text-sm font-medium">User</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="6,9 12,15 18,9"/>
               </svg>
@@ -224,9 +282,13 @@ const Header: React.FC = () => {
 
             {/* Profile Dropdown */}
             {showProfileDropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+              <div 
+                className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
                 <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || 'User'}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">User</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
                 </div>
                 <button
