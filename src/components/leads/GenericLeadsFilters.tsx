@@ -6,7 +6,7 @@
  * Works for ALL lead tabs: regular, cracked, archived
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFilters } from '../../hooks/useFilters';
 import { getSalesUnitsApi, getFilterEmployeesApi } from '../../apis/leads';
 import { getActiveIndustriesApi } from '../../apis/industries';
@@ -37,6 +37,9 @@ interface GenericLeadsFiltersProps {
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
   
+  // Data sharing callbacks
+  onEmployeesLoaded?: (employees: any[]) => void;
+  
   // UI customization
   theme?: {
     primary: string;
@@ -52,6 +55,7 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
   showFilters,
   onFiltersChange,
   onClearFilters,
+  onEmployeesLoaded,
   theme = {
     primary: 'bg-blue-600',
     secondary: 'hover:bg-blue-700',
@@ -102,10 +106,16 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
   const [employees, setEmployees] = useState<any[]>([]);
   const [industries, setIndustries] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Refs to prevent duplicate API calls
+  const salesUnitsFetched = useRef(false);
+  const employeesFetched = useRef(false);
+  const industriesFetched = useRef(false);
 
   // Fetch sales units when needed
   useEffect(() => {
-    if (showFilters.salesUnit) {
+    if (showFilters.salesUnit && !salesUnitsFetched.current) {
+      salesUnitsFetched.current = true;
       const fetchSalesUnits = async () => {
         try {
           const response = await getSalesUnitsApi();
@@ -122,7 +132,8 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
 
   // Fetch industries when needed
   useEffect(() => {
-    if (showFilters.industry) {
+    if (showFilters.industry && !industriesFetched.current) {
+      industriesFetched.current = true;
       const fetchIndustries = async () => {
         try {
           const response = await getActiveIndustriesApi();
@@ -139,7 +150,8 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
 
   // Fetch employees when needed
   useEffect(() => {
-    if (showFilters.assignedTo || showFilters.closedBy) {
+    if ((showFilters.assignedTo || showFilters.closedBy) && !employeesFetched.current) {
+      employeesFetched.current = true;
       const fetchEmployees = async () => {
         try {
           setIsLoading(true);
@@ -147,6 +159,8 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
           const response = await getFilterEmployeesApi(salesUnitId);
           if (response.success && response.data) {
             setEmployees(response.data);
+            // Share employees data with parent component for bulk actions
+            onEmployeesLoaded?.(response.data);
           }
         } catch (error) {
           console.error('Error fetching employees:', error);
@@ -156,7 +170,7 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
       };
       fetchEmployees();
     }
-  }, [showFilters.assignedTo, showFilters.closedBy, filters.salesUnit]);
+  }, [showFilters.assignedTo, showFilters.closedBy, filters.salesUnit, onEmployeesLoaded]);
 
   const handleClearAll = () => {
     resetFilters();

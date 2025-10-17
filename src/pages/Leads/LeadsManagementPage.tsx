@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import LeadsTable from '../../components/leads/LeadsTable';
 import CrackLeadsTable from '../../components/leads/CrackLeadsTable';
 import ArchiveLeadsTable from '../../components/leads/ArchiveLeadsTable';
@@ -14,14 +14,26 @@ import {
   getArchivedLeadsApi,
   bulkUpdateLeadsApi, 
   bulkDeleteLeadsApi, 
-  getLeadsStatisticsApi, 
-  getFilterEmployeesApi
+  getLeadsStatisticsApi
 } from '../../apis/leads';
 import type { Lead } from '../../types';
 
 const LeadsManagementPage: React.FC = () => {
   // Auth context
   const { user } = useAuth();
+  
+  // Refs to prevent duplicate API calls from React Strict Mode
+  const hasInitialized = useRef(false);
+  const hasLoadedTabs = useRef({
+    leads: false,
+    crack: false,
+    archive: false
+  });
+  // Refs to track if filters have been initialized (to prevent refetch on mount)
+  const regularFiltersInitialized = useRef(false);
+  const crackedFiltersInitialized = useRef(false);
+  const archivedFiltersInitialized = useRef(false);
+  const isInitialMount = useRef(true);
   
   // State management
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -284,66 +296,85 @@ const LeadsManagementPage: React.FC = () => {
     }
   };
 
-  // Fetch employees for bulk actions (this is separate from filter employees)
-  const fetchSupportingData = async () => {
-    try {
-      const employeesRes = await getFilterEmployeesApi();
-
-      if (employeesRes.success && employeesRes.data) {
-        setEmployees(employeesRes.data);
-      }
-    } catch (error) {
-      console.error('Error fetching supporting data:', error);
-      // Fallback to mock data for bulk actions
-      setEmployees([
-        { id: '1', name: 'John Smith' },
-        { id: '2', name: 'Sarah Johnson' },
-        { id: '3', name: 'Mike Wilson' },
-        { id: '4', name: 'Emily Davis' }
-      ]);
-    }
-  };
-
-  // Load data on component mount
+  // Load initial data on component mount (with guard to prevent double-calling)
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+    
+    // Mark leads tab as loaded
+    hasLoadedTabs.current.leads = true;
+    
+    // Fetch initial data for leads tab
     fetchRegularLeads();
     fetchStatistics();
-    fetchSupportingData();
+    // Note: employees will be fetched by GenericLeadsFilters and shared via props
+    
+    // Mark initial mount as complete after a short delay
+    setTimeout(() => {
+      isInitialMount.current = false;
+    }, 100);
   }, []);
 
-  // Handle tab switching
+  // Handle tab switching - only fetch if tab hasn't been loaded before
   useEffect(() => {
     if (activeTab === 'archive' && !canAccessArchiveLeads()) {
       setActiveTab('leads');
       return;
     }
 
-    // Fetch data for the active tab
-    if (activeTab === 'leads') {
-      if (regularLeads.length === 0) fetchRegularLeads();
-    } else if (activeTab === 'crack') {
-      if (crackedLeads.length === 0) fetchCrackedLeads();
-    } else if (activeTab === 'archive') {
-      if (archivedLeads.length === 0) fetchArchivedLeads();
+    // Fetch data for the active tab only if not already loaded
+    if (activeTab === 'leads' && !hasLoadedTabs.current.leads) {
+      hasLoadedTabs.current.leads = true;
+      fetchRegularLeads();
+    } else if (activeTab === 'crack' && !hasLoadedTabs.current.crack) {
+      hasLoadedTabs.current.crack = true;
+      fetchCrackedLeads();
+    } else if (activeTab === 'archive' && !hasLoadedTabs.current.archive) {
+      hasLoadedTabs.current.archive = true;
+      fetchArchivedLeads();
     }
   }, [activeTab]);
 
-  // Refetch when filters change for each tab
+  // Refetch when filters change for each tab (but not on initial mount)
   useEffect(() => {
-    fetchRegularLeads(1);
-  }, [regularFilters]);
+    // Skip if still in initial mount phase
+    if (isInitialMount.current) return;
+    
+    if (!regularFiltersInitialized.current) {
+      regularFiltersInitialized.current = true;
+      return;
+    }
+    // Only refetch if we're on the leads tab and filters actually changed
+    if (activeTab === 'leads') {
+      fetchRegularLeads(1);
+    }
+  }, [regularFilters, activeTab]);
 
   useEffect(() => {
+    // Skip if still in initial mount phase
+    if (isInitialMount.current) return;
+    
+    if (!crackedFiltersInitialized.current) {
+      crackedFiltersInitialized.current = true;
+      return;
+    }
     if (activeTab === 'crack') {
       fetchCrackedLeads(1);
     }
-  }, [crackedFilters]);
+  }, [crackedFilters, activeTab]);
 
   useEffect(() => {
+    // Skip if still in initial mount phase
+    if (isInitialMount.current) return;
+    
+    if (!archivedFiltersInitialized.current) {
+      archivedFiltersInitialized.current = true;
+      return;
+    }
     if (activeTab === 'archive') {
       fetchArchivedLeads(1);
     }
-  }, [archivedFilters]);
+  }, [archivedFilters, activeTab]);
 
   // Handlers - Tab-aware page change
   const handlePageChange = (page: number) => {
@@ -363,6 +394,11 @@ const LeadsManagementPage: React.FC = () => {
   const handleBulkSelect = (leadIds: string[]) => {
     setSelectedLeads(leadIds);
   };
+
+  // Handle employees data from GenericLeadsFilters
+  const handleEmployeesLoaded = useCallback((employeesData: any[]) => {
+    setEmployees(employeesData);
+  }, []);
 
   // Simplified filter handlers using generic system
   const handleRegularFiltersChange = useCallback((newFilters: any) => {
@@ -605,6 +641,7 @@ const LeadsManagementPage: React.FC = () => {
             }}
             onFiltersChange={handleRegularFiltersChange}
             onClearFilters={handleRegularClearFilters}
+            onEmployeesLoaded={handleEmployeesLoaded}
             searchPlaceholder="Search leads by name, email, phone..."
             theme={{
               primary: 'bg-indigo-600',
@@ -627,6 +664,7 @@ const LeadsManagementPage: React.FC = () => {
             }}
             onFiltersChange={handleCrackedFiltersChange}
             onClearFilters={handleCrackedClearFilters}
+            onEmployeesLoaded={handleEmployeesLoaded}
             searchPlaceholder="Search cracked leads..."
             theme={{
               primary: 'bg-green-600',
@@ -650,6 +688,7 @@ const LeadsManagementPage: React.FC = () => {
             }}
             onFiltersChange={handleArchivedFiltersChange}
             onClearFilters={handleArchivedClearFilters}
+            onEmployeesLoaded={handleEmployeesLoaded}
             searchPlaceholder="Search archived leads..."
             theme={{
               primary: 'bg-gray-600',
