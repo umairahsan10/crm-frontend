@@ -21,6 +21,7 @@ import ProjectLogsPage from './pages/LogFiles/subpages/ProjectLogsPage';
 import EmployeeRequestsPage from './pages/EmployeeRequests/EmployeeRequestsPage';
 import HRRequestAdminPage from './pages/HRManagement/HRRequestAdminPage';
 import AdminHRRequestsPage from './pages/Admin/AdminHRRequestsPage';
+import PayrollPage from './pages/HRManagement/Payroll/PayrollPage';
 import DealsPage from './pages/Deals/DealsPage';
 import ReportsPage from './pages/Sales/ReportsPage';
 import LeadsManagementPage from './pages/Leads/LeadsManagementPage';
@@ -153,6 +154,10 @@ function AppLayout() {
         <Route 
           path="/attendance" 
           element={canAccessPage('attendance') ? <AttendancePage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/payroll" 
+          element={canAccessPage('payroll') ? <PayrollPage /> : <Navigate to="/login" replace />}
         />
         <Route 
           path="/hr-logs" 

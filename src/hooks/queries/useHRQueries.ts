@@ -28,6 +28,10 @@ import {
   type CreateEmployeeDto,
   type UpdateEmployeeDto
 } from '../../apis/hr-employees';
+import {
+  getAttendanceLogsApi,
+  type AttendanceLogDto
+} from '../../apis/attendance';
 
 // ============================================================================
 // QUERY KEYS - Centralized key management for cache invalidation
@@ -59,6 +63,13 @@ export const hrQueryKeys = {
     all: ['hr', 'roles'] as const,
     lists: () => [...hrQueryKeys.roles.all, 'list'] as const,
     list: (params?: any) => [...hrQueryKeys.roles.lists(), params || {}] as const,
+  },
+
+  attendance: {
+    all: ['hr', 'attendance'] as const,
+    logs: () => [...hrQueryKeys.attendance.all, 'logs'] as const,
+    log: (filters: any) => [...hrQueryKeys.attendance.logs(), filters] as const,
+    statistics: (date: string) => [...hrQueryKeys.attendance.all, 'statistics', date] as const,
   },
 };
 
@@ -335,6 +346,50 @@ export const useInvalidateEmployees = () => {
   return () => {
     queryClient.invalidateQueries({ queryKey: hrQueryKeys.employees.all });
     queryClient.invalidateQueries({ queryKey: hrQueryKeys.statistics.all });
+  };
+};
+
+// ============================================================================
+// ATTENDANCE QUERIES
+// ============================================================================
+
+/**
+ * Hook to fetch attendance logs with filters and date range
+ */
+export const useAttendanceLogs = (
+  filters: AttendanceLogDto,
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: hrQueryKeys.attendance.log(filters),
+    queryFn: async () => {
+      console.log('🔍 [ATTENDANCE] Fetching attendance logs with filters:', filters);
+      const response = await getAttendanceLogsApi(filters);
+      console.log('✅ [ATTENDANCE] Attendance logs fetched successfully:', response);
+      return response;
+    },
+    staleTime: 1 * 60 * 1000, // 1 minute - attendance changes frequently
+    gcTime: 3 * 60 * 1000, // 3 minutes
+    enabled: options?.enabled !== false,
+    ...options,
+  });
+};
+
+/**
+ * Hook for attendance mutations (check-in, check-out, bulk mark)
+ * Returns mutation object with invalidation on success
+ */
+export const useAttendanceMutation = () => {
+  const queryClient = useQueryClient();
+  
+  return {
+    invalidateAttendance: (filters?: AttendanceLogDto) => {
+      if (filters) {
+        queryClient.invalidateQueries({ queryKey: hrQueryKeys.attendance.log(filters) });
+      } else {
+        queryClient.invalidateQueries({ queryKey: hrQueryKeys.attendance.all });
+      }
+    }
   };
 };
 

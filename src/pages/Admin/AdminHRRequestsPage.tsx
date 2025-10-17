@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * Admin HR Requests Page - REFACTORED to match Leads structure
+ * Uses: React Query, Generic Filters, DataTable, Detail Drawer
+ */
+
+import React, { useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import DataTable from '../../components/common/DataTable/DataTable';
 import DataStatistics from '../../components/common/Statistics/DataStatistics';
-import Notification from '../../components/common/Notification/Notification';
-import { useNotification } from '../../hooks/useNotification';
-import { 
-  getHRAdminRequestsApi,
-  updateHRAdminRequestApi,
-  type AdminRequestResponseDto
-} from '../../apis/hr-admin-requests';
+import GenericAdminHRRequestsFilters from '../../components/hr-admin-requests/GenericAdminHRRequestsFilters';
+import AdminHRRequestDetailsDrawer from '../../components/hr-admin-requests/AdminHRRequestDetailsDrawer';
+import { useHRAdminRequests, useUpdateHRAdminRequest } from '../../hooks/queries/useHRAdminRequestsQueries';
 
 // Local interface for component
 interface AdminHRRequestTableRow {
-  id: string; // For DataTable compatibility
+  id: string;
   request_id: number;
   type: string;
   description: string;
@@ -26,31 +28,92 @@ interface AdminHRRequestTableRow {
 
 const AdminHRRequestsPage: React.FC = () => {
   const { user } = useAuth();
-  const notification = useNotification();
   
   // State management
-  const [adminRequests, setAdminRequests] = useState<AdminHRRequestTableRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedRequest, setSelectedRequest] = useState<AdminRequestResponseDto | null>(null);
-  const [actionModalOpen, setActionModalOpen] = useState(false);
-  const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
-  const [actionNotes, setActionNotes] = useState('');
+  const [selectedRequest, setSelectedRequest] = useState<AdminHRRequestTableRow | null>(null);
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Check if user is Admin
   const isAdmin = user?.role === 'admin';
 
-  // Statistics
-  const [statistics, setStatistics] = useState({
-    total_requests: 0,
-    pending_requests: 0,
-    approved_requests: 0,
-    rejected_requests: 0,
-    salary_increase_requests: 0,
-    late_approval_requests: 0,
-    others_requests: 0
+  // Filter states
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    type: '',
+    fromDate: '',
+    toDate: ''
   });
 
-  // No access check - only Admin should access this page
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
+
+  // React Query hooks
+  const requestsQuery = useHRAdminRequests(
+    { ...filters, page: pagination.currentPage, limit: pagination.itemsPerPage },
+    { enabled: isAdmin }
+  );
+  const updateMutation = useUpdateHRAdminRequest();
+
+  // Extract data
+  const requestsData = requestsQuery.data || {};
+  const adminRequestsRaw = requestsData.adminRequests || [];
+  const loading = requestsQuery.isLoading;
+
+  // Transform to table format and apply client-side filtering
+  const adminRequests: AdminHRRequestTableRow[] = useMemo(() => {
+    let filtered = adminRequestsRaw.map((request: any) => ({
+      id: request.id.toString(),
+      request_id: request.id,
+      type: request.type,
+      description: request.description || 'N/A',
+      status: request.status || 'pending',
+      hrLogId: request.hrLogId,
+      created_at: request.createdAt || new Date().toISOString(),
+      updated_at: request.updatedAt || new Date().toISOString(),
+      hr_employee_name: `HR Employee ${request.hr?.employeeId || request.hrId || 'N/A'}`,
+      hr_employee_email: 'N/A',
+      hr_department: 'HR'
+    }));
+
+    // Apply client-side filters
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter((req: AdminHRRequestTableRow) =>
+        req.description.toLowerCase().includes(searchLower) ||
+        req.type.toLowerCase().includes(searchLower)
+      );
+    }
+    if (filters.status) {
+      filtered = filtered.filter((req: AdminHRRequestTableRow) => req.status === filters.status);
+    }
+    if (filters.type) {
+      filtered = filtered.filter((req: AdminHRRequestTableRow) => req.type === filters.type);
+    }
+
+    return filtered;
+  }, [adminRequestsRaw, filters]);
+
+  // Calculate statistics
+  const statistics = useMemo(() => {
+    return {
+      total_requests: adminRequests.length,
+      pending_requests: adminRequests.filter(r => r.status === 'pending').length,
+      approved_requests: adminRequests.filter(r => r.status === 'approved').length,
+      rejected_requests: adminRequests.filter(r => r.status === 'rejected').length,
+      salary_increase_requests: adminRequests.filter(r => r.type === 'salary_increase').length,
+      late_approval_requests: adminRequests.filter(r => r.type === 'late_approval').length,
+      others_requests: adminRequests.filter(r => r.type === 'others').length
+    };
+  }, [adminRequests]);
+
+  // No access check
   if (!user || !isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -67,143 +130,110 @@ const AdminHRRequestsPage: React.FC = () => {
     );
   }
 
-  // Calculate statistics from the current requests data
-  const calculateStatistics = (requests: AdminHRRequestTableRow[]) => {
-    const stats = {
-      total_requests: requests.length,
-      pending_requests: requests.filter(r => r.status === 'pending').length,
-      approved_requests: requests.filter(r => r.status === 'approved').length,
-      rejected_requests: requests.filter(r => r.status === 'rejected').length,
-      salary_increase_requests: requests.filter(r => r.type === 'salary_increase').length,
-      late_approval_requests: requests.filter(r => r.type === 'late_approval').length,
-      others_requests: requests.filter(r => r.type === 'others').length
-    };
-    return stats;
+  // Handlers
+  const handleFiltersChange = useCallback((newFilters: any) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on filter change
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      search: '',
+      status: '',
+      type: '',
+      fromDate: '',
+      toDate: ''
+    });
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+  }, []);
+
+  const handlePageChange = (page: number) => {
+    setPagination(prev => ({ ...prev, currentPage: page }));
   };
 
-  // Fetch HR admin requests
-  const fetchAdminRequests = async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching HR admin requests for admin...');
-      
-      const response = await getHRAdminRequestsApi();
-      console.log('Fetched admin requests response:', response);
-      console.log('Response type:', typeof response);
-      console.log('Response length:', Array.isArray(response) ? response.length : 'Not an array');
-      console.log('All HR admin requests:', response);
-      
-      // Extract the adminRequests array from the response
-      const adminRequests = response.adminRequests || [];
-      console.log('Admin requests array:', adminRequests);
-      
-      const mappedRequests: AdminHRRequestTableRow[] = adminRequests.map(request => ({
-        id: request.id.toString(),
-        request_id: request.id,
-        type: request.type,
-        description: request.description || 'N/A',
-        status: request.status || 'pending',
-        hrLogId: undefined,
-        created_at: request.createdAt || new Date().toISOString(),
-        updated_at: request.updatedAt || new Date().toISOString(),
-        hr_employee_name: `HR Employee ${request.hr?.employeeId || request.hrId || 'N/A'}`,
-        hr_employee_email: 'N/A', // Not available in the response
-        hr_department: 'HR' // Default to HR since all requests are from HR
-      }));
-
-      console.log('Mapped admin requests count:', mappedRequests.length);
-      setAdminRequests(mappedRequests);
-      
-      // Calculate statistics
-      const stats = calculateStatistics(mappedRequests);
-      setStatistics(stats);
-    } catch (error) {
-      console.error('Error fetching admin requests:', error);
-      setAdminRequests([]);
-      setStatistics({
-        total_requests: 0,
-        pending_requests: 0,
-        approved_requests: 0,
-        rejected_requests: 0,
-        salary_increase_requests: 0,
-        late_approval_requests: 0,
-        others_requests: 0
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleRequestClick = (request: AdminHRRequestTableRow) => {
+    setSelectedRequest(request);
   };
 
-  // Handle approve/reject action
-  const handleAction = async () => {
-    if (!selectedRequest) return;
-
+  const handleApprove = async (requestId: number, notes: string) => {
     try {
-      const status = actionType === 'approve' ? 'approved' : 'rejected';
-      await updateHRAdminRequestApi(selectedRequest.id, status, actionNotes);
-      
-      notification.hide();
-      setTimeout(() => {
-        notification.show({
-          type: 'success',
-          message: `Request ${actionType}d successfully!`,
-          title: 'Success',
-          autoDismiss: true,
-          dismissTimeout: 2000,
-          position: 'top-right',
-          className: 'bg-white notification-red-close',
-          style: {
-            backgroundColor: '#ffffff',
-            border: '2px solid #16a34a',
-            color: '#16a34a'
-          }
-        });
-      }, 100);
-
-      // Refresh data
-      fetchAdminRequests();
-      setActionModalOpen(false);
+      await updateMutation.mutateAsync({ requestId, action: 'approve', notes });
+      setNotification({ type: 'success', message: 'Request approved successfully!' });
       setSelectedRequest(null);
-      setActionNotes('');
     } catch (error) {
-      console.error('Error updating request:', error);
-      notification.hide();
-      setTimeout(() => {
-        notification.show({
-          type: 'error',
-          message: `Failed to ${actionType} request`,
-          title: 'Error',
-          autoDismiss: true,
-          dismissTimeout: 2000,
-          position: 'top-right',
-          className: 'bg-white border-2 border-red-500 text-red-700 shadow-lg notification-red-close'
-        });
-      }, 100);
+      setNotification({ type: 'error', message: 'Failed to approve request' });
     }
   };
 
-  // Open action modal
-  const openActionModal = (request: AdminHRRequestTableRow, action: 'approve' | 'reject') => {
-    // Find the full request object
-    const fullRequest: AdminRequestResponseDto = {
-      id: request.request_id,
-      hrId: 1, // Default value, not critical for the modal action
-      description: request.description,
-      type: request.type,
-      hrLogId: request.hrLogId,
-      status: request.status as any,
-      createdAt: request.created_at,
-      updatedAt: request.updated_at,
-      hr: {
-        id: 1,
-        employeeId: 1
-      }
-    };
-    
-    setSelectedRequest(fullRequest);
-    setActionType(action);
-    setActionModalOpen(true);
+  const handleReject = async (requestId: number, notes: string) => {
+    try {
+      await updateMutation.mutateAsync({ requestId, action: 'reject', notes });
+      setNotification({ type: 'success', message: 'Request rejected successfully!' });
+      setSelectedRequest(null);
+    } catch (error) {
+      setNotification({ type: 'error', message: 'Failed to reject request' });
+    }
   };
+
+  // DataTable columns
+  const columns = [
+    {
+      header: 'ID',
+      accessor: 'request_id',
+      sortable: true,
+      render: (value: any) => `#${value}`
+    },
+    {
+      header: 'Request Type',
+      accessor: 'type',
+      sortable: true,
+      render: (value: any) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          value === 'salary_increase' ? 'bg-purple-100 text-purple-800' :
+          value === 'late_approval' ? 'bg-indigo-100 text-indigo-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {value.replace('_', ' ').toUpperCase()}
+        </span>
+      )
+    },
+    {
+      header: 'Description',
+      accessor: 'description',
+      sortable: false
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      sortable: true,
+      render: (value: any) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+          value === 'approved' ? 'bg-green-100 text-green-800' :
+          'bg-red-100 text-red-800'
+        }`}>
+          {value.toUpperCase()}
+        </span>
+      )
+    },
+    {
+      header: 'HR Employee',
+      accessor: 'hr_employee_name',
+      sortable: true
+    },
+    {
+      header: 'Created At',
+      accessor: 'created_at',
+      sortable: true,
+      render: (value: any) => new Date(value).toLocaleDateString()
+    },
+    {
+      header: 'Last Updated',
+      accessor: 'updated_at',
+      sortable: true,
+      render: (value: any) => new Date(value).toLocaleDateString()
+    }
+  ];
 
   // Statistics cards
   const statisticsCards = [
@@ -266,23 +296,8 @@ const AdminHRRequestsPage: React.FC = () => {
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
         </svg>
       )
-    },
-    {
-      title: 'Others',
-      value: statistics.others_requests,
-      color: 'blue' as const,
-      icon: (
-        <svg fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-        </svg>
-      )
     }
   ];
-
-  // Load data on component mount
-  useEffect(() => {
-    fetchAdminRequests();
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -291,215 +306,108 @@ const AdminHRRequestsPage: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                HR Requests
-              </h1>
+              <h1 className="text-3xl font-bold text-gray-900">HR Requests</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Review and manage requests from HR department
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* Statistics Dashboard */}
-        <div className="mb-8">
-          <DataStatistics 
-            title="HR Request Statistics"
-            cards={statisticsCards}
-            loading={loading}
-          />
-          
-          {/* Request Type Breakdown */}
-          <div className="mt-8">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Breakdown by Request Type</h3>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h4 className="text-lg font-semibold mb-4 text-gray-900">Salary Increase</h4>
-                <div className="text-3xl font-bold text-purple-600">{statistics.salary_increase_requests}</div>
-                <p className="text-sm text-gray-500 mt-1">requests</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h4 className="text-lg font-semibold mb-4 text-gray-900">Late Approval</h4>
-                <div className="text-3xl font-bold text-indigo-600">{statistics.late_approval_requests}</div>
-                <p className="text-sm text-gray-500 mt-1">requests</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h4 className="text-lg font-semibold mb-4 text-gray-900">Others</h4>
-                <div className="text-3xl font-bold text-gray-600">{statistics.others_requests}</div>
-                <p className="text-sm text-gray-500 mt-1">requests</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Requests Table */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              HR Requests from All HR Employees
-            </h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              Review and take action on requests submitted by HR department
-            </p>
-          </div>
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-gray-600">Loading requests...</span>
-            </div>
-          ) : adminRequests.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <button
+              onClick={() => setShowStatistics(!showStatistics)}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No requests</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                No HR requests have been submitted yet.
-              </p>
-            </div>
-          ) : (
-            <ul className="divide-y divide-gray-200">
-              {adminRequests.map((request) => (
-                <li key={request.id}>
-                  <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center">
-                          <p className="text-sm font-medium text-purple-600 truncate">
-                            {request.type.replace('_', ' ').toUpperCase()}
-                          </p>
-                          <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            request.status === 'approved' ? 'bg-green-100 text-green-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {request.status}
-                          </span>
-                        </div>
-                        <div className="mt-1">
-                          <p className="text-sm text-gray-900">{request.description}</p>
-                        </div>
-                        <div className="mt-1 flex items-center space-x-4 text-xs text-gray-500">
-                          <span>From: {request.hr_employee_name}</span>
-                          <span>Department: {request.hr_department}</span>
-                        </div>
-                      </div>
-                      <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
-                        <div className="text-sm text-gray-500 text-right">
-                          <div>Created: {new Date(request.created_at).toLocaleDateString()}</div>
-                          {request.status !== 'pending' && (
-                            <div>Updated: {new Date(request.updated_at).toLocaleDateString()}</div>
-                          )}
-                        </div>
-                        {request.status === 'pending' && (
-                          <div className="flex space-x-2 ml-4">
-                            <button
-                              onClick={() => openActionModal(request, 'approve')}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => openActionModal(request, 'reject')}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+              {showStatistics ? 'Hide Statistics' : 'Show Statistics'}
+            </button>
+          </div>
         </div>
 
-        {/* Action Modal */}
-        {actionModalOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
-                    <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${
-                      actionType === 'approve' ? 'bg-green-100' : 'bg-red-100'
-                    }`}>
-                      {actionType === 'approve' ? (
-                        <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                      <h3 className="text-lg leading-6 font-medium text-gray-900">
-                        {actionType === 'approve' ? 'Approve Request' : 'Reject Request'}
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">
-                          Are you sure you want to {actionType} this request?
-                        </p>
-                        <div className="mt-4">
-                          <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                            Notes (Optional)
-                          </label>
-                          <textarea
-                            id="notes"
-                            rows={3}
-                            value={actionNotes}
-                            onChange={(e) => setActionNotes(e.target.value)}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            placeholder={`Add notes for ${actionType}...`}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+        {/* Statistics - Collapsible */}
+        {showStatistics && (
+          <div className="mb-6">
+            <DataStatistics 
+              title="HR Request Statistics"
+              cards={statisticsCards}
+              loading={loading}
+            />
+          </div>
+        )}
+
+        {/* Filters */}
+        <GenericAdminHRRequestsFilters
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+        />
+
+        {/* DataTable */}
+        <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+          <DataTable
+            data={adminRequests}
+            columns={columns}
+            loading={loading}
+            currentPage={pagination.currentPage}
+            totalPages={Math.ceil(adminRequests.length / pagination.itemsPerPage)}
+            totalItems={adminRequests.length}
+            onPageChange={handlePageChange}
+            serverSidePagination={false}
+            paginated={true}
+            onRowClick={handleRequestClick}
+          />
+        </div>
+
+        {/* Details Drawer */}
+        <AdminHRRequestDetailsDrawer
+          request={selectedRequest}
+          isOpen={!!selectedRequest}
+          onClose={() => setSelectedRequest(null)}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
+
+        {/* Notification */}
+        {notification && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <div className={`rounded-lg shadow-lg p-4 ${
+              notification.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+            }`}>
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  {notification.type === 'success' ? (
+                    <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
                 </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <div className="ml-3">
+                  <p className={`text-sm font-medium ${
+                    notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {notification.message}
+                  </p>
+                </div>
+                <div className="ml-auto pl-3">
                   <button
-                    type="button"
-                    onClick={handleAction}
-                    className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm ${
-                      actionType === 'approve' 
-                        ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' 
-                        : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+                    onClick={() => setNotification(null)}
+                    className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                      notification.type === 'success' 
+                        ? 'text-green-500 hover:bg-green-100 focus:ring-green-600' 
+                        : 'text-red-500 hover:bg-red-100 focus:ring-red-600'
                     }`}
                   >
-                    {actionType === 'approve' ? 'Approve' : 'Reject'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActionModalOpen(false);
-                      setSelectedRequest(null);
-                      setActionNotes('');
-                    }}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    Cancel
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
                   </button>
                 </div>
               </div>
             </div>
           </div>
         )}
-
-        {/* Notification */}
-        <Notification
-          visible={notification.visible}
-          onClose={notification.hide}
-          {...notification.config}
-        />
       </div>
     </div>
   );
