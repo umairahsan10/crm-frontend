@@ -6,10 +6,8 @@
  * Works for ALL lead tabs: regular, cracked, archived
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useFilters } from '../../hooks/useFilters';
-import { getSalesUnitsApi, getFilterEmployeesApi } from '../../apis/leads';
-import { getActiveIndustriesApi } from '../../apis/industries';
 
 /**
  * Generic filter props - works for ANY tab type!
@@ -37,8 +35,10 @@ interface GenericLeadsFiltersProps {
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
   
-  // Data sharing callbacks
-  onEmployeesLoaded?: (employees: any[]) => void;
+  // Shared data props (from React Query)
+  salesUnits?: Array<{ id: number; name: string }>;
+  employees?: any[];
+  industries?: any[];
   
   // UI customization
   theme?: {
@@ -55,7 +55,9 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
   showFilters,
   onFiltersChange,
   onClearFilters,
-  onEmployeesLoaded,
+  salesUnits = [],
+  employees = [],
+  industries = [],
   theme = {
     primary: 'bg-blue-600',
     secondary: 'hover:bg-blue-700',
@@ -100,77 +102,6 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
   );
 
   const [showAdvanced, setShowAdvanced] = useState(false);
-  
-  // Dynamic data states
-  const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [industries, setIndustries] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Refs to prevent duplicate API calls
-  const salesUnitsFetched = useRef(false);
-  const employeesFetched = useRef(false);
-  const industriesFetched = useRef(false);
-
-  // Fetch sales units when needed
-  useEffect(() => {
-    if (showFilters.salesUnit && !salesUnitsFetched.current) {
-      salesUnitsFetched.current = true;
-      const fetchSalesUnits = async () => {
-        try {
-          const response = await getSalesUnitsApi();
-          if (response.success && response.data) {
-            setSalesUnits(response.data);
-          }
-        } catch (error) {
-          console.error('Error fetching sales units:', error);
-        }
-      };
-      fetchSalesUnits();
-    }
-  }, [showFilters.salesUnit]);
-
-  // Fetch industries when needed
-  useEffect(() => {
-    if (showFilters.industry && !industriesFetched.current) {
-      industriesFetched.current = true;
-      const fetchIndustries = async () => {
-        try {
-          const response = await getActiveIndustriesApi();
-          if (response.success && response.data) {
-            setIndustries(response.data);
-          }
-        } catch (error) {
-          console.error('Error fetching industries:', error);
-        }
-      };
-      fetchIndustries();
-    }
-  }, [showFilters.industry]);
-
-  // Fetch employees when needed
-  useEffect(() => {
-    if ((showFilters.assignedTo || showFilters.closedBy) && !employeesFetched.current) {
-      employeesFetched.current = true;
-      const fetchEmployees = async () => {
-        try {
-          setIsLoading(true);
-          const salesUnitId = filters.salesUnit ? parseInt(filters.salesUnit as string) : undefined;
-          const response = await getFilterEmployeesApi(salesUnitId);
-          if (response.success && response.data) {
-            setEmployees(response.data);
-            // Share employees data with parent component for bulk actions
-            onEmployeesLoaded?.(response.data);
-          }
-        } catch (error) {
-          console.error('Error fetching employees:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchEmployees();
-    }
-  }, [showFilters.assignedTo, showFilters.closedBy, filters.salesUnit, onEmployeesLoaded]);
 
   const handleClearAll = () => {
     resetFilters();
@@ -316,7 +247,7 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
                 value: (e.id || e.employeeId || e.userId || '').toString(),
                 label: e.name || e.fullName || `${e.firstName} ${e.lastName}` || e.email || 'Unknown'
               })),
-              isLoading
+              false
             )}
             
             {showFilters.dateRange && (
@@ -346,7 +277,7 @@ const GenericLeadsFilters: React.FC<GenericLeadsFiltersProps> = ({
                 value: (e.id || e.employeeId || '').toString(),
                 label: e.name || e.fullName || `${e.firstName} ${e.lastName}` || 'Unknown'
               })),
-              isLoading
+              false
             )}
             
             {showFilters.currentPhase && renderSelect(
