@@ -1,8 +1,10 @@
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 import type { Revenue, RevenuesResponse, RevenueResponse, ApiResponse } from '../types';
-import { getAuthData } from '../utils/cookieUtils';
+import { 
+  apiGetJson, 
+  apiPostJson, 
+  apiPatchJson, 
+  apiDeleteJson
+} from '../utils/apiClient';
 
 export interface ApiError {
   message: string;
@@ -30,15 +32,11 @@ export const getRevenuesApi = async (
   } = {}
 ): Promise<ApiResponse<Revenue[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters
     const queryParams = new URLSearchParams();
     queryParams.append('page', page.toString());
     queryParams.append('limit', limit.toString());
+    if (filters.search) queryParams.append('search', filters.search);
     if (filters.category) queryParams.append('category', filters.category);
     if (filters.source) queryParams.append('source', filters.source);
     if (filters.fromDate) queryParams.append('fromDate', filters.fromDate);
@@ -51,29 +49,15 @@ export const getRevenuesApi = async (
     if (filters.relatedInvoiceId) queryParams.append('relatedInvoiceId', filters.relatedInvoiceId);
 
     const url = queryParams.toString() 
-      ? `${API_BASE_URL}/accountant/revenue?${queryParams.toString()}`
-      : `${API_BASE_URL}/accountant/revenue`;
+      ? `/accountant/revenue?${queryParams.toString()}`
+      : `/accountant/revenue`;
 
     console.log('📤 [API] Fetching revenues from:', url);
     console.log('📤 [API] Filters:', filters);
     console.log('📤 [API] Query params:', queryParams.toString());
     console.log('📤 [API] Page:', page, 'Limit:', limit);
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Revenues API HTTP Error:', response.status, errorData);
-      throw new Error(errorData.message || `HTTP ${response.status}: Failed to fetch revenues`);
-    }
-
-    const data: RevenuesResponse = await response.json();
+    const data: RevenuesResponse = await apiGetJson<RevenuesResponse>(url);
     console.log('✅ Revenues API Response:', data);
     
     // Backend returns { status, message, data: [], total, page, limit }
@@ -116,28 +100,9 @@ export const createRevenueApi = async (revenueData: {
   transactionId?: number;
 }): Promise<ApiResponse<Revenue>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Creating revenue with data:', revenueData);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/revenue`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(revenueData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create revenue');
-    }
-
-    const data = await response.json();
+    const data = await apiPostJson<any>('/accountant/revenue', revenueData);
     console.log('Create revenue response:', data);
     
     if (data.status === 'error') {
@@ -161,27 +126,9 @@ export const createRevenueApi = async (revenueData: {
 // Get revenue by ID
 export const getRevenueByIdApi = async (revenueId: string | number): Promise<ApiResponse<Revenue>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Fetching revenue by ID:', revenueId);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/revenue/${revenueId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch revenue');
-    }
-
-    const data: RevenueResponse = await response.json();
+    const data: RevenueResponse = await apiGetJson<RevenueResponse>(`/accountant/revenue/${revenueId}`);
     console.log('Revenue detail response:', data);
     
     if (data.status === 'error') {
@@ -216,32 +163,13 @@ export const updateRevenueApi = async (
   }
 ): Promise<ApiResponse<Revenue>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Updating revenue:', revenueId, 'with data:', updates);
 
     // Backend expects PATCH to /accountant/revenue with revenue_id in body
-    const response = await fetch(`${API_BASE_URL}/accountant/revenue`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        revenue_id: revenueId,
-        ...updates
-      }),
+    const data = await apiPatchJson<any>('/accountant/revenue', {
+      revenue_id: revenueId,
+      ...updates
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update revenue');
-    }
-
-    const data = await response.json();
     console.log('Update revenue response:', data);
     
     if (data.status === 'error') {
@@ -265,31 +193,41 @@ export const updateRevenueApi = async (
 // Delete revenue
 export const deleteRevenueApi = async (revenueId: string): Promise<ApiResponse<void>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/accountant/revenue/${revenueId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete revenue');
-    }
-
-    const data: ApiResponse<void> = await response.json();
+    const data: ApiResponse<void> = await apiDeleteJson<ApiResponse<void>>(`/accountant/revenue/${revenueId}`);
     return data;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(error.message);
     }
     throw new Error('An unexpected error occurred while deleting revenue');
+  }
+};
+
+// Statistics API
+export const getRevenuesStatisticsApi = async (): Promise<ApiResponse<{
+  totalRevenues: number;
+  totalAmount: number;
+  thisMonthAmount: number;
+  lastMonthAmount: number;
+  growthRate: number;
+  byCategory: { [key: string]: number };
+  byPaymentMethod: { [key: string]: number };
+  recentRevenues: Revenue[];
+}>> => {
+  try {
+    console.log('📊 Fetching revenue statistics...');
+    
+    const data = await apiGetJson<any>('/accountant/revenue/statistics');
+    console.log('✅ Revenue statistics received:', data);
+    
+    return {
+      success: true,
+      data: data.data || data,
+      message: 'Revenue statistics fetched successfully'
+    };
+  } catch (error) {
+    console.error('❌ Revenue statistics API error:', error);
+    throw new Error('Failed to fetch revenue statistics');
   }
 };
 

@@ -1,8 +1,5 @@
 import { apiGetJson, ApiError } from '../utils/apiClient';
 
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 export interface AdminData {
   id: number;
   firstName: string;
@@ -33,8 +30,8 @@ export interface AdminListResponse {
 
 export const getMyAdminProfileApi = async (): Promise<AdminData> => {
   try {
-    console.log('Fetching admin profile from:', `${API_BASE_URL}/admin/my-profile`);
-    const response = await apiGetJson<AdminResponse>(`${API_BASE_URL}/admin/my-profile`);
+    console.log('Fetching admin profile from: /admin/my-profile');
+    const response = await apiGetJson<AdminResponse>('/admin/my-profile');
     console.log('Admin profile API response:', response);
     return response;
   } catch (error) {
@@ -48,7 +45,7 @@ export const getMyAdminProfileApi = async (): Promise<AdminData> => {
 
 export const getAllAdminsApi = async (page: number = 1, limit: number = 10): Promise<AdminListResponse> => {
   try {
-    const response = await apiGetJson<AdminListResponse>(`${API_BASE_URL}/admin?page=${page}&limit=${limit}`);
+    const response = await apiGetJson<AdminListResponse>(`/admin?page=${page}&limit=${limit}`);
     return response;
   } catch (error) {
     console.error('Admin list API Error:', error);
@@ -61,7 +58,7 @@ export const getAllAdminsApi = async (page: number = 1, limit: number = 10): Pro
 
 export const getAdminByIdApi = async (id: number): Promise<AdminData> => {
   try {
-    const response = await apiGetJson<AdminResponse>(`${API_BASE_URL}/admin/${id}`);
+    const response = await apiGetJson<AdminResponse>(`/admin/${id}`);
     return response;
   } catch (error) {
     console.error('Admin by ID API Error:', error);

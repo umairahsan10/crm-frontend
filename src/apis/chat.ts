@@ -4,44 +4,15 @@ import type {
   ChatParticipant, 
   ChatUser
 } from '../components/common/chat/types';
-import { getAuthData } from '../utils/cookieUtils';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-// Helper function to handle API responses
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Network error' }));
-    throw new Error(error.message || `HTTP error! status: ${response.status}`);
-  }
-  
-  const data = await response.json();
-  return data;
-};
+import { apiGetJson, apiPostJson, apiDeleteJson } from '../utils/apiClient';
 
 // Chat API functions
 export const chatApi = {
   // Get all chats for current user (participant-based filtering happens on backend)
   getChats: async (): Promise<ProjectChat[]> => {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
+    console.log('🔵 Fetching chats from: /project-chats');
 
-    console.log('🔵 Fetching chats from:', `${API_BASE_URL}/project-chats`);
-    console.log('🔑 Token (first 20 chars):', token?.substring(0, 20) + '...');
-
-    const response = await fetch(`${API_BASE_URL}/project-chats`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    console.log('📥 Response status:', response.status, response.statusText);
-    
-    const data = await handleResponse<ProjectChat[]>(response);
+    const data = await apiGetJson<ProjectChat[]>('/project-chats');
     console.log('✅ Chats received:', data.length, 'chats');
     
     return data;
@@ -49,43 +20,16 @@ export const chatApi = {
 
   // Get specific chat by ID
   getChat: async (chatId: number): Promise<ProjectChat> => {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/project-chats/${chatId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    return handleResponse<ProjectChat>(response);
+    const data = await apiGetJson<ProjectChat>(`/project-chats/${chatId}`);
+    return data;
   },
 
   // Get messages for a chat
   getMessages: async (chatId: number, limit = 50, offset = 0): Promise<{ messages: ChatMessage[]; total: number; limit: number; offset: number }> => {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('🔵 Fetching messages for chat:', chatId);
-    console.log('🔵 URL:', `${API_BASE_URL}/chat-messages/chat/${chatId}?limit=${limit}&offset=${offset}`);
+    console.log('🔵 URL:', `/chat-messages/chat/${chatId}?limit=${limit}&offset=${offset}`);
 
-    const response = await fetch(`${API_BASE_URL}/chat-messages/chat/${chatId}?limit=${limit}&offset=${offset}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    console.log('📥 Messages response status:', response.status);
-    
-    const data = await handleResponse<{ messages: ChatMessage[]; total: number; limit: number; offset: number }>(response);
+    const data = await apiGetJson<{ messages: ChatMessage[]; total: number; limit: number; offset: number }>(`/chat-messages/chat/${chatId}?limit=${limit}&offset=${offset}`);
     console.log('✅ Messages received:', data.messages?.length || 0, 'messages');
     
     return data;
@@ -93,11 +37,6 @@ export const chatApi = {
 
   // Send message to chat
   sendMessage: async (chatId: number, content: string): Promise<ChatMessage> => {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('🔵 Sending message to chat:', chatId);
     console.log('📤 Message content:', content);
     
@@ -109,33 +48,7 @@ export const chatApi = {
     
     console.log('📤 Request body:', JSON.stringify(requestBody));
 
-    const response = await fetch(`${API_BASE_URL}/chat-messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    console.log('📥 Send message response status:', response.status);
-    
-    // Check if response is not ok before trying to parse
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Send message error response:', errorText);
-      
-      // Try to parse as JSON for better error handling
-      try {
-        const errorData = JSON.parse(errorText);
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      } catch (parseError) {
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-    }
-    
-    // Handle the backend response format
-    const responseData = await response.json();
+    const responseData = await apiPostJson<any>('/chat-messages', requestBody);
     console.log('📥 Raw response:', responseData);
     
     // Extract the message data from the backend response format
@@ -147,86 +60,31 @@ export const chatApi = {
 
   // Get chat participants
   getParticipants: async (chatId: number): Promise<ChatParticipant[]> => {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/chat-participants/chat/${chatId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    return handleResponse<ChatParticipant[]>(response);
+    const data = await apiGetJson<ChatParticipant[]>(`/chat-participants/chat/${chatId}`);
+    return data;
   },
 
   // Add participant to chat (Owner only)
   addParticipant: async (chatId: number, employeeId: number): Promise<ChatParticipant> => {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/chat-participants`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ 
-        chatId,
-        employeeId,
-        memberType: 'participant'
-      })
+    const data = await apiPostJson<ChatParticipant>('/chat-participants', { 
+      chatId,
+      employeeId,
+      memberType: 'participant'
     });
-
-    return handleResponse<ChatParticipant>(response);
+    return data;
   },
 
   // Remove participant from chat (Owner only)
   removeParticipant: async (participantId: number): Promise<void> => {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/chat-participants/${participantId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    return handleResponse<void>(response);
+    await apiDeleteJson<void>(`/chat-participants/${participantId}`);
   },
 
   // Get available employees
   getAvailableEmployees: async (): Promise<ChatUser[]> => {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     try {
       console.log('🔵 Fetching employees from /employee/all-employees...');
-      const response = await fetch(`${API_BASE_URL}/employee/all-employees`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-
-      const responseData = await response.json();
+      
+      const responseData = await apiGetJson<any>('/employee/all-employees');
       console.log('📥 Raw response from /employee/all-employees:', responseData);
 
       // Extract employees from the response

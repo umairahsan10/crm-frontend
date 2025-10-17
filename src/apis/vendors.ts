@@ -1,7 +1,4 @@
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-import { getAuthData } from '../utils/cookieUtils';
+import { apiGetJson, apiPostJson } from '../utils/apiClient';
 
 export interface Vendor {
   id: number;
@@ -43,36 +40,9 @@ export interface ApiResponse<T> {
 // Get all vendors
 export const getVendorsApi = async (): Promise<ApiResponse<Vendor[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
+    console.log('Fetching vendors from: /accountant/vendors/display');
 
-    console.log('Fetching vendors from:', `${API_BASE_URL}/accountant/vendors/display`);
-
-    const response = await fetch(`${API_BASE_URL}/accountant/vendors/display`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('Vendors response status:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch vendors';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Vendors API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>('/accountant/vendors/display');
     console.log('Vendors response:', data);
 
     // Handle response format: { status, message, vendors: [], metadata }
@@ -102,49 +72,9 @@ export const getVendorsApi = async (): Promise<ApiResponse<Vendor[]>> => {
 // Create a new vendor
 export const createVendorApi = async (vendorData: CreateVendorRequest): Promise<ApiResponse<Vendor>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Creating vendor:', vendorData);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/vendor/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(vendorData),
-    });
-
-    console.log('Create vendor response status:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to create vendor';
-      try {
-        const errorData = await response.json();
-        
-        // Handle validation errors (400)
-        if (response.status === 400) {
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (Array.isArray(errorData.message)) {
-            errorMessage = errorData.message.join(', ');
-          }
-        } 
-        // Handle other errors
-        else {
-          errorMessage = errorData.message || errorMessage;
-        }
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Create vendor API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiPostJson<any>('/accountant/vendor/create', vendorData);
     console.log('Create vendor response:', data);
 
     // Handle response format: { status, message, vendor_id, vendor_data }
@@ -170,4 +100,3 @@ export const createVendorApi = async (vendorData: CreateVendorRequest): Promise<
     throw new Error('An unexpected error occurred while creating the vendor');
   }
 };
-

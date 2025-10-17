@@ -1,8 +1,5 @@
 import { apiGetJson, ApiError } from '../utils/apiClient';
 
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 export interface ProfileData {
   id: number;
   firstName: string;
@@ -43,8 +40,8 @@ export interface ProfileResponse {
 
 export const getMyProfileApi = async (): Promise<ProfileData> => {
   try {
-    console.log('Fetching profile from:', `${API_BASE_URL}/employee/my-profile`);
-    const response = await apiGetJson<ProfileResponse>(`${API_BASE_URL}/employee/my-profile`);
+    console.log('Fetching profile from: /employee/my-profile');
+    const response = await apiGetJson<ProfileResponse>('/employee/my-profile');
     console.log('Profile API response:', response);
     return response.data;
   } catch (error) {

@@ -1,8 +1,10 @@
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 import type { Liability, LiabilitiesResponse, LiabilityResponse, ApiResponse } from '../types';
-import { getAuthData } from '../utils/cookieUtils';
+import { 
+  apiGetJson, 
+  apiPostJson, 
+  apiPatchJson, 
+  apiDeleteJson
+} from '../utils/apiClient';
 
 export interface ApiError {
   message: string;
@@ -26,13 +28,9 @@ export const getLiabilitiesApi = async (
   } = {}
 ): Promise<ApiResponse<Liability[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters (backend doesn't use page/limit)
     const queryParams = new URLSearchParams();
+    if (filters.search) queryParams.append('search', filters.search);
     if (filters.isPaid) queryParams.append('isPaid', filters.isPaid);
     if (filters.relatedVendorId) queryParams.append('relatedVendorId', filters.relatedVendorId);
     if (filters.category) queryParams.append('category', filters.category);
@@ -41,8 +39,8 @@ export const getLiabilitiesApi = async (
     if (filters.createdBy) queryParams.append('createdBy', filters.createdBy);
 
     const url = queryParams.toString() 
-      ? `${API_BASE_URL}/accountant/liabilities?${queryParams.toString()}`
-      : `${API_BASE_URL}/accountant/liabilities`;
+      ? `/accountant/liabilities?${queryParams.toString()}`
+      : `/accountant/liabilities`;
 
     console.log('📤 Fetching liabilities:', {
       url,
@@ -50,21 +48,7 @@ export const getLiabilitiesApi = async (
       queryParams: queryParams.toString()
     });
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Liabilities API HTTP Error:', response.status, errorData);
-      throw new Error(errorData.message || `HTTP ${response.status}: Failed to fetch liabilities`);
-    }
-
-    const data: LiabilitiesResponse = await response.json();
+    const data: LiabilitiesResponse = await apiGetJson<LiabilitiesResponse>(url);
     console.log('✅ Liabilities API Response:', data);
     
     // Backend returns { status, message, data: [], total }
@@ -104,28 +88,9 @@ export const createLiabilityApi = async (liabilityData: {
   relatedVendorId?: number;
 }): Promise<ApiResponse<Liability>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Creating liability with data:', liabilityData);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/liabilities`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(liabilityData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create liability');
-    }
-
-    const data = await response.json();
+    const data = await apiPostJson<any>('/accountant/liabilities', liabilityData);
     console.log('Create liability response:', data);
     
     if (data.status === 'error') {
@@ -149,27 +114,9 @@ export const createLiabilityApi = async (liabilityData: {
 // Get liability by ID
 export const getLiabilityByIdApi = async (liabilityId: string | number): Promise<ApiResponse<Liability>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Fetching liability by ID:', liabilityId);
 
-    const response = await fetch(`${API_BASE_URL}/accountant/liabilities/${liabilityId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch liability');
-    }
-
-    const data: LiabilityResponse = await response.json();
+    const data: LiabilityResponse = await apiGetJson<LiabilityResponse>(`/accountant/liabilities/${liabilityId}`);
     console.log('Liability detail response:', data);
     
     if (data.status === 'error') {
@@ -202,32 +149,13 @@ export const updateLiabilityApi = async (
   }
 ): Promise<ApiResponse<Liability>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Updating liability:', liabilityId, 'with data:', updates);
 
     // Backend expects PATCH to /accountant/liabilities with liability_id in body
-    const response = await fetch(`${API_BASE_URL}/accountant/liabilities`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        liability_id: liabilityId,
-        ...updates
-      }),
+    const data = await apiPatchJson<any>('/accountant/liabilities', {
+      liability_id: liabilityId,
+      ...updates
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update liability');
-    }
-
-    const data = await response.json();
     console.log('Update liability response:', data);
     
     if (data.status === 'error') {
@@ -254,11 +182,6 @@ export const markLiabilityAsPaidApi = async (
   transactionId?: number
 ): Promise<ApiResponse<{ liability: Liability; transaction: any; expense: any }>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Marking liability as paid:', liabilityId, 'transactionId:', transactionId);
 
     const requestBody: any = {
@@ -269,21 +192,7 @@ export const markLiabilityAsPaidApi = async (
       requestBody.transactionId = transactionId;
     }
 
-    const response = await fetch(`${API_BASE_URL}/accountant/liabilities/mark-paid`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to mark liability as paid');
-    }
-
-    const data = await response.json();
+    const data = await apiPatchJson<any>('/accountant/liabilities/mark-paid', requestBody);
     console.log('Mark as paid response:', data);
     
     if (data.status === 'error') {
@@ -307,25 +216,7 @@ export const markLiabilityAsPaidApi = async (
 // Delete liability
 export const deleteLiabilityApi = async (liabilityId: string): Promise<ApiResponse<void>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/accountant/liabilities/${liabilityId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete liability');
-    }
-
-    const data: ApiResponse<void> = await response.json();
+    const data: ApiResponse<void> = await apiDeleteJson<ApiResponse<void>>(`/accountant/liabilities/${liabilityId}`);
     return data;
   } catch (error) {
     if (error instanceof Error) {
@@ -335,3 +226,29 @@ export const deleteLiabilityApi = async (liabilityId: string): Promise<ApiRespon
   }
 };
 
+// Statistics API
+export const getLiabilitiesStatisticsApi = async (): Promise<ApiResponse<{
+  totalLiabilities: number;
+  totalAmount: number;
+  paidAmount: number;
+  unpaidAmount: number;
+  overdueAmount: number;
+  byCategory: { [key: string]: number };
+  recentLiabilities: Liability[];
+}>> => {
+  try {
+    console.log('📊 Fetching liabilities statistics...');
+    
+    const data = await apiGetJson<any>('/accountant/liabilities/statistics');
+    console.log('✅ Liabilities statistics received:', data);
+    
+    return {
+      success: true,
+      data: data.data || data,
+      message: 'Liabilities statistics fetched successfully'
+    };
+  } catch (error) {
+    console.error('❌ Liabilities statistics API error:', error);
+    throw new Error('Failed to fetch liabilities statistics');
+  }
+};

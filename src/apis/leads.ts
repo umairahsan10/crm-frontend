@@ -1,8 +1,10 @@
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 import type { CreateLeadRequest, CreateLeadResponse, Lead, ApiResponse } from '../types';
-import { getAuthData } from '../utils/cookieUtils';
+import { 
+  apiGetJson, 
+  apiPostJson, 
+  apiPutJson, 
+  apiDeleteJson
+} from '../utils/apiClient';
 
 export interface ApiError {
   message: string;
@@ -12,61 +14,10 @@ export interface ApiError {
 // Create a new lead
 export const createLeadApi = async (leadData: CreateLeadRequest): Promise<CreateLeadResponse> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    console.log('Making API call to:', `${API_BASE_URL}/leads`);
-    console.log('API Base URL:', API_BASE_URL);
-    console.log('Request headers:', {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token.substring(0, 20)}...`
-    });
+    console.log('Making API call to: /leads');
     console.log('Request body:', leadData);
-    
-    // Test if the API endpoint is reachable
-    try {
-      const testResponse = await fetch(`${API_BASE_URL}/leads`, {
-        method: 'OPTIONS',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      console.log('API endpoint test (OPTIONS):', testResponse.status);
-    } catch (testError) {
-      console.warn('API endpoint test failed:', testError);
-    }
 
-    const response = await fetch(`${API_BASE_URL}/leads`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(leadData),
-    });
-
-    console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to create lead';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('API Error Details:', {
-        status: response.status,
-        statusText: response.statusText,
-        url: response.url
-      });
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiPostJson<any>('/leads', leadData);
     console.log('Raw API Response data:', data);
     
     // Handle different response formats
@@ -122,11 +73,6 @@ export const getLeadsApi = async (
   } = {}
 ): Promise<ApiResponse<Lead[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters
     const queryParams = new URLSearchParams({
       page: page.toString(),
@@ -144,20 +90,7 @@ export const getLeadsApi = async (
       ...(filters.userId && { userId: filters.userId })
     });
 
-    const response = await fetch(`${API_BASE_URL}/leads?${queryParams.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch leads');
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>(`/leads?${queryParams.toString()}`);
     console.log('Raw GET leads response:', data);
     
     // Handle different response formats
@@ -207,30 +140,9 @@ export const getLeadsApi = async (
 // Get a specific lead by ID
 export const getLeadByIdApi = async (leadId: string): Promise<ApiResponse<Lead>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('📡 Fetching lead by ID:', leadId);
 
-    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('📥 getLeadByIdApi response status:', response.status);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ getLeadByIdApi error:', errorData);
-      throw new Error(errorData.message || 'Failed to fetch lead');
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>(`/leads/${leadId}`);
     console.log('✅ getLeadByIdApi raw response:', data);
     console.log('📝 Comments in response:', data.comments || 'NOT FOUND');
     console.log('📅 Outcome history in response:', data.outcomeHistory || 'NOT FOUND');
@@ -277,37 +189,9 @@ export const getLeadByIdApi = async (leadId: string): Promise<ApiResponse<Lead>>
 // Update a lead
 export const updateLeadApi = async (leadId: string, updates: Partial<Lead>): Promise<ApiResponse<Lead>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Updating lead:', leadId, 'with data:', updates);
 
-    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(updates),
-    });
-
-    console.log('Update response status:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to update lead';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Update lead API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiPutJson<any>(`/leads/${leadId}`, updates);
     console.log('Update lead response:', data);
     
     // Handle different response formats from your backend
@@ -344,25 +228,7 @@ export const updateLeadApi = async (leadId: string, updates: Partial<Lead>): Pro
 // Delete a lead
 export const deleteLeadApi = async (leadId: string): Promise<ApiResponse<void>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete lead');
-    }
-
-    const data: ApiResponse<void> = await response.json();
+    const data = await apiDeleteJson<ApiResponse<void>>(`/leads/${leadId}`);
     return data;
   } catch (error) {
     if (error instanceof Error) {
@@ -375,26 +241,7 @@ export const deleteLeadApi = async (leadId: string): Promise<ApiResponse<void>> 
 // Bulk operations
 export const bulkUpdateLeadsApi = async (leadIds: string[], updates: Partial<Lead>): Promise<ApiResponse<void>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/leads/bulk-update`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ leadIds, updates }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update leads');
-    }
-
-    const data: ApiResponse<void> = await response.json();
+    const data = await apiPostJson<ApiResponse<void>>('/leads/bulk-update', { leadIds, updates });
     return data;
   } catch (error) {
     if (error instanceof Error) {
@@ -406,26 +253,7 @@ export const bulkUpdateLeadsApi = async (leadIds: string[], updates: Partial<Lea
 
 export const bulkDeleteLeadsApi = async (leadIds: string[]): Promise<ApiResponse<void>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/leads/bulk-delete`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ leadIds }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete leads');
-    }
-
-    const data: ApiResponse<void> = await response.json();
+    const data = await apiPostJson<ApiResponse<void>>('/leads/bulk-delete', { leadIds });
     return data;
   } catch (error) {
     if (error instanceof Error) {
@@ -462,36 +290,9 @@ export const getLeadsStatisticsApi = async (): Promise<ApiResponse<{
   };
 }>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
+    console.log('Fetching leads statistics from: /leads/statistics/overview');
 
-    console.log('Fetching leads statistics from:', `${API_BASE_URL}/leads/statistics/overview`);
-
-    const response = await fetch(`${API_BASE_URL}/leads/statistics/overview`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('Statistics API response status:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch statistics';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Statistics API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>('/leads/statistics/overview');
     console.log('Statistics API raw data:', data);
     
     return {
@@ -513,37 +314,9 @@ export const getLeadsStatisticsApi = async (): Promise<ApiResponse<{
 // Get sales units for filter dropdown
 export const getSalesUnitsApi = async (): Promise<ApiResponse<Array<{ id: number; name: string }>>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const url = `${API_BASE_URL}/leads/filter-options/sales-units`;
-    console.log('Fetching sales units from:', url);
+    console.log('Fetching sales units from: /leads/filter-options/sales-units');
     
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('Sales units response status:', response.status);
-    
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch sales units';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Sales units API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>('/leads/filter-options/sales-units');
     console.log('Sales units raw data:', data);
     
     // Ensure data is an array
@@ -579,11 +352,6 @@ export const getMyLeadsApi = async (
   } = {}
 ): Promise<ApiResponse<Lead[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters
     const queryParams = new URLSearchParams({
       page: page.toString(),
@@ -597,20 +365,7 @@ export const getMyLeadsApi = async (
       ...(filters.sortOrder && { sortOrder: filters.sortOrder })
     });
 
-    const response = await fetch(`${API_BASE_URL}/leads/my-leads?${queryParams.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch my leads');
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>(`/leads/my-leads?${queryParams.toString()}`);
     console.log('Raw GET my-leads response:', data);
     
     // Handle the response format from your backend
@@ -663,48 +418,19 @@ export const requestLeadApi = async (keptLeadIds: number[], includePushLeads: bo
 }>> => {
   console.log('🚀 requestLeadApi called with:', {
     keptLeadIds,
-    includePushLeads,
-    apiUrl: `${API_BASE_URL}/leads/request`
+    includePushLeads
   });
   
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      console.log('❌ No authentication token found');
-      throw new Error('No authentication token found');
-    }
-
-    console.log('🔐 Token found, making API request...');
+    console.log('🔐 Making API request...');
     const requestBody = {
       keptLeadIds,
       includePushLeads
     };
     
     console.log('📤 Request body:', requestBody);
-    console.log('📡 Making POST request to:', `${API_BASE_URL}/leads/request`);
 
-    const response = await fetch(`${API_BASE_URL}/leads/request`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log('📥 Response received:', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.log('❌ API Error:', errorData);
-      throw new Error(errorData.message || 'Failed to request leads');
-    }
-
-    const data = await response.json();
+    const data = await apiPostJson<any>('/leads/request', requestBody);
     console.log('✅ API Success:', data);
     
     return {
@@ -735,11 +461,6 @@ export const getFilterEmployeesApi = async (salesUnitId?: number): Promise<ApiRe
   [key: string]: any;
 }>>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters
     const queryParams = new URLSearchParams();
     if (salesUnitId) {
@@ -747,34 +468,12 @@ export const getFilterEmployeesApi = async (salesUnitId?: number): Promise<ApiRe
     }
 
     const url = salesUnitId 
-      ? `${API_BASE_URL}/leads/filter-options/employees?${queryParams.toString()}`
-      : `${API_BASE_URL}/leads/filter-options/employees`;
+      ? `/leads/filter-options/employees?${queryParams.toString()}`
+      : `/leads/filter-options/employees`;
 
     console.log('Fetching employees from:', url);
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('Employees response status:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch employees';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Employees API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>(url);
     console.log('Employees raw data:', data);
     
     // Ensure data is an array and handle different response formats
@@ -814,37 +513,9 @@ export interface CrackLeadRequest {
 
 export const crackLeadApi = async (leadId: string, crackData: CrackLeadRequest): Promise<ApiResponse<Lead>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Cracking lead:', leadId, 'with data:', crackData);
 
-    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(crackData),
-    });
-
-    console.log('Crack lead response status:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to crack lead';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Crack lead API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiPutJson<any>(`/leads/${leadId}`, crackData);
     console.log('Crack lead response:', data);
     
     return {
@@ -869,37 +540,9 @@ export interface PushLeadRequest {
 
 export const pushLeadApi = async (leadId: string, pushData: PushLeadRequest): Promise<ApiResponse<Lead>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Pushing lead:', leadId, 'with data:', pushData);
 
-    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(pushData),
-    });
-
-    console.log('Push lead response status:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to push lead';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Push lead API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiPutJson<any>(`/leads/${leadId}`, pushData);
     console.log('Push lead response:', data);
     
     return {
@@ -933,11 +576,6 @@ export const getCrackedLeadsApi = async (
   } = {}
 ): Promise<ApiResponse<any[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters
     const queryParams = new URLSearchParams({
       page: page.toString(),
@@ -955,20 +593,7 @@ export const getCrackedLeadsApi = async (
 
     console.log('Fetching cracked leads with filters:', filters);
 
-    const response = await fetch(`${API_BASE_URL}/leads/cracked?${queryParams.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch cracked leads');
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>(`/leads/cracked?${queryParams.toString()}`);
     console.log('Cracked leads response:', data);
     
     return {
@@ -1004,11 +629,6 @@ export const getArchivedLeadsApi = async (
   } = {}
 ): Promise<ApiResponse<any[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters
     const queryParams = new URLSearchParams({
       page: page.toString(),
@@ -1027,20 +647,7 @@ export const getArchivedLeadsApi = async (
 
     console.log('Fetching archived leads with filters:', filters);
 
-    const response = await fetch(`${API_BASE_URL}/leads/archived?${queryParams.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch archived leads');
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>(`/leads/archived?${queryParams.toString()}`);
     console.log('Archived leads response:', data);
     
     return {
@@ -1061,27 +668,9 @@ export const getArchivedLeadsApi = async (
 // Get single cracked lead details
 export const getCrackedLeadApi = async (crackedLeadId: number): Promise<ApiResponse<any>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Fetching single cracked lead:', crackedLeadId);
 
-    const response = await fetch(`${API_BASE_URL}/leads/cracked/${crackedLeadId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch cracked lead details');
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>(`/leads/cracked/${crackedLeadId}`);
     console.log('Single cracked lead response:', data);
     
     return {

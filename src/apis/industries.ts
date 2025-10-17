@@ -1,7 +1,4 @@
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-import { getAuthData } from '../utils/cookieUtils';
+import { apiGetJson, apiPostJson } from '../utils/apiClient';
 
 export interface Industry {
   id: number;
@@ -29,36 +26,9 @@ export interface ApiResponse<T> {
 // Get all active industries
 export const getActiveIndustriesApi = async (): Promise<ApiResponse<Industry[]>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
+    console.log('Fetching active industries from: /industries/active');
 
-    console.log('Fetching active industries from:', `${API_BASE_URL}/industries/active`);
-
-    const response = await fetch(`${API_BASE_URL}/industries/active`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('Active industries response status:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch industries';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Active industries API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiGetJson<any>('/industries/active');
     console.log('Active industries response:', data);
 
     // Handle different response formats
@@ -88,48 +58,9 @@ export const getActiveIndustriesApi = async (): Promise<ApiResponse<Industry[]>>
 // Create a new industry
 export const createIndustryApi = async (industryData: CreateIndustryRequest): Promise<ApiResponse<Industry>> => {
   try {
-    const { token } = getAuthData();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     console.log('Creating industry:', industryData);
 
-    const response = await fetch(`${API_BASE_URL}/industries`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(industryData),
-    });
-
-    console.log('Create industry response status:', response.status);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to create industry';
-      try {
-        const errorData = await response.json();
-        
-        // Handle validation errors (400)
-        if (response.status === 400 && Array.isArray(errorData.message)) {
-          errorMessage = errorData.message.join(', ');
-        } 
-        // Handle duplicate error (409)
-        else if (response.status === 409) {
-          errorMessage = errorData.message || 'Industry already exists';
-        } 
-        else {
-          errorMessage = errorData.message || errorMessage;
-        }
-      } catch (parseError) {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      console.error('Create industry API error:', errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
+    const data = await apiPostJson<any>('/industries', industryData);
     console.log('Create industry response:', data);
 
     // Handle different response formats
@@ -155,4 +86,3 @@ export const createIndustryApi = async (industryData: CreateIndustryRequest): Pr
     throw new Error('An unexpected error occurred while creating the industry');
   }
 };
-
