@@ -546,7 +546,7 @@ export interface Client {
   postalCode?: string;
   country?: string;
   industryId?: number;
-  industry?: string;
+  industry?: string | { id: number; name: string; description?: string; isActive?: boolean; createdAt?: string; updatedAt?: string };
   taxId?: string;
   accountStatus: ClientStatus;
   notes?: string;
@@ -557,6 +557,14 @@ export interface Client {
   lastContactDate?: string;
   totalRevenue?: number;
   satisfactionScore?: number;
+  // New fields from API response
+  createdBy?: number;
+  employee?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 export type ClientType = 'individual' | 'enterprise' | 'smb' | 'startup';

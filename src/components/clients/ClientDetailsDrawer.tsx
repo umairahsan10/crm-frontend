@@ -71,7 +71,7 @@ const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
         state: client.state || '',
         postalCode: client.postalCode || '',
         country: client.country || '',
-        industry: client.industry || '',
+        industry: typeof client.industry === 'string' ? client.industry : (client.industry?.name || ''),
         taxId: client.taxId || '',
         accountStatus: client.accountStatus || 'prospect',
         notes: client.notes || ''
@@ -297,14 +297,23 @@ const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
                           ? (client.industry as any).name 
                           : client.industry || 'N/A'}
                       </p>
+                      {typeof client.industry === 'object' && client.industry && 'description' in client.industry && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          {(client.industry as any).description}
+                        </p>
+                      )}
                       </div>
-                    {client.assignedTo && (
+                    {(client.assignedTo || client.employee) && (
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
                         <p className="text-lg text-gray-900 font-medium">
-                          {typeof client.assignedTo === 'string' 
+                          {client.employee 
+                            ? `${client.employee.firstName} ${client.employee.lastName} (${client.employee.email})`
+                            : client.assignedTo && typeof client.assignedTo === 'string' 
                               ? client.assignedTo 
-                            : `${client.assignedTo.firstName} ${client.assignedTo.lastName}`}
+                              : client.assignedTo && typeof client.assignedTo === 'object'
+                                ? `${client.assignedTo.firstName} ${client.assignedTo.lastName}`
+                                : 'N/A'}
                       </p>
                     </div>
                     )}
@@ -366,6 +375,39 @@ const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
                   </div>
                 </div>
 
+                {/* System Information */}
+                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg className="h-5 w-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    System Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Created At</label>
+                      <p className="text-lg text-gray-900 font-medium">
+                        {client.createdAt ? new Date(client.createdAt).toLocaleString() : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
+                      <p className="text-lg text-gray-900 font-medium">
+                        {client.updatedAt ? new Date(client.updatedAt).toLocaleString() : 'N/A'}
+                      </p>
+                    </div>
+                    {client.employee && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Assigned Employee</label>
+                        <div className="text-lg text-gray-900 font-medium">
+                          <p>{client.employee.firstName} {client.employee.lastName}</p>
+                          <p className="text-sm text-gray-600">{client.employee.email}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Additional Information */}
                 <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
                   <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
@@ -381,18 +423,6 @@ const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
                         <p className="text-lg text-gray-900 font-medium">{client.taxId}</p>
                     </div>
                     )}
-                      <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Created At</label>
-                      <p className="text-lg text-gray-900 font-medium">
-                          {client.createdAt ? new Date(client.createdAt).toLocaleString() : 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
-                      <p className="text-lg text-gray-900 font-medium">
-                          {client.updatedAt ? new Date(client.updatedAt).toLocaleString() : 'N/A'}
-                        </p>
-                      </div>
                     {client.lastContactDate && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Last Contact</label>
