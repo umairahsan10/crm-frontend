@@ -12,7 +12,12 @@ import {
   AddClientModal
 } from '../../components/clients';
 import GenericClientsFilters from '../../components/clients/GenericClientsFilters';
-import { useClients, useClientsStatistics } from '../../hooks/queries/useClientsQueries';
+import { 
+  useClients, 
+  useClientsStatistics,
+  useBulkUpdateClients,
+  useBulkDeleteClients
+} from '../../hooks/queries/useClientsQueries';
 import type { Client } from '../../types';
 
 const ClientsManagementPage: React.FC = () => {
@@ -31,15 +36,16 @@ const ClientsManagementPage: React.FC = () => {
     itemsPerPage: 20
   });
 
-  // Filter state
+  // Filter state - Updated to match API parameters
   const [filters, setFilters] = useState({
     search: '',
-    status: '',
-    type: '',
-    industry: '',
-    assignedTo: '',
-    startDate: '',
-    endDate: '',
+    accountStatus: '',
+    clientType: '',
+    phone: '',
+    industryId: '',
+    createdBy: '',
+    createdAfter: '',
+    createdBefore: '',
     sortBy: 'createdAt',
     sortOrder: 'desc' as 'asc' | 'desc'
   });
@@ -52,20 +58,18 @@ const ClientsManagementPage: React.FC = () => {
   );
   const statisticsQuery = useClientsStatistics();
 
+  // Mutation hooks for CRUD operations
+  const bulkUpdateClientsMutation = useBulkUpdateClients();
+  const bulkDeleteClientsMutation = useBulkDeleteClients();
+
   // Extract data and loading states from queries
   const clients = (clientsQuery.data as any)?.data || [];
   const statistics = (statisticsQuery.data as any)?.data || {
-    totalClients: 0,
-    activeClients: 0,
-    prospectClients: 0,
-    inactiveClients: 0,
-    churnedClients: 0,
-    totalRevenue: 0,
-    averageSatisfaction: 0,
-    byStatus: {},
-    byType: {},
-    byIndustry: {},
-    today: { new: 0, contacted: 0, converted: 0 }
+    total: 0,
+    active: 0,
+    inactive: 0,
+    suspended: 0,
+    prospect: 0
   };
   const isLoading = clientsQuery.isLoading;
 
@@ -73,11 +77,12 @@ const ClientsManagementPage: React.FC = () => {
   React.useEffect(() => {
     if (clientsQuery.data) {
       const data = clientsQuery.data as any;
+      const paginationData = data.pagination || data;
       setPagination(prev => ({
         ...prev,
-        currentPage: data.page || prev.currentPage,
-        totalPages: data.totalPages || prev.totalPages,
-        totalItems: data.total || prev.totalItems,
+        currentPage: paginationData.page || prev.currentPage,
+        totalPages: paginationData.totalPages || prev.totalPages,
+        totalItems: paginationData.total || prev.totalItems,
       }));
     }
   }, [clientsQuery.data]);
@@ -103,43 +108,77 @@ const ClientsManagementPage: React.FC = () => {
   const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
-      status: '',
-      type: '',
-      industry: '',
-      assignedTo: '',
-      startDate: '',
-      endDate: '',
+      accountStatus: '',
+      clientType: '',
+      phone: '',
+      industryId: '',
+      createdBy: '',
+      createdAfter: '',
+      createdBefore: '',
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
-  const handleBulkAssign = (clientIds: string[], assignedTo: string) => {
+  const handleBulkAssign = async (clientIds: string[], assignedTo: string) => {
+    try {
+      await bulkUpdateClientsMutation.mutateAsync({
+        clientIds,
+        updates: { assignedTo }
+      });
       setNotification({
         type: 'success',
-      message: `Successfully assigned ${clientIds.length} clients to ${assignedTo}`
+        message: `Successfully assigned ${clientIds.length} clients to ${assignedTo}`
       });
-    setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), 3000);
       setSelectedClients([]);
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Failed to assign clients'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
-  const handleBulkStatusChange = (clientIds: string[], _status: string) => {
+  const handleBulkStatusChange = async (clientIds: string[], status: string) => {
+    try {
+      await bulkUpdateClientsMutation.mutateAsync({
+        clientIds,
+        updates: { accountStatus: status }
+      });
       setNotification({
         type: 'success',
-      message: `Successfully updated status for ${clientIds.length} clients`
+        message: `Successfully updated status for ${clientIds.length} clients`
       });
-    setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), 3000);
       setSelectedClients([]);
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Failed to update client status'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
-  const handleBulkDelete = (clientIds: string[]) => {
+  const handleBulkDelete = async (clientIds: string[]) => {
+    try {
+      await bulkDeleteClientsMutation.mutateAsync(clientIds);
       setNotification({
         type: 'success',
         message: `Successfully deleted ${clientIds.length} clients`
       });
-    setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), 3000);
       setSelectedClients([]);
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Failed to delete clients'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
   return (

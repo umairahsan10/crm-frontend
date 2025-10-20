@@ -7,14 +7,6 @@ import { type ColumnConfig } from '../common/DynamicTable/DynamicTable';
 
 export const clientsTableConfig: ColumnConfig[] = [
   {
-    key: 'id',
-    label: 'ID',
-    type: 'text',
-    sortable: true,
-    width: '80px',
-    render: (value) => `#${value}`
-  },
-  {
     key: 'clientName',
     label: 'Client Name',
     type: 'text',
@@ -91,25 +83,6 @@ export const clientsTableConfig: ColumnConfig[] = [
         text: 'CHURNED'
       }
     }
-  },
-  {
-    key: 'industry',
-    label: 'Industry',
-    type: 'text',
-    sortable: true
-  },
-  {
-    key: 'totalRevenue',
-    label: 'Revenue',
-    type: 'currency',
-    sortable: true,
-    render: (value) => value !== undefined ? `$${value.toLocaleString()}` : 'N/A'
-  },
-  {
-    key: 'createdAt',
-    label: 'Created',
-    type: 'date',
-    sortable: true
   }
 ];
 

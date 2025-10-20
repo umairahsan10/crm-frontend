@@ -546,7 +546,7 @@ export interface Client {
   postalCode?: string;
   country?: string;
   industryId?: number;
-  industry?: string;
+  industry?: string | { id: number; name: string; description?: string; isActive?: boolean; createdAt?: string; updatedAt?: string };
   taxId?: string;
   accountStatus: ClientStatus;
   notes?: string;
@@ -557,6 +557,14 @@ export interface Client {
   lastContactDate?: string;
   totalRevenue?: number;
   satisfactionScore?: number;
+  // New fields from API response
+  createdBy?: number;
+  employee?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 export type ClientType = 'individual' | 'enterprise' | 'smb' | 'startup';
@@ -584,27 +592,35 @@ export interface CreateClientRequest {
 export interface UpdateClientRequest extends Partial<CreateClientRequest> {}
 
 export interface ClientStatistics {
-  totalClients: number;
-  activeClients: number;
-  prospectClients: number;
-  inactiveClients: number;
-  churnedClients: number;
-  totalRevenue: number;
-  averageSatisfaction: number;
-  byStatus: {
+  // Basic counts (from API response)
+  total: number;
+  active: number;
+  inactive: number;
+  suspended: number;
+  prospect: number;
+  
+  // Optional extended fields (for backward compatibility)
+  totalClients?: number;
+  activeClients?: number;
+  prospectClients?: number;
+  inactiveClients?: number;
+  churnedClients?: number;
+  totalRevenue?: number;
+  averageSatisfaction?: number;
+  byStatus?: {
     prospect: number;
     active: number;
     inactive: number;
     suspended: number;
     churned: number;
   };
-  byType: {
+  byType?: {
     individual: number;
     enterprise: number;
     smb: number;
     startup: number;
   };
-  byIndustry: {
+  byIndustry?: {
     technology: number;
     healthcare: number;
     finance: number;
@@ -613,7 +629,7 @@ export interface ClientStatistics {
     education: number;
     other: number;
   };
-  today: {
+  today?: {
     new: number;
     contacted: number;
     converted: number;

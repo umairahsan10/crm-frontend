@@ -23,12 +23,13 @@ const GenericClientsFilters: React.FC<GenericClientsFiltersProps> = ({
   } = useFilters(
     {
       search: '',
-      status: '',
-      type: '',
-      industry: '',
-      assignedTo: '',
-      startDate: '',
-      endDate: '',
+      accountStatus: '',
+      clientType: '',
+      phone: '',
+      industryId: '',
+      createdBy: '',
+      createdAfter: '',
+      createdBefore: '',
       sortBy: 'createdAt',
       sortOrder: 'desc'
     },
@@ -87,13 +88,13 @@ const GenericClientsFilters: React.FC<GenericClientsFiltersProps> = ({
   ];
 
   const industryOptions = [
-    { value: 'technology', label: 'Technology' },
-    { value: 'healthcare', label: 'Healthcare' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'retail', label: 'Retail' },
-    { value: 'manufacturing', label: 'Manufacturing' },
-    { value: 'education', label: 'Education' },
-    { value: 'other', label: 'Other' }
+    { value: 1, label: 'Technology' },
+    { value: 2, label: 'Healthcare' },
+    { value: 3, label: 'Finance' },
+    { value: 4, label: 'Retail' },
+    { value: 5, label: 'Manufacturing' },
+    { value: 6, label: 'Education' },
+    { value: 7, label: 'Other' }
   ];
 
   return (
@@ -138,12 +139,13 @@ const GenericClientsFilters: React.FC<GenericClientsFiltersProps> = ({
       {showAdvanced && (
         <div className="px-6 py-4 bg-gray-50">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {renderSelect('status', 'Status', statusOptions)}
-            {renderSelect('type', 'Client Type', typeOptions)}
-            {renderSelect('industry', 'Industry', industryOptions)}
-            {renderInput('assignedTo', 'Assigned To', 'text')}
-            {renderInput('startDate', 'Start Date', 'date')}
-            {renderInput('endDate', 'End Date', 'date')}
+            {renderSelect('accountStatus', 'Account Status', statusOptions)}
+            {renderSelect('clientType', 'Client Type', typeOptions)}
+            {renderInput('phone', 'Phone', 'text')}
+            {renderSelect('industryId', 'Industry', industryOptions)}
+            {renderInput('createdBy', 'Created By', 'text')}
+            {renderInput('createdAfter', 'Created After', 'date')}
+            {renderInput('createdBefore', 'Created Before', 'date')}
           </div>
 
           <div className="mt-4 flex justify-end gap-3">
