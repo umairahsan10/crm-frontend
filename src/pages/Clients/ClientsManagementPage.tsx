@@ -31,15 +31,22 @@ const ClientsManagementPage: React.FC = () => {
     itemsPerPage: 20
   });
 
-  // Filter state
+  // Filter state - Updated to match API parameters
   const [filters, setFilters] = useState({
     search: '',
-    status: '',
-    type: '',
-    industry: '',
-    assignedTo: '',
-    startDate: '',
-    endDate: '',
+    accountStatus: '',
+    clientType: '',
+    companyName: '',
+    clientName: '',
+    email: '',
+    phone: '',
+    city: '',
+    state: '',
+    country: '',
+    industryId: '',
+    createdBy: '',
+    createdAfter: '',
+    createdBefore: '',
     sortBy: 'createdAt',
     sortOrder: 'desc' as 'asc' | 'desc'
   });
@@ -55,17 +62,11 @@ const ClientsManagementPage: React.FC = () => {
   // Extract data and loading states from queries
   const clients = (clientsQuery.data as any)?.data || [];
   const statistics = (statisticsQuery.data as any)?.data || {
-    totalClients: 0,
-    activeClients: 0,
-    prospectClients: 0,
-    inactiveClients: 0,
-    churnedClients: 0,
-    totalRevenue: 0,
-    averageSatisfaction: 0,
-    byStatus: {},
-    byType: {},
-    byIndustry: {},
-    today: { new: 0, contacted: 0, converted: 0 }
+    total: 0,
+    active: 0,
+    inactive: 0,
+    suspended: 0,
+    prospect: 0
   };
   const isLoading = clientsQuery.isLoading;
 
@@ -73,11 +74,12 @@ const ClientsManagementPage: React.FC = () => {
   React.useEffect(() => {
     if (clientsQuery.data) {
       const data = clientsQuery.data as any;
+      const paginationData = data.pagination || data;
       setPagination(prev => ({
         ...prev,
-        currentPage: data.page || prev.currentPage,
-        totalPages: data.totalPages || prev.totalPages,
-        totalItems: data.total || prev.totalItems,
+        currentPage: paginationData.page || prev.currentPage,
+        totalPages: paginationData.totalPages || prev.totalPages,
+        totalItems: paginationData.total || prev.totalItems,
       }));
     }
   }, [clientsQuery.data]);
@@ -103,12 +105,19 @@ const ClientsManagementPage: React.FC = () => {
   const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
-      status: '',
-      type: '',
-      industry: '',
-      assignedTo: '',
-      startDate: '',
-      endDate: '',
+      accountStatus: '',
+      clientType: '',
+      companyName: '',
+      clientName: '',
+      email: '',
+      phone: '',
+      city: '',
+      state: '',
+      country: '',
+      industryId: '',
+      createdBy: '',
+      createdAfter: '',
+      createdBefore: '',
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });

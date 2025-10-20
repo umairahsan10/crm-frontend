@@ -96,7 +96,13 @@ export const clientsTableConfig: ColumnConfig[] = [
     key: 'industry',
     label: 'Industry',
     type: 'text',
-    sortable: true
+    sortable: true,
+    render: (value) => {
+      if (typeof value === 'object' && value?.name) {
+        return value.name;
+      }
+      return value || 'N/A';
+    }
   },
   {
     key: 'totalRevenue',

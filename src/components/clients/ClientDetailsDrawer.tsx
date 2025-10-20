@@ -272,7 +272,11 @@ const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
-                      <p className="text-lg text-gray-900 font-medium">{client.industry || 'N/A'}</p>
+                      <p className="text-lg text-gray-900 font-medium">
+                        {typeof client.industry === 'object' && client.industry && 'name' in client.industry
+                          ? (client.industry as any).name 
+                          : client.industry || 'N/A'}
+                      </p>
                       </div>
                     {client.assignedTo && (
                     <div>
