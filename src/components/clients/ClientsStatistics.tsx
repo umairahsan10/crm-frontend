@@ -22,30 +22,30 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
     );
   }
 
-  const statusColors = {
-    prospect: 'bg-blue-500',
-    active: 'bg-green-500',
-    inactive: 'bg-gray-500',
-    suspended: 'bg-yellow-500',
-    churned: 'bg-red-500'
-  };
+  // const statusColors = {
+  //   prospect: 'bg-blue-500',
+  //   active: 'bg-green-500',
+  //   inactive: 'bg-gray-500',
+  //   suspended: 'bg-yellow-500',
+  //   churned: 'bg-red-500'
+  // };
 
-  const typeColors = {
-    individual: 'bg-purple-500',
-    enterprise: 'bg-indigo-500',
-    smb: 'bg-green-500',
-    startup: 'bg-orange-500'
-  };
+  // const typeColors = {
+  //   individual: 'bg-purple-500',
+  //   enterprise: 'bg-indigo-500',
+  //   smb: 'bg-green-500',
+  //   startup: 'bg-orange-500'
+  // };
 
-  const industryColors = {
-    technology: 'bg-blue-500',
-    healthcare: 'bg-green-500',
-    finance: 'bg-purple-500',
-    retail: 'bg-orange-500',
-    manufacturing: 'bg-gray-500',
-    education: 'bg-indigo-500',
-    other: 'bg-yellow-500'
-  };
+  // const industryColors = {
+  //   technology: 'bg-blue-500',
+  //   healthcare: 'bg-green-500',
+  //   finance: 'bg-purple-500',
+  //   retail: 'bg-orange-500',
+  //   manufacturing: 'bg-gray-500',
+  //   education: 'bg-indigo-500',
+  //   other: 'bg-yellow-500'
+  // };
 
   return (
     <div className="space-y-8">
