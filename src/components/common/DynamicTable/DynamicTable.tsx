@@ -3,7 +3,7 @@ import React from 'react';
 export interface ColumnConfig {
   key: string;
   label: string;
-  type: 'text' | 'badge' | 'avatar' | 'date' | 'currency' | 'custom' | 'contact' | 'assignment' | 'phase' | 'commission';
+  type: 'text' | 'badge' | 'avatar' | 'date' | 'currency' | 'custom' | 'contact' | 'assignment' | 'phase' | 'commission' | 'website';
   sortable?: boolean;
   width?: string;
   className?: string;
@@ -260,6 +260,18 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
         }
         return value || 'N/A';
 
+      case 'website':
+        return (
+          <a 
+            href={value} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate block"
+          >
+            {value || 'N/A'}
+          </a>
+        );
+
       case 'text':
       default:
         return (
@@ -314,8 +326,8 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
   return (
     <div className={`bg-white shadow-sm rounded-lg border border-gray-200 ${className}`}>
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-100">
+      <div className="w-full">
+        <table className="w-full divide-y divide-gray-100">
           <thead className="bg-gray-50">
             <tr>
               {/* Select All Checkbox - Only show if selectable */}
@@ -379,7 +391,8 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className={`px-4 py-2 whitespace-nowrap ${column.className || ''}`}
+                      className={`px-4 py-2 ${column.className || ''}`}
+                      style={{ width: column.width }}
                     >
                       {renderCellContent(column, row[column.key], row)}
                     </td>

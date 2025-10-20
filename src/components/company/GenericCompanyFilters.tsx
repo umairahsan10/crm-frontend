@@ -1,0 +1,217 @@
+/**
+ * GENERIC COMPANY FILTERS
+ * Demonstrates the generic filter system for companies
+ * 
+ * This works for ALL company tabs: active, prospects, inactive
+ */
+
+import React, { useState } from 'react';
+import { useFilters } from '../../hooks/useFilters';
+
+/**
+ * Generic filter props - works for ANY tab type!
+ */
+interface GenericCompanyFiltersProps {
+  // What filters to show (configure per tab)
+  showFilters: {
+    status?: boolean;
+    country?: boolean;
+    company?: boolean;
+  };
+  
+  // Callbacks - only pass the ones you need
+  onFiltersChange: (filters: any) => void;
+  onClearFilters: () => void;
+  
+  // Shared data props
+  employees?: any[];
+  
+  // UI customization
+  theme?: {
+    primary: string;
+    secondary: string;
+    ring: string;
+    bg: string;
+    text: string;
+  };
+  searchPlaceholder?: string;
+}
+
+const GenericCompanyFilters: React.FC<GenericCompanyFiltersProps> = ({
+  showFilters,
+  onFiltersChange,
+  onClearFilters,
+  employees = [],
+  theme = {
+    primary: 'bg-blue-600',
+    secondary: 'hover:bg-blue-700',
+    ring: 'ring-blue-500',
+    bg: 'bg-blue-100',
+    text: 'text-blue-800'
+  },
+  searchPlaceholder = 'Search companies...'
+}) => {
+  // Generic filter state - automatically works with any combination!
+  const { 
+    filters, 
+    updateFilter, 
+    resetFilters, 
+    hasActiveFilters,
+    activeCount 
+  } = useFilters(
+    {
+      search: '',
+      status: '',
+      country: '',
+      company: ''
+    },
+    (newFilters) => {
+      // Auto-trigger when filters change
+      onFiltersChange(newFilters);
+    }
+  );
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const handleClearAll = () => {
+    resetFilters();
+    onClearFilters();
+  };
+
+  // Render helper for select fields
+  const renderSelect = (
+    key: keyof typeof filters,
+    label: string,
+    options: Array<{value: string | number; label: string}>,
+    loading?: boolean
+  ) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <select
+        value={(filters[key] as string) || ''}
+        onChange={(e) => updateFilter(key as any, e.target.value)}
+        disabled={loading}
+        className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${theme.ring} sm:text-sm disabled:opacity-50`}
+      >
+        <option value="">All {label}</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+
+  const renderInput = (key: keyof typeof filters, label: string, type: 'text' | 'date' | 'number' = 'text', placeholder?: string) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <input
+        type={type}
+        value={(filters[key] as string) || ''}
+        onChange={(e) => updateFilter(key as any, e.target.value)}
+        placeholder={placeholder}
+        className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:${theme.ring} sm:text-sm`}
+      />
+    </div>
+  );
+
+  // Pre-defined options
+  const statusOptions = [
+    { value: 'active', label: 'Active' },
+    { value: 'prospect', label: 'Prospect' },
+    { value: 'inactive', label: 'Inactive' }
+  ];
+
+  const countryOptions = [
+    { value: 'United States', label: 'United States' },
+    { value: 'Canada', label: 'Canada' },
+    { value: 'United Kingdom', label: 'United Kingdom' },
+    { value: 'Germany', label: 'Germany' },
+    { value: 'France', label: 'France' },
+    { value: 'Australia', label: 'Australia' },
+    { value: 'Japan', label: 'Japan' },
+    { value: 'Other', label: 'Other' }
+  ];
+
+  const companyOptions = [
+    { value: 'TechCorp Solutions', label: 'TechCorp Solutions' },
+    { value: 'Green Energy Co', label: 'Green Energy Co' },
+    { value: 'Manufacturing Inc', label: 'Manufacturing Inc' },
+    { value: 'HealthTech Innovations', label: 'HealthTech Innovations' },
+    { value: 'FinanceFirst Ltd', label: 'FinanceFirst Ltd' }
+  ];
+
+  return (
+    <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
+      {/* Search Bar */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center space-x-4">
+          <div className="flex-1">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={(filters.search as string) || ''}
+                onChange={(e) => updateFilter('search', e.target.value)}
+                placeholder={searchPlaceholder}
+                className={`block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:${theme.ring} sm:text-sm`}
+              />
+            </div>
+          </div>
+          
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+            </svg>
+            Filters
+            {hasActiveFilters && (
+              <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${theme.bg} ${theme.text}`}>
+                {activeCount}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Advanced Filters - Rendered based on configuration */}
+      {showAdvanced && (
+        <div className="px-6 py-4 bg-gray-50">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            {/* Only render filters that are configured to show */}
+            {showFilters.status && renderSelect('status', 'Status', statusOptions)}
+            
+            {showFilters.country && renderSelect('country', 'Country', countryOptions)}
+            
+            {showFilters.company && renderSelect('company', 'Company', companyOptions)}
+          </div>
+
+          {/* Actions */}
+          <div className="mt-4 flex justify-end gap-3">
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearAll}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <svg className="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                </svg>
+                Clear All ({activeCount})
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default GenericCompanyFilters;
+

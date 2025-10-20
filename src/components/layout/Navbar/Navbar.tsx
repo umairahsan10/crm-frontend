@@ -59,6 +59,7 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'logs', label: 'Logs', icon: '📋', path: '/logs' },
         { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
         { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
+        { id: 'company', label: 'Companies', icon: '🏢', path: '/company' },
         { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects' },
         { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
         { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
@@ -102,6 +103,7 @@ const Navbar: React.FC<NavbarProps> = ({
             ...baseItems,
             { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
             { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
+            { id: 'company', label: 'Companies', icon: '🏢', path: '/company' },
             { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
             { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];
@@ -283,6 +285,17 @@ const Navbar: React.FC<NavbarProps> = ({
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        );
+      case '🏢':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 21h18"/>
+            <path d="M5 21V7l8-4v18"/>
+            <path d="M9 9h.01"/>
+            <path d="M9 12h.01"/>
+            <path d="M9 15h.01"/>
+            <path d="M9 18h.01"/>
           </svg>
         );
       default:
