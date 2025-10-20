@@ -95,10 +95,26 @@ const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
     try {
       setIsUpdating(true);
       
+      // Prepare the data for the API - map industry string to industryId number
+      const apiData = {
+        ...editForm,
+        // Convert industry string to industryId number if needed
+        industryId: editForm.industry ? parseInt(editForm.industry) : undefined,
+        // Remove the industry string field as API expects industryId
+        industry: undefined
+      };
+      
+      // Remove undefined values to avoid sending empty fields
+      const cleanData = Object.fromEntries(
+        Object.entries(apiData).filter(([_, value]) => value !== undefined && value !== '')
+      );
+      
+      console.log('Sending update data:', cleanData);
+      
       // Use the mutation to update the client
       const result = await updateClientMutation.mutateAsync({
         id: client.id,
-        data: editForm
+        data: cleanData
       });
       
       if (result.success && result.data) {

@@ -165,8 +165,8 @@ export const getClientsStatisticsApi = async (): Promise<ApiResponse<ClientStati
     }
     
     console.log('Processed statistics data:', statisticsData);
-    
-    return {
+
+  return {
       success: true,
       data: statisticsData,
       message: data.message || 'Statistics fetched successfully'
@@ -318,10 +318,16 @@ export const updateClientApi = async (id: string, clientData: {
   passwordHash?: string;
 }): Promise<ApiResponse<Client>> => {
   try {
-    console.log('Updating client:', id, 'with data:', clientData);
+    console.log('=== UPDATE CLIENT API CALL ===');
+    console.log('Client ID:', id);
+    console.log('Client Data:', clientData);
+    console.log('API Endpoint:', `/clients/${id}`);
+    console.log('Request Method: PATCH');
 
     const data = await apiPatchJson<any>(`/clients/${id}`, clientData);
     console.log('Update client response:', data);
+    console.log('Response status:', data.status);
+    console.log('Response message:', data.message);
     
     // Handle different response formats from your backend
     let updatedClient;
@@ -345,8 +351,17 @@ export const updateClientApi = async (id: string, clientData: {
       message: data.message || 'Client updated successfully'
     };
   } catch (error) {
-    console.error('Update client error:', error);
+    console.error('=== UPDATE CLIENT ERROR ===');
+    console.error('Error type:', typeof error);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Full error:', error);
+    
     if (error instanceof Error) {
+      // Check if it's an API error with status code
+      if ('status' in error) {
+        console.error('API Error Status:', (error as any).status);
+        console.error('API Error Response:', (error as any).response);
+      }
       throw new Error(error.message);
     }
     throw new Error('An unexpected error occurred while updating the client');
