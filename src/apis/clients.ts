@@ -150,9 +150,25 @@ export const getClientsStatisticsApi = async (): Promise<ApiResponse<ClientStati
     const data = await apiGetJson<any>('/clients/stats');
     console.log('Statistics API raw data:', data);
     
+    // Handle the API response format: { status, message, data: { total, active, inactive, suspended, prospect } }
+    let statisticsData;
+    
+    if (data && typeof data === 'object' && 'status' in data && data.status === 'success') {
+      // API response format: { status: 'success', message: '...', data: { total: 8, active: 0, ... } }
+      statisticsData = data.data;
+    } else if (data && typeof data === 'object' && 'data' in data) {
+      // Alternative format: { data: { total: 8, active: 0, ... } }
+      statisticsData = data.data;
+    } else {
+      // Direct format: { total: 8, active: 0, ... }
+      statisticsData = data;
+    }
+    
+    console.log('Processed statistics data:', statisticsData);
+    
     return {
       success: true,
-      data: data.data || data,
+      data: statisticsData,
       message: data.message || 'Statistics fetched successfully'
     };
   } catch (error) {
