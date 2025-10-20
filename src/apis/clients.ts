@@ -7,7 +7,7 @@ import type { Client, ClientStatistics, ApiResponse } from '../types';
 import { 
   apiGetJson, 
   apiPostJson, 
-  apiPutJson, 
+  apiPatchJson,
   apiDeleteJson
 } from '../utils/apiClient';
 
@@ -216,7 +216,24 @@ export const getClientByIdApi = async (clientId: string): Promise<ApiResponse<Cl
 /**
  * Create new client
  */
-export const createClientApi = async (clientData: Partial<Client>): Promise<ApiResponse<Client>> => {
+export const createClientApi = async (clientData: {
+  passwordHash: string;
+  clientType?: string;
+  companyName?: string;
+  clientName?: string;
+  email?: string;
+  phone?: string;
+  altPhone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  industryId?: number;
+  taxId?: string;
+  accountStatus?: 'active' | 'inactive' | 'suspended' | 'prospect';
+  notes?: string;
+}): Promise<ApiResponse<Client>> => {
   try {
     console.log('Making API call to: /clients');
     console.log('Request body:', clientData);
@@ -255,6 +272,7 @@ export const createClientApi = async (clientData: Partial<Client>): Promise<ApiR
     console.log('Formatted API Response:', formattedResponse);
     return formattedResponse;
   } catch (error) {
+    console.error('Create client error:', error);
     if (error instanceof Error) {
       throw new Error(error.message);
     }
@@ -265,11 +283,28 @@ export const createClientApi = async (clientData: Partial<Client>): Promise<ApiR
 /**
  * Update existing client
  */
-export const updateClientApi = async (id: string, clientData: Partial<Client>): Promise<ApiResponse<Client>> => {
+export const updateClientApi = async (id: string, clientData: {
+  clientType?: string;
+  companyName?: string;
+  clientName?: string;
+  email?: string;
+  phone?: string;
+  altPhone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  industryId?: number;
+  taxId?: string;
+  accountStatus?: 'active' | 'inactive' | 'suspended' | 'prospect';
+  notes?: string;
+  passwordHash?: string;
+}): Promise<ApiResponse<Client>> => {
   try {
     console.log('Updating client:', id, 'with data:', clientData);
 
-    const data = await apiPutJson<any>(`/clients/${id}`, clientData);
+    const data = await apiPatchJson<any>(`/clients/${id}`, clientData);
     console.log('Update client response:', data);
     
     // Handle different response formats from your backend

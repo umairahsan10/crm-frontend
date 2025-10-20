@@ -12,7 +12,12 @@ import {
   AddClientModal
 } from '../../components/clients';
 import GenericClientsFilters from '../../components/clients/GenericClientsFilters';
-import { useClients, useClientsStatistics } from '../../hooks/queries/useClientsQueries';
+import { 
+  useClients, 
+  useClientsStatistics,
+  useBulkUpdateClients,
+  useBulkDeleteClients
+} from '../../hooks/queries/useClientsQueries';
 import type { Client } from '../../types';
 
 const ClientsManagementPage: React.FC = () => {
@@ -58,6 +63,10 @@ const ClientsManagementPage: React.FC = () => {
     filters
   );
   const statisticsQuery = useClientsStatistics();
+
+  // Mutation hooks for CRUD operations
+  const bulkUpdateClientsMutation = useBulkUpdateClients();
+  const bulkDeleteClientsMutation = useBulkDeleteClients();
 
   // Extract data and loading states from queries
   const clients = (clientsQuery.data as any)?.data || [];
@@ -124,31 +133,64 @@ const ClientsManagementPage: React.FC = () => {
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
-  const handleBulkAssign = (clientIds: string[], assignedTo: string) => {
+  const handleBulkAssign = async (clientIds: string[], assignedTo: string) => {
+    try {
+      await bulkUpdateClientsMutation.mutateAsync({
+        clientIds,
+        updates: { assignedTo }
+      });
       setNotification({
         type: 'success',
-      message: `Successfully assigned ${clientIds.length} clients to ${assignedTo}`
+        message: `Successfully assigned ${clientIds.length} clients to ${assignedTo}`
       });
-    setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), 3000);
       setSelectedClients([]);
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Failed to assign clients'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
-  const handleBulkStatusChange = (clientIds: string[], _status: string) => {
+  const handleBulkStatusChange = async (clientIds: string[], status: string) => {
+    try {
+      await bulkUpdateClientsMutation.mutateAsync({
+        clientIds,
+        updates: { accountStatus: status }
+      });
       setNotification({
         type: 'success',
-      message: `Successfully updated status for ${clientIds.length} clients`
+        message: `Successfully updated status for ${clientIds.length} clients`
       });
-    setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), 3000);
       setSelectedClients([]);
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Failed to update client status'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
-  const handleBulkDelete = (clientIds: string[]) => {
+  const handleBulkDelete = async (clientIds: string[]) => {
+    try {
+      await bulkDeleteClientsMutation.mutateAsync(clientIds);
       setNotification({
         type: 'success',
         message: `Successfully deleted ${clientIds.length} clients`
       });
-    setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), 3000);
       setSelectedClients([]);
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Failed to delete clients'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
   return (

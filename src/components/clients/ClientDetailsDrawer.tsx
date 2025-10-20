@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavbar } from '../../context/NavbarContext';
+import { useUpdateClient } from '../../hooks/queries/useClientsQueries';
 import type { Client, ClientType, ClientStatus } from '../../types';
 
 interface ClientDetailsDrawerProps {
@@ -86,21 +87,24 @@ const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
     }));
   };
 
+  const updateClientMutation = useUpdateClient();
+
   const handleUpdateClient = async () => {
     if (!client) return;
     
     try {
       setIsUpdating(true);
       
-      // Mock update - replace with real API call
-      const updatedClient: Client = {
-        ...client,
-        ...editForm,
-        updatedAt: new Date().toISOString()
-      };
+      // Use the mutation to update the client
+      const result = await updateClientMutation.mutateAsync({
+        id: client.id,
+        data: editForm
+      });
       
-      onClientUpdated?.(updatedClient);
-      setActiveTab('details');
+      if (result.success && result.data) {
+        onClientUpdated?.(result.data);
+        setActiveTab('details');
+      }
       
     } catch (error) {
       console.error('Error updating client:', error);

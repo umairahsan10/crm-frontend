@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavbar } from '../../context/NavbarContext';
+import { useCreateClient } from '../../hooks/queries/useClientsQueries';
 import type { CreateClientRequest, ClientType, ClientStatus } from '../../types';
 
 interface AddClientModalProps {
@@ -120,6 +121,8 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  const createClientMutation = useCreateClient();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -130,45 +133,38 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Create new client object
-      const newClient = {
-        id: Date.now().toString(),
+      // Use the mutation to create the client
+      const result = await createClientMutation.mutateAsync({
+        passwordHash: 'TempPassword123!', // Required field - should be handled by form
         ...formData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        assignedTo: undefined,
-        salesUnitId: undefined,
-        lastContactDate: undefined,
-        totalRevenue: 0,
-        satisfactionScore: 0
-      };
-
-      onClientCreated(newClient);
-      
-      // Reset form
-      setFormData({
-        clientType: 'individual',
-        clientName: '',
-        email: '',
-        phone: '',
-        accountStatus: 'prospect',
-        companyName: '',
-        altPhone: '',
-        address: '',
-        city: '',
-        state: '',
-        postalCode: '',
-        country: '',
-        industryId: undefined,
-        taxId: '',
-        notes: ''
+        accountStatus: formData.accountStatus as 'active' | 'inactive' | 'suspended' | 'prospect'
       });
-      setErrors({});
-      
-      onClose();
+
+      if (result.success && result.data) {
+        onClientCreated(result.data);
+        
+        // Reset form
+        setFormData({
+          clientType: 'individual',
+          clientName: '',
+          email: '',
+          phone: '',
+          accountStatus: 'prospect',
+          companyName: '',
+          altPhone: '',
+          address: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: '',
+          industryId: undefined,
+          taxId: '',
+          notes: ''
+        });
+        setErrors({});
+        
+        onClose();
+      }
       
     } catch (error) {
       console.error('Error creating client:', error);

@@ -62,7 +62,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Clients</p>
-              <p className="text-2xl font-semibold text-gray-900">{statistics.totalClients}</p>
+              <p className="text-2xl font-semibold text-gray-900">{statistics.total || 0}</p>
             </div>
           </div>
         </div>
@@ -78,7 +78,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Active Clients</p>
-              <p className="text-2xl font-semibold text-gray-900">{statistics.activeClients}</p>
+              <p className="text-2xl font-semibold text-gray-900">{statistics.active || 0}</p>
             </div>
           </div>
         </div>
@@ -94,7 +94,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-              <p className="text-2xl font-semibold text-gray-900">${statistics.totalRevenue.toLocaleString()}</p>
+              <p className="text-2xl font-semibold text-gray-900">${(statistics.totalRevenue || 0).toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -110,7 +110,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Avg. Satisfaction</p>
-              <p className="text-2xl font-semibold text-gray-900">{statistics.averageSatisfaction.toFixed(1)}/5</p>
+              <p className="text-2xl font-semibold text-gray-900">{(statistics.averageSatisfaction || 0).toFixed(1)}/5</p>
             </div>
           </div>
         </div>
@@ -120,7 +120,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Clients by Status</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {Object.entries(statistics.byStatus).map(([status, count]) => (
+          {Object.entries(statistics.byStatus || {}).map(([status, count]) => (
             <div key={status} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center">
                 <div className={`w-3 h-3 rounded-full mr-3 ${statusColors[status as keyof typeof statusColors] || 'bg-gray-500'}`}></div>
@@ -128,7 +128,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
                   {status}
                 </span>
               </div>
-              <span className="text-sm font-semibold text-gray-900">{count}</span>
+              <span className="text-sm font-semibold text-gray-900">{count || 0}</span>
             </div>
           ))}
         </div>
@@ -138,7 +138,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Clients by Type</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Object.entries(statistics.byType).map(([type, count]) => (
+          {Object.entries(statistics.byType || {}).map(([type, count]) => (
             <div key={type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center">
                 <div className={`w-3 h-3 rounded-full mr-3 ${typeColors[type as keyof typeof typeColors] || 'bg-gray-500'}`}></div>
@@ -146,7 +146,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
                   {type}
                 </span>
               </div>
-              <span className="text-sm font-semibold text-gray-900">{count}</span>
+              <span className="text-sm font-semibold text-gray-900">{count || 0}</span>
             </div>
           ))}
         </div>
@@ -156,7 +156,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Clients by Industry</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Object.entries(statistics.byIndustry).map(([industry, count]) => (
+          {Object.entries(statistics.byIndustry || {}).map(([industry, count]) => (
             <div key={industry} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center">
                 <div className={`w-3 h-3 rounded-full mr-3 ${industryColors[industry as keyof typeof industryColors] || 'bg-gray-500'}`}></div>
@@ -164,7 +164,7 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
                   {industry}
                 </span>
               </div>
-              <span className="text-sm font-semibold text-gray-900">{count}</span>
+              <span className="text-sm font-semibold text-gray-900">{count || 0}</span>
             </div>
           ))}
         </div>
@@ -175,15 +175,15 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
         <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Activity</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{statistics.today.new}</div>
+            <div className="text-2xl font-bold text-blue-600">{statistics.today?.new || 0}</div>
             <div className="text-sm text-gray-500">New Clients</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{statistics.today.contacted}</div>
+            <div className="text-2xl font-bold text-green-600">{statistics.today?.contacted || 0}</div>
             <div className="text-sm text-gray-500">Contacted</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">{statistics.today.converted}</div>
+            <div className="text-2xl font-bold text-purple-600">{statistics.today?.converted || 0}</div>
             <div className="text-sm text-gray-500">Converted</div>
           </div>
         </div>
@@ -194,16 +194,16 @@ const ClientsStatistics: React.FC<ClientsStatisticsProps> = ({ statistics, isLoa
         <h3 className="text-lg font-medium text-gray-900 mb-4">Client Conversion Funnel</h3>
         <div className="space-y-4">
           {[
-            { stage: 'Prospect', count: statistics.byStatus.prospect || 0, color: 'bg-blue-500' },
-            { stage: 'Active', count: statistics.byStatus.active || 0, color: 'bg-green-500' },
-            { stage: 'Inactive', count: statistics.byStatus.inactive || 0, color: 'bg-gray-500' },
-            { stage: 'Churned', count: statistics.byStatus.churned || 0, color: 'bg-red-500' }
+            { stage: 'Prospect', count: statistics.byStatus?.prospect || 0, color: 'bg-blue-500' },
+            { stage: 'Active', count: statistics.byStatus?.active || 0, color: 'bg-green-500' },
+            { stage: 'Inactive', count: statistics.byStatus?.inactive || 0, color: 'bg-gray-500' },
+            { stage: 'Churned', count: statistics.byStatus?.churned || 0, color: 'bg-red-500' }
           ].map((stage) => {
             const maxCount = Math.max(...[
-              statistics.byStatus.prospect || 0,
-              statistics.byStatus.active || 0,
-              statistics.byStatus.inactive || 0,
-              statistics.byStatus.churned || 0
+              statistics.byStatus?.prospect || 0,
+              statistics.byStatus?.active || 0,
+              statistics.byStatus?.inactive || 0,
+              statistics.byStatus?.churned || 0
             ]);
             const percentage = maxCount > 0 ? (stage.count / maxCount) * 100 : 0;
             

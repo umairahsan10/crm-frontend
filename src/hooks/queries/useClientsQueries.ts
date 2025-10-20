@@ -5,13 +5,18 @@
  * Each hook handles caching, loading states, and error handling automatically.
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { 
   getClientsApi,
   getClientsStatisticsApi,
   getClientByIdApi,
   searchCompaniesApi,
-  searchContactsApi
+  searchContactsApi,
+  createClientApi,
+  updateClientApi,
+  deleteClientApi,
+  bulkUpdateClientsApi,
+  bulkDeleteClientsApi
 } from '../../apis/clients';
 
 // Query Keys - Centralized for consistency
@@ -118,5 +123,119 @@ export const usePrefetchClients = () => {
     prefetchClients,
     prefetchClientById,
   };
+};
+
+/**
+ * Hook to create a new client
+ */
+export const useCreateClient = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createClientApi,
+    onSuccess: (data) => {
+      // Invalidate and refetch clients list
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.lists() });
+      // Invalidate statistics
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.statistics() });
+      console.log('Client created successfully:', data);
+    },
+    onError: (error) => {
+      console.error('Failed to create client:', error);
+    },
+  });
+};
+
+/**
+ * Hook to update an existing client
+ */
+export const useUpdateClient = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => updateClientApi(id, data),
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch clients list
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.lists() });
+      // Invalidate specific client detail
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.detail(variables.id) });
+      // Invalidate statistics
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.statistics() });
+      console.log('Client updated successfully:', data);
+    },
+    onError: (error) => {
+      console.error('Failed to update client:', error);
+    },
+  });
+};
+
+/**
+ * Hook to delete a client
+ */
+export const useDeleteClient = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteClientApi,
+    onSuccess: (data, clientId) => {
+      // Invalidate and refetch clients list
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.lists() });
+      // Remove specific client from cache
+      queryClient.removeQueries({ queryKey: clientsQueryKeys.detail(clientId) });
+      // Invalidate statistics
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.statistics() });
+      console.log('Client deleted successfully:', data);
+    },
+    onError: (error) => {
+      console.error('Failed to delete client:', error);
+    },
+  });
+};
+
+/**
+ * Hook to bulk update clients
+ */
+export const useBulkUpdateClients = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ clientIds, updates }: { clientIds: string[]; updates: any }) => 
+      bulkUpdateClientsApi(clientIds, updates),
+    onSuccess: (data) => {
+      // Invalidate and refetch clients list
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.lists() });
+      // Invalidate statistics
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.statistics() });
+      console.log('Clients bulk updated successfully:', data);
+    },
+    onError: (error) => {
+      console.error('Failed to bulk update clients:', error);
+    },
+  });
+};
+
+/**
+ * Hook to bulk delete clients
+ */
+export const useBulkDeleteClients = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bulkDeleteClientsApi,
+    onSuccess: (data, clientIds) => {
+      // Invalidate and refetch clients list
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.lists() });
+      // Remove specific clients from cache
+      clientIds.forEach(clientId => {
+        queryClient.removeQueries({ queryKey: clientsQueryKeys.detail(clientId) });
+      });
+      // Invalidate statistics
+      queryClient.invalidateQueries({ queryKey: clientsQueryKeys.statistics() });
+      console.log('Clients bulk deleted successfully:', data);
+    },
+    onError: (error) => {
+      console.error('Failed to bulk delete clients:', error);
+    },
+  });
 };
 
