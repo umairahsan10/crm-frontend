@@ -25,13 +25,7 @@ const GenericClientsFilters: React.FC<GenericClientsFiltersProps> = ({
       search: '',
       accountStatus: '',
       clientType: '',
-      companyName: '',
-      clientName: '',
-      email: '',
       phone: '',
-      city: '',
-      state: '',
-      country: '',
       industryId: '',
       createdBy: '',
       createdAfter: '',
@@ -147,13 +141,7 @@ const GenericClientsFilters: React.FC<GenericClientsFiltersProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {renderSelect('accountStatus', 'Account Status', statusOptions)}
             {renderSelect('clientType', 'Client Type', typeOptions)}
-            {renderInput('companyName', 'Company Name', 'text')}
-            {renderInput('clientName', 'Client Name', 'text')}
-            {renderInput('email', 'Email', 'text')}
             {renderInput('phone', 'Phone', 'text')}
-            {renderInput('city', 'City', 'text')}
-            {renderInput('state', 'State', 'text')}
-            {renderInput('country', 'Country', 'text')}
             {renderSelect('industryId', 'Industry', industryOptions)}
             {renderInput('createdBy', 'Created By', 'text')}
             {renderInput('createdAfter', 'Created After', 'date')}
