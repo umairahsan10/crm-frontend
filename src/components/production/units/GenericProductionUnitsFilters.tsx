@@ -25,7 +25,6 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
   showFilters,
   onFiltersChange,
   onClearFilters,
-  availableHeads = [],
   theme = {
     primary: 'bg-blue-600',
     secondary: 'hover:bg-blue-700',
@@ -74,8 +73,8 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
     <div className="flex flex-col space-y-1">
       <label className="text-sm font-medium text-gray-700">{label}</label>
       <select
-        value={filters[key] || ''}
-        onChange={(e) => updateFilter(key, e.target.value)}
+        value={filters[key as keyof typeof filters] || ''}
+        onChange={(e) => updateFilter(key as keyof typeof filters, e.target.value)}
         className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:${theme.ring} sm:text-sm`}
       >
         <option value="">{placeholder}</option>

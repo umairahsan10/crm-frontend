@@ -21,7 +21,7 @@ const CreateUnitForm: React.FC<CreateUnitFormProps> = ({
 
   const createUnitMutation = useCreateProductionUnit();
   const { data: headsData, isLoading: loadingHeads } = useAvailableUnitHeads();
-  const availableHeads = externalAvailableHeads || headsData?.data?.heads || [];
+  const availableHeads = externalAvailableHeads || (headsData && typeof headsData === 'object' && 'data' in headsData && (headsData as any).data && typeof (headsData as any).data === 'object' && 'heads' in (headsData as any).data) ? ((headsData as any).data as any).heads : [];
 
   const isLoading = externalLoading || createUnitMutation.isPending || loadingHeads;
   const error = externalError || createUnitMutation.error?.message;
@@ -161,7 +161,7 @@ const CreateUnitForm: React.FC<CreateUnitFormProps> = ({
                 disabled={isSubmitting || isLoading}
               >
                 <option value={0}>Select a unit head</option>
-                {availableHeads.map((head) => (
+                {availableHeads.map((head: any) => (
                   <option key={head.id} value={head.id}>
                     {head.firstName} {head.lastName}
                   </option>

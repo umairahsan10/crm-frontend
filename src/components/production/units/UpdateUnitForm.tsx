@@ -22,7 +22,7 @@ const UpdateUnitForm: React.FC<UpdateUnitFormProps> = ({
 
   const updateUnitMutation = useUpdateProductionUnit();
   const { data: headsData, isLoading: loadingHeads } = useAvailableUnitHeads();
-  const availableHeads = headsData?.data?.heads || [];
+  const availableHeads = (headsData && typeof headsData === 'object' && 'data' in headsData && (headsData as any).data && typeof (headsData as any).data === 'object' && 'heads' in (headsData as any).data) ? ((headsData as any).data as any).heads : [];
 
   const isLoading = updateUnitMutation.isPending || loadingHeads;
 
