@@ -394,7 +394,7 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
                       className={`px-4 py-2 ${column.className || ''}`}
                       style={{ width: column.width }}
                     >
-                      {renderCellContent(column, row[column.key], row)}
+                      {renderCellContent(column, column.type === 'contact' ? row : row[column.key], row)}
                     </td>
                   ))}
                 </tr>

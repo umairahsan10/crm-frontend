@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { useNavbar } from '../../context/NavbarContext';
+import { updateCompanyApi } from '../../apis/company';
+import type { Company } from '../../apis/company';
 
 interface CompanyDetailsDrawerProps {
-  company: any | null;
+  company: Company | null;
   isOpen: boolean;
   onClose: () => void;
-  onCompanyUpdated?: (updatedCompany: any) => void;
+  onCompanyUpdated?: (updatedCompany: Company) => void;
 }
 
 const CompanyDetailsDrawer: React.FC<CompanyDetailsDrawerProps> = ({
@@ -15,28 +18,90 @@ const CompanyDetailsDrawer: React.FC<CompanyDetailsDrawerProps> = ({
   onClose,
   onCompanyUpdated
 }) => {
-  const { user } = useAuth();
+  useAuth();
   const { isNavbarOpen } = useNavbar();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'details' | 'edit'>('details');
   const [isMobile, setIsMobile] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdating] = useState(false);
+  
+  // Update company mutation
+  const updateCompanyMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Company> }) => updateCompanyApi(id, data),
+    onSuccess: (updatedCompany) => {
+      console.log('✅ Company updated successfully:', updatedCompany);
+      
+      // Show success toast
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2';
+      toast.innerHTML = `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>Company updated successfully! Status: ${updatedCompany.status || 'Success'}</span>
+      `;
+      document.body.appendChild(toast);
+      
+      // Remove toast after 3 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 3000);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['company-statistics'] });
+      
+      // Close drawer and reset
+      onCompanyUpdated?.(updatedCompany);
+      setActiveTab('details');
+      onClose();
+    },
+    onError: (error: any) => {
+      console.error('❌ Failed to update company:', error);
+      
+      // Show error toast
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2';
+      toast.innerHTML = `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+        <span>Failed to update company. Status: ${error?.response?.status || 'Error'}</span>
+      `;
+      document.body.appendChild(toast);
+      
+      // Remove toast after 5 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 5000);
+    }
+  });
   
   // Edit form state
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<Partial<Company>>({
     name: '',
     email: '',
     phone: '',
     website: '',
-    industry: '',
-    size: '',
-    status: '',
-    type: '',
-    location: '',
-    revenue: '',
-    employees: '',
-    founded: '',
-    description: '',
-    assignedTo: ''
+    address: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
+    status: 'active',
+    quarterlyLeavesDays: 0,
+    monthlyLatesDays: 0,
+    absentDeduction: 0,
+    lateDeduction: 0,
+    halfDeduction: 0,
+    taxId: '',
+    lateTime: 0,
+    halfTime: 0,
+    absentTime: 0
   });
 
 
@@ -65,11 +130,11 @@ const CompanyDetailsDrawer: React.FC<CompanyDetailsDrawerProps> = ({
         website: company.website || '',
         industry: company.industry || '',
         size: company.size || '',
-        status: company.status || '',
+        status: (company.status as 'active' | 'inactive') || 'active',
         type: company.type || '',
         location: company.location || '',
         revenue: company.revenue || '',
-        employees: company.employees?.toString() || '',
+        employees: company.employees || 0,
         founded: company.founded || '',
         description: company.description || '',
         assignedTo: company.assignedTo || ''
@@ -94,32 +159,11 @@ const CompanyDetailsDrawer: React.FC<CompanyDetailsDrawerProps> = ({
 
   const handleUpdateCompany = async () => {
     if (!company) return;
-
-    try {
-      setIsUpdating(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const updatedCompany = {
-        ...company,
-        ...editForm
-      };
-      
-      onCompanyUpdated?.(updatedCompany);
-      
-      setNotification({ type: 'success', message: 'Company updated successfully!' });
-      setTimeout(() => setNotification(null), 3000);
-      setActiveTab('details');
-    } catch (error) {
-      setNotification({ 
-        type: 'error', 
-        message: error instanceof Error ? error.message : 'Failed to update company' 
-      });
-      setTimeout(() => setNotification(null), 5000);
-    } finally {
-      setIsUpdating(false);
-    }
+    
+    updateCompanyMutation.mutate({ 
+      id: company.id, 
+      data: editForm 
+    });
   };
 
 
@@ -395,34 +439,57 @@ const CompanyDetailsDrawer: React.FC<CompanyDetailsDrawerProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
-                        <select
-                          value={editForm.industry}
-                          onChange={(e) => handleEditFormChange('industry', e.target.value)}
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                        <input
+                          type="text"
+                          value={editForm.address}
+                          onChange={(e) => handleEditFormChange('address', e.target.value)}
                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select Industry</option>
-                          <option value="Technology">Technology</option>
-                          <option value="Energy">Energy</option>
-                          <option value="Manufacturing">Manufacturing</option>
-                          <option value="Healthcare">Healthcare</option>
-                          <option value="Finance">Finance</option>
-                          <option value="Retail">Retail</option>
-                          <option value="Education">Education</option>
-                          <option value="Other">Other</option>
-                        </select>
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Company Size</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                        <input
+                          type="text"
+                          value={editForm.city}
+                          onChange={(e) => handleEditFormChange('city', e.target.value)}
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                        <input
+                          type="text"
+                          value={editForm.state}
+                          onChange={(e) => handleEditFormChange('state', e.target.value)}
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
+                        <input
+                          type="text"
+                          value={editForm.zip}
+                          onChange={(e) => handleEditFormChange('zip', e.target.value)}
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
                         <select
-                          value={editForm.size}
-                          onChange={(e) => handleEditFormChange('size', e.target.value)}
+                          value={editForm.country}
+                          onChange={(e) => handleEditFormChange('country', e.target.value)}
                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">Select Size</option>
-                          <option value="small">Small (1-50)</option>
-                          <option value="medium">Medium (51-200)</option>
-                          <option value="large">Large (200+)</option>
+                          <option value="">Select Country</option>
+                          <option value="United States">United States</option>
+                          <option value="Canada">Canada</option>
+                          <option value="United Kingdom">United Kingdom</option>
+                          <option value="Germany">Germany</option>
+                          <option value="France">France</option>
+                          <option value="Australia">Australia</option>
+                          <option value="Japan">Japan</option>
+                          <option value="Other">Other</option>
                         </select>
                       </div>
                       <div>
@@ -432,86 +499,112 @@ const CompanyDetailsDrawer: React.FC<CompanyDetailsDrawerProps> = ({
                           onChange={(e) => handleEditFormChange('status', e.target.value)}
                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">Select Status</option>
                           <option value="active">Active</option>
-                          <option value="prospect">Prospect</option>
                           <option value="inactive">Inactive</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-                        <select
-                          value={editForm.type}
-                          onChange={(e) => handleEditFormChange('type', e.target.value)}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select Type</option>
-                          <option value="enterprise">Enterprise</option>
-                          <option value="startup">Startup</option>
-                          <option value="smb">SMB</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                        <input
-                          type="text"
-                          value={editForm.location}
-                          onChange={(e) => handleEditFormChange('location', e.target.value)}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Revenue</label>
-                        <input
-                          type="text"
-                          value={editForm.revenue}
-                          onChange={(e) => handleEditFormChange('revenue', e.target.value)}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Employees</label>
-                        <input
-                          type="number"
-                          value={editForm.employees}
-                          onChange={(e) => handleEditFormChange('employees', e.target.value)}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Founded</label>
-                        <input
-                          type="text"
-                          value={editForm.founded}
-                          onChange={(e) => handleEditFormChange('founded', e.target.value)}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
-                        <select
-                          value={editForm.assignedTo}
-                          onChange={(e) => handleEditFormChange('assignedTo', e.target.value)}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select Assignee</option>
-                          <option value="John Smith">John Smith</option>
-                          <option value="Sarah Johnson">Sarah Johnson</option>
-                          <option value="Mike Wilson">Mike Wilson</option>
-                          <option value="Lisa Brown">Lisa Brown</option>
-                          <option value="David Lee">David Lee</option>
                         </select>
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                      <textarea
-                        value={editForm.description}
-                        onChange={(e) => handleEditFormChange('description', e.target.value)}
-                        rows={4}
-                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
+                    {/* HR Configuration Section */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg className="h-5 w-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                        </svg>
+                        HR Configuration
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Quarterly Leave Days</label>
+                          <input
+                            type="number"
+                            value={editForm.quarterlyLeavesDays}
+                            onChange={(e) => handleEditFormChange('quarterlyLeavesDays', (parseInt(e.target.value) || 0).toString())}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Lates Days</label>
+                          <input
+                            type="number"
+                            value={editForm.monthlyLatesDays}
+                            onChange={(e) => handleEditFormChange('monthlyLatesDays', (parseInt(e.target.value) || 0).toString())}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Absent Deduction</label>
+                          <input
+                            type="number"
+                            value={editForm.absentDeduction}
+                            onChange={(e) => handleEditFormChange('absentDeduction', (parseInt(e.target.value) || 0).toString())}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Late Deduction</label>
+                          <input
+                            type="number"
+                            value={editForm.lateDeduction}
+                            onChange={(e) => handleEditFormChange('lateDeduction', (parseInt(e.target.value) || 0).toString())}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Half Day Deduction</label>
+                          <input
+                            type="number"
+                            value={editForm.halfDeduction}
+                            onChange={(e) => handleEditFormChange('halfDeduction', (parseInt(e.target.value) || 0).toString())}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Tax ID</label>
+                          <input
+                            type="text"
+                            value={editForm.taxId}
+                            onChange={(e) => handleEditFormChange('taxId', e.target.value)}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Late Time (minutes)</label>
+                          <input
+                            type="number"
+                            value={editForm.lateTime}
+                            onChange={(e) => handleEditFormChange('lateTime', (parseInt(e.target.value) || 0).toString())}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Half Time (hours)</label>
+                          <input
+                            type="number"
+                            value={editForm.halfTime}
+                            onChange={(e) => handleEditFormChange('halfTime', (parseInt(e.target.value) || 0).toString())}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Absent Time (hours)</label>
+                          <input
+                            type="number"
+                            value={editForm.absentTime}
+                            onChange={(e) => handleEditFormChange('absentTime', (parseInt(e.target.value) || 0).toString())}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">

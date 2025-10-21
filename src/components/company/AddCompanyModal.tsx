@@ -1,16 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { X, Building2, Mail, Phone, Globe, MapPin, Flag } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { X, Building2 } from 'lucide-react';
 import { useNavbar } from '../../context/NavbarContext';
+import { createCompanyApi } from '../../apis/company';
+import type { Company } from '../../apis/company';
 
 interface AddCompanyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (companyData: any) => void;
+  onSave: (companyData: Partial<Company>) => void;
 }
 
-const AddCompanyModal: React.FC<AddCompanyModalProps> = ({ isOpen, onClose, onSave }) => {
+const AddCompanyModal: React.FC<AddCompanyModalProps> = ({ isOpen, onClose }) => {
   const { isNavbarOpen } = useNavbar();
+  const queryClient = useQueryClient();
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Create company mutation
+  const createCompanyMutation = useMutation({
+    mutationFn: createCompanyApi,
+    onSuccess: (newCompany) => {
+      console.log('✅ Company created successfully:', newCompany);
+      
+      // Show success toast
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2';
+      toast.innerHTML = `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>Company created successfully! Status: ${newCompany.status || 'Success'}</span>
+      `;
+      document.body.appendChild(toast);
+      
+      // Remove toast after 3 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 3000);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['company-statistics'] });
+      
+      // Close modal
+      handleClose();
+    },
+    onError: (error: any) => {
+      console.error('❌ Failed to create company:', error);
+      
+      // Show error toast
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2';
+      toast.innerHTML = `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+        <span>Failed to create company. Status: ${error?.response?.status || 'Error'}</span>
+      `;
+      document.body.appendChild(toast);
+      
+      // Remove toast after 5 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 5000);
+    }
+  });
 
   // Check if device is mobile
   useEffect(() => {
@@ -29,9 +87,20 @@ const AddCompanyModal: React.FC<AddCompanyModalProps> = ({ isOpen, onClose, onSa
     phone: '',
     website: '',
     address: '',
+    city: '',
+    state: '',
+    zip: '',
     country: '',
     status: 'active',
-    description: ''
+    quarterlyLeavesDays: 0,
+    monthlyLatesDays: 0,
+    absentDeduction: 0,
+    lateDeduction: 0,
+    halfDeduction: 0,
+    taxId: '',
+    lateTime: 0,
+    halfTime: 0,
+    absentTime: 0
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -79,22 +148,36 @@ const AddCompanyModal: React.FC<AddCompanyModalProps> = ({ isOpen, onClose, onSa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔍 Form submitted, validating...');
     
     if (validateForm()) {
+      console.log('✅ Form validation passed');
       const companyData = {
-        ...formData,
-        id: Date.now().toString(), // Generate unique ID
-        location: formData.address, // Map address to location
-        revenue: '$0', // Default values
-        employees: 0,
-        founded: new Date().getFullYear().toString(),
-        assignedTo: 'Unassigned',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        website: formData.website,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        country: formData.country,
+        status: formData.status as 'active' | 'inactive',
+        quarterlyLeavesDays: formData.quarterlyLeavesDays,
+        monthlyLatesDays: formData.monthlyLatesDays,
+        absentDeduction: formData.absentDeduction,
+        lateDeduction: formData.lateDeduction,
+        halfDeduction: formData.halfDeduction,
+        taxId: formData.taxId,
+        lateTime: formData.lateTime,
+        halfTime: formData.halfTime,
+        absentTime: formData.absentTime
       };
       
-      onSave(companyData);
-      handleClose();
+      console.log('🚀 Sending company data:', companyData);
+      createCompanyMutation.mutate(companyData);
+    } else {
+      console.log('❌ Form validation failed:', errors);
     }
   };
 
@@ -105,9 +188,20 @@ const AddCompanyModal: React.FC<AddCompanyModalProps> = ({ isOpen, onClose, onSa
       phone: '',
       website: '',
       address: '',
+      city: '',
+      state: '',
+      zip: '',
       country: '',
       status: 'active',
-      description: ''
+      quarterlyLeavesDays: 0,
+      monthlyLatesDays: 0,
+      absentDeduction: 0,
+      lateDeduction: 0,
+      halfDeduction: 0,
+      taxId: '',
+      lateTime: 0,
+      halfTime: 0,
+      absentTime: 0
     });
     setErrors({});
     onClose();
@@ -227,7 +321,40 @@ const AddCompanyModal: React.FC<AddCompanyModalProps> = ({ isOpen, onClose, onSa
                          value={formData.address}
                          onChange={handleInputChange}
                          className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                         placeholder="123 Business St, City, State 12345"
+                         placeholder="123 Business St"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                       <input
+                         type="text"
+                         name="city"
+                         value={formData.city}
+                         onChange={handleInputChange}
+                         className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                         placeholder="New York"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                       <input
+                         type="text"
+                         name="state"
+                         value={formData.state}
+                         onChange={handleInputChange}
+                         className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                         placeholder="NY"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
+                       <input
+                         type="text"
+                         name="zip"
+                         value={formData.zip}
+                         onChange={handleInputChange}
+                         className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                         placeholder="10001"
                        />
                      </div>
                      <div>
@@ -266,17 +393,126 @@ const AddCompanyModal: React.FC<AddCompanyModalProps> = ({ isOpen, onClose, onSa
                      </div>
                    </div>
 
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                     <textarea
-                       name="description"
-                       value={formData.description}
-                       onChange={handleInputChange}
-                       rows={4}
-                       className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                       placeholder="Brief description of the company..."
-                     />
+                   {/* HR Configuration Section */}
+                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                     <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                       <svg className="h-5 w-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                       </svg>
+                       HR Configuration
+                     </h4>
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Quarterly Leave Days</label>
+                         <input
+                           type="number"
+                           name="quarterlyLeavesDays"
+                           value={formData.quarterlyLeavesDays}
+                           onChange={handleInputChange}
+                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="5"
+                           min="0"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Lates Days</label>
+                         <input
+                           type="number"
+                           name="monthlyLatesDays"
+                           value={formData.monthlyLatesDays}
+                           onChange={handleInputChange}
+                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="3"
+                           min="0"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Absent Deduction</label>
+                         <input
+                           type="number"
+                           name="absentDeduction"
+                           value={formData.absentDeduction}
+                           onChange={handleInputChange}
+                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="0"
+                           min="0"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Late Deduction</label>
+                         <input
+                           type="number"
+                           name="lateDeduction"
+                           value={formData.lateDeduction}
+                           onChange={handleInputChange}
+                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="0"
+                           min="0"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Half Day Deduction</label>
+                         <input
+                           type="number"
+                           name="halfDeduction"
+                           value={formData.halfDeduction}
+                           onChange={handleInputChange}
+                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="0"
+                           min="0"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Tax ID</label>
+                         <input
+                           type="text"
+                           name="taxId"
+                           value={formData.taxId}
+                           onChange={handleInputChange}
+                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="TAX123456"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Late Time (minutes)</label>
+                         <input
+                           type="number"
+                           name="lateTime"
+                           value={formData.lateTime}
+                           onChange={handleInputChange}
+                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="30"
+                           min="0"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Half Time (hours)</label>
+                         <input
+                           type="number"
+                           name="halfTime"
+                           value={formData.halfTime}
+                           onChange={handleInputChange}
+                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="4"
+                           min="0"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Absent Time (hours)</label>
+                         <input
+                           type="number"
+                           name="absentTime"
+                           value={formData.absentTime}
+                           onChange={handleInputChange}
+                           className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="8"
+                           min="0"
+                         />
+                       </div>
+                     </div>
                    </div>
+
 
                    <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
                      <button
