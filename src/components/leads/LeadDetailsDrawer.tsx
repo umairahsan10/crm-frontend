@@ -505,7 +505,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      <div className="absolute inset-0 bg-gray-900 bg-opacity-75" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-gray-600 bg-opacity-50" onClick={onClose}></div>
       
       <div 
         className="relative mx-auto h-full bg-white shadow-2xl rounded-lg border border-gray-200 transform transition-all duration-300 ease-out"
