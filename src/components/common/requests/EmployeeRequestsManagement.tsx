@@ -33,7 +33,6 @@ interface EmployeeRequestTableRow {
   description: string;
   priority: string;
   status: string;
-  assigned_to_name: string;
   requested_on: string;
   resolved_on: string | null;
   created_at: string;
@@ -155,9 +154,6 @@ const EmployeeRequestsManagement: React.FC = () => {
     description: request.description || 'N/A',
     priority: request.priority || 'Low',
     status: request.status || 'Pending',
-    assigned_to_name: request.assignedToEmployee ? 
-      `${request.assignedToEmployee.firstName || ''} ${request.assignedToEmployee.lastName || ''}`.trim() || 'N/A' : 
-      'Unassigned',
     requested_on: request.requestedOn || new Date().toISOString(),
     resolved_on: request.resolvedOn || null,
     created_at: request.createdAt || new Date().toISOString(),
@@ -217,13 +213,12 @@ const EmployeeRequestsManagement: React.FC = () => {
     }
   };
 
-  const handleUpdate = async (requestId: number, notes: string, priority: string, assignedTo: string) => {
+  const handleUpdate = async (requestId: number, notes: string, priority: string) => {
     try {
       const action: EmployeeRequestAction = {
         status: 'In_Progress',
         responseNotes: notes,
         priority: priority as any,
-        assignedTo: assignedTo && !isNaN(Number(assignedTo)) ? Number(assignedTo) : undefined
       };
       await takeActionMutation.mutateAsync({ requestId, action });
       notification.show({ message: 'Request updated successfully', type: 'success' });
@@ -232,24 +227,6 @@ const EmployeeRequestsManagement: React.FC = () => {
     } catch (error) {
       console.error('Error updating request:', error);
       notification.show({ message: 'Failed to update request', type: 'error' });
-    }
-  };
-
-  const handleAssign = async (requestId: number, notes: string, priority: string, assignedTo: string) => {
-    try {
-      const action: EmployeeRequestAction = {
-        status: 'In_Progress',
-        responseNotes: notes,
-        priority: priority as any,
-        assignedTo: assignedTo && !isNaN(Number(assignedTo)) ? Number(assignedTo) : undefined
-      };
-      await takeActionMutation.mutateAsync({ requestId, action });
-      notification.show({ message: 'Request assigned successfully', type: 'success' });
-      setDrawerOpen(false);
-      setSelectedRequest(null);
-    } catch (error) {
-      console.error('Error assigning request:', error);
-      notification.show({ message: 'Failed to assign request', type: 'error' });
     }
   };
 
@@ -409,7 +386,6 @@ const EmployeeRequestsManagement: React.FC = () => {
             onResolve={handleResolve}
             onReject={handleReject}
             onUpdate={handleUpdate}
-            onAssign={handleAssign}
             onHold={handleHold}
             isHROrAdmin={isHROrAdmin}
           />
