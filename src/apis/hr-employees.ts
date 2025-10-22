@@ -154,8 +154,9 @@ export interface GetEmployeesDto {
   departmentId?: number;
   roleId?: number;
   status?: string;
-  employmentType?: string;
-  modeOfWork?: string;
+  gender?: 'male' | 'female';
+  employmentType?: 'full_time' | 'part_time';
+  modeOfWork?: 'hybrid' | 'on_site' | 'remote';
 }
 
 export interface EmployeeResponseDto {
@@ -291,6 +292,7 @@ export const getEmployeesApi = async (query: GetEmployeesDto = {}): Promise<Empl
     if (query.departmentId) queryParams.append('departmentId', query.departmentId.toString());
     if (query.roleId) queryParams.append('roleId', query.roleId.toString());
     if (query.status) queryParams.append('status', query.status);
+    if (query.gender) queryParams.append('gender', query.gender);
     if (query.employmentType) queryParams.append('employmentType', query.employmentType);
     if (query.modeOfWork) queryParams.append('modeOfWork', query.modeOfWork);
 
@@ -405,6 +407,7 @@ export interface EmployeeStatistics {
   total: number;
   active: number;
   inactive: number;
+  terminated: number;
   byDepartment: Record<string, number>;
   byRole: Record<string, number>;
   byGender: Record<string, number>;

@@ -45,7 +45,7 @@ const GenericEmployeeFilters: React.FC<GenericEmployeeFiltersProps> = ({
       search: '',
       departmentId: '',
       roleId: '',
-      status: '',
+      gender: '',
       employmentType: '',
       modeOfWork: ''
     },
@@ -86,24 +86,20 @@ const GenericEmployeeFilters: React.FC<GenericEmployeeFiltersProps> = ({
   );
 
   // Pre-defined options
-  const statusOptions = [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'terminated', label: 'Terminated' }
+  const genderOptions = [
+    { value: 'male', label: 'Male' },
+    { value: 'female', label: 'Female' }
   ];
 
   const employmentTypeOptions = [
-    { value: 'full-time', label: 'Full Time' },
-    { value: 'part-time', label: 'Part Time' },
-    { value: 'contract', label: 'Contract' },
-    { value: 'internship', label: 'Internship' },
-    { value: 'freelance', label: 'Freelance' }
+    { value: 'full_time', label: 'Full Time' },
+    { value: 'part_time', label: 'Part Time' }
   ];
 
   const modeOfWorkOptions = [
-    { value: 'onsite', label: 'Onsite' },
-    { value: 'remote', label: 'Remote' },
-    { value: 'hybrid', label: 'Hybrid' }
+    { value: 'on_site', label: 'On Site' },
+    { value: 'hybrid', label: 'Hybrid' },
+    { value: 'remote', label: 'Remote' }
   ];
 
   return (
@@ -151,8 +147,8 @@ const GenericEmployeeFilters: React.FC<GenericEmployeeFiltersProps> = ({
         <div className="px-6 py-4 bg-gray-50">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             
-            {/* Status Filter */}
-            {renderSelect('status', 'Status', statusOptions)}
+            {/* Gender Filter */}
+            {renderSelect('gender', 'Gender', genderOptions)}
             
             {/* Department Filter */}
             {renderSelect(
