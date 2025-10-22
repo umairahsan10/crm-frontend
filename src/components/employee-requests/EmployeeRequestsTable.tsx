@@ -14,7 +14,6 @@ interface EmployeeRequestTableRow {
   description: string;
   priority: string;
   status: string;
-  assigned_to_name: string;
   requested_on: string;
   resolved_on: string | null;
   created_at: string;

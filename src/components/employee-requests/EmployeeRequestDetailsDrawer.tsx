@@ -11,8 +11,7 @@ interface EmployeeRequestDetailsDrawerProps {
   hrEmployeesLoading: boolean;
   onResolve: (requestId: number, notes: string) => void;
   onReject: (requestId: number, notes: string) => void;
-  onUpdate: (requestId: number, notes: string, priority: string, assignedTo: string) => void;
-  onAssign: (requestId: number, notes: string, priority: string, assignedTo: string) => void;
+  onUpdate: (requestId: number, notes: string, priority: string) => void;
   onHold: (requestId: number, notes: string) => void;
   isHROrAdmin?: boolean;
 }
@@ -21,21 +20,17 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
   request,
   isOpen,
   onClose,
-  hrEmployees,
-  hrEmployeesLoading,
   onResolve,
   onReject,
   onUpdate,
-  onAssign,
   onHold,
   isHROrAdmin = true
 }) => {
   const { isNavbarOpen } = useNavbar();
   const [isMobile, setIsMobile] = useState(false);
-  const [actionType, setActionType] = useState<'approve' | 'reject' | 'update' | 'hold' | 'assign'>('approve');
+  const [actionType, setActionType] = useState<'approve' | 'reject' | 'update' | 'hold'>('approve');
   const [actionNotes, setActionNotes] = useState('');
   const [actionPriority, setActionPriority] = useState<string>('');
-  const [actionAssignedTo, setActionAssignedTo] = useState<string>('');
   const [showActionModal, setShowActionModal] = useState(false);
 
   // Check if device is mobile
@@ -54,7 +49,6 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
   useEffect(() => {
     if (request) {
       setActionPriority(request.priority || 'Low');
-      setActionAssignedTo(request.assignedTo?.toString() || '');
       setActionNotes('');
     }
   }, [request]);
@@ -67,7 +61,7 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
     }
   }, [isOpen]);
 
-  const handleActionClick = (action: 'approve' | 'reject' | 'update' | 'hold' | 'assign') => {
+  const handleActionClick = (action: 'approve' | 'reject' | 'update' | 'hold') => {
     setActionType(action);
     setShowActionModal(true);
   };
@@ -83,10 +77,7 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
         onReject(request.id, actionNotes);
         break;
       case 'update':
-        onUpdate(request.id, actionNotes, actionPriority, actionAssignedTo);
-        break;
-      case 'assign':
-        onAssign(request.id, actionNotes, actionPriority, actionAssignedTo);
+        onUpdate(request.id, actionNotes, actionPriority);
         break;
       case 'hold':
         onHold(request.id, actionNotes);
@@ -233,23 +224,6 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
                 </div>
               </div>
 
-              {/* Assignment Information */}
-              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <svg className="h-5 w-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Assignment
-                </h3>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
-                  <p className="text-lg text-gray-900 font-medium">
-                    {request.assignedToEmployee ? 
-                      `${request.assignedToEmployee.firstName} ${request.assignedToEmployee.lastName}` : 
-                      <span className="text-gray-500">Unassigned</span>}
-                  </p>
-                </div>
-              </div>
 
               {/* Timeline */}
               <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
@@ -328,21 +302,12 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
                     </button>
                     <button
                       onClick={() => handleActionClick('update')}
-                      className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm"
+                      className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm md:col-span-2"
                     >
                       <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                       Update Request
-                    </button>
-                    <button
-                      onClick={() => handleActionClick('assign')}
-                      className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 shadow-sm"
-                    >
-                      <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      {request.assignedToEmployee ? 'Reassign' : 'Assign'}
                     </button>
                     <button
                       onClick={() => handleActionClick('hold')}
@@ -370,7 +335,7 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
                 {actionType === 'approve' ? 'Resolve' : 
                  actionType === 'reject' ? 'Reject' : 
                  actionType === 'hold' ? 'Put On Hold' : 
-                 actionType === 'assign' ? 'Assign' : 'Update'} Request
+                 'Update'} Request
               </h3>
               
               <div className="mb-4 bg-blue-50 p-3 rounded-md border border-blue-200">
@@ -395,7 +360,7 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
                 />
               </div>
 
-              {(actionType === 'update' || actionType === 'assign') && (
+              {(actionType === 'update') && (
                 <>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -411,28 +376,6 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
                       <option value="High">High</option>
                       <option value="Urgent">Urgent</option>
                     </select>
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Assign To HR Employee
-                    </label>
-                    <select
-                      value={actionAssignedTo}
-                      onChange={(e) => setActionAssignedTo(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={hrEmployeesLoading}
-                    >
-                      <option value="">Select HR Employee</option>
-                      {hrEmployees.map((hr) => (
-                        <option key={hr.id} value={hr.id.toString()}>
-                          {hr.firstName} {hr.lastName} - {hr.role.name}
-                        </option>
-                      ))}
-                    </select>
-                    {hrEmployeesLoading && (
-                      <p className="text-xs text-gray-500 mt-1">Loading HR employees...</p>
-                    )}
                   </div>
                 </>
               )}
@@ -450,14 +393,13 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
                     actionType === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
                     actionType === 'reject' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' :
                     actionType === 'hold' ? 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500' :
-                    actionType === 'assign' ? 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500' :
                     'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
                   }`}
                 >
                   {actionType === 'approve' ? 'Resolve' : 
                    actionType === 'reject' ? 'Reject' : 
                    actionType === 'hold' ? 'Put On Hold' : 
-                   actionType === 'assign' ? 'Assign' : 'Update'}
+                  'Update'}
                 </button>
               </div>
             </div>

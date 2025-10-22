@@ -98,11 +98,6 @@ export const employeeRequestsTableConfig: ColumnConfig[] = [
     }
   },
   {
-    key: 'assigned_to_name',
-    label: 'Assigned To',
-    type: 'text'
-  },
-  {
     key: 'requested_on',
     label: 'Requested On',
     type: 'date',
