@@ -1,21 +1,22 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { useNavbar } from '../../../context/NavbarContext';
 import BulkActions, { type BulkAction } from '../../../components/common/BulkActions/BulkActions';
 import DataStatistics from '../../../components/common/Statistics/DataStatistics';
 import EmployeesTable from '../../../components/employees/EmployeesTable';
 import GenericEmployeeFilters from '../../../components/employees/GenericEmployeeFilters';
 import EmployeeDetailsDrawer from '../../../components/employees/EmployeeDetailsDrawer';
-import CreateEmployeeWizard from '../../../components/employees/CreateEmployeeWizard/CreateEmployeeWizard';
-import { 
-  useEmployees,
+import CreateEmployeeDrawer from '../../../components/employees/CreateEmployeeDrawer';
+import {
   useEmployeeStatistics,
   useDepartments,
   useRoles,
   useTerminateEmployee,
-  useUpdateEmployee
+  useUpdateEmployee,
+  useActiveEmployees,
+  useTerminatedEmployees,
+  useInactiveEmployees
 } from '../../../hooks/queries/useHRQueries';
-import { 
+import {
   type Employee,
   type EmployeeStatistics
 } from '../../../apis/hr-employees';
@@ -23,12 +24,11 @@ import './EmployeeManagement.css';
 
 const EmployeeManagement: React.FC = () => {
   const { hasPermission } = useAuth();
-  const { isNavbarOpen } = useNavbar();
-  
+
   // State management
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
-  const [showWizard, setShowWizard] = useState(false);
+  const [showCreateDrawer, setShowCreateDrawer] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showTerminateModal, setShowTerminateModal] = useState(false);
   const [employeeToTerminate, setEmployeeToTerminate] = useState<Employee | null>(null);
@@ -38,13 +38,14 @@ const EmployeeManagement: React.FC = () => {
   });
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive' | 'terminated'>('active');
 
   // Pagination state
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 20
+    itemsPerPage: 20,
   });
 
   // Filter state
@@ -52,39 +53,104 @@ const EmployeeManagement: React.FC = () => {
     search: '',
     departmentId: '',
     roleId: '',
-    status: '',
+    gender: '',
     employmentType: '',
-    modeOfWork: ''
+    modeOfWork: '',
   });
 
-  // React Query hooks - Data fetching with automatic caching
-  const employeesQuery = useEmployees(
+  // Queries with stable caching options
+  const activeEmployeesQuery = useActiveEmployees(
     pagination.currentPage,
     pagination.itemsPerPage,
     {
       search: filters.search || undefined,
       departmentId: filters.departmentId ? parseInt(filters.departmentId) : undefined,
       roleId: filters.roleId ? parseInt(filters.roleId) : undefined,
-      status: filters.status || undefined,
-      employmentType: filters.employmentType || undefined,
-      modeOfWork: filters.modeOfWork || undefined
+      gender: filters.gender as 'male' | 'female' | undefined,
+      employmentType: filters.employmentType as 'full_time' | 'part_time' | undefined,
+      modeOfWork: filters.modeOfWork as 'hybrid' | 'on_site' | 'remote' | undefined,
+    },
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes - keep data fresh longer
+      gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      refetchOnMount: false, // Don't refetch when component mounts if data exists
     }
   );
 
-  const statisticsQuery = useEmployeeStatistics();
-  const departmentsQuery = useDepartments({ limit: 100 });
-  const rolesQuery = useRoles({ limit: 100 });
+  const terminatedEmployeesQuery = useTerminatedEmployees(
+    pagination.currentPage,
+    pagination.itemsPerPage,
+    {
+      search: filters.search || undefined,
+      departmentId: filters.departmentId ? parseInt(filters.departmentId) : undefined,
+      roleId: filters.roleId ? parseInt(filters.roleId) : undefined,
+      gender: filters.gender as 'male' | 'female' | undefined,
+      employmentType: filters.employmentType as 'full_time' | 'part_time' | undefined,
+      modeOfWork: filters.modeOfWork as 'hybrid' | 'on_site' | 'remote' | undefined,
+    },
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes - keep data fresh longer
+      gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      refetchOnMount: false, // Don't refetch when component mounts if data exists
+    }
+  );
+
+  const inactiveEmployeesQuery = useInactiveEmployees(
+    pagination.currentPage,
+    pagination.itemsPerPage,
+    {
+      search: filters.search || undefined,
+      departmentId: filters.departmentId ? parseInt(filters.departmentId) : undefined,
+      roleId: filters.roleId ? parseInt(filters.roleId) : undefined,
+      gender: filters.gender as 'male' | 'female' | undefined,
+      employmentType: filters.employmentType as 'full_time' | 'part_time' | undefined,
+      modeOfWork: filters.modeOfWork as 'hybrid' | 'on_site' | 'remote' | undefined,
+    },
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes - keep data fresh longer
+      gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      refetchOnMount: false, // Don't refetch when component mounts if data exists
+    }
+  );
+
+  const statisticsQuery = useEmployeeStatistics({
+    staleTime: 5 * 60 * 1000, // 5 minutes - keep data fresh longer
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Don't refetch when component mounts if data exists
+  });
+  const departmentsQuery = useDepartments({ limit: 100 }, {
+    staleTime: 10 * 60 * 1000, // 10 minutes - departments change rarely
+    gcTime: 15 * 60 * 1000, // 15 minutes - keep in cache longer
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+  const rolesQuery = useRoles({ limit: 100 }, {
+    staleTime: 10 * 60 * 1000, // 10 minutes - roles change rarely
+    gcTime: 15 * 60 * 1000, // 15 minutes - keep in cache longer
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 
   // Mutations
   const terminateMutation = useTerminateEmployee();
   const updateMutation = useUpdateEmployee();
 
-  // Extract data from queries
+  const employeesQuery = 
+    activeTab === 'active' ? activeEmployeesQuery :
+    activeTab === 'inactive' ? inactiveEmployeesQuery :
+    terminatedEmployeesQuery;
+
   const employees = employeesQuery.data?.employees || [];
+
   const statistics: EmployeeStatistics = statisticsQuery.data?.statistics || {
     total: 0,
     active: 0,
     inactive: 0,
+    terminated: 0,
     byDepartment: {},
     byRole: {},
     byGender: {},
@@ -96,17 +162,18 @@ const EmployeeManagement: React.FC = () => {
     thisMonth: {
       new: 0,
       active: 0,
-      inactive: 0
-    }
+      inactive: 0,
+    },
   };
+
   const departments = departmentsQuery.data?.departments || [];
   const roles = rolesQuery.data?.roles || [];
+
   const isLoading = employeesQuery.isLoading;
 
-  // Update pagination when React Query data changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (employeesQuery.data) {
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
         currentPage: employeesQuery.data.page,
         totalPages: employeesQuery.data.totalPages,
@@ -115,7 +182,7 @@ const EmployeeManagement: React.FC = () => {
     }
   }, [employeesQuery.data]);
 
-  // Statistics cards (similar to LeadsManagementPage structure)
+
   const statisticsCards = [
     {
       title: 'Total Employees',
@@ -128,7 +195,7 @@ const EmployeeManagement: React.FC = () => {
       )
     },
     {
-      title: 'Active',
+      title: 'Active Employees',
       value: statistics.active,
       color: 'green' as const,
       icon: (
@@ -138,7 +205,7 @@ const EmployeeManagement: React.FC = () => {
       )
     },
     {
-      title: 'Inactive',
+      title: 'Terminated Employees',
       value: statistics.inactive,
       color: 'red' as const,
       icon: (
@@ -167,19 +234,41 @@ const EmployeeManagement: React.FC = () => {
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
         </svg>
       )
+    },
+    {
+      title: 'Average Age',
+      value: `${statistics.averageAge} years`,
+      color: 'indigo' as const,
+      icon: (
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+        </svg>
+      )
+    },
+    {
+      title: 'Female Employees',
+      value: statistics.byGender.female || 0,
+      color: 'purple' as const,
+      icon: (
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+        </svg>
+      )
+    },
+    {
+      title: 'Male Employees',
+      value: statistics.byGender.male || 0,
+      color: 'blue' as const,
+      icon: (
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+        </svg>
+      )
     }
   ];
 
-  // Bulk actions configuration
-  const bulkActions: BulkAction[] = [
-    {
-      id: 'activate',
-      label: 'Activate',
-      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
-      variant: 'primary',
-      onClick: (selectedIds) => handleBulkActivate(selectedIds),
-      confirmMessage: `Are you sure you want to activate the selected employee(s)?`
-    },
+  // Bulk actions configuration (tab-aware)
+  const bulkActions: BulkAction[] = activeTab === 'active' ? [
     {
       id: 'deactivate',
       label: 'Deactivate',
@@ -195,6 +284,32 @@ const EmployeeManagement: React.FC = () => {
       variant: 'danger',
       onClick: (selectedIds) => handleBulkTerminate(selectedIds),
       confirmMessage: `Are you sure you want to terminate the selected employee(s)? This will process their final salary and mark them as terminated.`
+    }
+  ] : activeTab === 'inactive' ? [
+    {
+      id: 'reactivate',
+      label: 'Reactivate',
+      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
+      variant: 'primary',
+      onClick: (selectedIds) => handleBulkActivate(selectedIds),
+      confirmMessage: `Are you sure you want to reactivate the selected employee(s)?`
+    },
+    {
+      id: 'terminate',
+      label: 'Terminate Selected',
+      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" clipRule="evenodd" /></svg>,
+      variant: 'danger',
+      onClick: (selectedIds) => handleBulkTerminate(selectedIds),
+      confirmMessage: `Are you sure you want to terminate the selected employee(s)? This will process their final salary and mark them as terminated.`
+    }
+  ] : [
+    {
+      id: 'reactivate',
+      label: 'Reactivate',
+      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
+      variant: 'primary',
+      onClick: (selectedIds) => handleBulkActivate(selectedIds),
+      confirmMessage: `Are you sure you want to reactivate the selected employee(s)?`
     }
   ];
 
@@ -222,12 +337,19 @@ const EmployeeManagement: React.FC = () => {
       search: '',
       departmentId: '',
       roleId: '',
-      status: '',
+      gender: '',
       employmentType: '',
       modeOfWork: ''
     });
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
+
+  const handleTabChange = (tab: 'active' | 'inactive' | 'terminated') => {
+    setActiveTab(tab);
+    setSelectedEmployees([]); // Clear selection when switching tabs
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1
+    // No API call needed - using client-side filtering
+  };
 
   const handleBulkActivate = async (selectedIds: string[]) => {
     try {
@@ -279,8 +401,8 @@ const EmployeeManagement: React.FC = () => {
 
   const handleBulkTerminate = (_selectedIds: string[]) => {
     // For bulk termination, show a modal to get termination details
-      setNotification({
-        type: 'error',
+    setNotification({
+      type: 'error',
       message: 'Please terminate employees individually to provide termination details'
     });
     setTimeout(() => setNotification(null), 5000);
@@ -300,9 +422,9 @@ const EmployeeManagement: React.FC = () => {
         termination_date: terminationData.termination_date,
         description: terminationData.description
       });
-        
-        setNotification({
-          type: 'success',
+
+      setNotification({
+        type: 'success',
         message: `Employee ${employeeToTerminate.firstName} ${employeeToTerminate.lastName} terminated successfully`
       });
       setShowTerminateModal(false);
@@ -336,59 +458,74 @@ const EmployeeManagement: React.FC = () => {
   };
 
   // Check permissions
-  const canManageEmployees = hasPermission('manage_employees');
-  const canCreateEmployee = hasPermission('create_employee');
+  const canManageEmployees = hasPermission('employee_add_permission');
+  const canCreateEmployee = hasPermission('employee_add_permission');
+  
+  // Fallback for HR department users (temporary until permissions are properly set)
+  const { user } = useAuth();
+  const isHRUser = user?.department === 'HR' || user?.role === 'admin';
+  
+  // Debug permissions
+  console.log('Permissions Debug:', {
+    canManageEmployees,
+    canCreateEmployee,
+    isHRUser,
+    userRole: user?.role,
+    userDepartment: user?.department,
+    userType: user?.type,
+    userPermissions: user?.permissions,
+    allPermissions: JSON.stringify(localStorage.getItem('permissions'))
+  });
 
   return (
-    <div className={`employee-management ${isNavbarOpen ? 'navbar-open' : 'navbar-closed'}`}>
-      {/* Header Section */}
-      <div className="employee-header">
-        <div className="header-content">
-          <h1 className="page-title">Employee Management</h1>
-          <p className="page-subtitle">
-            Manage your workforce with comprehensive employee lifecycle management
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Employee Management</h1>
+              <p className="mt-2 text-gray-600">
+                Manage your workforce with comprehensive employee lifecycle management
               </p>
             </div>
-        <div className="header-actions">
-          {canManageEmployees && (
-            <>
+            <div className="flex items-center space-x-4">
               <button
                 onClick={() => setShowStatistics(!showStatistics)}
-                className="btn-secondary"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 {showStatistics ? 'Hide Statistics' : 'Show Statistics'}
               </button>
-              {canCreateEmployee && (
-              <button
-                  onClick={() => setShowWizard(true)}
-                  className="btn-primary"
-              >
-                  <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add Employee
-              </button>
+              {(canCreateEmployee || isHRUser) && (
+                 <button
+                   onClick={() => setShowCreateDrawer(true)}
+                   className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                 >
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Employee
+                </button>
               )}
-            </>
-          )}
+            </div>
           </div>
         </div>
 
-      {/* Statistics Section */}
+        {/* Statistics */}
         {showStatistics && (
-        <div className="statistics-section">
-            <DataStatistics 
-              cards={statisticsCards} 
-            loading={statisticsQuery.isLoading}
-          />
-              </div>
+          <div className="mb-8">
+            <DataStatistics
+              title="Employee Statistics"
+              cards={statisticsCards}
+              loading={statisticsQuery.isLoading}
+            />
+          </div>
         )}
 
-      {/* Filters Section */}
-      <div className="filters-section">
+        {/* Filters */}
         <GenericEmployeeFilters
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
@@ -397,21 +534,77 @@ const EmployeeManagement: React.FC = () => {
           departmentsLoading={departmentsQuery.isLoading}
           rolesLoading={rolesQuery.isLoading}
         />
-      </div>
+
+        {/* Tab Navigation */}
+        <div className="w-full border-b border-gray-200 mb-4">
+          <div className="flex w-full justify-between">
+            <button
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${activeTab === 'active'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-blue-600'
+                }`}
+              onClick={() => handleTabChange('active')}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Active Employees ({statistics.active})
+            </button>
+
+            <button
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${activeTab === 'inactive'
+                  ? 'border-yellow-600 text-yellow-600'
+                  : 'border-transparent text-gray-500 hover:text-yellow-600'
+                }`}
+              onClick={() => handleTabChange('inactive')}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Inactive Employees ({statistics.inactive})
+            </button>
+
+            <button
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${activeTab === 'terminated'
+                  ? 'border-red-600 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-red-600'
+                }`}
+              onClick={() => handleTabChange('terminated')}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Terminated Employees ({statistics.terminated})
+            </button>
+          </div>
+        </div>
+
+
 
         {/* Bulk Actions */}
-      {selectedEmployees.length > 0 && canManageEmployees && (
-        <div className="bulk-actions-section">
-          <BulkActions
-            selectedItems={selectedEmployees}
-            actions={bulkActions}
-            onClearSelection={() => setSelectedEmployees([])}
-          />
-        </div>
-      )}
+        {selectedEmployees.length > 0 && canManageEmployees && (
+          <div className="mb-4">
+            <BulkActions
+              selectedItems={selectedEmployees}
+              actions={bulkActions}
+              onClearSelection={() => setSelectedEmployees([])}
+            />
+          </div>
+        )}
 
         {/* Employees Table */}
-      <div className="table-section">
         <EmployeesTable
           employees={employees}
           isLoading={isLoading}
@@ -424,69 +617,67 @@ const EmployeeManagement: React.FC = () => {
           onBulkSelect={handleBulkSelect}
           selectedEmployees={selectedEmployees}
         />
-      </div>
 
         {/* Employee Details Drawer */}
         <EmployeeDetailsDrawer
           employee={selectedEmployee}
           isOpen={drawerOpen}
-        onClose={handleDrawerClose}
-        onEdit={(employee) => setSelectedEmployee(employee)}
+          onClose={handleDrawerClose}
+          onEdit={(employee) => setSelectedEmployee(employee)}
           onTerminate={handleTerminateEmployee}
-        onEmployeeUpdated={() => {}}
+          onEmployeeUpdated={() => { }}
         />
 
-        {/* Create Employee Wizard */}
-        {showWizard && (
-                <CreateEmployeeWizard
-                  onClose={() => setShowWizard(false)}
-          onSuccess={handleEmployeeCreated}
-        />
-      )}
+         {/* Create Employee Drawer */}
+         <CreateEmployeeDrawer
+           isOpen={showCreateDrawer}
+           onClose={() => setShowCreateDrawer(false)}
+           onEmployeeCreated={handleEmployeeCreated}
+         />
 
-      {/* Terminate Modal */}
-      {showTerminateModal && employeeToTerminate && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Terminate Employee</h3>
-              <button onClick={() => setShowTerminateModal(false)} className="close-button">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-            <div className="modal-body">
-              <p className="warning-text">
-                Are you sure you want to terminate {employeeToTerminate.firstName} {employeeToTerminate.lastName}?
-              </p>
-              <div className="form-group">
-                <label>Termination Date</label>
-                <input
-                  type="date"
-                  value={terminationData.termination_date}
-                  onChange={(e) => setTerminationData(prev => ({ ...prev, termination_date: e.target.value }))}
-                  className="form-input"
-                />
+        {/* Terminate Modal */}
+        {showTerminateModal && employeeToTerminate && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>Terminate Employee</h3>
+                <button onClick={() => setShowTerminateModal(false)} className="close-button">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="form-group">
-                <label>Reason (Optional)</label>
-                <textarea
-                  value={terminationData.description}
-                  onChange={(e) => setTerminationData(prev => ({ ...prev, description: e.target.value }))}
-                  className="form-input"
-                  rows={3}
-                  placeholder="Enter termination reason..."
-                    />
-                  </div>
+              <div className="modal-body">
+                <p className="warning-text">
+                  Are you sure you want to terminate {employeeToTerminate.firstName} {employeeToTerminate.lastName}?
+                </p>
+                <div className="form-group">
+                  <label>Termination Date</label>
+                  <input
+                    type="date"
+                    value={terminationData.termination_date}
+                    onChange={(e) => setTerminationData(prev => ({ ...prev, termination_date: e.target.value }))}
+                    className="form-input"
+                  />
                 </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowTerminateModal(false)} className="btn-secondary">
-                Cancel
-              </button>
-              <button onClick={confirmTermination} className="btn-danger" disabled={terminateMutation.isPending}>
-                {terminateMutation.isPending ? 'Terminating...' : 'Terminate Employee'}
-              </button>
+                <div className="form-group">
+                  <label>Reason (Optional)</label>
+                  <textarea
+                    value={terminationData.description}
+                    onChange={(e) => setTerminationData(prev => ({ ...prev, description: e.target.value }))}
+                    className="form-input"
+                    rows={3}
+                    placeholder="Enter termination reason..."
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button onClick={() => setShowTerminateModal(false)} className="btn-secondary">
+                  Cancel
+                </button>
+                <button onClick={confirmTermination} className="btn-danger" disabled={terminateMutation.isPending}>
+                  {terminateMutation.isPending ? 'Terminating...' : 'Terminate Employee'}
+                </button>
               </div>
             </div>
           </div>
@@ -494,28 +685,29 @@ const EmployeeManagement: React.FC = () => {
 
         {/* Notification */}
         {notification && (
-        <div className={`notification notification-${notification.type}`}>
-          <div className="notification-content">
-            <div className="notification-icon">
-                  {notification.type === 'success' ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  )}
-                </div>
-            <p className="notification-message">{notification.message}</p>
-            <button onClick={() => setNotification(null)} className="notification-close">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+          <div className={`notification notification-${notification.type}`}>
+            <div className="notification-content">
+              <div className="notification-icon">
+                {notification.type === 'success' ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <p className="notification-message">{notification.message}</p>
+              <button onClick={() => setNotification(null)} className="notification-close">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
         )}
+      </div>
     </div>
   );
 };

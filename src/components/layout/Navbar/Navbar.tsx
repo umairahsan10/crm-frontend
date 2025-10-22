@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import {
@@ -41,6 +41,9 @@ const Navbar: React.FC<NavbarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [profileDropdownTimeout, setProfileDropdownTimeout] = useState<number | null>(null);
 
   // Get navigation items based on user type, role, and department
   const getNavigationItems = () => {
@@ -184,7 +187,35 @@ const Navbar: React.FC<NavbarProps> = ({
     return null;
   };
 
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  // Auto-close profile dropdown after 1 second
+  useEffect(() => {
+    if (profileDropdownOpen) {
+      // Clear any existing timeout
+      if (profileDropdownTimeout) {
+        clearTimeout(profileDropdownTimeout);
+      }
+
+      // Set new timeout
+      const timeout = setTimeout(() => {
+        setProfileDropdownOpen(false);
+      }, 1250);
+
+      setProfileDropdownTimeout(timeout);
+    } else {
+      // Clear timeout if dropdown is closed
+      if (profileDropdownTimeout) {
+        clearTimeout(profileDropdownTimeout);
+        setProfileDropdownTimeout(null);
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (profileDropdownTimeout) {
+        clearTimeout(profileDropdownTimeout);
+      }
+    };
+  }, [profileDropdownOpen]);
 
   const handleProfileClick = () => {
     setProfileDropdownOpen(!profileDropdownOpen);

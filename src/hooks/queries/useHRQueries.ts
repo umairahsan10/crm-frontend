@@ -116,6 +116,35 @@ export const useEmployees = (
   });
 };
 
+export const useActiveEmployees = (
+  page: number = 1,
+  limit: number = 20,
+  filters: Partial<GetEmployeesDto> = {},
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) => {
+  return useEmployees(page, limit, { ...filters, status: 'active' }, options);
+};
+
+
+export const useTerminatedEmployees = (
+  page: number = 1,
+  limit: number = 20,
+  filters: Partial<GetEmployeesDto> = {},
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) => {
+  return useEmployees(page, limit, { ...filters, status: 'terminated' }, options);
+};
+
+export const useInactiveEmployees = (
+  page: number = 1,
+  limit: number = 20,
+  filters: Partial<GetEmployeesDto> = {},
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) => {
+  return useEmployees(page, limit, { ...filters, status: 'inactive' }, options);
+};
+
+
 /**
  * Hook to fetch single employee details
  * 

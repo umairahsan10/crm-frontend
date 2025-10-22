@@ -21,6 +21,86 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
   const [teamLeads, setTeamLeads] = useState<any[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
 
+  // Role hierarchy validation
+  const getRoleHierarchyConstraints = (roleId: number) => {
+    const role = roles.find(r => r.id === roleId);
+    if (!role) return { canHaveManager: true, canHaveTeamLead: true };
+
+    const roleName = role.name.toLowerCase();
+    
+    // Department Manager: Top level - can't have manager or team lead
+    if (roleName.includes('department manager') || roleName.includes('department_manager') || roleName.includes('dep_manager')) {
+      return { canHaveManager: false, canHaveTeamLead: false };
+    }
+    
+    // Unit Head: Can have manager (dep_manager), can't have team lead
+    if (roleName.includes('unit head') || roleName.includes('unit_head')) {
+      return { canHaveManager: true, canHaveTeamLead: false };
+    }
+    
+    // Team Lead: Can have manager (unit_head), can't have team lead
+    if (roleName.includes('team lead') || roleName.includes('team_lead')) {
+      return { canHaveManager: true, canHaveTeamLead: false };
+    }
+    
+    // Senior/Junior: Can have both manager and team lead
+    return { canHaveManager: true, canHaveTeamLead: true };
+  };
+
+  // Get filtered managers and team leads based on role hierarchy
+  const getFilteredManagersAndTeamLeads = () => {
+    if (!formData.roleId) return { managers: managers, teamLeads: teamLeads };
+    
+    const constraints = getRoleHierarchyConstraints(formData.roleId);
+    
+    let filteredManagers = managers;
+    let filteredTeamLeads = teamLeads;
+    
+    // Filter based on role hierarchy
+    if (!constraints.canHaveManager) {
+      filteredManagers = [];
+    }
+    if (!constraints.canHaveTeamLead) {
+      filteredTeamLeads = [];
+    }
+    
+    // Additional filtering based on role hierarchy
+    const role = roles.find(r => r.id === formData.roleId);
+    if (role) {
+      const roleName = role.name.toLowerCase();
+      
+      // Unit Head can only report to Department Manager (dep_manager)
+      if (roleName.includes('unit head') || roleName.includes('unit_head')) {
+        filteredManagers = managers.filter(emp => 
+          ['dep_manager'].includes(emp.role.name.toLowerCase())
+        );
+      }
+      
+      // Team Lead can report to Unit Head or Department Manager
+      if (roleName.includes('team lead') || roleName.includes('team_lead')) {
+        filteredManagers = managers.filter(emp => 
+          ['dep_manager', 'unit_head'].includes(emp.role.name.toLowerCase())
+        );
+      }
+      
+      // Senior can report to Team Lead, Unit Head, or Department Manager
+      if (roleName.includes('senior')) {
+        filteredManagers = managers.filter(emp => 
+          ['dep_manager', 'unit_head', 'team_lead'].includes(emp.role.name.toLowerCase())
+        );
+      }
+      
+      // Junior can report to Team Lead, Unit Head, or Department Manager
+      if (roleName.includes('junior')) {
+        filteredManagers = managers.filter(emp => 
+          ['dep_manager', 'unit_head', 'team_lead'].includes(emp.role.name.toLowerCase())
+        );
+      }
+    }
+    
+    return { managers: filteredManagers, teamLeads: filteredTeamLeads };
+  };
+
   // Load managers and team leads when department changes
   useEffect(() => {
     const loadEmployees = async () => {
@@ -35,7 +115,7 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
         });
 
         const managerList = response.employees.filter(emp => 
-          ['manager', 'unit head', 'unit_head'].includes(emp.role.name.toLowerCase())
+          ['dep_manager', 'unit_head', 'team_lead'].includes(emp.role.name.toLowerCase())
         );
         const teamLeadList = response.employees.filter(emp => 
           ['team lead', 'team_lead'].includes(emp.role.name.toLowerCase())
@@ -52,6 +132,21 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
 
     loadEmployees();
   }, [formData.departmentId]);
+
+  // Clear manager and team lead selections when role changes
+  useEffect(() => {
+    if (formData.roleId) {
+      const constraints = getRoleHierarchyConstraints(formData.roleId);
+      
+      // Clear selections that are not allowed for this role
+      if (!constraints.canHaveManager && formData.managerId) {
+        updateFormData({ managerId: '' });
+      }
+      if (!constraints.canHaveTeamLead && formData.teamLeadId) {
+        updateFormData({ teamLeadId: '' });
+      }
+    }
+  }, [formData.roleId]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -73,8 +168,26 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
     // Employment Information
     if (!formData.departmentId) newErrors.departmentId = 'Required';
     if (!formData.roleId) newErrors.roleId = 'Required';
-    if (!formData.managerId) newErrors.managerId = 'Required';
-    if (!formData.teamLeadId) newErrors.teamLeadId = 'Required';
+    
+    // Role hierarchy validation
+    if (formData.roleId) {
+      const constraints = getRoleHierarchyConstraints(formData.roleId);
+      
+      if (constraints.canHaveManager && !formData.managerId) {
+        newErrors.managerId = 'Required';
+      } else if (!constraints.canHaveManager && formData.managerId) {
+        newErrors.managerId = 'This role cannot have a manager';
+      }
+      
+      if (constraints.canHaveTeamLead && !formData.teamLeadId) {
+        newErrors.teamLeadId = 'Required';
+      } else if (!constraints.canHaveTeamLead && formData.teamLeadId) {
+        newErrors.teamLeadId = 'This role cannot have a team lead';
+      }
+    } else {
+      if (!formData.managerId) newErrors.managerId = 'Required';
+      if (!formData.teamLeadId) newErrors.teamLeadId = 'Required';
+    }
     if (!formData.startDate) newErrors.startDate = 'Required';
     if (!formData.modeOfWork) newErrors.modeOfWork = 'Required';
     if (formData.remoteDaysAllowed === undefined || formData.remoteDaysAllowed === '') {
@@ -273,15 +386,23 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label form-label-required">Manager</label>
+            <label className={`form-label ${getRoleHierarchyConstraints(formData.roleId).canHaveManager ? 'form-label-required' : ''}`}>
+              Manager
+              {!getRoleHierarchyConstraints(formData.roleId).canHaveManager && (
+                <span className="text-sm text-gray-500 ml-2">(Not applicable for this role)</span>
+              )}
+            </label>
             <select
-              className="form-select"
+              className={`form-select ${!getRoleHierarchyConstraints(formData.roleId).canHaveManager ? 'opacity-50' : ''}`}
               value={formData.managerId || ''}
               onChange={(e) => updateFormData({ managerId: e.target.value ? parseInt(e.target.value) : '' })}
-              disabled={!formData.departmentId || loadingEmployees}
+              disabled={!formData.departmentId || loadingEmployees || !getRoleHierarchyConstraints(formData.roleId).canHaveManager}
             >
-              <option value="">{loadingEmployees ? 'Loading...' : 'Select'}</option>
-              {managers.map(m => (
+              <option value="">
+                {loadingEmployees ? 'Loading...' : 
+                 !getRoleHierarchyConstraints(formData.roleId).canHaveManager ? 'Not applicable' : 'Select'}
+              </option>
+              {getFilteredManagersAndTeamLeads().managers.map(m => (
                 <option key={m.id} value={m.id}>{m.firstName} {m.lastName}</option>
               ))}
             </select>
@@ -289,15 +410,23 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label form-label-required">Team Lead</label>
+            <label className={`form-label ${getRoleHierarchyConstraints(formData.roleId).canHaveTeamLead ? 'form-label-required' : ''}`}>
+              Team Lead
+              {!getRoleHierarchyConstraints(formData.roleId).canHaveTeamLead && (
+                <span className="text-sm text-gray-500 ml-2">(Not applicable for this role)</span>
+              )}
+            </label>
             <select
-              className="form-select"
+              className={`form-select ${!getRoleHierarchyConstraints(formData.roleId).canHaveTeamLead ? 'opacity-50' : ''}`}
               value={formData.teamLeadId || ''}
               onChange={(e) => updateFormData({ teamLeadId: e.target.value ? parseInt(e.target.value) : '' })}
-              disabled={!formData.departmentId || loadingEmployees}
+              disabled={!formData.departmentId || loadingEmployees || !getRoleHierarchyConstraints(formData.roleId).canHaveTeamLead}
             >
-              <option value="">{loadingEmployees ? 'Loading...' : 'Select'}</option>
-              {teamLeads.map(t => (
+              <option value="">
+                {loadingEmployees ? 'Loading...' : 
+                 !getRoleHierarchyConstraints(formData.roleId).canHaveTeamLead ? 'Not applicable' : 'Select'}
+              </option>
+              {getFilteredManagersAndTeamLeads().teamLeads.map(t => (
                 <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>
               ))}
             </select>
