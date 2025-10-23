@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SalaryStatisticsCards from '../../../components/finance/salary/SalaryStatisticsCards';
+import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
+import type { MetricData } from '../../../types/dashboard';
 import SalaryTable from '../../../components/finance/salary/SalaryTable';
 import SalaryDetailsDrawer from '../../../components/finance/salary/SalaryDetailsDrawer';
 import GenericSalaryFilters from '../../../components/finance/salary/GenericSalaryFilters';
@@ -52,6 +53,64 @@ const SalaryManagementPage: React.FC = () => {
 
 
   const monthOptions = getMonthOptions();
+
+  // Transform salary summary data to MetricData format
+  const getSalaryMetrics = (): MetricData[] => {
+    if (!salaryData) return [];
+    
+    const { summary } = salaryData;
+    
+    return [
+      {
+        title: 'Total Employees',
+        value: summary.totalEmployees,
+        change: 'Active employees',
+        changeType: 'positive' as const,
+        icon: '👥',
+        subtitle: 'This month'
+      },
+      {
+        title: 'Total Base Salary',
+        value: `$${summary.totalBaseSalary.toLocaleString()}`,
+        change: 'Base salary pool',
+        changeType: 'positive' as const,
+        icon: '💰',
+        subtitle: 'Monthly base'
+      },
+      {
+        title: 'Total Commission',
+        value: `$${summary.totalCommission.toLocaleString()}`,
+        change: 'Performance based',
+        changeType: 'positive' as const,
+        icon: '📈',
+        subtitle: 'Earned this month'
+      },
+      {
+        title: 'Total Bonus',
+        value: `$${summary.totalBonus.toLocaleString()}`,
+        change: 'Rewards & incentives',
+        changeType: 'positive' as const,
+        icon: '🎁',
+        subtitle: 'Bonus payments'
+      },
+      {
+        title: 'Total Deductions',
+        value: `$${summary.totalDeductions.toLocaleString()}`,
+        change: 'Attendance & penalties',
+        changeType: 'negative' as const,
+        icon: '📉',
+        subtitle: 'This month'
+      },
+      {
+        title: 'Final Salary Pool',
+        value: `$${summary.totalFinalSalary.toLocaleString()}`,
+        change: 'Net payable amount',
+        changeType: 'positive' as const,
+        icon: '✅',
+        subtitle: 'Total to be paid'
+      }
+    ];
+  };
 
   // Handlers
   const handlePageChange = (page: number) => {
@@ -382,12 +441,16 @@ const SalaryManagementPage: React.FC = () => {
           </div>
         )}
 
-        {/* Statistics Panel */}
+        {/* Key Metrics Summary */}
         {salaryData && (
           <div className="mb-8">
-            <SalaryStatisticsCards 
-              summary={salaryData.summary}
-              loading={isLoading}
+            <MetricGrid
+              title=""
+              metrics={getSalaryMetrics()}
+              columns={4}
+              headerColor="from-green-50 to-transparent"
+              headerGradient="from-green-500 to-teal-600"
+              cardSize="sm"
             />
           </div>
         )}
