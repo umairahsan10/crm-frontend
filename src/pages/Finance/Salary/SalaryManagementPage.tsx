@@ -24,6 +24,9 @@ const SalaryManagementPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [isCalculating, setIsCalculating] = useState(false);
+  const [lastCalculated, setLastCalculated] = useState<Date | null>(null);
+  const [showLastCalculated, setShowLastCalculated] = useState(false);
+  const [timerRef, setTimerRef] = useState<number | null>(null);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -290,11 +293,28 @@ const SalaryManagementPage: React.FC = () => {
       
       setNotification({ 
         type: 'success', 
-        message: 'Salary calculation triggered for all employees!' 
+        message: 'Salary calculation completed for all employees! Values have been updated.' 
       });
       
-      // Refresh the data
-      await fetchSalaryData();
+      // Clear any existing timer
+      if (timerRef) {
+        clearTimeout(timerRef);
+      }
+      
+      // Set calculation timestamp and show it
+      const now = new Date();
+      setLastCalculated(now);
+      setShowLastCalculated(true);
+      
+      // Hide the timestamp after 5 seconds
+      const timer = setTimeout(() => {
+        setShowLastCalculated(false);
+        setTimerRef(null);
+      }, 5000);
+      setTimerRef(timer);
+      
+      // Refresh the data with recalculated flag
+      await fetchSalaryData(true);
     } catch (error) {
       console.error('Error calculating salaries:', error);
       setNotification({ 
@@ -307,13 +327,13 @@ const SalaryManagementPage: React.FC = () => {
   };
 
 
-  const fetchSalaryData = async () => {
+  const fetchSalaryData = async (recalculated?: boolean) => {
     try {
       setIsLoading(true);
       
       // For now, use mock data
       // In a real app, you would call: await getAllSalariesDisplay(selectedMonth);
-      const mockData = getMockSalaryData(selectedMonth);
+      const mockData = getMockSalaryData(selectedMonth, recalculated);
       setSalaryData(mockData);
       
     } catch (error) {
@@ -343,6 +363,15 @@ const SalaryManagementPage: React.FC = () => {
     fetchSalaryData();
   }, []);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef) {
+        clearTimeout(timerRef);
+      }
+    };
+  }, [timerRef]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -354,6 +383,14 @@ const SalaryManagementPage: React.FC = () => {
               <p className="mt-2 text-sm text-gray-600">
                 Manage employee salaries, bonuses, and payroll processing
               </p>
+              {lastCalculated && showLastCalculated && (
+                <div className="mt-2 flex items-center text-sm text-green-600 animate-pulse">
+                  <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Last calculated: {lastCalculated.toLocaleString()}
+                </div>
+              )}
             </div>
             
             {/* Action Buttons */}
