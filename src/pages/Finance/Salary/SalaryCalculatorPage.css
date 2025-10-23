@@ -1,0 +1,87 @@
+/* Salary Calculator Page Styles */
+/* Most styles are now handled by Tailwind CSS classes */
+
+.salary-calculator-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+/* Custom styles for calculator-specific components */
+.department-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.department-badge--sales {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.department-badge--marketing {
+  background-color: #e9d5ff;
+  color: #7c3aed;
+}
+
+.department-badge--hr {
+  background-color: #fce7f3;
+  color: #be185d;
+}
+
+.department-badge--finance {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+/* Loading and error states */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #10b981;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .salary-calculator-container {
+    padding: 1rem;
+  }
+  
+  .department-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+  }
+}

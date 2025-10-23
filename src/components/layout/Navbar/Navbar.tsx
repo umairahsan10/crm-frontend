@@ -21,6 +21,7 @@ import {
   AiOutlineLink,
   AiOutlineLock,
   AiOutlineTool,
+  AiOutlineWallet,
 } from 'react-icons/ai';
 import './Navbar.css';
 
@@ -65,6 +66,7 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'company', label: 'Companies', icon: '🏢', path: '/company' },
         { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects' },
         { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
+        { id: 'salary', label: 'Salary Management', icon: '💵', path: '/finance/salary' },
         { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
         { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing' },
         { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
@@ -99,6 +101,7 @@ const Navbar: React.FC<NavbarProps> = ({
             { id: 'logs', label: 'Logs', icon: '📋', path: '/logs' },
             { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
             { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
+            { id: 'salary', label: 'Salary Management', icon: '💵', path: '/finance/salary' },
             { id: 'chats', label: 'Chats', icon: '💬', path: '/chats' },
           ];
         
@@ -132,6 +135,7 @@ const Navbar: React.FC<NavbarProps> = ({
           return [
             ...baseItems,
             { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
+            { id: 'salary', label: 'Salary Management', icon: '💵', path: '/finance/salary' },
             { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];
         
@@ -243,6 +247,8 @@ const Navbar: React.FC<NavbarProps> = ({
         return <AiOutlineCalendar size={20} />;
       case '💰':
         return <AiOutlineDollarCircle size={20} />;
+      case '💵':
+        return <AiOutlineWallet size={20} />;
       case '📈':
         return <AiOutlineBarChart size={20} />;
       case '💼':
