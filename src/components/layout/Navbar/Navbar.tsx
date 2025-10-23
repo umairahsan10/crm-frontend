@@ -21,6 +21,7 @@ import {
   AiOutlineLink,
   AiOutlineLock,
   AiOutlineTool,
+  AiOutlineWallet,
 } from 'react-icons/ai';
 import './Navbar.css';
 
@@ -246,6 +247,8 @@ const Navbar: React.FC<NavbarProps> = ({
         return <AiOutlineCalendar size={20} />;
       case '💰':
         return <AiOutlineDollarCircle size={20} />;
+      case '💵':
+        return <AiOutlineWallet size={20} />;
       case '📈':
         return <AiOutlineBarChart size={20} />;
       case '💼':
