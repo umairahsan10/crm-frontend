@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  getSalaryPreview, 
   formatCurrency, 
   formatDate 
 } from '../../../apis/finance/salary';

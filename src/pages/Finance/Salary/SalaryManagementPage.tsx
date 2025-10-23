@@ -4,13 +4,10 @@ import SalaryStatisticsCards from '../../../components/finance/salary/SalaryStat
 import SalaryTable from '../../../components/finance/salary/SalaryTable';
 import SalaryDetailsDrawer from '../../../components/finance/salary/SalaryDetailsDrawer';
 import { 
-  getAllSalariesDisplay, 
-  getSalaryBreakdown, 
   calculateAllSalaries,
   getMockSalaryData,
   getCurrentMonth,
-  getMonthOptions,
-  formatCurrency
+  getMonthOptions
 } from '../../../apis/finance/salary';
 import type { SalaryDisplayAll, SalaryDisplay, SalaryBreakdown } from '../../../types/finance/salary';
 import './SalaryManagementPage.css';
@@ -22,16 +19,14 @@ const SalaryManagementPage: React.FC = () => {
   const [isError, setIsError] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  const [selectedEmployee, setSelectedEmployee] = useState<SalaryDisplay | null>(null);
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
-  const [salaryBreakdown, setSalaryBreakdown] = useState<SalaryBreakdown | null>(null);
+  const [salaryBreakdown, setSalaryBreakdown] = useState<SalaryBreakdown | undefined>(undefined);
   const [isCalculating, setIsCalculating] = useState(false);
 
   const monthOptions = getMonthOptions();
 
   const handleEmployeeViewDetails = async (employee: SalaryDisplay) => {
     try {
-      setSelectedEmployee(employee);
       setShowDetailsDrawer(true);
       
       // In a real app, you would fetch the breakdown from the API
@@ -179,8 +174,7 @@ const SalaryManagementPage: React.FC = () => {
 
   const handleCloseDetailsDrawer = () => {
     setShowDetailsDrawer(false);
-    setSelectedEmployee(null);
-    setSalaryBreakdown(null);
+    setSalaryBreakdown(undefined);
   };
 
   // Load salary data on component mount
