@@ -33,6 +33,23 @@ const SalaryManagementPage: React.FC = () => {
     itemsPerPage: 20
   });
 
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    department: '',
+    status: '',
+    fromDate: '',
+    toDate: '',
+    minSalary: '',
+    maxSalary: '',
+    createdBy: '',
+    sortBy: 'employeeName',
+    sortOrder: 'asc' as 'asc' | 'desc'
+  });
+
+  // Filtered data state
+  const [filteredEmployees, setFilteredEmployees] = useState<SalaryDisplay[]>([]);
+
 
   const monthOptions = getMonthOptions();
 
@@ -99,16 +116,109 @@ const SalaryManagementPage: React.FC = () => {
     setSelectedEmployees(employeeIds);
   };
 
-  // Simplified filter handlers using generic system
+  // Filter handlers
   const handleFiltersChange = useCallback((newFilters: any) => {
-    // Handle filter changes
-    console.log('Filters changed:', newFilters);
+    setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
   const handleClearFilters = useCallback(() => {
-    // Handle clear filters
-    console.log('Filters cleared');
+    setFilters({
+      search: '',
+      department: '',
+      status: '',
+      fromDate: '',
+      toDate: '',
+      minSalary: '',
+      maxSalary: '',
+      createdBy: '',
+      sortBy: 'employeeName',
+      sortOrder: 'asc'
+    });
   }, []);
+
+  // Apply filters to data
+  const applyFilters = useCallback((employees: SalaryDisplay[], currentFilters: typeof filters) => {
+    let filtered = employees;
+
+    // Search filter
+    if (currentFilters.search) {
+      const searchTerm = currentFilters.search.toLowerCase();
+      filtered = filtered.filter(emp => 
+        emp.employeeName.toLowerCase().includes(searchTerm) ||
+        emp.department.toLowerCase().includes(searchTerm) ||
+        emp.employeeId.toString().includes(searchTerm)
+      );
+    }
+
+    // Department filter
+    if (currentFilters.department) {
+      filtered = filtered.filter(emp => emp.department === currentFilters.department);
+    }
+
+    // Status filter
+    if (currentFilters.status) {
+      filtered = filtered.filter(emp => emp.status === currentFilters.status);
+    }
+
+    // Salary range filters
+    if (currentFilters.minSalary) {
+      const minSalary = parseFloat(currentFilters.minSalary);
+      if (!isNaN(minSalary)) {
+        filtered = filtered.filter(emp => emp.finalSalary >= minSalary);
+      }
+    }
+
+    if (currentFilters.maxSalary) {
+      const maxSalary = parseFloat(currentFilters.maxSalary);
+      if (!isNaN(maxSalary)) {
+        filtered = filtered.filter(emp => emp.finalSalary <= maxSalary);
+      }
+    }
+
+    // Date range filters
+    if (currentFilters.fromDate) {
+      const fromDate = new Date(currentFilters.fromDate);
+      filtered = filtered.filter(emp => {
+        if (!emp.paidOn) return false;
+        return new Date(emp.paidOn) >= fromDate;
+      });
+    }
+
+    if (currentFilters.toDate) {
+      const toDate = new Date(currentFilters.toDate);
+      filtered = filtered.filter(emp => {
+        if (!emp.paidOn) return false;
+        return new Date(emp.paidOn) <= toDate;
+      });
+    }
+
+    // Created by filter
+    if (currentFilters.createdBy) {
+      const createdByTerm = currentFilters.createdBy.toLowerCase();
+      filtered = filtered.filter(emp => 
+        emp.employeeName.toLowerCase().includes(createdByTerm) ||
+        emp.employeeId.toString().includes(createdByTerm)
+      );
+    }
+
+    return filtered;
+  }, []);
+
+  // Update filtered data when filters or salary data changes
+  useEffect(() => {
+    if (salaryData) {
+      const filtered = applyFilters(salaryData.employees, filters);
+      setFilteredEmployees(filtered);
+      
+      // Update pagination
+      setPagination(prev => ({
+        ...prev,
+        totalItems: filtered.length,
+        totalPages: Math.ceil(filtered.length / prev.itemsPerPage),
+        currentPage: 1 // Reset to first page when filters change
+      }));
+    }
+  }, [salaryData, filters, applyFilters]);
 
 
   const handleCalculateAllSalaries = async () => {
@@ -291,7 +401,7 @@ const SalaryManagementPage: React.FC = () => {
         {/* Salary Table */}
         {salaryData && (
           <SalaryTable
-            employees={salaryData.employees}
+            employees={filteredEmployees}
             isLoading={isLoading}
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
