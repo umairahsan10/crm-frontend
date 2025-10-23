@@ -8,8 +8,7 @@ import GenericSalaryFilters from '../../../components/finance/salary/GenericSala
 import { 
   calculateAllSalaries,
   getMockSalaryData,
-  getCurrentMonth,
-  getMonthOptions
+  getCurrentMonth
 } from '../../../apis/finance/salary';
 import type { SalaryDisplayAll, SalaryDisplay, SalaryBreakdown } from '../../../types/finance/salary';
 import './SalaryManagementPage.css';
@@ -52,7 +51,6 @@ const SalaryManagementPage: React.FC = () => {
   const [filteredEmployees, setFilteredEmployees] = useState<SalaryDisplay[]>([]);
 
 
-  const monthOptions = getMonthOptions();
 
   // Transform salary summary data to MetricData format
   const getSalaryMetrics = (): MetricData[] => {
@@ -196,8 +194,13 @@ const SalaryManagementPage: React.FC = () => {
   }, []);
 
   // Apply filters to data
-  const applyFilters = useCallback((employees: SalaryDisplay[], currentFilters: typeof filters) => {
+  const applyFilters = useCallback((employees: SalaryDisplay[], currentFilters: typeof filters, currentMonth: string) => {
     let filtered = employees;
+
+    // Month filter
+    if (currentMonth) {
+      filtered = filtered.filter(emp => emp.month === currentMonth);
+    }
 
     // Search filter
     if (currentFilters.search) {
@@ -263,10 +266,10 @@ const SalaryManagementPage: React.FC = () => {
     return filtered;
   }, []);
 
-  // Update filtered data when filters or salary data changes
+  // Update filtered data when filters, salary data, or selected month changes
   useEffect(() => {
     if (salaryData) {
-      const filtered = applyFilters(salaryData.employees, filters);
+      const filtered = applyFilters(salaryData.employees, filters, selectedMonth);
       setFilteredEmployees(filtered);
       
       // Update pagination
@@ -277,7 +280,7 @@ const SalaryManagementPage: React.FC = () => {
         currentPage: 1 // Reset to first page when filters change
       }));
     }
-  }, [salaryData, filters, applyFilters]);
+  }, [salaryData, filters, selectedMonth, applyFilters]);
 
 
   const handleCalculateAllSalaries = async () => {
@@ -310,7 +313,7 @@ const SalaryManagementPage: React.FC = () => {
       
       // For now, use mock data
       // In a real app, you would call: await getAllSalariesDisplay(selectedMonth);
-      const mockData = getMockSalaryData();
+      const mockData = getMockSalaryData(selectedMonth);
       setSalaryData(mockData);
       
     } catch (error) {
@@ -355,22 +358,6 @@ const SalaryManagementPage: React.FC = () => {
             
             {/* Action Buttons */}
             <div className="flex items-center space-x-3">
-              <div className="month-selector">
-                <label htmlFor="month-select" className="block text-sm font-medium text-gray-700 mb-1">Select Month:</label>
-                <select 
-                  id="month-select"
-                  value={selectedMonth} 
-                  onChange={(e) => handleMonthChange(e.target.value)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                >
-                  {monthOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
               <button
                 onClick={handleCalculateAllSalaries}
                 disabled={isCalculating}
@@ -459,6 +446,8 @@ const SalaryManagementPage: React.FC = () => {
         <GenericSalaryFilters
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
+          selectedMonth={selectedMonth}
+          onMonthChange={handleMonthChange}
         />
 
         {/* Salary Table */}

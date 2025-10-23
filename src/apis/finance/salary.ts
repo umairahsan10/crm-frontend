@@ -175,13 +175,14 @@ export const getMonthOptions = (): { value: string; label: string }[] => {
 };
 
 // Mock data for development/testing
-export const getMockSalaryData = (): SalaryDisplayAll => {
+export const getMockSalaryData = (month?: string): SalaryDisplayAll => {
+  const selectedMonth = month || getCurrentMonth();
   const mockEmployees: SalaryDisplay[] = [
     {
       employeeId: 1,
       employeeName: 'John Doe',
       department: 'Sales',
-      month: '2025-01',
+      month: selectedMonth,
       baseSalary: 30000,
       commission: 2500,
       bonus: 1500,
@@ -199,7 +200,7 @@ export const getMockSalaryData = (): SalaryDisplayAll => {
       employeeId: 2,
       employeeName: 'Jane Smith',
       department: 'Marketing',
-      month: '2025-01',
+      month: selectedMonth,
       baseSalary: 28000,
       commission: 0,
       bonus: 800,
@@ -217,7 +218,7 @@ export const getMockSalaryData = (): SalaryDisplayAll => {
       employeeId: 3,
       employeeName: 'Mike Johnson',
       department: 'Sales',
-      month: '2025-01',
+      month: selectedMonth,
       baseSalary: 32000,
       commission: 1800,
       bonus: 1200,
@@ -234,7 +235,7 @@ export const getMockSalaryData = (): SalaryDisplayAll => {
       employeeId: 4,
       employeeName: 'Sarah Wilson',
       department: 'HR',
-      month: '2025-01',
+      month: selectedMonth,
       baseSalary: 26000,
       commission: 0,
       bonus: 500,
@@ -252,7 +253,7 @@ export const getMockSalaryData = (): SalaryDisplayAll => {
       employeeId: 5,
       employeeName: 'David Brown',
       department: 'Sales',
-      month: '2025-01',
+      month: selectedMonth,
       baseSalary: 35000,
       commission: 3200,
       bonus: 2000,
@@ -268,7 +269,7 @@ export const getMockSalaryData = (): SalaryDisplayAll => {
   ];
 
   return {
-    month: '2025-01',
+    month: selectedMonth,
     summary: {
       totalEmployees: 5,
       totalBaseSalary: 151000,
