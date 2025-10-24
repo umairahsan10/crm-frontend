@@ -25,9 +25,9 @@ const GenericEmployeeRequestsFilters: React.FC<GenericEmployeeRequestsFiltersPro
     {
       search: '',
       status: '',
+      department: '',
       priority: '',
       requestType: '',
-      department: '',
       fromDate: '',
       toDate: ''
     },
@@ -95,16 +95,19 @@ const GenericEmployeeRequestsFilters: React.FC<GenericEmployeeRequestsFiltersPro
     { value: 'Low', label: 'Low' },
     { value: 'Medium', label: 'Medium' },
     { value: 'High', label: 'High' },
-    { value: 'Critical', label: 'Critical' }
+    { value: 'Critical', label: 'Critical' },
+    { value: 'Urgent', label: 'Urgent' }
   ];
 
-  const typeOptions = [
+  const requestTypeOptions = [
     { value: 'Leave Request', label: 'Leave Request' },
     { value: 'Half-Day Request', label: 'Half-Day Request' },
     { value: 'Complaint', label: 'Complaint' },
     { value: 'Salary Query', label: 'Salary Query' },
+    { value: 'Late Request', label: 'Late Request' },
     { value: 'Other', label: 'Other' }
   ];
+
 
   return (
     <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
@@ -152,7 +155,7 @@ const GenericEmployeeRequestsFilters: React.FC<GenericEmployeeRequestsFiltersPro
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {renderSelect('status', 'Status', statusOptions)}
             {renderSelect('priority', 'Priority', priorityOptions)}
-            {renderSelect('requestType', 'Request Type', typeOptions)}
+            {renderSelect('requestType', 'Request Type', requestTypeOptions)}
             {renderInput('fromDate', 'From Date', 'date')}
             {renderInput('toDate', 'To Date', 'date')}
           </div>

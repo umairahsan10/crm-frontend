@@ -1,19 +1,19 @@
 import { apiGetJson, apiRequest } from '../utils/apiClient';
 
-// Types for HR Communication Requests
+// Types for HR Communication Requests - Updated to match API response
 export interface EmployeeRequest {
   id: number;
   empId: number;
-  departmentId: number;
-  requestType: string;
-  subject: string;
-  description: string;
-  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  departmentId: number | null;
+  requestType: string | null;
+  subject: string | null;
+  description: string | null;
+  priority: 'Low' | 'Medium' | 'High' | 'Critical' | 'Urgent';
   status: 'Pending' | 'In_Progress' | 'Resolved' | 'Rejected' | 'Cancelled';
-  assignedTo: number;
+  assignedTo: number | null;
+  responseNotes: string | null;
   requestedOn: string;
   resolvedOn: string | null;
-  createdAt: string;
   updatedAt: string;
   employee: {
     id: number;
@@ -32,13 +32,13 @@ export interface EmployeeRequest {
   department: {
     id: number;
     name: string;
-  };
+  } | null;
   assignedToEmployee: {
     id: number;
     firstName: string;
     lastName: string;
     email: string;
-  };
+  } | null;
 }
 
 export interface EmployeeRequestAction {
@@ -79,28 +79,48 @@ export interface EmployeeRequestStats {
 }
 
 export interface GetEmployeeRequestsDto {
+  page?: number;
+  limit?: number;
+  search?: string;
   status?: 'Pending' | 'In_Progress' | 'Resolved' | 'Rejected' | 'Cancelled';
-  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical' | 'Urgent';
   department_id?: number;
   employee_id?: number;
   assigned_to?: number;
   start_date?: string;
   end_date?: string;
-  request_type?: string;
+  requestType?: string;
+}
+
+// API Response interface for paginated data
+export interface EmployeeRequestsResponse {
+  data: EmployeeRequest[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 // API Functions
-export const getEmployeeRequestsApi = async (query?: GetEmployeeRequestsDto): Promise<EmployeeRequest[]> => {
+export const getEmployeeRequestsApi = async (query?: GetEmployeeRequestsDto): Promise<EmployeeRequestsResponse> => {
   const params = new URLSearchParams();
   
+  // Employee requests API parameters
+  if (query?.page) params.append('page', query.page.toString());
+  if (query?.limit) params.append('limit', query.limit.toString());
+  if (query?.search) params.append('search', query.search);
   if (query?.status) params.append('status', query.status);
   if (query?.priority) params.append('priority', query.priority);
   if (query?.department_id) params.append('departmentId', query.department_id.toString());
-  if (query?.employee_id) params.append('empId', query.employee_id.toString()); // Changed to empId to match backend
+  if (query?.employee_id) params.append('empId', query.employee_id.toString());
   if (query?.assigned_to) params.append('assignedTo', query.assigned_to.toString());
-  if (query?.start_date) params.append('startDate', query.start_date);
-  if (query?.end_date) params.append('endDate', query.end_date);
-  if (query?.request_type) params.append('requestType', query.request_type);
+  if (query?.start_date) params.append('fromDate', query.start_date);
+  if (query?.end_date) params.append('toDate', query.end_date);
+  if (query?.requestType) params.append('requestType', query.requestType);
 
   const queryString = params.toString();
   const url = queryString ? `/communication/employee/hr-requests?${queryString}` : '/communication/employee/hr-requests';
@@ -108,7 +128,7 @@ export const getEmployeeRequestsApi = async (query?: GetEmployeeRequestsDto): Pr
   console.log('API call URL:', url);
   console.log('Query parameters:', query);
   
-  return apiGetJson<EmployeeRequest[]>(url);
+  return apiGetJson<EmployeeRequestsResponse>(url);
 };
 
 export const getEmployeeRequestsByStatusApi = async (status: string): Promise<EmployeeRequest[]> => {
@@ -179,9 +199,9 @@ export const exportEmployeeRequestsApi = async (query: GetEmployeeRequestsDto & 
   if (query.department_id) params.append('department_id', query.department_id.toString());
   if (query.employee_id) params.append('employee_id', query.employee_id.toString());
   if (query.assigned_to) params.append('assigned_to', query.assigned_to.toString());
-  if (query.start_date) params.append('start_date', query.start_date);
-  if (query.end_date) params.append('end_date', query.end_date);
-  if (query.request_type) params.append('request_type', query.request_type);
+  if (query.start_date) params.append('fromDate', query.start_date);
+  if (query.end_date) params.append('toDate', query.end_date);
+  if (query.requestType) params.append('requestType', query.requestType);
   if (query.format) params.append('format', query.format);
 
   const queryString = params.toString();

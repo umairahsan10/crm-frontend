@@ -14,30 +14,11 @@ import {
   useTakeRequestAction,
   useExportRequests
 } from '../../../hooks/queries/useEmployeeRequestsQueries';
-import { useEmployees } from '../../../hooks/queries/useHRQueries';
 import { 
   type EmployeeRequest, 
   type EmployeeRequestAction
 } from '../../../apis/employee-requests';
 
-// Local interface for component
-interface EmployeeRequestTableRow {
-  id: string; // For DataTable compatibility
-  request_id: number;
-  emp_id: number;
-  employee_name: string;
-  employee_email: string;
-  department_name: string;
-  request_type: string;
-  subject: string;
-  description: string;
-  priority: string;
-  status: string;
-  requested_on: string;
-  resolved_on: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 const EmployeeRequestsManagement: React.FC = () => {
   const { user } = useAuth();
@@ -49,9 +30,12 @@ const EmployeeRequestsManagement: React.FC = () => {
   // Filter states
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [priorityFilter, setPriorityFilter] = useState<string>('');
   const [departmentFilter, setDepartmentFilter] = useState<string>('');
+  const [priorityFilter, setPriorityFilter] = useState<string>('');
   const [requestTypeFilter, setRequestTypeFilter] = useState<string>('');
+  const [fromDateFilter, setFromDateFilter] = useState<string>('');
+  const [toDateFilter, setToDateFilter] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('all');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,29 +48,64 @@ const EmployeeRequestsManagement: React.FC = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
 
-  // React Query hooks
-  const filters = useMemo(() => ({
-    search,
-    status: statusFilter,
-    priority: priorityFilter,
-    department: departmentFilter,
-    requestType: requestTypeFilter,
-    page: currentPage,
-    limit: itemsPerPage
-  }), [search, statusFilter, priorityFilter, departmentFilter, requestTypeFilter, currentPage]);
 
-  // Use appropriate hook based on user role
+  // Use appropriate hook based on user role (single API call like Request Admin page)
   const requestsQuery = isHROrAdmin 
-    ? useEmployeeRequests(filters)
+    ? useEmployeeRequests({
+        page: currentPage,
+        limit: itemsPerPage,
+        search,
+        status: statusFilter,
+        department: departmentFilter,
+        priority: priorityFilter,
+        requestType: requestTypeFilter,
+        start_date: fromDateFilter,
+        end_date: toDateFilter
+      })
     : useMyEmployeeRequests(Number(user?.id), { enabled: !!user?.id });
 
-  const employeesQuery = useEmployees(100);
   const takeActionMutation = useTakeRequestAction();
   const exportMutation = useExportRequests();
 
   // Extract data from queries
-  const employeeRequests = requestsQuery.data || [];
-  const statisticsQuery = useEmployeeRequestsStatistics(employeeRequests);
+  const requestsData = requestsQuery.data || { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 1, hasNext: false, hasPrev: false } };
+  const allEmployeeRequests = requestsData.data || [];
+  
+  // Transform to table format and apply tab filtering (exactly like Request Admin page)
+  const employeeRequests = useMemo(() => {
+    // First transform the data to table format
+    let transformed = allEmployeeRequests.map((request: any) => ({
+      id: request.id.toString(),
+      request_id: request.id,
+      emp_id: request.empId,
+      employee_name: `${request.employee?.firstName || ''} ${request.employee?.lastName || ''}`.trim(),
+      employee_email: request.employee?.email || 'N/A',
+      department_name: request.employee?.department?.name || 'Unknown',
+      request_type: request.requestType || 'Other',
+      subject: request.subject || 'N/A',
+      description: request.description || 'N/A',
+      priority: request.priority || 'Low',
+      status: request.status || 'Pending',
+      requested_on: request.requestedOn || new Date().toISOString(),
+      resolved_on: request.resolvedOn || null,
+      created_at: request.requestedOn || new Date().toISOString(),
+      updated_at: request.updatedAt || new Date().toISOString()
+    }));
+
+    // Apply tab filtering only (other filters are handled by API)
+    if (activeTab === 'all') {
+      return transformed;
+    }
+    
+    // Filter by pending status
+    if (activeTab === 'pending') {
+      return transformed.filter((req: any) => req.status === 'Pending');
+    }
+    
+    return transformed;
+  }, [allEmployeeRequests, activeTab]);
+
+  const statisticsQuery = useEmployeeRequestsStatistics(allEmployeeRequests);
   const statistics = statisticsQuery.data || {
     total_requests: 0,
     pending_requests: 0,
@@ -102,11 +121,47 @@ const EmployeeRequestsManagement: React.FC = () => {
     department_breakdown: [],
     request_type_breakdown: []
   };
-  const hrEmployees = employeesQuery.data?.employees || [];
+  // HR employees data is now included in the requests response
+  const hrEmployees = allEmployeeRequests.map((request: any) => request.employee).filter((emp: any, index: number, self: any[]) => 
+    index === self.findIndex((e: any) => e.id === emp.id)
+  );
+
+  // Calculate counts for tabs using unfiltered data
+  const tabCounts = useMemo(() => {
+    const requestTypeCounts: Record<string, number> = {};
+    const priorityCounts: Record<string, number> = {};
+    const statusCounts: Record<string, number> = {};
+    const departmentCounts: Record<string, number> = {};
+
+
+    allEmployeeRequests.forEach((request: any) => {
+      // Count by request type
+      const requestType = request.requestType || 'Other';
+      requestTypeCounts[requestType] = (requestTypeCounts[requestType] || 0) + 1;
+
+      // Count by priority
+      const priority = request.priority || 'Low';
+      priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+
+      // Count by status
+      const status = request.status || 'Pending';
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+
+      // Count by department
+      const department = request.employee?.department?.name || 'Unknown';
+      departmentCounts[department] = (departmentCounts[department] || 0) + 1;
+    });
+
+    return {
+      requestTypeCounts,
+      priorityCounts,
+      statusCounts,
+      departmentCounts
+    };
+  }, [allEmployeeRequests]);
 
   // Loading states
   const loading = requestsQuery.isLoading;
-  const hrEmployeesLoading = employeesQuery.isLoading;
 
   // No access check needed - all logged-in users can access this page
   if (!user) {
@@ -141,40 +196,18 @@ const EmployeeRequestsManagement: React.FC = () => {
     notification.show({ message: 'Request created successfully', type: 'success' });
   };
 
-  // Convert EmployeeRequest to EmployeeRequestTableRow format
-  const convertToTableRow = (request: EmployeeRequest): EmployeeRequestTableRow => ({
-    id: request.id.toString(),
-    request_id: request.id,
-    emp_id: request.empId,
-    employee_name: `${request.employee?.firstName || ''} ${request.employee?.lastName || ''}`.trim() || 'N/A',
-    employee_email: request.employee?.email || 'N/A',
-    department_name: request.department?.name || 'N/A',
-    request_type: request.requestType || 'N/A',
-    subject: request.subject || 'N/A',
-    description: request.description || 'N/A',
-    priority: request.priority || 'Low',
-    status: request.status || 'Pending',
-    requested_on: request.requestedOn || new Date().toISOString(),
-    resolved_on: request.resolvedOn || null,
-    created_at: request.createdAt || new Date().toISOString(),
-    updated_at: request.updatedAt || new Date().toISOString()
-  });
-
-  // Convert requests to table format
-  const tableRequests = employeeRequests.map(convertToTableRow);
-  
-  // Pagination calculations
-  const totalItems = tableRequests.length;
+  // Pagination calculations (using client-side pagination for filtered results)
+  const totalItems = employeeRequests.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedRequests = tableRequests.slice(
+  const paginatedRequests = employeeRequests.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
   // Handle table row click
-  const handleTableRowClick = (row: EmployeeRequestTableRow) => {
-    // Find the original EmployeeRequest object
-    const originalRequest = employeeRequests.find((req: EmployeeRequest) => req.id === row.request_id);
+  const handleTableRowClick = (row: any) => {
+    // Find the original EmployeeRequest object from allEmployeeRequests
+    const originalRequest = allEmployeeRequests.find((req: any) => req.id === row.request_id);
     if (originalRequest) {
       handleRequestClick(originalRequest);
     }
@@ -249,7 +282,16 @@ const EmployeeRequestsManagement: React.FC = () => {
   // Handle bulk actions
   const handleExportRequests = async () => {
     try {
-      await exportMutation.mutateAsync(filters);
+      const exportFilters = {
+        search,
+        status: statusFilter,
+        department: departmentFilter,
+        priority: priorityFilter,
+        requestType: requestTypeFilter,
+        start_date: fromDateFilter,
+        end_date: toDateFilter
+      };
+      await exportMutation.mutateAsync(exportFilters);
       notification.show({ message: 'Requests exported successfully', type: 'success' });
     } catch (error) {
       console.error('Error exporting requests:', error);
@@ -324,20 +366,73 @@ const EmployeeRequestsManagement: React.FC = () => {
           onFiltersChange={(newFilters) => {
             setSearch(newFilters.search || '');
             setStatusFilter(newFilters.status || '');
-            setPriorityFilter(newFilters.priority || '');
             setDepartmentFilter(newFilters.department || '');
+            setPriorityFilter(newFilters.priority || '');
             setRequestTypeFilter(newFilters.requestType || '');
+            setFromDateFilter(newFilters.fromDate || '');
+            setToDateFilter(newFilters.toDate || '');
             setCurrentPage(1); // Reset to first page when filters change
           }}
           onClearFilters={() => {
             setSearch('');
             setStatusFilter('');
-            setPriorityFilter('');
             setDepartmentFilter('');
+            setPriorityFilter('');
             setRequestTypeFilter('');
+            setFromDateFilter('');
+            setToDateFilter('');
             setCurrentPage(1);
           }}
         />
+
+        {/* Tab Navigation */}
+        <div className="w-full border-b border-gray-200 mb-4">
+          <div className="flex w-full justify-between">
+            {/* All Requests Tab */}
+            <button
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${
+                activeTab === 'all'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-blue-600'
+              }`}
+              onClick={() => {
+                setActiveTab('all');
+                setCurrentPage(1);
+              }}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              All Requests ({tabCounts.statusCounts ? Object.values(tabCounts.statusCounts).reduce((sum, count) => sum + count, 0) : 0})
+            </button>
+
+            {/* Pending Status Tab */}
+            <button
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${
+                activeTab === 'pending'
+                  ? 'border-yellow-600 text-yellow-600'
+                  : 'border-transparent text-gray-500 hover:text-yellow-600'
+              }`}
+              onClick={() => {
+                setActiveTab('pending');
+                setCurrentPage(1);
+              }}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Pending ({tabCounts.statusCounts?.Pending || 0})
+            </button>
+          </div>
+        </div>
 
         {/* Bulk Actions */}
         <div className="mb-6">
@@ -382,7 +477,7 @@ const EmployeeRequestsManagement: React.FC = () => {
             isOpen={drawerOpen}
             onClose={handleCloseDrawer}
             hrEmployees={hrEmployees}
-            hrEmployeesLoading={hrEmployeesLoading}
+            hrEmployeesLoading={false}
             onResolve={handleResolve}
             onReject={handleReject}
             onUpdate={handleUpdate}
