@@ -12,6 +12,7 @@ export interface Unit {
   };
   teamsCount?: number;
   employeesCount?: number;
+  projectsCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -153,12 +154,22 @@ export interface UnitDetailsDrawerProps {
 // ===== FILTER TYPES =====
 
 export interface UnitFilters {
+  // Existing filters
   search?: string;
   hasHead?: string;
   hasTeams?: string;
   hasProjects?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  
+  // NEW - Add all documented filters
+  headEmail?: string;
+  headName?: string;
+  unitName?: string;
+  minTeams?: number;
+  maxTeams?: number;
+  minProjects?: number;
+  maxProjects?: number;
 }
 
 // ===== PAGINATION TYPES =====

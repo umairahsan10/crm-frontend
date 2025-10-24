@@ -21,8 +21,11 @@ const UpdateUnitForm: React.FC<UpdateUnitFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateUnitMutation = useUpdateProductionUnit();
-  const { data: headsData, isLoading: loadingHeads } = useAvailableUnitHeads();
-  const availableHeads = (headsData && typeof headsData === 'object' && 'data' in headsData && (headsData as any).data && typeof (headsData as any).data === 'object' && 'heads' in (headsData as any).data) ? ((headsData as any).data as any).heads : [];
+  // Use assigned=false to get only unassigned heads (available for assignment)
+  const { data: headsData, isLoading: loadingHeads } = useAvailableUnitHeads(false, { 
+    enabled: true // Always enabled for update form since it's only shown when user can update
+  });
+  const availableHeads = (headsData as any)?.data?.heads || [];
 
   const isLoading = updateUnitMutation.isPending || loadingHeads;
 
@@ -118,6 +121,16 @@ const UpdateUnitForm: React.FC<UpdateUnitFormProps> = ({
         </select>
         {errors.headId && (
           <p className="mt-1 text-sm text-red-600">{errors.headId}</p>
+        )}
+        {!isLoading && availableHeads.length === 0 && (
+          <p className="mt-1 text-sm text-amber-600">
+            No available unit heads found. All unit heads may already be assigned to other units.
+          </p>
+        )}
+        {!isLoading && availableHeads.length > 0 && (
+          <p className="mt-1 text-sm text-green-600">
+            Showing {availableHeads.length} available unit head{availableHeads.length !== 1 ? 's' : ''} (not assigned to any unit).
+          </p>
         )}
       </div>
 

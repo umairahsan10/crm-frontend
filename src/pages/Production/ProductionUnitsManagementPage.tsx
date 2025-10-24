@@ -3,15 +3,18 @@ import ProductionUnitsTable from '../../components/production/units/ProductionUn
 import GenericProductionUnitsFilters from '../../components/production/units/GenericProductionUnitsFilters';
 import ProductionUnitDetailsDrawer from '../../components/production/units/ProductionUnitDetailsDrawer';
 import CreateUnitForm from '../../components/production/units/CreateUnitForm';
+import { useAuth } from '../../context/AuthContext';
 import { 
   useProductionUnits,
   useAvailableUnitHeads,
   useCreateProductionUnit,
-  useUpdateProductionUnit
+  useUpdateProductionUnit,
+  useDeleteProductionUnit
 } from '../../hooks/queries/useProductionUnitsQueries';
 import type { Unit } from '../../types/production/units';
 
 const ProductionUnitsManagementPage: React.FC = () => {
+  const { user } = useAuth();
   
   // UI State management
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
@@ -37,6 +40,13 @@ const ProductionUnitsManagementPage: React.FC = () => {
     sortOrder: 'desc' as 'asc' | 'desc'
   });
 
+  // Role-based access control
+  const canSeeAllUnits = user?.role === 'dep_manager' || user?.role === 'admin';
+  const canCreateUnits = user?.role === 'dep_manager' || user?.role === 'admin';
+  const canUpdateUnits = user?.role === 'dep_manager' || user?.role === 'admin';
+  const canDeleteUnits = user?.role === 'dep_manager' || user?.role === 'admin';
+  const showFilters = canSeeAllUnits; // Only show filters if user can see all units
+
 
   // Fetch data with current filters and pagination
   const { 
@@ -44,22 +54,26 @@ const ProductionUnitsManagementPage: React.FC = () => {
     isLoading: isLoadingUnits
   } = useProductionUnits(pagination.currentPage, pagination.itemsPerPage, filters);
 
+  // Only fetch available heads when creating or updating units (for department managers)
+  // Use assigned=false to get only unassigned heads (available for assignment)
   const { 
     data: availableHeadsData
-  } = useAvailableUnitHeads();
+  } = useAvailableUnitHeads(false, { 
+    enabled: canCreateUnits && (showCreateForm || !!unitToEdit) 
+  });
 
   // Mutations
   const createUnitMutation = useCreateProductionUnit();
   const updateUnitMutation = useUpdateProductionUnit();
+  const deleteUnitMutation = useDeleteProductionUnit();
 
   // Update pagination when data changes
   React.useEffect(() => {
-    if (unitsData && typeof unitsData === 'object' && 'data' in unitsData && unitsData.data) {
-      const data = unitsData.data as any[];
+    if ((unitsData as any)?.data) {
       setPagination(prev => ({
         ...prev,
-        totalItems: (unitsData as any).pagination?.total || data.length,
-        totalPages: (unitsData as any).pagination?.totalPages || 1
+        totalItems: (unitsData as any).data?.total || (unitsData as any).data?.length || 0,
+        totalPages: (unitsData as any).data?.pagination?.totalPages || 1
       }));
     }
   }, [unitsData]);
@@ -115,10 +129,25 @@ const ProductionUnitsManagementPage: React.FC = () => {
     }
   }, [updateUnitMutation]);
 
+  const handleDeleteUnit = useCallback(async (unit: Unit) => {
+    try {
+      await deleteUnitMutation.mutateAsync(unit.id);
+      setNotification({ type: 'success', message: 'Production unit deleted successfully!' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      setNotification({ 
+        type: 'error', 
+        message: `Failed to delete production unit: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      });
+      setTimeout(() => setNotification(null), 5000);
+    }
+  }, [deleteUnitMutation]);
 
 
-  const units = (unitsData && typeof unitsData === 'object' && 'data' in unitsData) ? (unitsData.data as Unit[]) : [];
-  const availableHeads = (availableHeadsData && typeof availableHeadsData === 'object' && 'data' in availableHeadsData && availableHeadsData.data && typeof availableHeadsData.data === 'object' && 'heads' in availableHeadsData.data) ? (availableHeadsData.data as any).heads : [];
+
+  const units = (unitsData as any)?.data || [];
+  const availableHeads = (availableHeadsData as any)?.data?.heads || [];
+
 
   return (
     <div className="production-units-management-page p-6">
@@ -126,47 +155,98 @@ const ProductionUnitsManagementPage: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Production Units Management</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {canSeeAllUnits ? 'Production Units Management' : 'My Production Unit'}
+            </h1>
             <p className="text-gray-600 mt-1">
-              Manage production units, teams, and employees
+              {canSeeAllUnits 
+                ? 'Manage production units, teams, and employees'
+                : 'View your assigned production unit details'
+              }
             </p>
           </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Create Unit
-            </button>
-          </div>
+          {canCreateUnits && (
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Create Unit
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
 
-      {/* Filters */}
-      <GenericProductionUnitsFilters
-        showFilters={{
-          hasHead: true,
-          hasTeams: true,
-          hasProjects: true,
-          sortBy: true
-        }}
-        onFiltersChange={handleFiltersChange}
-        onClearFilters={handleClearFilters}
-        availableHeads={availableHeads}
-        searchPlaceholder="Search production units by name..."
-        theme={{
-          primary: 'bg-blue-600',
-          secondary: 'hover:bg-blue-700',
-          ring: 'ring-blue-500',
-          bg: 'bg-blue-100',
-          text: 'text-blue-800'
-        }}
-      />
+      {/* Filters - Only show for users who can see all units */}
+      {showFilters && (
+        <GenericProductionUnitsFilters
+          showFilters={{
+            hasHead: true,
+            hasTeams: true,
+            hasProjects: true,
+            sortBy: true
+          }}
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+          availableHeads={availableHeads}
+          searchPlaceholder="Search production units by name..."
+          theme={{
+            primary: 'bg-blue-600',
+            secondary: 'hover:bg-blue-700',
+            ring: 'ring-blue-500',
+            bg: 'bg-blue-100',
+            text: 'text-blue-800'
+          }}
+        />
+      )}
 
+      {/* Role-based information for limited access users */}
+      {!canSeeAllUnits && (
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <svg className="h-5 w-5 text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h3 className="text-sm font-medium text-blue-800">
+                {user?.role === 'unit_head' && 'Unit Head View'}
+                {user?.role === 'team_lead' && 'Team Lead View'}
+                {(user?.role === 'senior' || user?.role === 'junior') && 'Production Employee View'}
+              </h3>
+              <p className="text-sm text-blue-600 mt-1">
+                {user?.role === 'unit_head' && 'You can view and manage your assigned production unit.'}
+                {user?.role === 'team_lead' && 'You can view production units where you lead teams.'}
+                {(user?.role === 'senior' || user?.role === 'junior') && 'You can view production units where you are assigned as a production employee.'}
+              </p>
+              <p className="text-xs text-blue-500 mt-1">
+                Showing {units.length} unit{units.length !== 1 ? 's' : ''} based on your role and assignments.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Debug information for department managers */}
+      {canSeeAllUnits && (
+        <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <svg className="h-5 w-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h3 className="text-sm font-medium text-green-800">Department Manager View</h3>
+              <p className="text-sm text-green-600 mt-1">
+                You have full access to manage all production units. Showing {units.length} unit{units.length !== 1 ? 's' : ''} in the system.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <ProductionUnitsTable
@@ -178,6 +258,7 @@ const ProductionUnitsManagementPage: React.FC = () => {
         itemsPerPage={pagination.itemsPerPage}
         onPageChange={handlePageChange}
         onUnitClick={handleUnitClick}
+        onDeleteUnit={canDeleteUnits ? handleDeleteUnit : undefined}
       />
 
       {/* Create Unit Modal */}
@@ -198,28 +279,6 @@ const ProductionUnitsManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Unit Modal */}
-      {unitToEdit && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setUnitToEdit(null)} />
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Production Unit</h3>
-                <p className="text-sm text-gray-500">Edit form would go here...</p>
-                <div className="mt-4 flex justify-end space-x-3">
-                  <button
-                    onClick={() => setUnitToEdit(null)}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit Unit Modal */}
       {unitToEdit && (
@@ -256,6 +315,7 @@ const ProductionUnitsManagementPage: React.FC = () => {
         unit={selectedUnit}
         isOpen={!!selectedUnit}
         onClose={() => setSelectedUnit(null)}
+        canUpdate={canUpdateUnits}
         onUnitUpdated={(updatedUnit) => {
           setSelectedUnit(updatedUnit);
           setNotification({
@@ -265,6 +325,7 @@ const ProductionUnitsManagementPage: React.FC = () => {
           setTimeout(() => setNotification(null), 3000);
         }}
       />
+
 
 
       {/* Notification */}

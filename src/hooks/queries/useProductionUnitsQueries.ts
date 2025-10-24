@@ -6,7 +6,9 @@ import {
   updateProductionUnitApi,
   deleteProductionUnitApi,
   getAvailableUnitHeadsApi,
-  getUnitTeamsApi
+  getAvailableTeamsApi,
+  addTeamToUnitApi,
+  removeTeamFromUnitApi
 } from '../../apis/production-units';
 import type { 
   CreateUnitRequest, 
@@ -25,6 +27,7 @@ export const productionUnitsQueryKeys = {
   detail: (id: string) => [...productionUnitsQueryKeys.details(), id] as const,
   teams: (unitId: number) => [...productionUnitsQueryKeys.all, 'teams', unitId] as const,
   availableHeads: () => [...productionUnitsQueryKeys.all, 'available-heads'] as const,
+  availableTeams: () => [...productionUnitsQueryKeys.all, 'available-teams'] as const,
 };
 
 // ===== QUERY HOOKS =====
@@ -68,18 +71,20 @@ export const useAvailableUnitHeads = (assigned?: boolean, options: any = {}) => 
   });
 };
 
-
-// Get teams in unit
-export const useUnitTeams = (unitId: number, options: any = {}) => {
+// Get available teams
+export const useAvailableTeams = (assigned?: boolean, options: any = {}) => {
   return useQuery({
-    queryKey: productionUnitsQueryKeys.teams(unitId),
-    queryFn: () => getUnitTeamsApi(unitId),
-    staleTime: 3 * 60 * 1000, // 3 minutes
-    gcTime: 8 * 60 * 1000, // 8 minutes
-    enabled: !!unitId && options.enabled !== false,
+    queryKey: [...productionUnitsQueryKeys.availableTeams(), { assigned }],
+    queryFn: () => getAvailableTeamsApi(assigned),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     ...options,
   });
 };
+
+
+// Note: getUnitTeamsApi was removed as it's not part of the documented API
+// Teams are now included in the unit details API response
 
 
 // ===== MUTATION HOOKS =====
@@ -123,6 +128,40 @@ export const useDeleteProductionUnit = () => {
       queryClient.invalidateQueries({ queryKey: productionUnitsQueryKeys.lists() });
       // Remove specific unit from cache
       queryClient.removeQueries({ queryKey: productionUnitsQueryKeys.detail(variables.toString()) });
+    },
+  });
+};
+
+// Add team to unit
+export const useAddTeamToUnit = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ unitId, teamId }: { unitId: number; teamId: number }) => 
+      addTeamToUnitApi(unitId, teamId),
+    onSuccess: (_, variables) => {
+      // Invalidate and refetch production units list and specific unit
+      queryClient.invalidateQueries({ queryKey: productionUnitsQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productionUnitsQueryKeys.detail(variables.unitId.toString()) });
+      // Invalidate available teams to refresh the list
+      queryClient.invalidateQueries({ queryKey: productionUnitsQueryKeys.availableTeams() });
+    },
+  });
+};
+
+// Remove team from unit
+export const useRemoveTeamFromUnit = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ unitId, teamId }: { unitId: number; teamId: number }) => 
+      removeTeamFromUnitApi(unitId, teamId),
+    onSuccess: (_, variables) => {
+      // Invalidate and refetch production units list and specific unit
+      queryClient.invalidateQueries({ queryKey: productionUnitsQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productionUnitsQueryKeys.detail(variables.unitId.toString()) });
+      // Invalidate available teams to refresh the list
+      queryClient.invalidateQueries({ queryKey: productionUnitsQueryKeys.availableTeams() });
     },
   });
 };

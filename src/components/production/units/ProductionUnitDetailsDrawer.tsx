@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Unit } from '../../../types/production/units';
-import { useProductionUnit } from '../../../hooks/queries/useProductionUnitsQueries';
+import { useProductionUnit, useRemoveTeamFromUnit, useAddTeamToUnit, useAvailableTeams } from '../../../hooks/queries/useProductionUnitsQueries';
 import { useNavbar } from '../../../context/NavbarContext';
 import UpdateUnitForm from './UpdateUnitForm';
 
@@ -10,23 +10,40 @@ interface ProductionUnitDetailsDrawerProps {
   onClose: () => void;
   onUnitUpdated?: (updatedUnit: Unit) => void;
   viewMode?: 'full' | 'details-only';  // full = all tabs, details-only = just Details tab
+  canUpdate?: boolean; // Whether user can update units
 }
 
 const ProductionUnitDetailsDrawer: React.FC<ProductionUnitDetailsDrawerProps> = ({
   unit,
   isOpen,
   onClose,
-  viewMode = 'full'
+  viewMode = 'full',
+  canUpdate = false
 }) => {
   const { isNavbarOpen } = useNavbar();
-  const [activeTab, setActiveTab] = useState<'details' | 'employees' | 'teams' | 'projects' | 'update'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'teams' | 'projects' | 'update'>('details');
   const [isMobile, setIsMobile] = useState(false);
+  const [showAddTeamModal, setShowAddTeamModal] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [showRemoveTeamConfirmation, setShowRemoveTeamConfirmation] = useState(false);
+  const [teamToRemove, setTeamToRemove] = useState<any>(null);
+
 
   // Fetch detailed data if unit is provided (includes employees, projects, teams, head)
   const { data: unitData, isLoading: isLoadingUnit } = useProductionUnit(
     unit?.id?.toString() || '', 
     { enabled: !!unit?.id }
   );
+
+  // Team management mutations
+  const removeTeamMutation = useRemoveTeamFromUnit();
+  const addTeamMutation = useAddTeamToUnit();
+  
+  // Fetch available teams (unassigned teams)
+  const { data: availableTeamsData, isLoading: isLoadingAvailableTeams } = useAvailableTeams(false, {
+    enabled: showAddTeamModal && !!unit?.id
+  });
+  const availableTeams = (availableTeamsData as any)?.data || [];
 
   // Check for mobile view
   useEffect(() => {
@@ -46,6 +63,52 @@ const ProductionUnitDetailsDrawer: React.FC<ProductionUnitDetailsDrawerProps> = 
     }
   }, [unit]);
 
+
+  // Team management handlers
+  const handleRemoveTeam = async (teamId: number) => {
+    if (!unit?.id) return;
+    
+    try {
+      await removeTeamMutation.mutateAsync({ unitId: unit.id, teamId });
+      setShowRemoveTeamConfirmation(false);
+      setTeamToRemove(null);
+    } catch (error) {
+      console.error('Failed to remove team:', error);
+    }
+  };
+
+  const handleRemoveTeamClick = (team: any) => {
+    setTeamToRemove(team);
+    setShowRemoveTeamConfirmation(true);
+  };
+
+  const handleCancelRemoveTeam = () => {
+    setShowRemoveTeamConfirmation(false);
+    setTeamToRemove(null);
+  };
+
+  const handleAddTeam = async () => {
+    if (!unit?.id || !selectedTeamId) return;
+    
+    try {
+      await addTeamMutation.mutateAsync({ unitId: unit.id, teamId: selectedTeamId });
+      setShowAddTeamModal(false);
+      setSelectedTeamId(null);
+    } catch (error) {
+      console.error('Failed to add team:', error);
+    }
+  };
+
+  const handleOpenAddTeamModal = () => {
+    setShowAddTeamModal(true);
+    setSelectedTeamId(null);
+  };
+
+  const handleCloseAddTeamModal = () => {
+    setShowAddTeamModal(false);
+    setSelectedTeamId(null);
+  };
+
   if (!isOpen || !unit) return null;
 
   const currentUnit = (unitData && typeof unitData === 'object' && 'data' in unitData) ? (unitData.data as Unit) : unit;
@@ -56,26 +119,153 @@ const ProductionUnitDetailsDrawer: React.FC<ProductionUnitDetailsDrawerProps> = 
   }
   
   // Get all data from unit details API (includes employees, projects, teams, head)
-  const employees = (unitData && typeof unitData === 'object' && 'data' in unitData && unitData.data && typeof unitData.data === 'object' && 'productionEmployees' in unitData.data) ? (unitData.data as any).productionEmployees : [];
-  const teams = (unitData && typeof unitData === 'object' && 'data' in unitData && unitData.data && typeof unitData.data === 'object' && 'teams' in unitData.data) ? (unitData.data as any).teams : [];
-  const projects = (unitData && typeof unitData === 'object' && 'data' in unitData && unitData.data && typeof unitData.data === 'object' && 'projects' in unitData.data) ? (unitData.data as any).projects : [];
+  // const employees = (unitData as any)?.data?.productionEmployees || []; // Removed - employees tab not needed
+  const teams = (unitData as any)?.data?.teams || [];
+  const projects = (unitData as any)?.data?.allProjects || [];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      <div className="absolute inset-0 bg-gray-900 bg-opacity-75" onClick={onClose}></div>
-      
-      <div 
-        className="relative mx-auto h-full bg-white shadow-2xl rounded-lg border border-gray-200 transform transition-all duration-300 ease-out"
-        style={{
-          marginLeft: isMobile ? '0' : (isNavbarOpen ? '280px' : '100px'),
-          width: isMobile ? '100vw' : (isNavbarOpen ? 'calc(100vw - 350px)' : 'calc(100vw - 150px)'),
-          maxWidth: isMobile ? '100vw' : '1200px',
-          marginRight: isMobile ? '0' : '50px',
-          marginTop: isMobile ? '0' : '20px',
-          marginBottom: isMobile ? '0' : '20px',
-          height: isMobile ? '100vh' : 'calc(100vh - 40px)'
-        }}
-      >
+    <>
+
+      {/* Add Team Modal - Overlay over drawer */}
+      {showAddTeamModal && (
+        <div className="absolute inset-0 bg-gray-900 bg-opacity-75 z-[60] flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full mx-4 border border-gray-200">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">Add Team to Unit</h2>
+                </div>
+                <button
+                  onClick={handleCloseAddTeamModal}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Available Teams List */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Team to Add
+                </label>
+                {isLoadingAvailableTeams ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-gray-600">Loading available teams...</span>
+                  </div>
+                ) : availableTeams.length > 0 ? (
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {availableTeams.map((team: any) => (
+                      <div
+                        key={team.id}
+                        onClick={() => setSelectedTeamId(team.id)}
+                        className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                          selectedTeamId === team.id
+                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center">
+                              <span className="text-sm font-medium text-white">
+                                {team.name?.charAt(0) || 'T'}
+                              </span>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-900">{team.name}</h3>
+                              <p className="text-sm text-gray-500">
+                                Lead: {team.teamLead?.firstName} {team.teamLead?.lastName}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-900">{team.employeeCount} members</p>
+                            {/* <p className="text-xs text-gray-500">{team.currentProject ? 1 : 0} projects</p> */}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 mb-2">
+                      <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 text-sm">No available teams found</p>
+                    <p className="text-gray-400 text-xs mt-1">All teams may already be assigned to units</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Error Message */}
+              {addTeamMutation.error && (
+                <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-red-800">
+                        {addTeamMutation.error.message || 'Failed to add team to unit'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleCloseAddTeamModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  disabled={addTeamMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddTeam}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!selectedTeamId || addTeamMutation.isPending}
+                >
+                  {addTeamMutation.isPending ? 'Adding...' : 'Add Team'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="fixed inset-0 z-50 overflow-hidden">
+        <div className="absolute inset-0 bg-gray-900 bg-opacity-75" onClick={onClose}></div>
+        
+        <div 
+          className="relative mx-auto h-full bg-white shadow-2xl rounded-lg border border-gray-200 transform transition-all duration-300 ease-out"
+          style={{
+            marginLeft: isMobile ? '0' : (isNavbarOpen ? '280px' : '100px'),
+            width: isMobile ? '100vw' : (isNavbarOpen ? 'calc(100vw - 350px)' : 'calc(100vw - 150px)'),
+            maxWidth: isMobile ? '100vw' : '1200px',
+            marginRight: isMobile ? '0' : '50px',
+            marginTop: isMobile ? '0' : '20px',
+            marginBottom: isMobile ? '0' : '20px',
+            height: isMobile ? '100vh' : 'calc(100vh - 40px)'
+          }}
+        >
         <div className="flex h-full flex-col">
           {/* Header */}
           <div className={`${isMobile ? 'px-4 py-3' : 'px-6 py-4'} border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg`}>
@@ -112,13 +302,12 @@ const ProductionUnitDetailsDrawer: React.FC<ProductionUnitDetailsDrawerProps> = 
                   Details
                 </button>
               ) : (
-                // For full mode - show all tabs
+                // For full mode - show all tabs (conditionally show update tab)
                 [
                   { id: 'details', name: 'Details' },
-                  { id: 'employees', name: 'Employees' },
                   { id: 'teams', name: 'Teams' },
                   { id: 'projects', name: 'Projects' },
-                  { id: 'update', name: 'Update' }
+                  ...(canUpdate ? [{ id: 'update', name: 'Update' }] : [])
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -207,64 +396,29 @@ const ProductionUnitDetailsDrawer: React.FC<ProductionUnitDetailsDrawerProps> = 
               </div>
             )}
 
-            {viewMode === 'full' && activeTab === 'employees' && (
-              <div className="space-y-4">
-                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Unit Employees
-                  </h3>
-                  {isLoadingUnit ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      <span className="ml-2 text-gray-600">Loading employees...</span>
-                    </div>
-                  ) : employees.length > 0 ? (
-                    <div className="space-y-3">
-                      {employees.map((employee: any) => (
-                        <div key={employee.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
-                            <span className="text-sm font-medium text-white">
-                              {employee.firstName?.[0] || 'E'}{employee.lastName?.[0] || 'M'}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900">
-                              {employee.firstName} {employee.lastName}
-                            </p>
-                            <p className="text-sm text-gray-500">{employee.email}</p>
-                            {employee.role && (
-                              <p className="text-xs text-blue-600">{employee.role}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="text-gray-400 mb-2">
-                        <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                      </div>
-                      <p className="text-gray-500 text-sm">No employees found in this unit</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {viewMode === 'full' && activeTab === 'teams' && (
               <div className="space-y-4">
-                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    Unit Teams
-                  </h3>
+                 <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                   <div className="flex items-center justify-between mb-4">
+                     <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                       <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                       </svg>
+                       Unit Teams
+                     </h3>
+                     {canUpdate && (
+                       <button
+                         onClick={handleOpenAddTeamModal}
+                         className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                       >
+                         <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                         </svg>
+                         Add Team
+                       </button>
+                     )}
+                   </div>
                   {isLoadingUnit ? (
                     <div className="flex items-center justify-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -282,12 +436,26 @@ const ProductionUnitDetailsDrawer: React.FC<ProductionUnitDetailsDrawerProps> = 
                             </div>
                             <div>
                               <p className="text-sm font-medium text-gray-900">{team.name}</p>
-                              <p className="text-sm text-gray-500">Lead: {team.teamLead}</p>
+                              <p className="text-sm text-gray-500">
+                                Lead: {team.teamLead?.firstName} {team.teamLead?.lastName}
+                              </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-900">{team.employeeCount} members</p>
-                            <p className="text-xs text-gray-500">{team.currentProjects} projects</p>
+                          <div className="flex items-center space-x-3">
+                            <div className="text-right">
+                              <p className="text-sm text-gray-900">{team.employeeCount || 0} members</p>
+                              <p className="text-xs text-gray-500">{team.completedLeads || 0} Completed Leads</p>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveTeamClick(team)}
+                              disabled={removeTeamMutation.isPending}
+                              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                            >
+                              <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Remove
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -326,19 +494,22 @@ const ProductionUnitDetailsDrawer: React.FC<ProductionUnitDetailsDrawerProps> = 
                         <div key={project.id} className="p-4 bg-gray-50 rounded-lg">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h4 className="text-sm font-medium text-gray-900">{project.name}</h4>
-                              <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                              <h4 className="text-sm font-medium text-gray-900">{project.description}</h4>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Client: {project.client?.companyName || 'Unknown'}
+                              </p>
                               <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
-                                <span>Client: {project.client}</span>
                                 <span>Status: {project.status}</span>
+                                <span>Progress: {project.liveProgress}%</span>
+                                <span>Difficulty: {project.difficultyLevel}</span>
                               </div>
                               <div className="mt-1 text-xs text-gray-500">
-                                {project.startDate} - {project.endDate}
+                                Deadline: {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'N/A'}
                               </div>
                             </div>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              project.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                              project.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                              project.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              project.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
                               'bg-yellow-100 text-yellow-800'
                             }`}>
                               {project.status}
@@ -361,7 +532,7 @@ const ProductionUnitDetailsDrawer: React.FC<ProductionUnitDetailsDrawerProps> = 
               </div>
             )}
 
-            {viewMode === 'full' && activeTab === 'update' && (
+            {viewMode === 'full' && activeTab === 'update' && canUpdate && (
               <div className="space-y-4">
                 <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
                   <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
@@ -386,7 +557,99 @@ const ProductionUnitDetailsDrawer: React.FC<ProductionUnitDetailsDrawerProps> = 
           </div>
         </div>
       </div>
+
+      {/* Remove Team Confirmation Modal */}
+      {showRemoveTeamConfirmation && teamToRemove && (
+        <div className="absolute inset-0 bg-gray-900 bg-opacity-75 z-[70] flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 border border-gray-200">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-red-50 to-pink-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="h-8 w-8 bg-red-100 rounded-lg flex items-center justify-center">
+                    <svg className="h-4 w-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">Remove Team</h2>
+                </div>
+                <button
+                  onClick={handleCancelRemoveTeam}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center">
+                  <span className="text-sm font-medium text-white">
+                    {teamToRemove.name?.charAt(0) || 'T'}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900">{teamToRemove.name}</h3>
+                  <p className="text-sm text-gray-500">
+                    Lead: {teamToRemove.teamLead?.firstName} {teamToRemove.teamLead?.lastName}
+                  </p>
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to remove <strong>"{teamToRemove.name}"</strong> from this unit? 
+                This action will unassign the team from the unit but won't delete the team itself.
+              </p>
+
+              {/* Team Info */}
+              <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Team Members:</span>
+                  <span className="font-medium">{teamToRemove.employeeCount || 0}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Completed Leads:</span>
+                  <span className="font-medium">{teamToRemove.completedLeads || 0}</span>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {removeTeamMutation.error && (
+                <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
+                  <p className="text-sm text-red-600">
+                    {removeTeamMutation.error.message || 'Failed to remove team from unit'}
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleCancelRemoveTeam}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  disabled={removeTeamMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleRemoveTeam(teamToRemove.id)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={removeTeamMutation.isPending}
+                >
+                  {removeTeamMutation.isPending ? 'Removing...' : 'Remove Team'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
+    </>
   );
 };
 
