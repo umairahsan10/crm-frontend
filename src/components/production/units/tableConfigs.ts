@@ -36,17 +36,24 @@ export const productionUnitsTableConfig: ColumnConfig[] = [
     sortable: true
   },
   {
-    key: 'employeeCount',
+    key: 'employeesCount',
     label: 'Employees',
     type: 'text',
-    width: '15%',
+    width: '12%',
+    sortable: true
+  },
+  {
+    key: 'projectsCount',
+    label: 'Projects',
+    type: 'text',
+    width: '12%',
     sortable: true
   },
   {
     key: 'createdAt',
     label: 'Created',
     type: 'date',
-    width: '15%',
+    width: '12%',
     sortable: true
   },
   {
@@ -54,7 +61,13 @@ export const productionUnitsTableConfig: ColumnConfig[] = [
     label: 'Status',
     type: 'badge',
     badgeConfig: unitStatusBadgeConfig,
-    width: '10%'
+    width: '12%'
+  },
+  {
+    key: 'actions',
+    label: 'Actions',
+    type: 'custom',
+    width: '12%'
   }
 ];
 
