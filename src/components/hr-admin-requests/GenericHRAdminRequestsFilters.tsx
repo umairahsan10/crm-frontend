@@ -25,7 +25,6 @@ const GenericHRAdminRequestsFilters: React.FC<GenericHRAdminRequestsFiltersProps
     {
       search: '',
       status: '',
-      type: '',
       fromDate: '',
       toDate: ''
     },
@@ -87,11 +86,6 @@ const GenericHRAdminRequestsFilters: React.FC<GenericHRAdminRequestsFiltersProps
     { value: 'rejected', label: 'Rejected' }
   ];
 
-  const typeOptions = [
-    { value: 'salary_increase', label: 'Salary Increase' },
-    { value: 'late_approval', label: 'Late Approval' },
-    { value: 'others', label: 'Others' }
-  ];
 
   return (
     <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
@@ -138,7 +132,6 @@ const GenericHRAdminRequestsFilters: React.FC<GenericHRAdminRequestsFiltersProps
         <div className="px-6 py-4 bg-gray-50">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {renderSelect('status', 'Status', statusOptions)}
-            {renderSelect('type', 'Type', typeOptions)}
             {renderInput('fromDate', 'From Date', 'date')}
             {renderInput('toDate', 'To Date', 'date')}
           </div>

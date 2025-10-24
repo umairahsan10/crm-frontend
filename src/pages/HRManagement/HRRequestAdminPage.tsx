@@ -3,7 +3,7 @@
  * Uses: React Query, Generic Filters, DataTable, Detail Drawer
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import HRAdminRequestsTable from '../../components/hr-admin-requests/HRAdminRequestsTable';
 import DataStatistics from '../../components/common/Statistics/DataStatistics';
@@ -34,6 +34,7 @@ const HRRequestAdminPage: React.FC = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<'salary_increase' | 'late_approval' | 'others'>('salary_increase');
 
   // Check if user is HR
   const isHR = user?.department === 'HR';
@@ -42,7 +43,6 @@ const HRRequestAdminPage: React.FC = () => {
   const [filters, setFilters] = useState({
     search: '',
     status: '',
-    type: '',
     fromDate: '',
     toDate: ''
   });
@@ -57,14 +57,32 @@ const HRRequestAdminPage: React.FC = () => {
 
   // React Query hooks
   const hrId = 1; // TODO: Get from user object
-  const requestsQuery = useMyHRAdminRequests(hrId, { enabled: isHR });
+  const requestsQuery = useMyHRAdminRequests(hrId, {
+    page: pagination.currentPage,
+    limit: pagination.itemsPerPage,
+    search: filters.search || undefined,
+    status: filters.status || undefined,
+    fromDate: filters.fromDate || undefined,
+    toDate: filters.toDate || undefined,
+  }, { enabled: isHR });
   const loading = requestsQuery.isLoading;
 
   // Extract data
   const requestsData = requestsQuery.data || {};
   const adminRequestsRaw = requestsData.adminRequests || [];
+  const totalItems = requestsData.total || 0;
+  const apiPagination = requestsData.pagination || { page: 1, limit: 20, totalPages: 1 };
 
-  // Transform to table format and apply client-side filtering
+  // Update pagination state from API response
+  useEffect(() => {
+    setPagination(prev => ({
+      ...prev,
+      totalPages: apiPagination.totalPages,
+      totalItems: totalItems
+    }));
+  }, [apiPagination.totalPages, totalItems]);
+
+  // Transform to table format and apply tab filtering only
   const adminRequests: HRAdminRequestTableRow[] = useMemo(() => {
     let filtered = adminRequestsRaw.map((request: any) => ({
       id: request.id.toString(),
@@ -79,36 +97,40 @@ const HRRequestAdminPage: React.FC = () => {
       hr_employee_email: 'N/A'
     }));
 
-    // Apply client-side filters
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter((req: HRAdminRequestTableRow) =>
-        req.description.toLowerCase().includes(searchLower) ||
-        req.type.toLowerCase().includes(searchLower)
-      );
-    }
-    if (filters.status) {
-      filtered = filtered.filter((req: HRAdminRequestTableRow) => req.status === filters.status);
-    }
-    if (filters.type) {
-      filtered = filtered.filter((req: HRAdminRequestTableRow) => req.type === filters.type);
-    }
+    // Apply tab filtering only (other filters are handled by API)
+    filtered = filtered.filter((req: HRAdminRequestTableRow) => req.type === activeTab);
 
     return filtered;
-  }, [adminRequestsRaw, filters]);
+  }, [adminRequestsRaw, activeTab]);
+
+  // Calculate statistics for all requests (not filtered by tab)
+  const allRequests = useMemo(() => {
+    return adminRequestsRaw.map((request: any) => ({
+      id: request.id.toString(),
+      request_id: request.id,
+      type: request.type || 'others',
+      description: request.description || 'N/A',
+      status: request.status || 'pending',
+      hrLogId: request.hrLogId,
+      created_at: request.createdAt || new Date().toISOString(),
+      updated_at: request.updatedAt || new Date().toISOString(),
+      hr_employee_name: `HR Employee ${request.hr?.employeeId || request.hrId || 'N/A'}`,
+      hr_employee_email: 'N/A'
+    }));
+  }, [adminRequestsRaw]);
 
   // Calculate statistics
   const statistics = useMemo(() => {
     return {
-      total_requests: adminRequests.length,
-      pending_requests: adminRequests.filter(r => r.status === 'pending').length,
-      approved_requests: adminRequests.filter(r => r.status === 'approved').length,
-      rejected_requests: adminRequests.filter(r => r.status === 'rejected').length,
-      salary_increase_requests: adminRequests.filter(r => r.type === 'salary_increase').length,
-      late_approval_requests: adminRequests.filter(r => r.type === 'late_approval').length,
-      others_requests: adminRequests.filter(r => r.type === 'others').length
+      total_requests: allRequests.length,
+      pending_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.status === 'pending').length,
+      approved_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.status === 'approved').length,
+      rejected_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.status === 'rejected').length,
+      salary_increase_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.type === 'salary_increase').length,
+      late_approval_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.type === 'late_approval').length,
+      others_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.type === 'others').length
     };
-  }, [adminRequests]);
+  }, [allRequests]);
 
   // No access check
   if (!user || !isHR) {
@@ -137,7 +159,6 @@ const HRRequestAdminPage: React.FC = () => {
     setFilters({
       search: '',
       status: '',
-      type: '',
       fromDate: '',
       toDate: ''
     });
@@ -156,6 +177,11 @@ const HRRequestAdminPage: React.FC = () => {
     requestsQuery.refetch();
     setCreateModalOpen(false);
     setNotification({ type: 'success', message: 'Request created successfully!' });
+  };
+
+  const handleTabChange = (tab: 'salary_increase' | 'late_approval' | 'others') => {
+    setActiveTab(tab);
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 when switching tabs
   };
 
   // Statistics cards
@@ -274,13 +300,69 @@ const HRRequestAdminPage: React.FC = () => {
           onClearFilters={handleClearFilters}
         />
 
+        {/* Tab Navigation */}
+        <div className="w-full border-b border-gray-200 mb-4">
+          <div className="flex w-full justify-between">
+            <button
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${activeTab === 'salary_increase'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-blue-600'
+                }`}
+              onClick={() => handleTabChange('salary_increase')}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Salary Increase ({statistics.salary_increase_requests})
+            </button>
+
+            <button
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${activeTab === 'late_approval'
+                  ? 'border-yellow-600 text-yellow-600'
+                  : 'border-transparent text-gray-500 hover:text-yellow-600'
+                }`}
+              onClick={() => handleTabChange('late_approval')}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Late Approval ({statistics.late_approval_requests})
+            </button>
+
+            <button
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${activeTab === 'others'
+                  ? 'border-purple-600 text-purple-600'
+                  : 'border-transparent text-gray-500 hover:text-purple-600'
+                }`}
+              onClick={() => handleTabChange('others')}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Others ({statistics.others_requests})
+            </button>
+          </div>
+        </div>
+
         {/* Table */}
         <HRAdminRequestsTable
           requests={adminRequests}
           isLoading={loading}
           currentPage={pagination.currentPage}
-          totalPages={Math.ceil(adminRequests.length / pagination.itemsPerPage)}
-          totalItems={adminRequests.length}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
           itemsPerPage={pagination.itemsPerPage}
           onPageChange={handlePageChange}
           onRequestClick={handleRequestClick}

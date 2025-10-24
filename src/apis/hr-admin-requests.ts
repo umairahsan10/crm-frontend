@@ -81,10 +81,35 @@ export const getHRAdminRequestsApi = async (): Promise<HRAdminRequestsResponse> 
 export interface MyHRAdminRequestsResponse {
   adminRequests: AdminRequestResponseDto[];
   total: number;
+  pagination: {
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
-export const getMyHRAdminRequestsApi = async (hrId: number): Promise<MyHRAdminRequestsResponse> => {
-  const url = `/hr/admin-requests/my-requests?hrId=${hrId}`;
+export interface MyHRAdminRequestsFilters {
+  hrId: number;
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export const getMyHRAdminRequestsApi = async (filters: MyHRAdminRequestsFilters): Promise<MyHRAdminRequestsResponse> => {
+  const params = new URLSearchParams();
+  params.append('hrId', filters.hrId.toString());
+  
+  if (filters.page) params.append('page', filters.page.toString());
+  if (filters.limit) params.append('limit', filters.limit.toString());
+  if (filters.search) params.append('search', filters.search);
+  if (filters.status) params.append('status', filters.status);
+  if (filters.fromDate) params.append('fromDate', filters.fromDate);
+  if (filters.toDate) params.append('toDate', filters.toDate);
+  
+  const url = `/hr/admin-requests/my-requests?${params.toString()}`;
   console.log('API: Fetching my HR admin requests from', url);
   return apiGetJson<MyHRAdminRequestsResponse>(url);
 };

@@ -17,7 +17,7 @@ export const hrAdminRequestsQueryKeys = {
   all: ['hrAdminRequests'] as const,
   lists: () => [...hrAdminRequestsQueryKeys.all, 'list'] as const,
   list: (filters: any) => [...hrAdminRequestsQueryKeys.lists(), filters] as const,
-  my: (hrId: number) => [...hrAdminRequestsQueryKeys.all, 'my', hrId] as const,
+  my: (hrId: number, filters?: any) => [...hrAdminRequestsQueryKeys.all, 'my', hrId, filters] as const,
 };
 
 /**
@@ -43,15 +43,27 @@ export const useHRAdminRequests = (
 /**
  * Hook to fetch HR's own admin requests (HR view)
  * @param hrId - HR employee ID
+ * @param filters - Filter parameters for requests
  */
 export const useMyHRAdminRequests = (
   hrId: number,
+  filters: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    fromDate?: string;
+    toDate?: string;
+  } = {},
   options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
 ) => {
   return useQuery({
-    queryKey: hrAdminRequestsQueryKeys.my(hrId),
+    queryKey: hrAdminRequestsQueryKeys.my(hrId, filters),
     queryFn: async () => {
-      const response = await getMyHRAdminRequestsApi(hrId);
+      const response = await getMyHRAdminRequestsApi({
+        hrId,
+        ...filters
+      });
       return response;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
