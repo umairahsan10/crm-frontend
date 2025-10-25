@@ -22,7 +22,11 @@ const codeItems = [
   { id: 15, title: 'interface', type: 'keyword', category: 'typescript', description: 'TypeScript interface declaration' }
 ];
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  title?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ title = "CRM Dashboard" }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -170,7 +174,7 @@ const Header: React.FC = () => {
   return (
     <div className="header">
       <div className="header-left">
-        <h1 className="header-title">CRM Dashboard</h1>
+        <h1 className="header-title">{title}</h1>
       </div>
 
       <div className="header-center header-search-container">

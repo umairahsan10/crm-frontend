@@ -5,7 +5,6 @@ const ProductionPage: React.FC = () => {
   return (
     <div className="production-container">
       <div className="page-header">
-        <h1>Production Management</h1>
         <p>Project tracking, team performance, and production workflow management</p>
       </div>
 

@@ -5,7 +5,6 @@ const ProjectsPage: React.FC = () => {
   return (
     <div className="projects-container">
       <div className="page-header">
-        <h1>Project Management</h1>
         <p>Manage and track all company projects, assignments, and progress</p>
       </div>
 

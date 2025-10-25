@@ -112,7 +112,6 @@ const DealsPage: React.FC = () => {
   return (
     <div className="deals-container">
       <div className="page-header">
-        <h1>Deals Management</h1>
         <p>Track your sales pipeline and manage deal opportunities</p>
       </div>
       

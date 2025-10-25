@@ -5,7 +5,6 @@ const MaintenancePage: React.FC = () => {
   return (
     <div className="maintenance-container">
       <div className="page-header">
-        <h1>System Maintenance</h1>
         <p>System health monitoring, maintenance tasks, and performance optimization</p>
       </div>
 

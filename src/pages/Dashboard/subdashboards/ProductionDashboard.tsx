@@ -595,9 +595,6 @@ const ProductionDashboard: React.FC = () => {
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Production Dashboard
-            </h1>
             <p className="text-gray-600 mt-1">
               {roleLevel === 'department_manager' && 'Complete production management and oversight'}
               {roleLevel === 'unit_head' && `Unit-specific production management for ${user?.department}`}

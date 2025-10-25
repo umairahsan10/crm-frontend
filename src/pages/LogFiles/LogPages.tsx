@@ -237,7 +237,6 @@ const LogsPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">System Logs</h1>
             <p className="mt-2 text-sm text-gray-600">
               Access and manage different types of system logs based on your permissions
             </p>

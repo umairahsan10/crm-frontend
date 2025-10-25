@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Navbar from '../../layout/Navbar/Navbar';
 import Header from '../Header/Header';
 import { useNavbar } from '../../../context/NavbarContext';
+import { getPageTitle } from '../../../utils/pageTitles';
 import type { UserRole } from '../../../types';
 import './Layout.css';
 
 interface LayoutProps {
   children: React.ReactNode;
-  title: string;
   onNavigate?: (page: string) => void;
   activePage?: string;
   userRole?: UserRole;
@@ -16,13 +17,16 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({
   children,
-  title,
   onNavigate,
   activePage = 'dashboard',
   onLogout
 }) => {
   const { isNavbarOpen, toggleNavbar, setNavbarOpen } = useNavbar();
   const [isMobile, setIsMobile] = useState(false);
+  const location = useLocation();
+  
+  // Get dynamic title based on current route
+  const dynamicTitle = getPageTitle(location.pathname);
 
   // Check if device is mobile
   useEffect(() => {
@@ -85,7 +89,7 @@ const Layout: React.FC<LayoutProps> = ({
         )}
         
         <Header
-          title={title}
+          title={dynamicTitle}
         />
         <div className="content-area">
           {children}

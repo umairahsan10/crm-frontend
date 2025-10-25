@@ -115,7 +115,6 @@ const LeadsPage: React.FC = () => {
   return (
     <div className="leads-container">
       <div className="page-header">
-        <h1>Lead Management</h1>
         <p>Create and manage your leads and prospects</p>
         
         <div className="header-actions">

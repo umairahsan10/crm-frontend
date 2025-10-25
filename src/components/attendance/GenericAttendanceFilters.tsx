@@ -23,7 +23,6 @@ const GenericAttendanceFilters: React.FC<GenericAttendanceFiltersProps> = ({
   } = useFilters(
     {
       search: '',
-      department: '',
       status: '',
       startDate: '',
       endDate: ''
@@ -117,7 +116,6 @@ const GenericAttendanceFilters: React.FC<GenericAttendanceFiltersProps> = ({
       {showAdvanced && (
         <div className="px-6 py-4 bg-gray-50">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {renderInput('department', 'Department', 'text')}
             {renderSelect('status', 'Status', statusOptions)}
             {renderInput('startDate', 'Start Date', 'date')}
             {renderInput('endDate', 'End Date', 'date')}

@@ -116,7 +116,6 @@ function AppLayout() {
 
   return (
     <Layout
-      title="CRM Dashboard"
       onNavigate={handleNavigation}
       activePage="dashboard"
       userRole={user?.role as any || 'employee'}

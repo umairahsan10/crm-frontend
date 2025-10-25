@@ -5,7 +5,6 @@ const MarketingPage: React.FC = () => {
   return (
     <div className="marketing-container">
       <div className="page-header">
-        <h1>Marketing Management</h1>
         <p>Campaign management, lead generation, and marketing analytics</p>
       </div>
 

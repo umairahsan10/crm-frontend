@@ -379,7 +379,6 @@ const SalaryManagementPage: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">Salary Management</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Manage employee salaries, bonuses, and payroll processing
               </p>

@@ -5,7 +5,6 @@ const AnalyticsPage: React.FC = () => {
   return (
     <div className="analytics-container">
       <div className="page-header">
-        <h1>Advanced Analytics</h1>
         <p>Deep insights and predictive analytics for business intelligence</p>
       </div>
 

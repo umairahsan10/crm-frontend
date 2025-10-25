@@ -5,7 +5,6 @@ const IntegrationsPage: React.FC = () => {
   return (
     <div className="integrations-container">
       <div className="page-header">
-        <h1>Integrations</h1>
         <p>Manage third-party integrations and API connections</p>
       </div>
 

@@ -9,7 +9,6 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="settings-container">
       <div className="page-header">
-        <h1>Settings</h1>
         <p>Manage your account and system preferences</p>
       </div>
       

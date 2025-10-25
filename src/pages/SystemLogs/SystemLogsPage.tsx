@@ -5,7 +5,6 @@ const SystemLogsPage: React.FC = () => {
   return (
     <div className="system-logs-container">
       <div className="page-header">
-        <h1>System Logs</h1>
         <p>Monitor system activities, errors, and performance logs</p>
       </div>
 

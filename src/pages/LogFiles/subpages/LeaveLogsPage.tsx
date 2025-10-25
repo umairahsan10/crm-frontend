@@ -142,7 +142,6 @@ const LeaveLogsPage: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">Leave Logs</h1>
               <p className="mt-2 text-sm text-gray-600">Track and manage employee leave requests and approvals</p>
             </div>
             <div className="flex items-center space-x-3">
