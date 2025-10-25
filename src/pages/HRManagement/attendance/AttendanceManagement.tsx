@@ -64,7 +64,6 @@ const AttendanceManagement: React.FC = () => {
   const [showStatistics, setShowStatistics] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
-    department: '',
     status: '',
     startDate: '',
     endDate: ''
@@ -138,10 +137,6 @@ const AttendanceManagement: React.FC = () => {
       );
     }
 
-    if (filters.department) {
-      filtered = filtered.filter(record => record.department.toLowerCase().includes(filters.department.toLowerCase()));
-    }
-
     if (filters.status) {
       filtered = filtered.filter(record => record.status === filters.status);
     }
@@ -167,7 +162,6 @@ const AttendanceManagement: React.FC = () => {
   const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
-      department: '',
       status: '',
       startDate: '',
       endDate: ''
@@ -443,7 +437,6 @@ const AttendanceManagement: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">Attendance Management</h1>
               <p className="mt-2 text-sm text-gray-600">Mark and track employee attendance for the selected date</p>
             </div>
             <div className="flex items-center space-x-3">

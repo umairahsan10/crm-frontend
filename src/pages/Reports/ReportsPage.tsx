@@ -5,7 +5,6 @@ const ReportsPage: React.FC = () => {
   return (
     <div className="reports-container">
       <div className="page-header">
-        <h1>Reports & Analytics</h1>
         <p>Generate comprehensive reports and analyze business performance</p>
       </div>
 

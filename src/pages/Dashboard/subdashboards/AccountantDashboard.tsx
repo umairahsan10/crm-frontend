@@ -594,9 +594,6 @@ const AccountantDashboard: React.FC = () => {
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Accountant Dashboard
-            </h1>
             <p className="text-gray-600 mt-1">
               {roleLevel === 'department_manager' && 'Complete financial management and oversight'}
               {roleLevel === 'unit_head' && `Unit-specific financial management for ${user?.department}`}

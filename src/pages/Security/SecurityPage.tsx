@@ -5,7 +5,6 @@ const SecurityPage: React.FC = () => {
   return (
     <div className="security-container">
       <div className="page-header">
-        <h1>Security Management</h1>
         <p>Monitor security settings, access controls, and threat detection</p>
       </div>
 

@@ -5,7 +5,6 @@ const AuditTrailPage: React.FC = () => {
   return (
     <div className="audit-trail-container">
       <div className="page-header">
-        <h1>Audit Trail</h1>
         <p>Track all system changes and user activities for compliance</p>
       </div>
 

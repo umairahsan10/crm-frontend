@@ -5,7 +5,6 @@ const HRManagementPage: React.FC = () => {
   return (
     <div className="hr-management-container">
       <div className="page-header">
-        <h1>HR Management</h1>
         <p>Comprehensive human resources management and employee lifecycle</p>
       </div>
 

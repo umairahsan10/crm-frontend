@@ -8,7 +8,6 @@ const ReportsPage: React.FC = () => {
   return (
     <div className="reports-container">
       <div className="page-header">
-        <h1>Sales & Analytics</h1>
         <p>Comprehensive insights into your business performance</p>
       </div>
       <BarChart />

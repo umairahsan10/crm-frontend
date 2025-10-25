@@ -11,7 +11,6 @@ const CampaignLogsPage: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Campaign Logs</h1>
               <p className="mt-2 text-sm text-gray-600">
                 View marketing campaigns and promotional activities
               </p>

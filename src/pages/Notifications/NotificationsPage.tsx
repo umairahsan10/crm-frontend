@@ -5,7 +5,6 @@ const NotificationsPage: React.FC = () => {
   return (
     <div className="notifications-container">
       <div className="page-header">
-        <h1>Notifications</h1>
         <p>Manage system notifications and alerts</p>
       </div>
 

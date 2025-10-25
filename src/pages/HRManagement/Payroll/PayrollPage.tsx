@@ -158,10 +158,9 @@ const PayrollPage: React.FC<PayrollPageProps> = ({ onBack }) => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
           <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">Payroll Management</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Manage employee salaries and payment records
-            </p>
+              </p>
           </div>
             <div className="flex items-center space-x-3">
               <button

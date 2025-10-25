@@ -5,7 +5,6 @@ const BackupPage: React.FC = () => {
   return (
     <div className="backup-container">
       <div className="page-header">
-        <h1>Backup & Restore</h1>
         <p>Manage data backups and system restore operations</p>
       </div>
 
