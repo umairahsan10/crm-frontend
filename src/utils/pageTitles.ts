@@ -55,6 +55,7 @@ export const getPageTitle = (pathname: string): string => {
     '/marketing': 'Marketing',
     '/production': 'Production',
     '/production/units': 'Units Management',
+    '/production/teams': 'Teams Management',
     
     // Communication routes
     '/chats': 'Chat',
