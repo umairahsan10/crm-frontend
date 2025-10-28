@@ -3,8 +3,7 @@ import type {
   Team,
   CreateTeamRequest,
   UpdateTeamRequest,
-  AddMembersRequest,
-  TeamFilters
+  AddMembersRequest
 } from '../types/production/teams';
 
 // API Response interface

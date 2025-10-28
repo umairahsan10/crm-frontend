@@ -7,12 +7,9 @@ import { useAuth } from '../../context/AuthContext';
 import { 
   useProductionTeams,
   useAvailableTeamLeads,
-  useAvailableEmployees,
   useCreateProductionTeam,
   useUpdateProductionTeam,
-  useDeleteProductionTeam,
-  useAddTeamMembers,
-  useRemoveTeamMember
+  useDeleteProductionTeam
 } from '../../hooks/queries/useProductionTeamsQueries';
 import type { Team } from '../../types/production/teams';
 
@@ -68,8 +65,6 @@ const ProductionTeamsManagementPage: React.FC = () => {
   const createTeamMutation = useCreateProductionTeam();
   const updateTeamMutation = useUpdateProductionTeam();
   const deleteTeamMutation = useDeleteProductionTeam();
-  const addMembersMutation = useAddTeamMembers();
-  const removeMemberMutation = useRemoveTeamMember();
 
   // Update pagination when data changes
   React.useEffect(() => {
@@ -145,28 +140,6 @@ const ProductionTeamsManagementPage: React.FC = () => {
       setTimeout(() => setNotification(null), 5000);
     }
   }, [deleteTeamMutation]);
-
-  const handleAddMembers = useCallback(async (teamId: number, membersData: any) => {
-    try {
-      await addMembersMutation.mutateAsync({ teamId, membersData });
-      setNotification({ type: 'success', message: 'Members added to team successfully!' });
-      setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      setNotification({ type: 'error', message: 'Failed to add members to team' });
-      setTimeout(() => setNotification(null), 5000);
-    }
-  }, [addMembersMutation]);
-
-  const handleRemoveMember = useCallback(async (teamId: number, employeeId: number) => {
-    try {
-      await removeMemberMutation.mutateAsync({ teamId, employeeId });
-      setNotification({ type: 'success', message: 'Member removed from team successfully!' });
-      setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      setNotification({ type: 'error', message: 'Failed to remove member from team' });
-      setTimeout(() => setNotification(null), 5000);
-    }
-  }, [removeMemberMutation]);
 
   const teams = (teamsData as any)?.data || [];
   const availableLeads = (availableLeadsData as any)?.data?.leads || [];
