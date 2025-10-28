@@ -52,6 +52,8 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
   onPageChange,
   onRowClick,
   onBulkSelect,
+  onSelectAll,
+  onDeselectAll,
   className = '',
   emptyMessage = 'No data available',
   selectable = false,
@@ -65,13 +67,26 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
   const handleSelectAll = () => {
     if (!onBulkSelect) return;
     
-    if (selectedItems.length === data.length) {
-      // Deselect all
-      onBulkSelect([]);
+    // Check if we have custom select/deselect functions
+    if (onSelectAll && onDeselectAll) {
+      // Use custom logic - check if any items are selected to determine action
+      if (selectedItems.length > 0) {
+        // Deselect all
+        onDeselectAll();
+      } else {
+        // Select all (custom logic)
+        onSelectAll();
+      }
     } else {
-      // Select all
-      const allIds = data.map(row => row.id?.toString() || '');
-      onBulkSelect(allIds);
+      // Default behavior
+      if (selectedItems.length === data.length) {
+        // Deselect all
+        onBulkSelect([]);
+      } else {
+        // Select all
+        const allIds = data.map(row => row.id?.toString() || '');
+        onBulkSelect(allIds);
+      }
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import BulkActions, { type BulkAction } from '../../../components/common/BulkActions/BulkActions';
 import DataStatistics from '../../../components/common/Statistics/DataStatistics';
@@ -6,6 +6,7 @@ import EmployeesTable from '../../../components/employees/EmployeesTable';
 import GenericEmployeeFilters from '../../../components/employees/GenericEmployeeFilters';
 import EmployeeDetailsDrawer from '../../../components/employees/EmployeeDetailsDrawer';
 import CreateEmployeeDrawer from '../../../components/employees/CreateEmployeeDrawer';
+import Loading from '../../../components/common/Loading/Loading';
 import {
   useEmployeeStatistics,
   useDepartments,
@@ -39,6 +40,7 @@ const EmployeeManagement: React.FC = () => {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive' | 'terminated'>('active');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -58,18 +60,11 @@ const EmployeeManagement: React.FC = () => {
     modeOfWork: '',
   });
 
-  // Queries with stable caching options
+  // Fetch ALL employees once for client-side filtering (like Request Admin page)
   const activeEmployeesQuery = useActiveEmployees(
-    pagination.currentPage,
-    pagination.itemsPerPage,
-    {
-      search: filters.search || undefined,
-      departmentId: filters.departmentId ? parseInt(filters.departmentId) : undefined,
-      roleId: filters.roleId ? parseInt(filters.roleId) : undefined,
-      gender: filters.gender as 'male' | 'female' | undefined,
-      employmentType: filters.employmentType as 'full_time' | 'part_time' | undefined,
-      modeOfWork: filters.modeOfWork as 'hybrid' | 'on_site' | 'remote' | undefined,
-    },
+    1, // Always page 1
+    100, // Backend guard limit - get all data for client-side filtering
+    {}, // No filters - we'll filter client-side
     {
       staleTime: 5 * 60 * 1000, // 5 minutes - keep data fresh longer
       gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
@@ -79,16 +74,9 @@ const EmployeeManagement: React.FC = () => {
   );
 
   const terminatedEmployeesQuery = useTerminatedEmployees(
-    pagination.currentPage,
-    pagination.itemsPerPage,
-    {
-      search: filters.search || undefined,
-      departmentId: filters.departmentId ? parseInt(filters.departmentId) : undefined,
-      roleId: filters.roleId ? parseInt(filters.roleId) : undefined,
-      gender: filters.gender as 'male' | 'female' | undefined,
-      employmentType: filters.employmentType as 'full_time' | 'part_time' | undefined,
-      modeOfWork: filters.modeOfWork as 'hybrid' | 'on_site' | 'remote' | undefined,
-    },
+    1, // Always page 1
+    100, // Backend guard limit - get all data for client-side filtering
+    {}, // No filters - we'll filter client-side
     {
       staleTime: 5 * 60 * 1000, // 5 minutes - keep data fresh longer
       gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
@@ -98,16 +86,9 @@ const EmployeeManagement: React.FC = () => {
   );
 
   const inactiveEmployeesQuery = useInactiveEmployees(
-    pagination.currentPage,
-    pagination.itemsPerPage,
-    {
-      search: filters.search || undefined,
-      departmentId: filters.departmentId ? parseInt(filters.departmentId) : undefined,
-      roleId: filters.roleId ? parseInt(filters.roleId) : undefined,
-      gender: filters.gender as 'male' | 'female' | undefined,
-      employmentType: filters.employmentType as 'full_time' | 'part_time' | undefined,
-      modeOfWork: filters.modeOfWork as 'hybrid' | 'on_site' | 'remote' | undefined,
-    },
+    1, // Always page 1
+    100, // Backend guard limit - get all data for client-side filtering
+    {}, // No filters - we'll filter client-side
     {
       staleTime: 5 * 60 * 1000, // 5 minutes - keep data fresh longer
       gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
@@ -139,13 +120,6 @@ const EmployeeManagement: React.FC = () => {
   const terminateMutation = useTerminateEmployee();
   const updateMutation = useUpdateEmployee();
 
-  const employeesQuery = 
-    activeTab === 'active' ? activeEmployeesQuery :
-    activeTab === 'inactive' ? inactiveEmployeesQuery :
-    terminatedEmployeesQuery;
-
-  const employees = employeesQuery.data?.employees || [];
-
   const statistics: EmployeeStatistics = statisticsQuery.data?.statistics || {
     total: 0,
     active: 0,
@@ -169,18 +143,95 @@ const EmployeeManagement: React.FC = () => {
   const departments = departmentsQuery.data?.departments || [];
   const roles = rolesQuery.data?.roles || [];
 
-  const isLoading = employeesQuery.isLoading;
+  // Extract all employees data (no pagination from API)
+  const allActiveEmployees = activeEmployeesQuery.data?.employees || [];
+  const allInactiveEmployees = inactiveEmployeesQuery.data?.employees || [];
+  const allTerminatedEmployees = terminatedEmployeesQuery.data?.employees || [];
 
-  useEffect(() => {
-    if (employeesQuery.data) {
-      setPagination((prev) => ({
-        ...prev,
-        currentPage: employeesQuery.data.page,
-        totalPages: employeesQuery.data.totalPages,
-        totalItems: employeesQuery.data.total,
-      }));
+  // Client-side filtering and pagination
+  const filteredEmployees = useMemo(() => {
+    let allEmployees: Employee[] = [];
+    
+    // Get the appropriate employee list based on active tab
+    switch (activeTab) {
+      case 'active':
+        allEmployees = allActiveEmployees;
+        break;
+      case 'inactive':
+        allEmployees = allInactiveEmployees;
+        break;
+      case 'terminated':
+        allEmployees = allTerminatedEmployees;
+        break;
+      default:
+        allEmployees = allActiveEmployees;
     }
-  }, [employeesQuery.data]);
+
+    // Apply ALL filters client-side
+    return allEmployees.filter((employee: Employee) => {
+      // Search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
+        const email = employee.email?.toLowerCase() || '';
+        
+        if (!fullName.includes(searchLower) && 
+            !email.includes(searchLower)) {
+          return false;
+        }
+      }
+
+      // Department filter
+      if (filters.departmentId && employee.departmentId !== parseInt(filters.departmentId)) {
+        return false;
+      }
+
+      // Role filter
+      if (filters.roleId && employee.roleId !== parseInt(filters.roleId)) {
+        return false;
+      }
+
+      // Gender filter
+      if (filters.gender && employee.gender !== filters.gender) {
+        return false;
+      }
+
+      // Employment type filter
+      if (filters.employmentType && employee.employmentType !== filters.employmentType) {
+        return false;
+      }
+
+      // Mode of work filter
+      if (filters.modeOfWork && employee.modeOfWork !== filters.modeOfWork) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [activeTab, allActiveEmployees, allInactiveEmployees, allTerminatedEmployees, filters]);
+
+  // Update pagination state based on filtered results
+  useEffect(() => {
+    const totalFilteredItems = filteredEmployees.length;
+    const totalPages = Math.ceil(totalFilteredItems / pagination.itemsPerPage);
+    setPagination(prev => ({
+      ...prev,
+      totalPages: totalPages,
+      totalItems: totalFilteredItems
+    }));
+  }, [filteredEmployees.length, pagination.itemsPerPage]);
+
+  // Client-side pagination
+  const paginatedEmployees = useMemo(() => {
+    const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
+    const endIndex = startIndex + pagination.itemsPerPage;
+    return filteredEmployees.slice(startIndex, endIndex);
+  }, [filteredEmployees, pagination.currentPage, pagination.itemsPerPage]);
+
+  // Use paginated employees for the table
+  const employees = paginatedEmployees;
+
+  const isLoading = activeEmployeesQuery.isLoading || inactiveEmployeesQuery.isLoading || terminatedEmployeesQuery.isLoading;
 
 
   const statisticsCards = [
@@ -448,13 +499,31 @@ const EmployeeManagement: React.FC = () => {
     setSelectedEmployee(null);
   };
 
-  const handleEmployeeCreated = () => {
-    // React Query will automatically refetch and update the UI
-    setNotification({
-      type: 'success',
-      message: 'Employee created successfully'
-    });
-    setTimeout(() => setNotification(null), 3000);
+  const handleEmployeeCreated = async () => {
+    try {
+      setIsRefreshing(true);
+      // Refetch all employee data to get the new employee
+      await Promise.all([
+        activeEmployeesQuery.refetch(),
+        inactiveEmployeesQuery.refetch(),
+        terminatedEmployeesQuery.refetch(),
+        statisticsQuery.refetch()
+      ]);
+      setNotification({
+        type: 'success',
+        message: 'Employee created successfully'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error('Error refreshing employee data:', error);
+      setNotification({
+        type: 'error',
+        message: 'Employee created but failed to refresh data'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Check permissions
@@ -628,11 +697,21 @@ const EmployeeManagement: React.FC = () => {
         />
 
          {/* Create Employee Drawer */}
-         <CreateEmployeeDrawer
-           isOpen={showCreateDrawer}
-           onClose={() => setShowCreateDrawer(false)}
-           onEmployeeCreated={handleEmployeeCreated}
-         />
+        <CreateEmployeeDrawer
+          isOpen={showCreateDrawer}
+          onClose={() => setShowCreateDrawer(false)}
+          onEmployeeCreated={handleEmployeeCreated}
+        />
+
+        {/* Overlay during refetch to avoid lag perception */}
+        <Loading
+          isLoading={isRefreshing}
+          position="overlay"
+          size="lg"
+          theme="primary"
+          backdropBlur
+          message="Refreshing employees..."
+        />
 
         {/* Terminate Modal */}
         {showTerminateModal && employeeToTerminate && (

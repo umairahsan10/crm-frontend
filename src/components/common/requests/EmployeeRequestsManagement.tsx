@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import DataStatistics from '../Statistics/DataStatistics';
 import BulkActions from '../BulkActions/BulkActions';
@@ -7,6 +7,7 @@ import GenericEmployeeRequestsFilters from '../../employee-requests/GenericEmplo
 import EmployeeRequestDetailsDrawer from '../../employee-requests/EmployeeRequestDetailsDrawer';
 import CreateRequestModal from './CreateRequestModal';
 import { useNotification } from '../../../hooks/useNotification';
+import Loading from '../Loading/Loading';
 import { 
   useEmployeeRequests,
   useMyEmployeeRequests,
@@ -47,20 +48,14 @@ const EmployeeRequestsManagement: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
 
   // Use appropriate hook based on user role (single API call like Request Admin page)
   const requestsQuery = isHROrAdmin 
     ? useEmployeeRequests({
-        page: currentPage,
-        limit: itemsPerPage,
-        search,
-        status: statusFilter,
-        department: departmentFilter,
-        priority: priorityFilter,
-        requestType: requestTypeFilter,
-        start_date: fromDateFilter,
-        end_date: toDateFilter
+        page: 1,
+        limit: 100, // Backend guard limit - get all data for client-side filtering
       })
     : useMyEmployeeRequests(Number(user?.id), { enabled: !!user?.id });
 
@@ -71,7 +66,7 @@ const EmployeeRequestsManagement: React.FC = () => {
   const requestsData = requestsQuery.data || { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 1, hasNext: false, hasPrev: false } };
   const allEmployeeRequests = requestsData.data || [];
   
-  // Transform to table format and apply tab filtering (exactly like Request Admin page)
+  // Transform to table format and apply ALL filtering client-side
   const employeeRequests = useMemo(() => {
     // First transform the data to table format
     let transformed = allEmployeeRequests.map((request: any) => ({
@@ -92,18 +87,47 @@ const EmployeeRequestsManagement: React.FC = () => {
       updated_at: request.updatedAt || new Date().toISOString()
     }));
 
-    // Apply tab filtering only (other filters are handled by API)
-    if (activeTab === 'all') {
-      return transformed;
-    }
-    
-    // Filter by pending status
-    if (activeTab === 'pending') {
-      return transformed.filter((req: any) => req.status === 'Pending');
-    }
-    
+    // Apply ALL filters client-side
+    transformed = transformed.filter((req: any) => {
+      // Tab filtering
+      if (activeTab === 'pending' && req.status !== 'Pending') return false;
+      
+      // Search filter
+      if (search && !req.subject.toLowerCase().includes(search.toLowerCase()) && 
+          !req.employee_name.toLowerCase().includes(search.toLowerCase()) &&
+          !req.description.toLowerCase().includes(search.toLowerCase())) return false;
+      
+      // Status filter
+      if (statusFilter && req.status !== statusFilter) return false;
+      
+      // Department filter
+      if (departmentFilter && req.department_name !== departmentFilter) return false;
+      
+      // Priority filter
+      if (priorityFilter && req.priority !== priorityFilter) return false;
+      
+      // Request type filter
+      if (requestTypeFilter && req.request_type !== requestTypeFilter) return false;
+      
+      // Date filters
+      if (fromDateFilter) {
+        const reqDate = new Date(req.created_at);
+        const fromDate = new Date(fromDateFilter);
+        if (reqDate < fromDate) return false;
+      }
+      
+      if (toDateFilter) {
+        const reqDate = new Date(req.created_at);
+        const toDate = new Date(toDateFilter);
+        toDate.setHours(23, 59, 59, 999); // End of day
+        if (reqDate > toDate) return false;
+      }
+      
+      return true;
+    });
+
     return transformed;
-  }, [allEmployeeRequests, activeTab]);
+  }, [allEmployeeRequests, activeTab, search, statusFilter, departmentFilter, priorityFilter, requestTypeFilter, fromDateFilter, toDateFilter]);
 
   const statisticsQuery = useEmployeeRequestsStatistics(allEmployeeRequests);
   const statistics = statisticsQuery.data || {
@@ -191,18 +215,37 @@ const EmployeeRequestsManagement: React.FC = () => {
     setSelectedRequest(null);
   };
 
-  const handleRequestCreated = () => {
+  const handleRequestCreated = async () => {
     setCreateModalOpen(false);
+    try {
+      setIsRefreshing(true);
+      await requestsQuery.refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
     notification.show({ message: 'Request created successfully', type: 'success' });
   };
 
-  // Pagination calculations (using client-side pagination for filtered results)
+  // Update pagination state based on filtered results
+  useEffect(() => {
+    const totalFilteredItems = employeeRequests.length;
+    const totalPages = Math.ceil(totalFilteredItems / itemsPerPage);
+    // Reset to page 1 if current page is beyond the new total pages
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [employeeRequests.length, itemsPerPage, currentPage]);
+
+  // Client-side pagination
+  const paginatedRequests = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return employeeRequests.slice(startIndex, endIndex);
+  }, [employeeRequests, currentPage, itemsPerPage]);
+
+  // Calculate pagination totals
   const totalItems = employeeRequests.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedRequests = employeeRequests.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   // Handle table row click
   const handleTableRowClick = (row: any) => {
@@ -221,12 +264,16 @@ const EmployeeRequestsManagement: React.FC = () => {
         responseNotes: notes
       };
       await takeActionMutation.mutateAsync({ requestId, action });
+      setIsRefreshing(true);
+      await requestsQuery.refetch();
       notification.show({ message: 'Request resolved successfully', type: 'success' });
       setDrawerOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error resolving request:', error);
       notification.show({ message: 'Failed to resolve request', type: 'error' });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -237,12 +284,16 @@ const EmployeeRequestsManagement: React.FC = () => {
         responseNotes: notes
       };
       await takeActionMutation.mutateAsync({ requestId, action });
+      setIsRefreshing(true);
+      await requestsQuery.refetch();
       notification.show({ message: 'Request rejected successfully', type: 'success' });
       setDrawerOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error rejecting request:', error);
       notification.show({ message: 'Failed to reject request', type: 'error' });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -254,12 +305,16 @@ const EmployeeRequestsManagement: React.FC = () => {
         priority: priority as any,
       };
       await takeActionMutation.mutateAsync({ requestId, action });
+      setIsRefreshing(true);
+      await requestsQuery.refetch();
       notification.show({ message: 'Request updated successfully', type: 'success' });
       setDrawerOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error updating request:', error);
       notification.show({ message: 'Failed to update request', type: 'error' });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -270,12 +325,16 @@ const EmployeeRequestsManagement: React.FC = () => {
         responseNotes: notes
       };
       await takeActionMutation.mutateAsync({ requestId, action });
+      setIsRefreshing(true);
+      await requestsQuery.refetch();
       notification.show({ message: 'Request put on hold successfully', type: 'success' });
       setDrawerOpen(false);
       setSelectedRequest(null);
     } catch (error) {
       console.error('Error putting request on hold:', error);
       notification.show({ message: 'Failed to put request on hold', type: 'error' });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -456,7 +515,7 @@ const EmployeeRequestsManagement: React.FC = () => {
         {/* Employee Requests Table */}
         <EmployeeRequestsTable
           requests={paginatedRequests}
-          isLoading={loading}
+          isLoading={loading || isRefreshing || takeActionMutation.isPending}
           currentPage={currentPage}
           totalPages={totalPages}
           totalItems={totalItems}
@@ -467,6 +526,16 @@ const EmployeeRequestsManagement: React.FC = () => {
           selectedRequests={selectedRequests}
           showDepartmentColumn={isHROrAdmin}
           showRequestIdColumn={false}
+        />
+
+        {/* Overlay loader during actions/refetch to avoid feeling stuck */}
+        <Loading
+          isLoading={isRefreshing || takeActionMutation.isPending}
+          position="overlay"
+          size="lg"
+          theme="primary"
+          backdropBlur
+          message="Updating requests..."
         />
 
         {/* Request Details Drawer */}

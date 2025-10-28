@@ -10,10 +10,13 @@ import {
   getEmployeeRequestsApi, 
   getMyEmployeeRequestsApi,
   exportEmployeeRequestsApi,
+  takeEmployeeRequestActionApi,
+  updateEmployeeRequestActionApi,
   type EmployeeRequest, 
   type EmployeeRequestStats,
   type EmployeeRequestAction
 } from '../../apis/employee-requests';
+import { useAuth } from '../../context/AuthContext';
 
 // Query Keys - Centralized for consistency
 export const employeeRequestsQueryKeys = {
@@ -70,12 +73,73 @@ export const useMyEmployeeRequests = (
  */
 export const useTakeRequestAction = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ requestId, action }: { requestId: number; action: EmployeeRequestAction }) => {
-      // TODO: Fix API call signature - needs 3 parameters
-      console.log('Taking action on request:', requestId, action);
-      return Promise.resolve({ success: true });
+      const hrEmployeeId = Number(user?.id);
+      if (!hrEmployeeId || Number.isNaN(hrEmployeeId)) {
+        throw new Error('Missing HR employee id');
+      }
+
+      try {
+        // Try creating/upserting the action first
+        return await takeEmployeeRequestActionApi(requestId, hrEmployeeId, action);
+      } catch (err) {
+        // If the backend expects an update, retry with PUT
+        return await updateEmployeeRequestActionApi(requestId, hrEmployeeId, action);
+      }
+    },
+    onMutate: async ({ requestId, action }) => {
+      // Cancel outgoing refetches so we don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: employeeRequestsQueryKeys.all });
+
+      // Snapshot previous data across all related queries for rollback
+      const previousData = queryClient.getQueriesData({ queryKey: employeeRequestsQueryKeys.all });
+
+      // Produce an updater that applies the action to a single request
+      const applyActionToRequest = (request: any) => {
+        if (!request || request.id !== requestId) return request;
+        return {
+          ...request,
+          status: action.status ?? request.status,
+          responseNotes: action.responseNotes ?? request.responseNotes,
+          priority: action.priority ?? request.priority,
+          assignedTo: action.assignedTo ?? request.assignedTo,
+          requestType: action.requestType ?? request.requestType,
+          subject: action.subject ?? request.subject,
+          description: action.description ?? request.description,
+          updatedAt: new Date().toISOString(),
+        };
+      };
+
+      // Optimistically update all list and my-requests caches
+      queryClient.setQueriesData({ queryKey: employeeRequestsQueryKeys.all, exact: false }, (data: any) => {
+        if (!data) return data;
+        // HR/Admin list shape: { data: EmployeeRequest[], meta: {...} }
+        if (data && Array.isArray(data.data)) {
+          return {
+            ...data,
+            data: data.data.map((req: any) => applyActionToRequest(req)),
+          };
+        }
+        // My requests shape: EmployeeRequest[]
+        if (Array.isArray(data)) {
+          return data.map((req: any) => applyActionToRequest(req));
+        }
+        return data;
+      });
+
+      // Return context for potential rollback
+      return { previousData };
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousData) {
+        for (const [key, data] of context.previousData as Array<[unknown, unknown]>) {
+          queryClient.setQueryData(key as any, data);
+        }
+      }
     },
     onSuccess: () => {
       // Invalidate all request lists to refetch with new data
