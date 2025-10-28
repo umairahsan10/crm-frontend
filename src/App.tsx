@@ -47,6 +47,7 @@ import HRManagementPage from './pages/HRManagement/HRManagementPage';
 import MarketingPage from './pages/Marketing/MarketingPage';
 import ProductionPage from './pages/Production/ProductionPage';
 import ProductionUnitsManagementPage from './pages/Production/ProductionUnitsManagementPage';
+import ProductionTeamsManagementPage from './pages/Production/ProductionTeamsManagementPage';
 import ClientsPage from './pages/Clients/ClientsPage';
 import AdminReportsPage from './pages/Reports/ReportsPage';
 import AnalyticsPage from './pages/Analytics/AnalyticsPage';
@@ -284,6 +285,10 @@ function AppLayout() {
         <Route 
           path="/production/units" 
           element={canAccessPage('production') ? <ProductionUnitsManagementPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/production/teams" 
+          element={canAccessPage('production') ? <ProductionTeamsManagementPage /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/clients" 
