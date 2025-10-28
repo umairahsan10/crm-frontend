@@ -11,6 +11,7 @@ import GenericHRAdminRequestsFilters from '../../components/hr-admin-requests/Ge
 import HRAdminRequestDetailsDrawer from '../../components/hr-admin-requests/HRAdminRequestDetailsDrawer';
 import CreateHRAdminRequestModal from '../../components/common/requests/CreateHRAdminRequestModal';
 import { useMyHRAdminRequests } from '../../hooks/queries/useHRAdminRequestsQueries';
+import Loading from '../../components/common/Loading/Loading';
 
 // Local interface for component
 interface HRAdminRequestTableRow {
@@ -35,6 +36,7 @@ const HRRequestAdminPage: React.FC = () => {
   const [showStatistics, setShowStatistics] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'salary_increase' | 'late_approval' | 'others'>('salary_increase');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Check if user is HR
   const isHR = user?.department === 'HR';
@@ -55,34 +57,20 @@ const HRRequestAdminPage: React.FC = () => {
     itemsPerPage: 20
   });
 
-  // React Query hooks
+  // React Query hooks - fetch ALL data once, filter client-side
   const hrId = 1; // TODO: Get from user object
   const requestsQuery = useMyHRAdminRequests(hrId, {
-    page: pagination.currentPage,
-    limit: pagination.itemsPerPage,
-    search: filters.search || undefined,
-    status: filters.status || undefined,
-    fromDate: filters.fromDate || undefined,
-    toDate: filters.toDate || undefined,
+    page: 1,
+    limit: 100, // Backend guard limit - get all data for client-side filtering
   }, { enabled: isHR });
   const loading = requestsQuery.isLoading;
+
 
   // Extract data
   const requestsData = requestsQuery.data || {};
   const adminRequestsRaw = requestsData.adminRequests || [];
-  const totalItems = requestsData.total || 0;
-  const apiPagination = requestsData.pagination || { page: 1, limit: 20, totalPages: 1 };
 
-  // Update pagination state from API response
-  useEffect(() => {
-    setPagination(prev => ({
-      ...prev,
-      totalPages: apiPagination.totalPages,
-      totalItems: totalItems
-    }));
-  }, [apiPagination.totalPages, totalItems]);
-
-  // Transform to table format and apply tab filtering only
+  // Transform to table format and apply ALL filtering client-side
   const adminRequests: HRAdminRequestTableRow[] = useMemo(() => {
     let filtered = adminRequestsRaw.map((request: any) => ({
       id: request.id.toString(),
@@ -97,11 +85,54 @@ const HRRequestAdminPage: React.FC = () => {
       hr_employee_email: 'N/A'
     }));
 
-    // Apply tab filtering only (other filters are handled by API)
-    filtered = filtered.filter((req: HRAdminRequestTableRow) => req.type === activeTab);
+    // Apply ALL filters client-side
+    filtered = filtered.filter((req: HRAdminRequestTableRow) => {
+      // Tab filter
+      if (req.type !== activeTab) return false;
+      
+      // Search filter
+      if (filters.search && !req.description.toLowerCase().includes(filters.search.toLowerCase())) return false;
+      
+      // Status filter
+      if (filters.status && req.status !== filters.status) return false;
+      
+      // Date filters
+      if (filters.fromDate) {
+        const reqDate = new Date(req.created_at);
+        const fromDate = new Date(filters.fromDate);
+        if (reqDate < fromDate) return false;
+      }
+      
+      if (filters.toDate) {
+        const reqDate = new Date(req.created_at);
+        const toDate = new Date(filters.toDate);
+        toDate.setHours(23, 59, 59, 999); // End of day
+        if (reqDate > toDate) return false;
+      }
+      
+      return true;
+    });
 
     return filtered;
-  }, [adminRequestsRaw, activeTab]);
+  }, [adminRequestsRaw, activeTab, filters]);
+
+  // Client-side pagination
+  const paginatedRequests = useMemo(() => {
+    const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
+    const endIndex = startIndex + pagination.itemsPerPage;
+    return adminRequests.slice(startIndex, endIndex);
+  }, [adminRequests, pagination.currentPage, pagination.itemsPerPage]);
+
+  // Update pagination state based on filtered results
+  useEffect(() => {
+    const totalFilteredItems = adminRequests.length;
+    const totalPages = Math.ceil(totalFilteredItems / pagination.itemsPerPage);
+    setPagination(prev => ({
+      ...prev,
+      totalPages: totalPages,
+      totalItems: totalFilteredItems
+    }));
+  }, [adminRequests.length, pagination.itemsPerPage]);
 
   // Calculate statistics for all requests (not filtered by tab)
   const allRequests = useMemo(() => {
@@ -153,6 +184,7 @@ const HRRequestAdminPage: React.FC = () => {
   const handleFiltersChange = useCallback((newFilters: any) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     setPagination(prev => ({ ...prev, currentPage: 1 }));
+    // No API call needed - filtering is client-side
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -173,8 +205,19 @@ const HRRequestAdminPage: React.FC = () => {
     setSelectedRequest(request);
   };
 
-  const handleRequestCreated = () => {
-    requestsQuery.refetch();
+  const handleRequestCreated = async (createdType: 'salary_increase' | 'late_approval' | 'others') => {
+    // Switch to the tab of the created request type
+    setActiveTab(createdType);
+    // Reset to first page for new content visibility
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    // Show overlay while refreshing list
+    try {
+      setIsRefreshing(true);
+      await requestsQuery.refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+    // Close modal and notify
     setCreateModalOpen(false);
     setNotification({ type: 'success', message: 'Request created successfully!' });
   };
@@ -183,6 +226,15 @@ const HRRequestAdminPage: React.FC = () => {
     setActiveTab(tab);
     setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 when switching tabs
   };
+
+  // Auto-dismiss notifications after a short delay
+  useEffect(() => {
+    if (!notification) return;
+    const timeoutId = setTimeout(() => {
+      setNotification(null);
+    }, 2500);
+    return () => clearTimeout(timeoutId);
+  }, [notification]);
 
   // Statistics cards
   const statisticsCards = [
@@ -255,6 +307,7 @@ const HRRequestAdminPage: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
+              <h1 className="text-2xl font-bold text-gray-900">HR Request Admin</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Create and manage requests to the Admin department
               </p>
@@ -357,8 +410,8 @@ const HRRequestAdminPage: React.FC = () => {
 
         {/* Table */}
         <HRAdminRequestsTable
-          requests={adminRequests}
-          isLoading={loading}
+          requests={paginatedRequests}
+          isLoading={loading || isRefreshing}
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
           totalItems={pagination.totalItems}
@@ -379,6 +432,16 @@ const HRRequestAdminPage: React.FC = () => {
           isOpen={createModalOpen}
           onClose={() => setCreateModalOpen(false)}
           onSuccess={handleRequestCreated}
+        />
+
+        {/* Overlay during refetch to avoid lag perception */}
+        <Loading
+          isLoading={isRefreshing}
+          position="overlay"
+          size="lg"
+          theme="primary"
+          backdropBlur
+          message="Refreshing requests..."
         />
 
         {/* Notification */}

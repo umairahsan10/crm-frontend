@@ -16,13 +16,12 @@ import DynamicTable, { type ColumnConfig } from '../../../components/common/Dyna
 import DataStatistics from '../../../components/common/Statistics/DataStatistics';
 import GenericAttendanceFilters from '../../../components/attendance/GenericAttendanceFilters';
 import EmployeeAttendanceDrawer from '../../../components/attendance/EmployeeAttendanceDrawer';
+import Loading from '../../../components/common/Loading/Loading';
 import { useEmployees, useAttendanceLogs, useAttendanceMutation } from '../../../hooks/queries/useHRQueries';
 import { 
   checkinApi, 
-  bulkMarkPresentApi,
   updateAttendanceLogStatusApi,
   type CheckinDto, 
-  type BulkMarkPresentDto,
   type UpdateAttendanceLogStatusDto
 } from '../../../apis/attendance';
 import './AttendanceManagement.css';
@@ -78,6 +77,10 @@ const AttendanceManagement: React.FC = () => {
   // Employee drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedEmployeeForDrawer, setSelectedEmployeeForDrawer] = useState<{id: number, name: string} | null>(null);
+
+  // Loading states for mark attendance actions
+  const [isMarkingAttendance, setIsMarkingAttendance] = useState(false);
+  const [isBulkMarkingAttendance, setIsBulkMarkingAttendance] = useState(false);
 
   // React Query hooks - Auto caching and refetching
   const employeesQuery = useEmployees(1, 1000, {}); // Get all employees
@@ -170,6 +173,7 @@ const AttendanceManagement: React.FC = () => {
 
   const handleMarkAttendance = async (employeeId: number) => {
     try {
+      setIsMarkingAttendance(true);
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -204,27 +208,70 @@ const AttendanceManagement: React.FC = () => {
         message: error instanceof Error ? error.message : 'Failed to mark attendance'
       });
       setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsMarkingAttendance(false);
     }
   };
 
   const handleBulkMarkAttendance = async () => {
     try {
+      setIsBulkMarkingAttendance(true);
       const employeeIds = selectedEmployees.map(id => parseInt(id));
       
-      const bulkMarkData: BulkMarkPresentDto = {
-        date: selectedDate,
-        employee_ids: employeeIds,
-        reason: bulkMarkReason || 'Bulk marked attendance by HR'
-      };
+      // Filter to only include unmarked employees for actual marking
+      const unmarkedEmployeeIds = employeeIds.filter(employeeId => {
+        const record = filteredRecords.find(r => r.id === employeeId.toString());
+        return record && (record.status === 'not_marked' || record.status === null || record.status === undefined);
+      });
+      
+      // If no unmarked employees are selected, show a message
+      if (unmarkedEmployeeIds.length === 0) {
+        setNotification({
+          type: 'success',
+          message: 'All selected employees are already marked for attendance'
+        });
+        setTimeout(() => setNotification(null), 3000);
+        return;
+      }
+      
+      // Mark each unmarked employee individually
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const employeeId of unmarkedEmployeeIds) {
+        try {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const day = String(now.getDate()).padStart(2, '0');
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          const seconds = String(now.getSeconds()).padStart(2, '0');
+          const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+          
+          const pakistaniTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}Z`;
+          
+          const checkinData: CheckinDto = {
+            employee_id: employeeId,
+            date: selectedDate,
+            checkin: pakistaniTime,
+            mode: 'onsite'
+          };
 
-      const response = await bulkMarkPresentApi(bulkMarkData);
+          await checkinApi(checkinData);
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to mark employee ${employeeId}:`, error);
+          errorCount++;
+        }
+      }
       
       // Invalidate and refetch
       invalidateAttendance({ start_date: selectedDate, end_date: selectedDate });
 
       setNotification({
-        type: 'success',
-        message: `Successfully marked ${response.marked_present} employees present`
+        type: successCount > 0 ? 'success' : 'error',
+        message: `Successfully marked ${successCount} employees present${errorCount > 0 ? `, ${errorCount} failed` : ''}${employeeIds.length > unmarkedEmployeeIds.length ? ` (${employeeIds.length - unmarkedEmployeeIds.length} already marked)` : ''}`
       });
       setTimeout(() => setNotification(null), 3000);
 
@@ -237,6 +284,8 @@ const AttendanceManagement: React.FC = () => {
         message: error instanceof Error ? error.message : 'Failed to bulk mark attendance'
       });
       setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsBulkMarkingAttendance(false);
     }
   };
 
@@ -290,6 +339,16 @@ const AttendanceManagement: React.FC = () => {
   const handleBulkSelect = (employeeIds: string[]) => {
     setSelectedEmployees(employeeIds);
   };
+
+  const handleSelectAll = useCallback(() => {
+    // Always select all employees for UI consistency, regardless of their status
+    const allEmployeeIds = filteredRecords.map(record => record.id);
+    setSelectedEmployees(allEmployeeIds);
+  }, [filteredRecords]);
+
+  const handleDeselectAll = useCallback(() => {
+    setSelectedEmployees([]);
+  }, []);
 
   // Statistics cards
   const statisticsCards = [
@@ -526,6 +585,8 @@ const AttendanceManagement: React.FC = () => {
             setIsDrawerOpen(true);
           }}
           onBulkSelect={handleBulkSelect}
+          onSelectAll={handleSelectAll}
+          onDeselectAll={handleDeselectAll}
           selectable={true}
           emptyMessage="No employees found"
           theme={{ primary: 'blue', secondary: 'gray', accent: 'blue' }}
@@ -649,6 +710,16 @@ const AttendanceManagement: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Overlay during mark attendance actions */}
+        <Loading
+          isLoading={isMarkingAttendance || isBulkMarkingAttendance}
+          position="overlay"
+          size="lg"
+          theme="primary"
+          backdropBlur
+          message={isMarkingAttendance ? "Marking attendance..." : "Bulk marking attendance..."}
+        />
       </div>
     </div>
   );

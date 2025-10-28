@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import Loading from '../Loading/Loading';
 import { createHRAdminRequestApi, type CreateHRAdminRequestDto } from '../../../apis/hr-admin-requests';
+
+type HRAdminRequestType = 'salary_increase' | 'late_approval' | 'others';
 
 interface CreateHRAdminRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (createdType: HRAdminRequestType) => void;
   hrEmployeeId?: number;
 }
 
@@ -14,7 +17,7 @@ const CreateHRAdminRequestModal: React.FC<CreateHRAdminRequestModalProps> = ({
   onSuccess
 }) => {
   const [formData, setFormData] = useState({
-    type: 'salary_increase' as const,
+    type: 'salary_increase' as HRAdminRequestType,
     description: ''
   });
   const [loading, setLoading] = useState(false);
@@ -83,7 +86,7 @@ const CreateHRAdminRequestModal: React.FC<CreateHRAdminRequestModalProps> = ({
       });
       setErrors({});
       
-      onSuccess();
+      onSuccess(formData.type);
       onClose();
     } catch (error) {
       console.error('Error creating HR admin request:', error);
@@ -235,6 +238,15 @@ const CreateHRAdminRequestModal: React.FC<CreateHRAdminRequestModalProps> = ({
           </form>
         </div>
       </div>
+      {/* Fullscreen overlay while submitting */}
+      <Loading 
+        isLoading={loading}
+        position="overlay"
+        size="lg"
+        theme="primary"
+        backdropBlur
+        message="Creating request..."
+      />
     </div>
   );
 };

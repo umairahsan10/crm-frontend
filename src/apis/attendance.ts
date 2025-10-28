@@ -16,8 +16,8 @@ export interface CheckoutDto {
 
 export interface BulkMarkPresentDto {
   date: string; // YYYY-MM-DD format
-  employee_ids?: number[]; // Optional: specific employee IDs, if not provided, marks all
   reason?: string;
+  // Removed employeeIds - API might not support selective marking
 }
 
 export interface CheckinResponseDto {
