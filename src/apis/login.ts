@@ -65,6 +65,26 @@ export const loginApi = async (credentials: LoginRequest): Promise<LoginResponse
       return mockResponse;
     }
 
+    // Check for sales department test user
+    if (credentials.email === 'sales@test.com' && credentials.password === 'sales') {
+      const mockResponse: LoginResponse = {
+        access_token: 'dummy_jwt_token_for_sales',
+        user: {
+          sub: 2,
+          role: 'employee',
+          type: 'employee',
+          department: 'Sales',
+          permissions: {
+            'read': true,
+            'write': true,
+            'manage_sales': true,
+            'manage_team': true,
+          }
+        }
+      };
+      return mockResponse;
+    }
+
     // For other credentials, make actual API call
     const data = await apiPostJson<LoginResponse>(`${API_BASE_URL}/auth/login`, credentials, {
       requireAuth: false,
