@@ -51,6 +51,9 @@ const Navbar: React.FC<NavbarProps> = ({
     if (!user) return [];
 
     const { type, department } = user;
+    
+    // Debug logging
+    console.log('Navbar - User data:', { type, department, role: user.role });
 
     // Admin sees all pages
     if (type === 'admin') {
@@ -72,6 +75,8 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
         { id: 'production-units', label: 'Units Management', icon: '🏢', path: '/production/units' },
         { id: 'production-teams', label: 'Teams Management', icon: '👥', path: '/production/teams' },
+        { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
+        { id: 'sales-teams', label: 'Sales Teams', icon: '👥', path: '/sales/teams' },
         { id: 'reports', label: 'Reports', icon: '📊', path: '/reports' },
         { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics' },
         { id: 'audit-trail', label: 'Audit Trail', icon: '🔍', path: '/audit-trail' },
@@ -92,7 +97,10 @@ const Navbar: React.FC<NavbarProps> = ({
       ];
 
       // Add department-specific items
-      switch (department?.toLowerCase()) {
+      const departmentLower = department?.toLowerCase();
+      console.log('Navbar - Department (lowercase):', departmentLower);
+      
+      switch (departmentLower) {
         case 'hr':
           return [
             ...baseItems,
@@ -107,12 +115,15 @@ const Navbar: React.FC<NavbarProps> = ({
           ];
         
         case 'sales':
+        case 'sales department':
+        case 'sales team':
           return [
             ...baseItems,
             { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
             { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
             { id: 'company', label: 'Companies', icon: '🏢', path: '/company' },
             { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
+            { id: 'sales-teams', label: 'Sales Teams', icon: '👥', path: '/sales/teams' },
             { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];
         
@@ -142,7 +153,8 @@ const Navbar: React.FC<NavbarProps> = ({
           ];
         
         default:
-          // Default employee with no specific department
+          // Default employee with no specific department or unrecognized department
+          console.log('Navbar - Unrecognized department, using default navigation:', departmentLower);
           return [
             ...baseItems,
             { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
