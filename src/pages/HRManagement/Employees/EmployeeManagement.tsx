@@ -6,6 +6,7 @@ import EmployeesTable from '../../../components/employees/EmployeesTable';
 import GenericEmployeeFilters from '../../../components/employees/GenericEmployeeFilters';
 import EmployeeDetailsDrawer from '../../../components/employees/EmployeeDetailsDrawer';
 import CreateEmployeeDrawer from '../../../components/employees/CreateEmployeeDrawer';
+import EditEmployeeDrawer from '../../../components/employees/EditEmployeeDrawer';
 import Loading from '../../../components/common/Loading/Loading';
 import {
   useEmployeeStatistics,
@@ -30,6 +31,8 @@ const EmployeeManagement: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [showCreateDrawer, setShowCreateDrawer] = useState(false);
+  const [showEditDrawer, setShowEditDrawer] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showTerminateModal, setShowTerminateModal] = useState(false);
   const [employeeToTerminate, setEmployeeToTerminate] = useState<Employee | null>(null);
@@ -143,13 +146,13 @@ const EmployeeManagement: React.FC = () => {
   const departments = departmentsQuery.data?.departments || [];
   const roles = rolesQuery.data?.roles || [];
 
-  // Extract all employees data (no pagination from API)
-  const allActiveEmployees = activeEmployeesQuery.data?.employees || [];
-  const allInactiveEmployees = inactiveEmployeesQuery.data?.employees || [];
-  const allTerminatedEmployees = terminatedEmployeesQuery.data?.employees || [];
-
   // Client-side filtering and pagination
   const filteredEmployees = useMemo(() => {
+    // Extract all employees data (no pagination from API)
+    const allActiveEmployees = activeEmployeesQuery.data?.employees || [];
+    const allInactiveEmployees = inactiveEmployeesQuery.data?.employees || [];
+    const allTerminatedEmployees = terminatedEmployeesQuery.data?.employees || [];
+    
     let allEmployees: Employee[] = [];
     
     // Get the appropriate employee list based on active tab
@@ -208,7 +211,7 @@ const EmployeeManagement: React.FC = () => {
 
       return true;
     });
-  }, [activeTab, allActiveEmployees, allInactiveEmployees, allTerminatedEmployees, filters]);
+  }, [activeTab, activeEmployeesQuery.data?.employees, inactiveEmployeesQuery.data?.employees, terminatedEmployeesQuery.data?.employees, filters]);
 
   // Update pagination state based on filtered results
   useEffect(() => {
@@ -374,11 +377,17 @@ const EmployeeManagement: React.FC = () => {
     setDrawerOpen(true);
   };
 
+  const handleEditEmployee = (employee: Employee) => {
+    setEmployeeToEdit(employee);
+    setShowEditDrawer(true);
+    // Don't close the details drawer - keep it open in background
+  };
+
   const handleBulkSelect = (employeeIds: string[]) => {
     setSelectedEmployees(employeeIds);
   };
 
-  const handleFiltersChange = useCallback((newFilters: any) => {
+  const handleFiltersChange = useCallback((newFilters: Record<string, string>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on filter change
   }, []);
@@ -397,7 +406,9 @@ const EmployeeManagement: React.FC = () => {
 
   const handleTabChange = (tab: 'active' | 'inactive' | 'terminated') => {
     setActiveTab(tab);
-    setSelectedEmployees([]); // Clear selection when switching tabs
+    setSelectedEmployees([]); // Clear bulk selection when switching tabs
+    setSelectedEmployee(null); // Clear selected employee when switching tabs
+    setDrawerOpen(false); // Close drawer when switching tabs
     setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1
     // No API call needed - using client-side filtering
   };
@@ -450,11 +461,11 @@ const EmployeeManagement: React.FC = () => {
     }
   };
 
-  const handleBulkTerminate = (_selectedIds: string[]) => {
+  const handleBulkTerminate = (selectedIds: string[]) => {
     // For bulk termination, show a modal to get termination details
     setNotification({
       type: 'error',
-      message: 'Please terminate employees individually to provide termination details'
+      message: `Please terminate ${selectedIds.length} employee(s) individually to provide termination details`
     });
     setTimeout(() => setNotification(null), 5000);
   };
@@ -496,7 +507,12 @@ const EmployeeManagement: React.FC = () => {
 
   const handleDrawerClose = () => {
     setDrawerOpen(false);
+    // Don't clear selectedEmployee - keep it for table state
+  };
+
+  const handleClearSelection = () => {
     setSelectedEmployee(null);
+    setDrawerOpen(false);
   };
 
   const handleEmployeeCreated = async () => {
@@ -519,6 +535,47 @@ const EmployeeManagement: React.FC = () => {
       setNotification({
         type: 'error',
         message: 'Employee created but failed to refresh data'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleEmployeeUpdated = async () => {
+    try {
+      setIsRefreshing(true);
+      // Refetch all employee data to get the updated employee
+      await Promise.all([
+        activeEmployeesQuery.refetch(),
+        inactiveEmployeesQuery.refetch(),
+        terminatedEmployeesQuery.refetch(),
+        statisticsQuery.refetch()
+      ]);
+      
+      // Update the selected employee with fresh data if it exists
+      if (selectedEmployee) {
+        const updatedEmployee = [
+          ...activeEmployeesQuery.data?.employees || [],
+          ...inactiveEmployeesQuery.data?.employees || [],
+          ...terminatedEmployeesQuery.data?.employees || []
+        ].find(emp => emp.id === selectedEmployee.id);
+        
+        if (updatedEmployee) {
+          setSelectedEmployee(updatedEmployee);
+        }
+      }
+      
+      setNotification({
+        type: 'success',
+        message: 'Employee updated successfully'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error('Error refreshing employee data:', error);
+      setNotification({
+        type: 'error',
+        message: 'Employee updated but failed to refresh data'
       });
       setTimeout(() => setNotification(null), 3000);
     } finally {
@@ -567,6 +624,17 @@ const EmployeeManagement: React.FC = () => {
                 </svg>
                 {showStatistics ? 'Hide Statistics' : 'Show Statistics'}
               </button>
+              {selectedEmployee && (
+                <button
+                  onClick={handleClearSelection}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Clear Selection
+                </button>
+              )}
               {(canCreateEmployee || isHRUser) && (
                  <button
                    onClick={() => setShowCreateDrawer(true)}
@@ -691,7 +759,7 @@ const EmployeeManagement: React.FC = () => {
           employee={selectedEmployee}
           isOpen={drawerOpen}
           onClose={handleDrawerClose}
-          onEdit={(employee) => setSelectedEmployee(employee)}
+          onEdit={handleEditEmployee}
           onTerminate={handleTerminateEmployee}
           onEmployeeUpdated={() => { }}
         />
@@ -701,6 +769,29 @@ const EmployeeManagement: React.FC = () => {
           isOpen={showCreateDrawer}
           onClose={() => setShowCreateDrawer(false)}
           onEmployeeCreated={handleEmployeeCreated}
+        />
+
+        {/* Edit Employee Drawer */}
+        <EditEmployeeDrawer
+          employee={employeeToEdit}
+          isOpen={showEditDrawer}
+          onClose={() => {
+            setShowEditDrawer(false);
+            setEmployeeToEdit(null);
+            // Reopen the details drawer if we have a selected employee
+            if (selectedEmployee) {
+              setDrawerOpen(true);
+            }
+          }}
+          onEmployeeUpdated={() => {
+            handleEmployeeUpdated();
+            setShowEditDrawer(false);
+            setEmployeeToEdit(null);
+            // Reopen the details drawer
+            if (selectedEmployee) {
+              setDrawerOpen(true);
+            }
+          }}
         />
 
         {/* Overlay during refetch to avoid lag perception */}
