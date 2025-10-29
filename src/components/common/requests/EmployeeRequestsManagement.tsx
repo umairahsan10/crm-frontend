@@ -7,7 +7,6 @@ import GenericEmployeeRequestsFilters from '../../employee-requests/GenericEmplo
 import EmployeeRequestDetailsDrawer from '../../employee-requests/EmployeeRequestDetailsDrawer';
 import CreateRequestModal from './CreateRequestModal';
 import { useNotification } from '../../../hooks/useNotification';
-import Loading from '../Loading/Loading';
 import { 
   useEmployeeRequests,
   useMyEmployeeRequests,
@@ -48,7 +47,6 @@ const EmployeeRequestsManagement: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
 
   // Use appropriate hook based on user role (single API call like Request Admin page)
@@ -215,15 +213,18 @@ const EmployeeRequestsManagement: React.FC = () => {
     setSelectedRequest(null);
   };
 
-  const handleRequestCreated = async () => {
+  const handleRequestCreated = () => {
+    // Close modal immediately
     setCreateModalOpen(false);
-    try {
-      setIsRefreshing(true);
-      await requestsQuery.refetch();
-    } finally {
-      setIsRefreshing(false);
-    }
+    
+    // Show notification immediately
     notification.show({ message: 'Request created successfully', type: 'success' });
+    
+    // Refresh data in background (don't await)
+    requestsQuery.refetch().catch(error => {
+      console.error('Error refreshing requests data:', error);
+      notification.show({ message: 'Request created but failed to refresh data', type: 'error' });
+    });
   };
 
   // Update pagination state based on filtered results
@@ -264,7 +265,6 @@ const EmployeeRequestsManagement: React.FC = () => {
         responseNotes: notes
       };
       await takeActionMutation.mutateAsync({ requestId, action });
-      setIsRefreshing(true);
       await requestsQuery.refetch();
       notification.show({ message: 'Request resolved successfully', type: 'success' });
       setDrawerOpen(false);
@@ -272,8 +272,6 @@ const EmployeeRequestsManagement: React.FC = () => {
     } catch (error) {
       console.error('Error resolving request:', error);
       notification.show({ message: 'Failed to resolve request', type: 'error' });
-    } finally {
-      setIsRefreshing(false);
     }
   };
 
@@ -284,7 +282,6 @@ const EmployeeRequestsManagement: React.FC = () => {
         responseNotes: notes
       };
       await takeActionMutation.mutateAsync({ requestId, action });
-      setIsRefreshing(true);
       await requestsQuery.refetch();
       notification.show({ message: 'Request rejected successfully', type: 'success' });
       setDrawerOpen(false);
@@ -292,8 +289,6 @@ const EmployeeRequestsManagement: React.FC = () => {
     } catch (error) {
       console.error('Error rejecting request:', error);
       notification.show({ message: 'Failed to reject request', type: 'error' });
-    } finally {
-      setIsRefreshing(false);
     }
   };
 
@@ -305,7 +300,6 @@ const EmployeeRequestsManagement: React.FC = () => {
         priority: priority as any,
       };
       await takeActionMutation.mutateAsync({ requestId, action });
-      setIsRefreshing(true);
       await requestsQuery.refetch();
       notification.show({ message: 'Request updated successfully', type: 'success' });
       setDrawerOpen(false);
@@ -313,8 +307,6 @@ const EmployeeRequestsManagement: React.FC = () => {
     } catch (error) {
       console.error('Error updating request:', error);
       notification.show({ message: 'Failed to update request', type: 'error' });
-    } finally {
-      setIsRefreshing(false);
     }
   };
 
@@ -325,7 +317,6 @@ const EmployeeRequestsManagement: React.FC = () => {
         responseNotes: notes
       };
       await takeActionMutation.mutateAsync({ requestId, action });
-      setIsRefreshing(true);
       await requestsQuery.refetch();
       notification.show({ message: 'Request put on hold successfully', type: 'success' });
       setDrawerOpen(false);
@@ -333,8 +324,6 @@ const EmployeeRequestsManagement: React.FC = () => {
     } catch (error) {
       console.error('Error putting request on hold:', error);
       notification.show({ message: 'Failed to put request on hold', type: 'error' });
-    } finally {
-      setIsRefreshing(false);
     }
   };
 
@@ -515,7 +504,7 @@ const EmployeeRequestsManagement: React.FC = () => {
         {/* Employee Requests Table */}
         <EmployeeRequestsTable
           requests={paginatedRequests}
-          isLoading={loading || isRefreshing || takeActionMutation.isPending}
+          isLoading={loading || takeActionMutation.isPending}
           currentPage={currentPage}
           totalPages={totalPages}
           totalItems={totalItems}
@@ -526,16 +515,6 @@ const EmployeeRequestsManagement: React.FC = () => {
           selectedRequests={selectedRequests}
           showDepartmentColumn={isHROrAdmin}
           showRequestIdColumn={false}
-        />
-
-        {/* Overlay loader during actions/refetch to avoid feeling stuck */}
-        <Loading
-          isLoading={isRefreshing || takeActionMutation.isPending}
-          position="overlay"
-          size="lg"
-          theme="primary"
-          backdropBlur
-          message="Updating requests..."
         />
 
         {/* Request Details Drawer */}

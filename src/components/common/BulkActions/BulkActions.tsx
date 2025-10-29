@@ -13,7 +13,7 @@ export interface BulkAction {
 export interface BulkActionsProps {
   selectedItems: string[];
   actions: BulkAction[];
-  onClearSelection: () => void;
+  onClearSelection?: () => void;
   className?: string;
 }
 
@@ -78,12 +78,14 @@ const BulkActions: React.FC<BulkActionsProps> = ({
           </button>
         </div>
 
-        <button
-          onClick={onClearSelection}
-          className="text-sm text-gray-500 hover:text-gray-700 font-medium"
-        >
-          Clear selection
-        </button>
+        {onClearSelection && (
+          <button
+            onClick={onClearSelection}
+            className="text-sm text-gray-500 hover:text-gray-700 font-medium"
+          >
+            Clear selection
+          </button>
+        )}
       </div>
 
       {/* Actions Dropdown */}

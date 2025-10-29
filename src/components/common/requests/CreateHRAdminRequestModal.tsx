@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Loading from '../Loading/Loading';
 import { createHRAdminRequestApi, type CreateHRAdminRequestDto } from '../../../apis/hr-admin-requests';
 
 type HRAdminRequestType = 'salary_increase' | 'late_approval' | 'others';
@@ -86,8 +85,9 @@ const CreateHRAdminRequestModal: React.FC<CreateHRAdminRequestModalProps> = ({
       });
       setErrors({});
       
-      onSuccess(formData.type);
+      // Close modal immediately and refresh data in background
       onClose();
+      onSuccess(formData.type);
     } catch (error) {
       console.error('Error creating HR admin request:', error);
       setErrors({
@@ -238,15 +238,6 @@ const CreateHRAdminRequestModal: React.FC<CreateHRAdminRequestModalProps> = ({
           </form>
         </div>
       </div>
-      {/* Fullscreen overlay while submitting */}
-      <Loading 
-        isLoading={loading}
-        position="overlay"
-        size="lg"
-        theme="primary"
-        backdropBlur
-        message="Creating request..."
-      />
     </div>
   );
 };

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Loading from '../Loading/Loading';
 import { createEmployeeRequestApi, type CreateEmployeeRequestDto } from '../../../apis/employee-requests';
 import { createLeaveRequestApi, type CreateLeaveRequestDto } from '../../../apis/leave-logs';
 
@@ -451,15 +450,6 @@ const CreateRequestModal: React.FC<CreateRequestModalProps> = ({
           </form>
         </div>
       </div>
-      {/* Fullscreen overlay while submitting */}
-      <Loading 
-        isLoading={isSubmitting}
-        position="overlay"
-        size="lg"
-        theme="primary"
-        backdropBlur
-        message="Submitting request..."
-      />
     </div>
   );
 };

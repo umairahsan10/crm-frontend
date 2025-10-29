@@ -4,7 +4,7 @@
  */
 
 import { getAuthData, isTokenExpired } from './cookieUtils';
-import { getApiBaseUrl } from '../config/api';
+import { getApiBaseUrl, getApiTimeout } from '../config/api';
 
 // Base URL for API requests
 const API_BASE_URL = getApiBaseUrl();
@@ -39,7 +39,7 @@ export const apiRequest = async (
 ): Promise<Response> => {
   const {
     requireAuth = true,
-    timeout = 10000,
+    timeout = getApiTimeout(),
     headers = {},
     ...fetchOptions
   } = options;

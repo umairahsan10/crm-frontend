@@ -8,9 +8,9 @@ interface EmployeeDetailsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onEdit: (employee: Employee) => void;
-  onTerminate: (employee: Employee) => void;
   isDeleting?: boolean;
   onEmployeeUpdated?: () => void;
+  onSwitchToTerminatedTab?: () => void;
 }
 
 const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
@@ -19,7 +19,8 @@ const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
   onClose,
   onEdit,
   isDeleting = false,
-  onEmployeeUpdated
+  onEmployeeUpdated,
+  onSwitchToTerminatedTab
 }) => {
   const { isNavbarOpen } = useNavbar();
   const [isMobile, setIsMobile] = useState(false);
@@ -28,8 +29,8 @@ const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
     termination_date: new Date().toISOString().split('T')[0],
     description: ''
   });
-  const [isTerminating, setIsTerminating] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isTerminating, setIsTerminating] = useState(false);
 
   // Check if device is mobile
   useEffect(() => {
@@ -69,6 +70,7 @@ const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
     if (!employee) return;
     
     setIsTerminating(true);
+    
     try {
       await terminateEmployeeApi({
         employee_id: employee.id,
@@ -87,15 +89,18 @@ const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
         description: ''
       });
       
-      // Refresh data
+      // Switch to terminated tab and close drawer immediately
+      if (onSwitchToTerminatedTab) {
+        onSwitchToTerminatedTab();
+      }
+      
+      // Close drawer immediately
+      onClose();
+      
+      // Refresh data in background (don't await)
       if (onEmployeeUpdated) {
         onEmployeeUpdated();
       }
-      
-      // Close drawer after a delay
-      setTimeout(() => {
-        onClose();
-      }, 1500);
     } catch (error) {
       setNotification({
         type: 'error',
@@ -431,19 +436,18 @@ const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
                     type="button"
                     onClick={() => setShowTerminateModal(false)}
                     className="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                    disabled={isTerminating}
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleConfirmTermination}
-                    disabled={isTerminating || !terminationData.description.trim()}
+                    disabled={!terminationData.description.trim() || isTerminating}
                     className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isTerminating ? (
                       <>
-                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>

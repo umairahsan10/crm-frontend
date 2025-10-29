@@ -73,8 +73,8 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({ onClose, on
   
   const [departments, setDepartments] = useState<Department[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Load departments and roles
   useEffect(() => {
@@ -98,8 +98,8 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({ onClose, on
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
     setError(null);
+    setIsCreating(true);
 
     try {
       // Prepare API data
@@ -140,7 +140,7 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({ onClose, on
       setError(err.message || 'Failed to create employee');
       console.error('Error creating employee:', err);
     } finally {
-      setLoading(false);
+      setIsCreating(false);
     }
   };
 
@@ -173,7 +173,7 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({ onClose, on
             updateFormData={updateFormData}
             onSubmit={handleSubmit}
             onBack={() => setCurrentPage(2)}
-            loading={loading}
+            loading={isCreating}
             error={error}
           />
         );

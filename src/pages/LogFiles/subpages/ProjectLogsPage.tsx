@@ -1,8 +1,10 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
-const ProjectLogsPage: React.FC = () => {
-  const navigate = useNavigate();
+interface ProjectLogsPageProps {
+  onBack?: () => void;
+}
+
+const ProjectLogsPage: React.FC<ProjectLogsPageProps> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -16,15 +18,17 @@ const ProjectLogsPage: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/logs')}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Logs
-              </button>
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Back to Logs Overview
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -44,12 +48,14 @@ const ProjectLogsPage: React.FC = () => {
                 This page will display project activity logs and development work records.
               </p>
               <div className="mt-6">
-                <button
-                  onClick={() => navigate('/logs')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Back to Logs
-                </button>
+                {onBack && (
+                  <button
+                    onClick={onBack}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Back to Logs Overview
+                  </button>
+                )}
               </div>
             </div>
           </div>

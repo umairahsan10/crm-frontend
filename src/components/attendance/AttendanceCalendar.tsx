@@ -23,10 +23,9 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
 }) => {
   
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    // Extract time part from ISO string (e.g., "2025-10-30T01:56:24.000Z" -> "01:56")
+    const timeMatch = dateString.match(/T(\d{2}:\d{2})/);
+    return timeMatch ? timeMatch[1] : dateString;
   };
 
   const generateCalendarDays = () => {
