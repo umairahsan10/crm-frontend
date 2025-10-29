@@ -58,8 +58,8 @@ const CreateEmployeeDrawer: React.FC<CreateEmployeeDrawerProps> = ({
   
   const [departments, setDepartments] = useState<Department[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Check if device is mobile
   useEffect(() => {
@@ -133,8 +133,8 @@ const CreateEmployeeDrawer: React.FC<CreateEmployeeDrawerProps> = ({
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
     setError(null);
+    setIsCreating(true);
 
     try {
       // Prepare the complete employee data
@@ -176,14 +176,14 @@ const CreateEmployeeDrawer: React.FC<CreateEmployeeDrawerProps> = ({
 
       await createCompleteEmployeeApi(completeEmployeeData);
       
-      // Success - close drawer and notify parent
-      onEmployeeCreated();
+      // Success - close drawer immediately and refresh data in background
       onClose();
+      onEmployeeCreated();
     } catch (err: any) {
       console.error('Error creating employee:', err);
       setError(err.message || 'Failed to create employee');
     } finally {
-      setLoading(false);
+      setIsCreating(false);
     }
   };
 
@@ -216,7 +216,7 @@ const CreateEmployeeDrawer: React.FC<CreateEmployeeDrawerProps> = ({
             updateFormData={updateFormData}
             onSubmit={handleSubmit}
             onBack={() => setCurrentPage(2)}
-            loading={loading}
+            loading={isCreating}
             error={error}
           />
         );

@@ -6,7 +6,8 @@ interface Page1Props {
   updateFormData: (data: any) => void;
   departments: Department[];
   roles: Role[];
-  onNext: () => void;
+  onNext?: () => void;
+  showNextButton?: boolean;
 }
 
 const Page1EmployeeDetails: React.FC<Page1Props> = ({
@@ -14,7 +15,8 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
   updateFormData,
   departments,
   roles,
-  onNext
+  onNext,
+  showNextButton = true
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [managers, setManagers] = useState<any[]>([]);
@@ -209,14 +211,14 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
   };
 
   const handleNext = () => {
-    if (validate()) {
+    if (validate() && onNext) {
       onNext();
     }
   };
 
   return (
     <div className="wizard-form">
-      <h2 className="form-section-title">Step 1 of 3: Employee Details</h2>
+      <h2 className="form-section-title">{showNextButton ? 'Step 1 of 3: Employee Details' : 'Employee Details'}</h2>
 
       {/* Personal Information */}
       <div className="form-section">
@@ -568,12 +570,14 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
         </div>
       </div>
 
-      <div className="wizard-actions">
-        <div></div>
-        <button className="btn btn-primary" onClick={handleNext}>
-          Next
-        </button>
-      </div>
+      {showNextButton && (
+        <div className="wizard-actions">
+          <div></div>
+          <button className="btn btn-primary" onClick={handleNext}>
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

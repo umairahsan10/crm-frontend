@@ -11,7 +11,6 @@ import GenericHRAdminRequestsFilters from '../../components/hr-admin-requests/Ge
 import HRAdminRequestDetailsDrawer from '../../components/hr-admin-requests/HRAdminRequestDetailsDrawer';
 import CreateHRAdminRequestModal from '../../components/common/requests/CreateHRAdminRequestModal';
 import { useMyHRAdminRequests } from '../../hooks/queries/useHRAdminRequestsQueries';
-import Loading from '../../components/common/Loading/Loading';
 
 // Local interface for component
 interface HRAdminRequestTableRow {
@@ -36,7 +35,6 @@ const HRRequestAdminPage: React.FC = () => {
   const [showStatistics, setShowStatistics] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'salary_increase' | 'late_approval' | 'others'>('salary_increase');
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Check if user is HR
   const isHR = user?.department === 'HR';
@@ -205,21 +203,18 @@ const HRRequestAdminPage: React.FC = () => {
     setSelectedRequest(request);
   };
 
-  const handleRequestCreated = async (createdType: 'salary_increase' | 'late_approval' | 'others') => {
+  const handleRequestCreated = (createdType: 'salary_increase' | 'late_approval' | 'others') => {
     // Switch to the tab of the created request type
     setActiveTab(createdType);
     // Reset to first page for new content visibility
     setPagination(prev => ({ ...prev, currentPage: 1 }));
-    // Show overlay while refreshing list
-    try {
-      setIsRefreshing(true);
-      await requestsQuery.refetch();
-    } finally {
-      setIsRefreshing(false);
-    }
-    // Close modal and notify
-    setCreateModalOpen(false);
+    
+    // Show notification
     setNotification({ type: 'success', message: 'Request created successfully!' });
+    setTimeout(() => setNotification(null), 3000);
+    
+    // Refresh data in background (don't await)
+    requestsQuery.refetch();
   };
 
   const handleTabChange = (tab: 'salary_increase' | 'late_approval' | 'others') => {
@@ -411,7 +406,7 @@ const HRRequestAdminPage: React.FC = () => {
         {/* Table */}
         <HRAdminRequestsTable
           requests={paginatedRequests}
-          isLoading={loading || isRefreshing}
+          isLoading={loading}
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
           totalItems={pagination.totalItems}
@@ -434,15 +429,6 @@ const HRRequestAdminPage: React.FC = () => {
           onSuccess={handleRequestCreated}
         />
 
-        {/* Overlay during refetch to avoid lag perception */}
-        <Loading
-          isLoading={isRefreshing}
-          position="overlay"
-          size="lg"
-          theme="primary"
-          backdropBlur
-          message="Refreshing requests..."
-        />
 
         {/* Notification */}
         {notification && (

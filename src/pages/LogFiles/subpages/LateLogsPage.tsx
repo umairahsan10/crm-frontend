@@ -20,7 +20,11 @@ import LateLogDetailsDrawer from '../../../components/common/wlogs/LateLogDetail
 import { useLateLogs, useLateLogsStatistics } from '../../../hooks/queries/useLogsQueries';
 import { exportLateLogsApi, ExportFormat } from '../../../apis/late-logs';
 
-const LateLogsPage: React.FC = () => {
+interface LateLogsPageProps {
+  onBack?: () => void;
+}
+
+const LateLogsPage: React.FC<LateLogsPageProps> = ({ onBack }) => {
   const { user } = useAuth();
   
   // State management
@@ -313,6 +317,19 @@ const LateLogsPage: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex-1">
+              {/* Back Button */}
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+                >
+                  <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to Logs Overview
+                </button>
+              )}
+              <h1 className="text-3xl font-bold text-gray-900">Late Logs</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Track and monitor employee late arrivals and justifications
               </p>

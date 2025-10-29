@@ -45,7 +45,7 @@ interface AttendanceRecord {
 const AttendanceManagement: React.FC = () => {
   const { user } = useAuth();
   
-  // Get today's date in local timezone
+  // Get today's date
   const getTodayDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -97,35 +97,35 @@ const AttendanceManagement: React.FC = () => {
 
   // Merge employee data with attendance logs
   const attendanceRecords: AttendanceRecord[] = useMemo(() => {
-      const attendanceMap = new Map();
+    const attendanceMap = new Map();
     if (Array.isArray(attendanceLogs)) {
       attendanceLogs.forEach((log: any) => {
-          attendanceMap.set(log.employee_id, {
-            status: log.status,
-            checkin: log.checkin,
-            checkout: log.checkout,
+        attendanceMap.set(log.employee_id, {
+          status: log.status,
+          checkin: log.checkin,
+          checkout: log.checkout,
           totalHours: null,
           logId: log.id,
-            lateDetails: log.late_details || null
-          });
+          lateDetails: log.late_details || null
         });
-      }
+      });
+    }
 
     return employees.map((employee: any) => {
-        const attendance = attendanceMap.get(employee.id);
-        return {
-          id: employee.id.toString(),
-          employeeId: employee.id,
-          employeeName: `${employee.firstName} ${employee.lastName}`,
+      const attendance = attendanceMap.get(employee.id);
+      return {
+        id: employee.id.toString(),
+        employeeId: employee.id,
+        employeeName: `${employee.firstName} ${employee.lastName}`,
         department: employee.department?.name || 'N/A',
-          status: attendance?.status || 'not_marked',
-          checkin: attendance?.checkin || null,
-          checkout: attendance?.checkout || null,
-          totalHours: attendance?.totalHours || null,
-          logId: attendance?.logId || undefined,
-          lateDetails: attendance?.lateDetails || null
-        };
-      });
+        status: attendance?.status || 'not_marked',
+        checkin: attendance?.checkin || null,
+        checkout: attendance?.checkout || null,
+        totalHours: attendance?.totalHours || null,
+        logId: attendance?.logId || undefined,
+        lateDetails: attendance?.lateDetails || null
+      };
+    });
   }, [employees, attendanceLogs]);
 
   // Apply filters
@@ -174,21 +174,13 @@ const AttendanceManagement: React.FC = () => {
   const handleMarkAttendance = async (employeeId: number) => {
     try {
       setIsMarkingAttendance(true);
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
       
-      const pakistaniTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}Z`;
+      const currentTime = new Date().toISOString();
       
       const checkinData: CheckinDto = {
         employee_id: employeeId,
         date: selectedDate,
-        checkin: pakistaniTime,
+        checkin: currentTime,
         mode: 'onsite'
       };
 
@@ -240,21 +232,13 @@ const AttendanceManagement: React.FC = () => {
       
       for (const employeeId of unmarkedEmployeeIds) {
         try {
-          const now = new Date();
-          const year = now.getFullYear();
-          const month = String(now.getMonth() + 1).padStart(2, '0');
-          const day = String(now.getDate()).padStart(2, '0');
-          const hours = String(now.getHours()).padStart(2, '0');
-          const minutes = String(now.getMinutes()).padStart(2, '0');
-          const seconds = String(now.getSeconds()).padStart(2, '0');
-          const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
-          
-          const pakistaniTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}Z`;
+          // Get current time in Karachi timezone (UTC+5)
+          const currentTime = new Date().toISOString();
           
           const checkinData: CheckinDto = {
             employee_id: employeeId,
             date: selectedDate,
-            checkin: pakistaniTime,
+            checkin: currentTime,
             mode: 'onsite'
           };
 
@@ -341,9 +325,11 @@ const AttendanceManagement: React.FC = () => {
   };
 
   const handleSelectAll = useCallback(() => {
-    // Always select all employees for UI consistency, regardless of their status
-    const allEmployeeIds = filteredRecords.map(record => record.id);
-    setSelectedEmployees(allEmployeeIds);
+    // Only select employees who don't have attendance marked yet
+    const unmarkedEmployeeIds = filteredRecords
+      .filter(record => record.status === 'not_marked' || record.status === null || record.status === undefined)
+      .map(record => record.id);
+    setSelectedEmployees(unmarkedEmployeeIds);
   }, [filteredRecords]);
 
   const handleDeselectAll = useCallback(() => {
@@ -434,13 +420,25 @@ const AttendanceManagement: React.FC = () => {
       key: 'checkin',
       label: 'Check In',
       type: 'custom',
-      render: (value) => (<span className="text-sm text-gray-900">{value ? new Date(value).toLocaleTimeString() : 'N/A'}</span>)
+      render: (value) => {
+        if (!value) return <span className="text-sm text-gray-900">N/A</span>;
+        // Extract time part from ISO string (e.g., "2025-10-30T01:56:24.000Z" -> "01:56:24")
+        const timeMatch = value.match(/T(\d{2}:\d{2}:\d{2})/);
+        const timeString = timeMatch ? timeMatch[1] : value;
+        return <span className="text-sm text-gray-900">{timeString}</span>;
+      }
     },
     {
       key: 'checkout',
       label: 'Check Out',
       type: 'custom',
-      render: (value) => (<span className="text-sm text-gray-900">{value ? new Date(value).toLocaleTimeString() : 'N/A'}</span>)
+      render: (value) => {
+        if (!value) return <span className="text-sm text-gray-900">N/A</span>;
+        // Extract time part from ISO string (e.g., "2025-10-30T01:56:24.000Z" -> "01:56:24")
+        const timeMatch = value.match(/T(\d{2}:\d{2}:\d{2})/);
+        const timeString = timeMatch ? timeMatch[1] : value;
+        return <span className="text-sm text-gray-900">{timeString}</span>;
+      }
     },
     {
       key: 'employeeId',

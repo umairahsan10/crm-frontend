@@ -1,6 +1,13 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import AccessLogsPage from './subpages/AccessLogsPage';
+import HRLogsPage from './subpages/HRLogsPage';
+import LeaveLogsPage from './subpages/LeaveLogsPage';
+import LateLogsPage from './subpages/LateLogsPage';
+import HalfDayLogsPage from './subpages/HalfDayLogsPage';
+import SalaryLogsPage from './subpages/SalaryLogsPage';
+import CampaignLogsPage from './subpages/CampaignLogsPage';
+import ProjectLogsPage from './subpages/ProjectLogsPage';
 import './LogPages.css';
 
 interface LogType {
@@ -18,7 +25,12 @@ interface LogType {
 
 const LogsPage: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [activeLogType, setActiveLogType] = useState<string | null>(null);
+
+  // Handle back navigation
+  const handleBackToOverview = () => {
+    setActiveLogType(null);
+  };
 
   // Define all log types with their permissions
   const logTypes: LogType[] = [
@@ -231,6 +243,35 @@ const LogsPage: React.FC = () => {
     return colorMap[color] || 'bg-gray-100 text-gray-800';
   };
 
+  // Render content based on active log type
+  const renderLogContent = () => {
+    switch (activeLogType) {
+      case 'access-logs':
+        return <AccessLogsPage onBack={handleBackToOverview} />;
+      case 'hr-logs':
+        return <HRLogsPage onBack={handleBackToOverview} />;
+      case 'leave-logs':
+        return <LeaveLogsPage onBack={handleBackToOverview} />;
+      case 'late-logs':
+        return <LateLogsPage onBack={handleBackToOverview} />;
+      case 'half-day-logs':
+        return <HalfDayLogsPage onBack={handleBackToOverview} />;
+      case 'salary-logs':
+        return <SalaryLogsPage onBack={handleBackToOverview} />;
+      case 'campaign-logs':
+        return <CampaignLogsPage onBack={handleBackToOverview} />;
+      case 'project-logs':
+        return <ProjectLogsPage onBack={handleBackToOverview} />;
+      default:
+        return null;
+    }
+  };
+
+  // If a log type is active, render the specific log page
+  if (activeLogType) {
+    return renderLogContent();
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -249,7 +290,7 @@ const LogsPage: React.FC = () => {
             <div
               key={logType.id}
               className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer group"
-              onClick={() => navigate(logType.route)}
+              onClick={() => setActiveLogType(logType.id)}
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -289,7 +330,7 @@ const LogsPage: React.FC = () => {
                     className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white ${getColorClasses(logType.color)} focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(logType.route);
+                      setActiveLogType(logType.id);
                     }}
                   >
                     View Logs

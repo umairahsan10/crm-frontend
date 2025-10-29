@@ -11,7 +11,11 @@ import LeaveLogDetailsDrawer from '../../../components/common/wlogs/LeaveLogDeta
 import { useLeaveLogs, useLeaveLogsStatistics } from '../../../hooks/queries/useLogsQueries';
 import { exportLeaveLogsApi, ExportFormat } from '../../../apis/leave-logs';
 
-const LeaveLogsPage: React.FC = () => {
+interface LeaveLogsPageProps {
+  onBack?: () => void;
+}
+
+const LeaveLogsPage: React.FC<LeaveLogsPageProps> = ({ onBack }) => {
   const { user } = useAuth();
   
   const [showStatistics, setShowStatistics] = useState(false);
@@ -139,9 +143,23 @@ const LeaveLogsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex-1">
+              {/* Back Button */}
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+                >
+                  <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to Logs Overview
+                </button>
+              )}
+              <h1 className="text-3xl font-bold text-gray-900">Leave Logs</h1>
               <p className="mt-2 text-sm text-gray-600">Track and manage employee leave requests and approvals</p>
             </div>
             <div className="flex items-center space-x-3">

@@ -10,8 +10,6 @@ import {
   type UpdateEmployeeDto
 } from '../../apis/hr-employees';
 import Page1EmployeeDetails from './CreateEmployeeWizard/pages/Page1EmployeeDetails';
-import Page2DepartmentDetails from './CreateEmployeeWizard/pages/Page2DepartmentDetails';
-import Page3BankAccount from './CreateEmployeeWizard/pages/Page3BankAccount';
 import './CreateEmployeeWizard/CreateEmployeeWizard.css';
 
 interface EditEmployeeDrawerProps {
@@ -29,13 +27,12 @@ const EditEmployeeDrawer: React.FC<EditEmployeeDrawerProps> = ({
 }) => {
   const { isNavbarOpen } = useNavbar();
   const [isMobile, setIsMobile] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState<any>({});
   
   const [departments, setDepartments] = useState<Department[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Check if device is mobile
   useEffect(() => {
@@ -77,13 +74,6 @@ const EditEmployeeDrawer: React.FC<EditEmployeeDrawerProps> = ({
         shiftStart: employee.shiftStart || '09:00',
         shiftEnd: employee.shiftEnd || '18:00',
         bonus: employee.bonus || 0,
-        departmentData: {
-          department: employee.department,
-          role: employee.role,
-          manager: employee.manager,
-          teamLead: employee.teamLead
-        },
-        bankAccount: undefined // Employee type doesn't have bankAccount property
       });
     }
   }, [employee, isOpen]);
@@ -91,7 +81,6 @@ const EditEmployeeDrawer: React.FC<EditEmployeeDrawerProps> = ({
   // Reset form when drawer closes
   useEffect(() => {
     if (!isOpen) {
-      setCurrentPage(1);
       setFormData({});
       setError(null);
     }
@@ -122,19 +111,12 @@ const EditEmployeeDrawer: React.FC<EditEmployeeDrawerProps> = ({
     setFormData((prev: Record<string, any>) => ({ ...prev, ...newData }));
   };
 
-  const handleNext = () => {
-    setCurrentPage(prev => Math.min(prev + 1, 3));
-  };
-
-  const handlePrevious = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
-  };
 
   const handleSubmit = async () => {
     if (!employee) return;
 
-    setLoading(true);
     setError(null);
+    setIsUpdating(true);
 
     try {
       // Prepare update data
@@ -167,13 +149,14 @@ const EditEmployeeDrawer: React.FC<EditEmployeeDrawerProps> = ({
 
       await updateEmployeeApi(employee.id, updateData);
       
-      onEmployeeUpdated();
+      // Success - close drawer immediately and refresh data in background
       onClose();
+      onEmployeeUpdated();
     } catch (error) {
       console.error('Error updating employee:', error);
       setError(error instanceof Error ? error.message : 'Failed to update employee');
     } finally {
-      setLoading(false);
+      setIsUpdating(false);
     }
   };
 
@@ -220,30 +203,6 @@ const EditEmployeeDrawer: React.FC<EditEmployeeDrawerProps> = ({
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-gray-700">Step {currentPage} of 3</span>
-                <div className="w-32 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(currentPage / 3) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div className="flex space-x-1">
-                {[1, 2, 3].map((step) => (
-                  <div
-                    key={step}
-                    className={`w-2 h-2 rounded-full ${
-                      step <= currentPage ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
 
           {/* Content */}
           <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
@@ -265,95 +224,48 @@ const EditEmployeeDrawer: React.FC<EditEmployeeDrawerProps> = ({
               </div>
             )}
 
-            {currentPage === 1 && (
-              <Page1EmployeeDetails
-                formData={formData}
-                updateFormData={handleFormDataChange}
-                departments={departments}
-                roles={roles}
-                onNext={handleNext}
-              />
-            )}
-
-            {currentPage === 2 && (
-              <Page2DepartmentDetails
-                formData={formData}
-                updateFormData={handleFormDataChange}
-                departments={departments}
-                onNext={handleNext}
-                onBack={handlePrevious}
-              />
-            )}
-
-            {currentPage === 3 && (
-              <Page3BankAccount
-                formData={formData}
-                updateFormData={handleFormDataChange}
-                onSubmit={handleSubmit}
-                onBack={handlePrevious}
-                loading={loading}
-                error={error}
-              />
-            )}
+            <Page1EmployeeDetails
+              formData={formData}
+              updateFormData={handleFormDataChange}
+              departments={departments}
+              roles={roles}
+              onNext={() => {}} // Dummy function since we're not using multi-page navigation
+              showNextButton={false} // Hide the Next button in edit mode
+            />
           </div>
 
           {/* Footer */}
           <div className={`${isMobile ? 'px-4 py-3' : 'px-6 py-4'} border-t border-gray-200 bg-gray-50 rounded-b-lg`}>
-            <div className="flex justify-between">
+            <div className="flex justify-end space-x-3">
               <button
-                onClick={handlePrevious}
-                disabled={currentPage === 1}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={onClose}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Previous
+                Cancel
               </button>
 
-              <div className="flex space-x-3">
-                <button
-                  onClick={onClose}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Cancel
-                </button>
-
-                {currentPage === 3 ? (
-                  <button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Update Employee
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleNext}
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Next
-                    <svg className="h-4 w-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <button
+                onClick={handleSubmit}
+                disabled={isUpdating}
+                className="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUpdating ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                  </button>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Update Employee
+                  </>
                 )}
-              </div>
+              </button>
             </div>
           </div>
         </div>
