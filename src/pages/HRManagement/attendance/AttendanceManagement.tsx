@@ -10,13 +10,14 @@
  * - Employee attendance drawer
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import DynamicTable, { type ColumnConfig } from '../../../components/common/DynamicTable/DynamicTable';
 import DataStatistics from '../../../components/common/Statistics/DataStatistics';
 import GenericAttendanceFilters from '../../../components/attendance/GenericAttendanceFilters';
 import EmployeeAttendanceDrawer from '../../../components/attendance/EmployeeAttendanceDrawer';
 import Loading from '../../../components/common/Loading/Loading';
+import Pagination from '../../../components/common/Pagination/Pagination';
 import { useEmployees, useAttendanceLogs, useAttendanceMutation } from '../../../hooks/queries/useHRQueries';
 import { 
   checkinApi, 
@@ -67,6 +68,14 @@ const AttendanceManagement: React.FC = () => {
     startDate: '',
     endDate: ''
   });
+
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
   
   // Modals state
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -83,7 +92,7 @@ const AttendanceManagement: React.FC = () => {
   const [isBulkMarkingAttendance, setIsBulkMarkingAttendance] = useState(false);
 
   // React Query hooks - Auto caching and refetching
-  const employeesQuery = useEmployees(1, 1000, {}); // Get all employees
+  const employeesQuery = useEmployees(pagination.currentPage, pagination.itemsPerPage, {}); // Use pagination
   const attendanceQuery = useAttendanceLogs({
         start_date: selectedDate,
         end_date: selectedDate
@@ -94,6 +103,20 @@ const AttendanceManagement: React.FC = () => {
   const employees = (employeesQuery.data as any)?.employees || [];
   const attendanceLogs = attendanceQuery.data || [];
   const isLoading = employeesQuery.isLoading || attendanceQuery.isLoading;
+
+  // Update pagination when employees data changes
+  useEffect(() => {
+    if (employeesQuery.data) {
+      const totalItems = (employeesQuery.data as any)?.total || 0;
+      const totalPages = Math.ceil(totalItems / pagination.itemsPerPage);
+      
+      setPagination(prev => ({
+        ...prev,
+        totalPages,
+        totalItems
+      }));
+    }
+  }, [employeesQuery.data, pagination.itemsPerPage]);
 
   // Merge employee data with attendance logs
   const attendanceRecords: AttendanceRecord[] = useMemo(() => {
@@ -128,7 +151,7 @@ const AttendanceManagement: React.FC = () => {
     });
   }, [employees, attendanceLogs]);
 
-  // Apply filters
+  // Apply client-side filters (search and status)
   const filteredRecords = useMemo(() => {
     let filtered = [...attendanceRecords];
 
@@ -567,14 +590,16 @@ const AttendanceManagement: React.FC = () => {
         {/* Attendance Table */}
         <DynamicTable
           columns={columns}
-          data={filteredRecords}
+          data={attendanceRecords}
           isLoading={isLoading}
-          currentPage={1}
-          totalPages={1}
-          totalItems={filteredRecords.length}
-          itemsPerPage={20}
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          itemsPerPage={pagination.itemsPerPage}
           selectedItems={selectedEmployees}
-          onPageChange={() => {}}
+          onPageChange={(page) => {
+            setPagination(prev => ({ ...prev, currentPage: page }));
+          }}
           onRowClick={(row) => {
             setSelectedEmployeeForDrawer({
               id: row.employeeId,
@@ -589,6 +614,26 @@ const AttendanceManagement: React.FC = () => {
           emptyMessage="No employees found"
           theme={{ primary: 'blue', secondary: 'gray', accent: 'blue' }}
         />
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="mt-6">
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              itemsPerPage={pagination.itemsPerPage}
+              onPageChange={(page) => {
+                setPagination(prev => ({ ...prev, currentPage: page }));
+              }}
+              showPageInfo={true}
+              showItemsInfo={true}
+              alignment="center"
+              size="md"
+              theme="primary"
+            />
+          </div>
+        )}
 
         {/* Bulk Mark Modal */}
         {showBulkMarkModal && (
