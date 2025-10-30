@@ -26,13 +26,6 @@ const GenericSalesUnitsFilters: React.FC<GenericSalesUnitsFiltersProps> = ({
   showFilters,
   onFiltersChange,
   onClearFilters,
-  theme = {
-    primary: 'bg-blue-600',
-    secondary: 'hover:bg-blue-700',
-    ring: 'ring-blue-500',
-    bg: 'bg-blue-100',
-    text: 'text-blue-800'
-  },
   searchPlaceholder = 'Search sales units...'
 }) => {
   const { filters, updateFilter, resetFilters, hasActiveFilters, activeCount } = useFilters(

@@ -25,13 +25,6 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
   showFilters,
   onFiltersChange,
   onClearFilters,
-  theme = {
-    primary: 'bg-blue-600',
-    secondary: 'hover:bg-blue-700',
-    ring: 'ring-blue-500',
-    bg: 'bg-blue-100',
-    text: 'text-blue-800'
-  },
   searchPlaceholder = 'Search production teams...'
 }) => {
   // Generic filter state - automatically works with any combination!

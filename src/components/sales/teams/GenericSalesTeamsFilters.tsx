@@ -26,13 +26,6 @@ const GenericSalesTeamsFilters: React.FC<GenericSalesTeamsFiltersProps> = ({
   showFilters,
   onFiltersChange,
   onClearFilters,
-  theme = {
-    primary: 'bg-green-600',
-    secondary: 'hover:bg-green-700',
-    ring: 'ring-green-500',
-    bg: 'bg-green-100',
-    text: 'text-green-800'
-  },
   searchPlaceholder = 'Search sales teams...'
 }) => {
   // Generic filter state - automatically works with any combination!
