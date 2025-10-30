@@ -76,6 +76,7 @@ const Navbar: React.FC<NavbarProps> = ({
         { id: 'production-units', label: 'Units Management', icon: '🏢', path: '/production/units' },
         { id: 'production-teams', label: 'Teams Management', icon: '👥', path: '/production/teams' },
         { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
+        { id: 'sales-units', label: 'Sales Units', icon: '🏢', path: '/sales/units' },
         { id: 'sales-teams', label: 'Sales Teams', icon: '👥', path: '/sales/teams' },
         { id: 'reports', label: 'Reports', icon: '📊', path: '/reports' },
         { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics' },
@@ -123,6 +124,7 @@ const Navbar: React.FC<NavbarProps> = ({
             { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
             { id: 'company', label: 'Companies', icon: '🏢', path: '/company' },
             { id: 'clients', label: 'Clients', icon: '👤', path: '/clients' },
+            { id: 'sales-units', label: 'Sales Units', icon: '🏢', path: '/sales/units' },
             { id: 'sales-teams', label: 'Sales Teams', icon: '👥', path: '/sales/teams' },
             { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];

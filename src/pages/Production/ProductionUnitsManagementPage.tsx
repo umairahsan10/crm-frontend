@@ -1,9 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import ProductionUnitsTable from '../../components/production/units/ProductionUnitsTable';
 import GenericProductionUnitsFilters from '../../components/production/units/GenericProductionUnitsFilters';
 import ProductionUnitDetailsDrawer from '../../components/production/units/ProductionUnitDetailsDrawer';
 import CreateUnitForm from '../../components/production/units/CreateUnitForm';
 import { useAuth } from '../../context/AuthContext';
+import { getPageTitle } from '../../utils/pageTitles';
 import { 
   useProductionUnits,
   useAvailableUnitHeads,
@@ -15,6 +17,13 @@ import type { Unit } from '../../types/production/units';
 
 const ProductionUnitsManagementPage: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  
+  // Set dynamic page title
+  useEffect(() => {
+    const pageTitle = getPageTitle(location.pathname);
+    document.title = pageTitle || 'Production Units Management';
+  }, [location.pathname]);
   
   // UI State management
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
@@ -155,10 +164,7 @@ const ProductionUnitsManagementPage: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {canSeeAllUnits ? 'Production Units Management' : 'My Production Unit'}
-            </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-sm text-gray-900">
               {canSeeAllUnits 
                 ? 'Manage production units, teams, and employees'
                 : 'View your assigned production unit details'
@@ -195,13 +201,6 @@ const ProductionUnitsManagementPage: React.FC = () => {
           onClearFilters={handleClearFilters}
           availableHeads={availableHeads}
           searchPlaceholder="Search production units by name..."
-          theme={{
-            primary: 'bg-blue-600',
-            secondary: 'hover:bg-blue-700',
-            ring: 'ring-blue-500',
-            bg: 'bg-blue-100',
-            text: 'text-blue-800'
-          }}
         />
       )}
 

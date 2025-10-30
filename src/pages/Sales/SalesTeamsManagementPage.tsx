@@ -1,9 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import SalesTeamsTable from '../../components/sales/teams/SalesTeamsTable';
 import GenericSalesTeamsFilters from '../../components/sales/teams/GenericSalesTeamsFilters';
 import SalesTeamDetailsDrawer from '../../components/sales/teams/SalesTeamDetailsDrawer';
 import CreateSalesTeamForm from '../../components/sales/teams/CreateSalesTeamForm';
 import { useAuth } from '../../context/AuthContext';
+import { getPageTitle } from '../../utils/pageTitles';
 import { 
   useSalesTeams,
   useAvailableTeamLeads,
@@ -15,6 +17,13 @@ import type { Team } from '../../types/sales/teams';
 
 const SalesTeamsManagementPage: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  
+  // Set dynamic page title
+  useEffect(() => {
+    const pageTitle = getPageTitle(location.pathname);
+    document.title = pageTitle || 'Sales Teams Management';
+  }, [location.pathname]);
   
   // UI State management
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
@@ -154,10 +163,7 @@ const SalesTeamsManagementPage: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {canSeeAllTeams ? 'Sales Teams Management' : 'My Sales Teams'}
-            </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-sm text-gray-900">
               {canSeeAllTeams 
                 ? 'Manage sales teams, members, and leads'
                 : 'View your assigned sales teams'
@@ -194,13 +200,6 @@ const SalesTeamsManagementPage: React.FC = () => {
           onClearFilters={handleClearFilters}
           availableLeads={availableLeads}
           searchPlaceholder="Search sales teams by name..."
-          theme={{
-            primary: 'bg-green-600',
-            secondary: 'hover:bg-green-700',
-            ring: 'ring-green-500',
-            bg: 'bg-green-100',
-            text: 'text-green-800'
-          }}
         />
       )}
 

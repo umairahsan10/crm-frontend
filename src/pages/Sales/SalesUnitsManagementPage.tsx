@@ -1,35 +1,35 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import ProductionTeamsTable from '../../components/production/teams/ProductionTeamsTable';
-import GenericProductionTeamsFilters from '../../components/production/teams/GenericProductionTeamsFilters';
-import ProductionTeamDetailsDrawer from '../../components/production/teams/ProductionTeamDetailsDrawer';
-import CreateTeamForm from '../../components/production/teams/CreateTeamForm';
+import SalesUnitsTable from '../../components/sales/units/SalesUnitsTable';
+import GenericSalesUnitsFilters from '../../components/sales/units/GenericSalesUnitsFilters';
+import SalesUnitDetailsDrawer from '../../components/sales/units/SalesUnitDetailsDrawer';
+import CreateSalesUnitForm from '../../components/sales/units/CreateSalesUnitForm';
 import { useAuth } from '../../context/AuthContext';
 import { getPageTitle } from '../../utils/pageTitles';
 import { 
-  useProductionTeams,
-  useAvailableTeamLeads,
-  useCreateProductionTeam,
-  useUpdateProductionTeam,
-  useDeleteProductionTeam
-} from '../../hooks/queries/useProductionTeamsQueries';
-import type { Team } from '../../types/production/teams';
+  useSalesUnits,
+  useAvailableSalesUnitHeads,
+  useCreateSalesUnit,
+  useUpdateSalesUnit,
+  useDeleteSalesUnit
+} from '../../hooks/queries/useSalesUnitsQueries';
+import type { SalesUnit } from '../../types/sales/units';
 
-const ProductionTeamsManagementPage: React.FC = () => {
+const SalesUnitsManagementPage: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
   
   // Set dynamic page title
   useEffect(() => {
     const pageTitle = getPageTitle(location.pathname);
-    document.title = pageTitle || 'Production Teams Management';
+    document.title = pageTitle || 'Sales Units Management';
   }, [location.pathname]);
   
   // UI State management
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<SalesUnit | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [teamToEdit, setTeamToEdit] = useState<Team | null>(null);
+  const [unitToEdit, setUnitToEdit] = useState<SalesUnit | null>(null);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -42,54 +42,61 @@ const ProductionTeamsManagementPage: React.FC = () => {
   // Filter state
   const [filters, setFilters] = useState({
     search: '',
-    hasLead: '',
-    hasMembers: '',
-    hasProjects: '',
+    hasHead: '',
+    hasTeams: '',
+    hasLeads: '',
+    hasEmployees: '',
     sortBy: 'createdAt',
     sortOrder: 'desc' as 'asc' | 'desc'
   });
 
   // Role-based access control
-  const canSeeAllTeams = user?.role === 'dep_manager' || user?.role === 'admin';
-  const canCreateTeams = user?.role === 'dep_manager' || user?.role === 'admin';
-  const canUpdateTeams = user?.role === 'dep_manager' || user?.role === 'admin' || user?.role === 'unit_head';
-  const canDeleteTeams = user?.role === 'dep_manager' || user?.role === 'admin';
-  const showFilters = canSeeAllTeams; // Only show filters if user can see all teams
+  const canSeeAllUnits = user?.role === 'dep_manager' || user?.role === 'admin';
+  const canCreateUnits = user?.role === 'dep_manager' || user?.role === 'admin';
+  const canUpdateUnits = user?.role === 'dep_manager' || user?.role === 'admin' || user?.role === 'unit_head';
+  const canDeleteUnits = user?.role === 'dep_manager' || user?.role === 'admin';
+  const showFilters = canSeeAllUnits; // Only show filters if user can see all units
+
 
   // Fetch data with current filters and pagination
   const { 
-    data: teamsData, 
-    isLoading: isLoadingTeams
-  } = useProductionTeams(pagination.currentPage, pagination.itemsPerPage, filters);
+    data: unitsData, 
+    isLoading: isLoadingUnits
+  } = useSalesUnits(pagination.currentPage, pagination.itemsPerPage, filters);
 
-  // Only fetch available leads when creating or updating teams (for department managers)
-  // Use assigned=false to get only unassigned leads (available for assignment)
+  // Only fetch available heads when creating or updating units (for department managers)
+  // Use assigned=false to get only unassigned heads (available for assignment)
   const { 
-    data: availableLeadsData
-  } = useAvailableTeamLeads(false, { 
-    enabled: canCreateTeams && (showCreateForm || !!teamToEdit) 
+    data: availableHeadsData
+  } = useAvailableSalesUnitHeads(false, { 
+    enabled: canCreateUnits && (showCreateForm || !!unitToEdit) 
   });
 
   // Mutations
-  const createTeamMutation = useCreateProductionTeam();
-  const updateTeamMutation = useUpdateProductionTeam();
-  const deleteTeamMutation = useDeleteProductionTeam();
+  const createUnitMutation = useCreateSalesUnit();
+  const updateUnitMutation = useUpdateSalesUnit();
+  const deleteUnitMutation = useDeleteSalesUnit();
 
   // Update pagination when data changes
   React.useEffect(() => {
-    if ((teamsData as any)?.data) {
+    if ((unitsData as any)?.data) {
       setPagination(prev => ({
         ...prev,
-        totalItems: (teamsData as any).data?.total || (teamsData as any).data?.length || 0,
-        totalPages: (teamsData as any).data?.pagination?.totalPages || 1
+        totalItems: (unitsData as any).data?.total || (unitsData as any).data?.length || 0,
+        totalPages: (unitsData as any).data?.pagination?.totalPages || 1
       }));
     }
-  }, [teamsData]);
+  }, [unitsData]);
+
+  // Extract data exactly like production
+  const units = (unitsData as any)?.data || [];
+  const availableHeads = (availableHeadsData as any)?.data?.heads || [];
 
   // Event handlers
-  const handleTeamClick = useCallback((team: Team) => {
-    setSelectedTeam(team);
+  const handleUnitClick = useCallback((unit: SalesUnit) => {
+    setSelectedUnit(unit);
   }, []);
+
 
   const handlePageChange = useCallback((page: number) => {
     setPagination(prev => ({ ...prev, currentPage: page }));
@@ -103,70 +110,67 @@ const ProductionTeamsManagementPage: React.FC = () => {
   const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
-      hasLead: '',
-      hasMembers: '',
-      hasProjects: '',
+      hasHead: '',
+      hasTeams: '',
+      hasLeads: '',
+      hasEmployees: '',
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
-  const handleCreateTeam = useCallback(async (teamData: any) => {
-    try {
-      await createTeamMutation.mutateAsync(teamData);
+  // Handle successful unit creation - form calls mutation directly
+  React.useEffect(() => {
+    if (createUnitMutation.isSuccess) {
       setShowCreateForm(false);
-      setNotification({ type: 'success', message: 'Production team created successfully!' });
+      setNotification({ type: 'success', message: 'Sales unit created successfully!' });
+      setTimeout(() => setNotification(null), 3000);
+      createUnitMutation.reset();
+    }
+  }, [createUnitMutation.isSuccess, createUnitMutation]);
+
+  const handleUpdateUnit = useCallback(async (unitId: number, unitData: any) => {
+    try {
+      await updateUnitMutation.mutateAsync({ id: unitId, unitData });
+      setUnitToEdit(null);
+      setNotification({ type: 'success', message: 'Sales unit updated successfully!' });
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
-      setNotification({ type: 'error', message: 'Failed to create production team' });
+      setNotification({ type: 'error', message: 'Failed to update sales unit' });
       setTimeout(() => setNotification(null), 5000);
     }
-  }, [createTeamMutation]);
+  }, [updateUnitMutation]);
 
-  const handleUpdateTeam = useCallback(async (teamId: number, teamData: any) => {
+  const handleDeleteUnit = useCallback(async (unit: SalesUnit) => {
     try {
-      await updateTeamMutation.mutateAsync({ id: teamId, teamData });
-      setTeamToEdit(null);
-      setNotification({ type: 'success', message: 'Production team updated successfully!' });
-      setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      setNotification({ type: 'error', message: 'Failed to update production team' });
-      setTimeout(() => setNotification(null), 5000);
-    }
-  }, [updateTeamMutation]);
-
-  const handleDeleteTeam = useCallback(async (team: Team) => {
-    try {
-      await deleteTeamMutation.mutateAsync(team.id);
-      setNotification({ type: 'success', message: 'Production team deleted successfully!' });
+      await deleteUnitMutation.mutateAsync(unit.id);
+      setNotification({ type: 'success', message: 'Sales unit deleted successfully!' });
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
       setNotification({ 
         type: 'error', 
-        message: `Failed to delete production team: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        message: `Failed to delete sales unit: ${error instanceof Error ? error.message : 'Unknown error'}` 
       });
       setTimeout(() => setNotification(null), 5000);
     }
-  }, [deleteTeamMutation]);
+  }, [deleteUnitMutation]);
 
-  const teams = (teamsData as any)?.data || [];
-  const availableLeads = (availableLeadsData as any)?.data?.leads || [];
 
   return (
-    <div className="production-teams-management-page p-6">
+    <div className="sales-units-management-page p-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-900">
-              {canSeeAllTeams 
-                ? 'Manage production teams, members, and projects'
-                : 'View your assigned production teams'
+              {canSeeAllUnits 
+                ? 'Manage sales units, teams, and employees'
+                : 'View your assigned sales unit details'
               }
             </p>
           </div>
-          {canCreateTeams && (
+          {canCreateUnits && (
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowCreateForm(true)}
@@ -175,31 +179,33 @@ const ProductionTeamsManagementPage: React.FC = () => {
                 <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Create Team
+                Create Unit
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Filters - Only show for users who can see all teams */}
+
+      {/* Filters - Only show for users who can see all units */}
       {showFilters && (
-        <GenericProductionTeamsFilters
+        <GenericSalesUnitsFilters
           showFilters={{
-            hasLead: true,
-            hasMembers: true,
-            hasProjects: true,
+            hasHead: true,
+            hasTeams: true,
+            hasLeads: true,
+            hasEmployees: true,
             sortBy: true
           }}
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
-          availableLeads={availableLeads}
-          searchPlaceholder="Search production teams by name..."
+          availableHeads={availableHeads}
+          searchPlaceholder="Search sales units by name..."
         />
       )}
 
       {/* Role-based information for limited access users */}
-      {!canSeeAllTeams && (
+      {!canSeeAllUnits && (
         <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center">
             <svg className="h-5 w-5 text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,15 +215,15 @@ const ProductionTeamsManagementPage: React.FC = () => {
               <h3 className="text-sm font-medium text-blue-800">
                 {user?.role === 'unit_head' && 'Unit Head View'}
                 {user?.role === 'team_lead' && 'Team Lead View'}
-                {(user?.role === 'senior' || user?.role === 'junior') && 'Production Employee View'}
+                {(user?.role === 'senior' || user?.role === 'junior') && 'Sales Employee View'}
               </h3>
               <p className="text-sm text-blue-600 mt-1">
-                {user?.role === 'unit_head' && 'You can view and manage teams in your production unit.'}
-                {user?.role === 'team_lead' && 'You can view and manage teams you lead.'}
-                {(user?.role === 'senior' || user?.role === 'junior') && 'You can view teams you belong to.'}
+                {user?.role === 'unit_head' && 'You can view and manage your assigned sales unit.'}
+                {user?.role === 'team_lead' && 'You can view sales units where you lead teams.'}
+                {(user?.role === 'senior' || user?.role === 'junior') && 'You can view sales units where you are assigned as a sales employee.'}
               </p>
               <p className="text-xs text-blue-500 mt-1">
-                Showing {teams.length} team{teams.length !== 1 ? 's' : ''} based on your role and assignments.
+                Showing {units.length} unit{units.length !== 1 ? 's' : ''} based on your role and assignments.
               </p>
             </div>
           </div>
@@ -225,7 +231,7 @@ const ProductionTeamsManagementPage: React.FC = () => {
       )}
 
       {/* Debug information for department managers */}
-      {canSeeAllTeams && (
+      {canSeeAllUnits && (
         <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center">
             <svg className="h-5 w-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,7 +240,7 @@ const ProductionTeamsManagementPage: React.FC = () => {
             <div>
               <h3 className="text-sm font-medium text-green-800">Department Manager View</h3>
               <p className="text-sm text-green-600 mt-1">
-                You have full access to manage all production teams. Showing {teams.length} team{teams.length !== 1 ? 's' : ''} in the system.
+                You have full access to manage all sales units. Showing {units.length} unit{units.length !== 1 ? 's' : ''} in the system.
               </p>
             </div>
           </div>
@@ -242,56 +248,60 @@ const ProductionTeamsManagementPage: React.FC = () => {
       )}
 
       {/* Table */}
-      <ProductionTeamsTable
-        teams={teams}
-        isLoading={isLoadingTeams}
+      <SalesUnitsTable
+        units={units}
+        isLoading={isLoadingUnits}
         currentPage={pagination.currentPage}
         totalPages={pagination.totalPages}
         totalItems={pagination.totalItems}
         itemsPerPage={pagination.itemsPerPage}
         onPageChange={handlePageChange}
-        onTeamClick={handleTeamClick}
-        onDeleteTeam={canDeleteTeams ? handleDeleteTeam : undefined}
+        onUnitClick={handleUnitClick}
+        onDeleteUnit={canDeleteUnits ? handleDeleteUnit : undefined}
       />
 
-      {/* Create Team Modal */}
+      {/* Create Unit Modal */}
       {showCreateForm && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowCreateForm(false)} />
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <CreateTeamForm
+              <CreateSalesUnitForm
                 isOpen={showCreateForm}
-                onClose={() => setShowCreateForm(false)}
-                onSubmit={handleCreateTeam}
-                loading={createTeamMutation.isPending}
-                error={createTeamMutation.error?.message || null}
+                onClose={() => {
+                  setShowCreateForm(false);
+                  createUnitMutation.reset();
+                }}
+                onSubmit={() => {}} // Form handles mutation directly
+                loading={createUnitMutation.isPending}
+                error={createUnitMutation.error?.message || null}
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Team Modal */}
-      {teamToEdit && (
+
+      {/* Edit Unit Modal */}
+      {unitToEdit && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setTeamToEdit(null)} />
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setUnitToEdit(null)} />
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
                   <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
                     <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                      Edit Production Team
+                      Edit Sales Unit
                     </h3>
-                    <CreateTeamForm
+                    <CreateSalesUnitForm
                       isOpen={true}
-                      onSubmit={(data) => handleUpdateTeam(teamToEdit.id, data)}
-                      onClose={() => setTeamToEdit(null)}
+                      onSubmit={(data) => handleUpdateUnit(unitToEdit.id, data)}
+                      onClose={() => setUnitToEdit(null)}
                       loading={false}
                       error={null}
-                      initialData={teamToEdit}
-                      availableLeads={availableLeads}
+                      initialData={unitToEdit}
+                      availableHeads={availableHeads}
                       isEditing={true}
                     />
                   </div>
@@ -302,21 +312,23 @@ const ProductionTeamsManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Team Details Drawer */}
-      <ProductionTeamDetailsDrawer
-        team={selectedTeam}
-        isOpen={!!selectedTeam}
-        onClose={() => setSelectedTeam(null)}
-        canUpdate={canUpdateTeams}
-        onTeamUpdated={(updatedTeam) => {
-          setSelectedTeam(updatedTeam);
+      {/* Unit Details Drawer */}
+      <SalesUnitDetailsDrawer
+        unit={selectedUnit}
+        isOpen={!!selectedUnit}
+        onClose={() => setSelectedUnit(null)}
+        canUpdate={canUpdateUnits}
+        onUnitUpdated={(updatedUnit) => {
+          setSelectedUnit(updatedUnit);
           setNotification({
             type: 'success',
-            message: 'Team updated successfully!'
+            message: 'Unit updated successfully!'
           });
           setTimeout(() => setNotification(null), 3000);
         }}
       />
+
+
 
       {/* Notification */}
       {notification && (
@@ -347,4 +359,6 @@ const ProductionTeamsManagementPage: React.FC = () => {
   );
 };
 
-export default ProductionTeamsManagementPage;
+export default SalesUnitsManagementPage;
+
+

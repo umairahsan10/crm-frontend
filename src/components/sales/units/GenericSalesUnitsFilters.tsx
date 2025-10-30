@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useFilters } from '../../../hooks/useFilters';
 
-interface GenericProductionTeamsFiltersProps {
+interface GenericSalesUnitsFiltersProps {
   showFilters: {
-    hasLead?: boolean;
-    hasMembers?: boolean;
-    hasProjects?: boolean;
+    hasHead?: boolean;
+    hasTeams?: boolean;
+    hasLeads?: boolean;
+    hasEmployees?: boolean;
     sortBy?: boolean;
   };
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
-  availableLeads?: Array<{ id: number; firstName: string; lastName: string; email: string }>;
+  availableHeads?: Array<{ id: number; firstName: string; lastName: string; email: string }>;
   theme?: {
     primary: string;
     secondary: string;
@@ -21,7 +22,7 @@ interface GenericProductionTeamsFiltersProps {
   searchPlaceholder?: string;
 }
 
-const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps> = ({
+const GenericSalesUnitsFilters: React.FC<GenericSalesUnitsFiltersProps> = ({
   showFilters,
   onFiltersChange,
   onClearFilters,
@@ -32,28 +33,19 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
     bg: 'bg-blue-100',
     text: 'text-blue-800'
   },
-  searchPlaceholder = 'Search production teams...'
+  searchPlaceholder = 'Search sales units...'
 }) => {
-  // Generic filter state - automatically works with any combination!
-  const { 
-    filters, 
-    updateFilter, 
-    resetFilters, 
-    hasActiveFilters,
-    activeCount 
-  } = useFilters(
+  const { filters, updateFilter, resetFilters, hasActiveFilters, activeCount } = useFilters(
     {
       search: '',
-      hasLead: '',
-      hasMembers: '',
-      hasProjects: '',
+      hasHead: '',
+      hasTeams: '',
+      hasLeads: '',
+      hasEmployees: '',
       sortBy: '',
       sortOrder: 'desc'
     },
-    (newFilters) => {
-      // Auto-trigger when filters change
-      onFiltersChange(newFilters);
-    }
+    (f) => onFiltersChange(f)
   );
 
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -63,7 +55,6 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
     onClearFilters();
   };
 
-  // Render helper for select fields
   const renderSelect = (
     key: string,
     label: string,
@@ -73,15 +64,13 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
     <div className="flex flex-col space-y-1">
       <label className="text-sm font-medium text-gray-700">{label}</label>
       <select
-        value={filters[key as keyof typeof filters] || ''}
-        onChange={(e) => updateFilter(key as keyof typeof filters, e.target.value)}
+        value={(filters as any)[key] || ''}
+        onChange={(e) => updateFilter(key as any, e.target.value)}
         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:text-sm"
       >
         <option value="">{placeholder}</option>
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
+          <option key={option.value} value={option.value}>{option.label}</option>
         ))}
       </select>
     </div>
@@ -89,7 +78,6 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
 
   return (
     <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
-      {/* Search Bar */}
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center space-x-4">
           <div className="flex-1">
@@ -127,7 +115,6 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
         </div>
       </div>
 
-      {/* Advanced Filters */}
       {showAdvanced && (
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
@@ -142,56 +129,36 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Has Lead Filter */}
-            {showFilters.hasLead && renderSelect(
-              'hasLead',
-              'Lead Status',
-              [
-                { value: 'true', label: 'Has Lead' },
-                { value: 'false', label: 'No Lead' }
-              ],
-              'All Teams'
-            )}
+            {showFilters.hasHead && renderSelect('hasHead', 'Head Status', [
+              { value: 'true', label: 'Has Head' },
+              { value: 'false', label: 'No Head' }
+            ], 'All Units')}
 
-            {/* Has Members Filter */}
-            {showFilters.hasMembers && renderSelect(
-              'hasMembers',
-              'Members Status',
-              [
-                { value: 'true', label: 'Has Members' },
-                { value: 'false', label: 'No Members' }
-              ],
-              'All Teams'
-            )}
+            {showFilters.hasTeams && renderSelect('hasTeams', 'Teams Status', [
+              { value: 'true', label: 'Has Teams' },
+              { value: 'false', label: 'No Teams' }
+            ], 'All Units')}
 
-            {/* Has Projects Filter */}
-            {showFilters.hasProjects && renderSelect(
-              'hasProjects',
-              'Projects Status',
-              [
-                { value: 'true', label: 'Has Projects' },
-                { value: 'false', label: 'No Projects' }
-              ],
-              'All Teams'
-            )}
+            {showFilters.hasLeads && renderSelect('hasLeads', 'Leads Status', [
+              { value: 'true', label: 'Has Leads' },
+              { value: 'false', label: 'No Leads' }
+            ], 'All Units')}
 
-            {/* Sort By Filter */}
-            {showFilters.sortBy && renderSelect(
-              'sortBy',
-              'Sort By',
-              [
-                { value: 'name', label: 'Name' },
-                { value: 'createdAt', label: 'Created Date' },
-                { value: 'updatedAt', label: 'Updated Date' },
-                { value: 'employeeCount', label: 'Members Count' },
-                { value: 'projectsCount', label: 'Projects Count' }
-              ],
-              'Default Sorting'
-            )}
+            {showFilters.hasEmployees && renderSelect('hasEmployees', 'Employees Status', [
+              { value: 'true', label: 'Has Employees' },
+              { value: 'false', label: 'No Employees' }
+            ], 'All Units')}
+
+            {showFilters.sortBy && renderSelect('sortBy', 'Sort By', [
+              { value: 'name', label: 'Name' },
+              { value: 'createdAt', label: 'Created Date' },
+              { value: 'updatedAt', label: 'Updated Date' },
+              { value: 'teamsCount', label: 'Teams Count' },
+              { value: 'employeeCount', label: 'Employee Count' }
+            ], 'Default Sorting')}
           </div>
 
-          {/* Sort Order */}
-          {showFilters.sortBy && filters.sortBy && (
+          {showFilters.sortBy && (filters as any).sortBy && (
             <div className="mt-4">
               <div className="flex items-center space-x-4">
                 <span className="text-sm font-medium text-gray-700">Sort Order:</span>
@@ -201,8 +168,8 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
                       type="radio"
                       name="sortOrder"
                       value="asc"
-                      checked={filters.sortOrder === 'asc'}
-                      onChange={(e) => updateFilter('sortOrder', e.target.value)}
+                      checked={(filters as any).sortOrder === 'asc'}
+                      onChange={(e) => updateFilter('sortOrder' as any, e.target.value)}
                       className="form-radio h-4 w-4 text-gray-600"
                     />
                     <span className="ml-2 text-sm text-gray-700">Ascending</span>
@@ -212,8 +179,8 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
                       type="radio"
                       name="sortOrder"
                       value="desc"
-                      checked={filters.sortOrder === 'desc'}
-                      onChange={(e) => updateFilter('sortOrder', e.target.value)}
+                      checked={(filters as any).sortOrder === 'desc'}
+                      onChange={(e) => updateFilter('sortOrder' as any, e.target.value)}
                       className="form-radio h-4 w-4 text-gray-600"
                     />
                     <span className="ml-2 text-sm text-gray-700">Descending</span>
@@ -228,4 +195,6 @@ const GenericProductionTeamsFilters: React.FC<GenericProductionTeamsFiltersProps
   );
 };
 
-export default GenericProductionTeamsFilters;
+export default GenericSalesUnitsFilters;
+
+

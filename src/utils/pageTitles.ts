@@ -54,8 +54,10 @@ export const getPageTitle = (pathname: string): string => {
     // Department routes
     '/marketing': 'Marketing',
     '/production': 'Production',
-    '/production/units': 'Units Management',
-    '/production/teams': 'Teams Management',
+    '/production/units': 'Production Units Management',
+    '/production/teams': 'Production Teams Management',
+    '/sales/units': 'Sales Units Management',
+    '/sales/teams': 'Sales Teams Management',
     
     // Communication routes
     '/chats': 'Chat',
