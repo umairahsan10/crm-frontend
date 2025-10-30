@@ -17,9 +17,9 @@ export interface CheckoutDto {
 }
 
 export interface BulkMarkPresentDto {
-  date: string; // YYYY-MM-DD format
-  reason?: string;
-  // Removed employeeIds - API might not support selective marking
+  date?: string; // YYYY-MM-DD format, optional - defaults to current PKT date
+  employee_ids?: number[]; // Optional array of employee IDs - if not provided, marks all active employees
+  reason?: string; // Optional reason for marking employees present
 }
 
 export interface CheckinResponseDto {
