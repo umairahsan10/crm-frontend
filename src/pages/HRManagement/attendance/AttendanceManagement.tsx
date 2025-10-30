@@ -17,7 +17,6 @@ import DataStatistics from '../../../components/common/Statistics/DataStatistics
 import GenericAttendanceFilters from '../../../components/attendance/GenericAttendanceFilters';
 import EmployeeAttendanceDrawer from '../../../components/attendance/EmployeeAttendanceDrawer';
 import Loading from '../../../components/common/Loading/Loading';
-import Pagination from '../../../components/common/Pagination/Pagination';
 import { useEmployees, useAttendanceLogs, useAttendanceMutation } from '../../../hooks/queries/useHRQueries';
 import { 
   checkinApi, 
@@ -623,25 +622,7 @@ const AttendanceManagement: React.FC = () => {
           theme={{ primary: 'blue', secondary: 'gray', accent: 'blue' }}
         />
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="mt-6">
-            <Pagination
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              totalItems={pagination.totalItems}
-              itemsPerPage={pagination.itemsPerPage}
-              onPageChange={(page) => {
-                setPagination(prev => ({ ...prev, currentPage: page }));
-              }}
-              showPageInfo={true}
-              showItemsInfo={true}
-              alignment="center"
-              size="md"
-              theme="primary"
-            />
-          </div>
-        )}
+        
 
         {/* Bulk Mark Modal */}
         {showBulkMarkModal && (
