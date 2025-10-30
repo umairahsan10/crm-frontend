@@ -6,6 +6,8 @@ export interface CheckinDto {
   date: string; // YYYY-MM-DD format
   checkin: string; // ISO string with time
   mode?: string;
+  timezone?: string; // IANA timezone name, e.g., "Asia/Karachi"
+  offset_minutes?: number; // Offset from UTC in minutes at event time
 }
 
 export interface CheckoutDto {
