@@ -199,12 +199,16 @@ const AttendanceManagement: React.FC = () => {
       setIsMarkingAttendance(true);
       
       const currentTime = new Date().toISOString();
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const offset_minutes = -new Date().getTimezoneOffset();
       
       const checkinData: CheckinDto = {
         employee_id: employeeId,
         date: selectedDate,
         checkin: currentTime,
-        mode: 'onsite'
+        mode: 'onsite',
+        timezone,
+        offset_minutes
       };
 
       const response = await checkinApi(checkinData);
@@ -257,12 +261,16 @@ const AttendanceManagement: React.FC = () => {
         try {
           // Get current time in Karachi timezone (UTC+5)
           const currentTime = new Date().toISOString();
+          const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const offset_minutes = -new Date().getTimezoneOffset();
           
           const checkinData: CheckinDto = {
             employee_id: employeeId,
             date: selectedDate,
             checkin: currentTime,
-            mode: 'onsite'
+            mode: 'onsite',
+            timezone,
+            offset_minutes
           };
 
           await checkinApi(checkinData);
