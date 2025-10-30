@@ -20,8 +20,10 @@ import Loading from '../../../components/common/Loading/Loading';
 import { useEmployees, useAttendanceLogs, useAttendanceMutation } from '../../../hooks/queries/useHRQueries';
 import { 
   checkinApi, 
+  bulkMarkPresentApi,
   updateAttendanceLogStatusApi,
   type CheckinDto, 
+  type BulkMarkPresentDto,
   type UpdateAttendanceLogStatusDto
 } from '../../../apis/attendance';
 import './AttendanceManagement.css';
@@ -45,17 +47,33 @@ interface AttendanceRecord {
 const AttendanceManagement: React.FC = () => {
   const { user } = useAuth();
   
-  // Get today's date
-  const getTodayDate = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+  // Get the date for the current shift (handles night shifts 21:00-05:00)
+  // If time is between 00:00-05:00, use previous day (shift started yesterday)
+  // Otherwise use current day
+  const getShiftDate = () => {
+    const now = new Date();
+    const hours = now.getHours();
+    
+    // If between 00:00 and 05:00, use previous day
+    if (hours >= 0 && hours < 5) {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const year = yesterday.getFullYear();
+      const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+      const day = String(yesterday.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    
+    // Otherwise use current day
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
 
   // State management
-  const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [selectedDate, setSelectedDate] = useState(getShiftDate());
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null); // null = all departments
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showBulkMarkModal, setShowBulkMarkModal] = useState(false);
@@ -117,7 +135,7 @@ const AttendanceManagement: React.FC = () => {
     }
   }, [employeesQuery.data, pagination.itemsPerPage]);
 
-  // Merge employee data with attendance logs
+  // Merge employee data with attendance logs - only include active employees
   const attendanceRecords: AttendanceRecord[] = useMemo(() => {
     const attendanceMap = new Map();
     if (Array.isArray(attendanceLogs)) {
@@ -133,32 +151,50 @@ const AttendanceManagement: React.FC = () => {
       });
     }
 
-    return employees.map((employee: any) => {
-      const attendance = attendanceMap.get(employee.id);
-      return {
-        id: employee.id.toString(),
-        employeeId: employee.id,
-        employeeName: `${employee.firstName} ${employee.lastName}`,
-        department: employee.department?.name || 'N/A',
-        status: attendance?.status || 'not_marked',
-        checkin: attendance?.checkin || null,
-        checkout: attendance?.checkout || null,
-        totalHours: attendance?.totalHours || null,
-        logId: attendance?.logId || undefined,
-        lateDetails: attendance?.lateDetails || null
-      };
-    });
+    // Filter only active employees
+    return employees
+      .filter((employee: any) => employee.status === 'active')
+      .map((employee: any) => {
+        const attendance = attendanceMap.get(employee.id);
+        return {
+          id: employee.id.toString(),
+          employeeId: employee.id,
+          employeeName: `${employee.firstName} ${employee.lastName}`,
+          department: employee.department?.name || 'N/A',
+          status: attendance?.status || 'not_marked',
+          checkin: attendance?.checkin || null,
+          checkout: attendance?.checkout || null,
+          totalHours: attendance?.totalHours || null,
+          logId: attendance?.logId || undefined,
+          lateDetails: attendance?.lateDetails || null
+        };
+      });
   }, [employees, attendanceLogs]);
 
-  // Apply client-side filters (search and status)
+  // Get unique departments from attendance records
+  const departments = useMemo(() => {
+    const deptSet = new Set<string>();
+    attendanceRecords.forEach(record => {
+      if (record.department && record.department !== 'N/A') {
+        deptSet.add(record.department);
+      }
+    });
+    return Array.from(deptSet).sort();
+  }, [attendanceRecords]);
+
+  // Apply client-side filters (search, status, and department)
   const filteredRecords = useMemo(() => {
     let filtered = [...attendanceRecords];
+
+    // Filter by department
+    if (selectedDepartment !== null) {
+      filtered = filtered.filter(record => record.department === selectedDepartment);
+    }
 
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(record => 
-        record.employeeName.toLowerCase().includes(searchLower) ||
-        record.department.toLowerCase().includes(searchLower)
+        record.employeeName.toLowerCase().includes(searchLower)
       );
     }
 
@@ -167,7 +203,7 @@ const AttendanceManagement: React.FC = () => {
     }
 
     return filtered;
-  }, [attendanceRecords, filters]);
+  }, [attendanceRecords, filters, selectedDepartment]);
 
   // Calculate statistics
   const statistics = useMemo(() => ({
@@ -236,56 +272,63 @@ const AttendanceManagement: React.FC = () => {
       setIsBulkMarkingAttendance(true);
       const employeeIds = selectedEmployees.map(id => parseInt(id));
       
+      // If no employees selected but a department is selected, use all employees from filtered records
+      const employeesToMark = employeeIds.length > 0 
+        ? employeeIds 
+        : (selectedDepartment !== null 
+            ? filteredRecords.map(r => r.employeeId) // All employees from selected department
+            : []); // No department selected and no employees selected - will mark all (employee_ids undefined)
+      
       // Filter to only include unmarked employees for actual marking
-      const unmarkedEmployeeIds = employeeIds.filter(employeeId => {
-        const record = filteredRecords.find(r => r.id === employeeId.toString());
+      const unmarkedEmployeeIds = employeesToMark.filter(employeeId => {
+        const record = filteredRecords.find(r => r.employeeId === employeeId);
         return record && (record.status === 'not_marked' || record.status === null || record.status === undefined);
       });
       
-      // If no unmarked employees are selected, show a message
-      if (unmarkedEmployeeIds.length === 0) {
+      // If employees were specified (selected or from department) but all are already marked, show a message
+      if (employeesToMark.length > 0 && unmarkedEmployeeIds.length === 0) {
         setNotification({
           type: 'success',
-          message: 'All selected employees are already marked for attendance'
+          message: 'All employees are already marked for attendance'
         });
         setTimeout(() => setNotification(null), 3000);
+        setShowBulkMarkModal(false);
+        setBulkMarkReason('');
         return;
       }
       
-      // Mark each unmarked employee individually
-      let successCount = 0;
-      let errorCount = 0;
-      
-      for (const employeeId of unmarkedEmployeeIds) {
-        try {
-          // Get current time in Karachi timezone (UTC+5)
-          const currentTime = new Date().toISOString();
-          const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          const offset_minutes = -new Date().getTimezoneOffset();
-          
-          const checkinData: CheckinDto = {
-            employee_id: employeeId,
-            date: selectedDate,
-            checkin: currentTime,
-            mode: 'onsite',
-            timezone,
-            offset_minutes
-          };
+      // Use bulk-mark-present endpoint
+      // If employee_ids provided, marks only those employees; otherwise marks all active employees
+      const bulkMarkData: BulkMarkPresentDto = {
+        date: selectedDate,
+        employee_ids: unmarkedEmployeeIds.length > 0 ? unmarkedEmployeeIds : undefined,
+        reason: bulkMarkReason || undefined
+      };
 
-          await checkinApi(checkinData);
-          successCount++;
-        } catch (error) {
-          console.error(`Failed to mark employee ${employeeId}:`, error);
-          errorCount++;
-        }
-      }
+      const response = await bulkMarkPresentApi(bulkMarkData);
       
       // Invalidate and refetch
       invalidateAttendance({ start_date: selectedDate, end_date: selectedDate });
 
+      // Build success message based on response
+      const successCount = response.marked_present || 0;
+      const errorCount = response.errors || 0;
+      const skippedCount = response.skipped || 0;
+      
+      let message = `Successfully marked ${successCount} employees present`;
+      if (errorCount > 0) {
+        message += `, ${errorCount} failed`;
+      }
+      if (skippedCount > 0) {
+        message += `, ${skippedCount} skipped`;
+      }
+      if (employeesToMark.length > 0 && employeesToMark.length > unmarkedEmployeeIds.length) {
+        message += ` (${employeesToMark.length - unmarkedEmployeeIds.length} already marked)`;
+      }
+
       setNotification({
         type: successCount > 0 ? 'success' : 'error',
-        message: `Successfully marked ${successCount} employees present${errorCount > 0 ? `, ${errorCount} failed` : ''}${employeeIds.length > unmarkedEmployeeIds.length ? ` (${employeeIds.length - unmarkedEmployeeIds.length} already marked)` : ''}`
+        message
       });
       setTimeout(() => setNotification(null), 3000);
 
@@ -533,7 +576,15 @@ const AttendanceManagement: React.FC = () => {
                   id="date"
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    const maxDate = getShiftDate();
+                    // Prevent selecting future dates
+                    if (newDate <= maxDate) {
+                      setSelectedDate(newDate);
+                    }
+                  }}
+                  max={getShiftDate()}
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -554,7 +605,7 @@ const AttendanceManagement: React.FC = () => {
         {showStatistics && (
           <div className="mb-8">
             <DataStatistics 
-              title={`Attendance Statistics for ${new Date(selectedDate).toLocaleDateString()}`}
+              title={`Attendance Statistics for ${new Date(selectedDate).toLocaleDateString()}${selectedDepartment ? ` - ${selectedDepartment}` : ''}`}
               cards={statisticsCards} 
               loading={isLoading}
             />
@@ -568,6 +619,55 @@ const AttendanceManagement: React.FC = () => {
           onClearFilters={handleClearFilters}
         />
         </div>
+
+        {/* Department Tabs */}
+        {departments.length > 0 && (
+          <div className="w-full border-b border-gray-200 mb-4">
+            <div className="flex w-full justify-between">
+              {/* All Departments Tab */}
+              <button
+                onClick={() => {
+                  setSelectedDepartment(null);
+                  setSelectedEmployees([]); // Clear selection when changing department
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${
+                  selectedDepartment === null
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-blue-600'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                All Departments ({attendanceRecords.length})
+              </button>
+              
+              {/* Department Tabs */}
+              {departments.map((dept) => {
+                const deptCount = attendanceRecords.filter(r => r.department === dept).length;
+                return (
+                  <button
+                    key={dept}
+                    onClick={() => {
+                      setSelectedDepartment(dept);
+                      setSelectedEmployees([]); // Clear selection when changing department
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${
+                      selectedDepartment === dept
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-blue-600'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    {dept} ({deptCount})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Bulk Selection Bar */}
         {selectedEmployees.length > 0 && (
@@ -597,7 +697,7 @@ const AttendanceManagement: React.FC = () => {
         {/* Attendance Table */}
         <DynamicTable
           columns={columns}
-          data={attendanceRecords}
+          data={filteredRecords}
           isLoading={isLoading}
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
@@ -639,7 +739,12 @@ const AttendanceManagement: React.FC = () => {
                   </div>
                 </div>
                   <div className="p-6">
-                  <p className="text-sm text-gray-600 mb-4">Mark attendance for {selectedEmployees.length} selected employees for {new Date(selectedDate).toLocaleDateString()}</p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    {selectedEmployees.length > 0 
+                      ? `Mark ${selectedEmployees.length} selected employee${selectedEmployees.length > 1 ? 's' : ''} as present for ${new Date(selectedDate).toLocaleDateString()}${selectedDepartment ? ` (${selectedDepartment})` : ''}`
+                      : `Mark all ${selectedDepartment ? `${selectedDepartment} ` : ''}employees as present for ${new Date(selectedDate).toLocaleDateString()}`
+                    }
+                  </p>
                     <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Reason (Optional)</label>
                     <textarea value={bulkMarkReason} onChange={(e) => setBulkMarkReason(e.target.value)} placeholder="Enter reason for bulk marking..." rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
