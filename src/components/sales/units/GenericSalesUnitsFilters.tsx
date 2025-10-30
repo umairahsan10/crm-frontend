@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useFilters } from '../../../hooks/useFilters';
 
-interface GenericProductionUnitsFiltersProps {
+interface GenericSalesUnitsFiltersProps {
   showFilters: {
     hasHead?: boolean;
     hasTeams?: boolean;
-    hasProjects?: boolean;
+    hasLeads?: boolean;
+    hasEmployees?: boolean;
     sortBy?: boolean;
   };
   onFiltersChange: (filters: any) => void;
@@ -21,32 +22,23 @@ interface GenericProductionUnitsFiltersProps {
   searchPlaceholder?: string;
 }
 
-const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps> = ({
+const GenericSalesUnitsFilters: React.FC<GenericSalesUnitsFiltersProps> = ({
   showFilters,
   onFiltersChange,
   onClearFilters,
-  searchPlaceholder = 'Search production units...'
+  searchPlaceholder = 'Search sales units...'
 }) => {
-  // Generic filter state - automatically works with any combination!
-  const { 
-    filters, 
-    updateFilter, 
-    resetFilters, 
-    hasActiveFilters,
-    activeCount 
-  } = useFilters(
+  const { filters, updateFilter, resetFilters, hasActiveFilters, activeCount } = useFilters(
     {
       search: '',
       hasHead: '',
       hasTeams: '',
-      hasProjects: '',
+      hasLeads: '',
+      hasEmployees: '',
       sortBy: '',
       sortOrder: 'desc'
     },
-    (newFilters) => {
-      // Auto-trigger when filters change
-      onFiltersChange(newFilters);
-    }
+    (f) => onFiltersChange(f)
   );
 
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -56,7 +48,6 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
     onClearFilters();
   };
 
-  // Render helper for select fields
   const renderSelect = (
     key: string,
     label: string,
@@ -66,15 +57,13 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
     <div className="flex flex-col space-y-1">
       <label className="text-sm font-medium text-gray-700">{label}</label>
       <select
-        value={filters[key as keyof typeof filters] || ''}
-        onChange={(e) => updateFilter(key as keyof typeof filters, e.target.value)}
+        value={(filters as any)[key] || ''}
+        onChange={(e) => updateFilter(key as any, e.target.value)}
         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:text-sm"
       >
         <option value="">{placeholder}</option>
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
+          <option key={option.value} value={option.value}>{option.label}</option>
         ))}
       </select>
     </div>
@@ -82,7 +71,6 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
 
   return (
     <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
-      {/* Search Bar */}
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center space-x-4">
           <div className="flex-1">
@@ -120,7 +108,6 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
         </div>
       </div>
 
-      {/* Advanced Filters */}
       {showAdvanced && (
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
@@ -135,56 +122,36 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Has Head Filter */}
-            {showFilters.hasHead && renderSelect(
-              'hasHead',
-              'Head Status',
-              [
-                { value: 'true', label: 'Has Head' },
-                { value: 'false', label: 'No Head' }
-              ],
-              'All Units'
-            )}
+            {showFilters.hasHead && renderSelect('hasHead', 'Head Status', [
+              { value: 'true', label: 'Has Head' },
+              { value: 'false', label: 'No Head' }
+            ], 'All Units')}
 
-            {/* Has Teams Filter */}
-            {showFilters.hasTeams && renderSelect(
-              'hasTeams',
-              'Teams Status',
-              [
-                { value: 'true', label: 'Has Teams' },
-                { value: 'false', label: 'No Teams' }
-              ],
-              'All Units'
-            )}
+            {showFilters.hasTeams && renderSelect('hasTeams', 'Teams Status', [
+              { value: 'true', label: 'Has Teams' },
+              { value: 'false', label: 'No Teams' }
+            ], 'All Units')}
 
-            {/* Has Projects Filter */}
-            {showFilters.hasProjects && renderSelect(
-              'hasProjects',
-              'Projects Status',
-              [
-                { value: 'true', label: 'Has Projects' },
-                { value: 'false', label: 'No Projects' }
-              ],
-              'All Units'
-            )}
+            {showFilters.hasLeads && renderSelect('hasLeads', 'Leads Status', [
+              { value: 'true', label: 'Has Leads' },
+              { value: 'false', label: 'No Leads' }
+            ], 'All Units')}
 
-            {/* Sort By Filter */}
-            {showFilters.sortBy && renderSelect(
-              'sortBy',
-              'Sort By',
-              [
-                { value: 'name', label: 'Name' },
-                { value: 'createdAt', label: 'Created Date' },
-                { value: 'updatedAt', label: 'Updated Date' },
-                { value: 'teamsCount', label: 'Teams Count' },
-                { value: 'employeeCount', label: 'Employee Count' }
-              ],
-              'Default Sorting'
-            )}
+            {showFilters.hasEmployees && renderSelect('hasEmployees', 'Employees Status', [
+              { value: 'true', label: 'Has Employees' },
+              { value: 'false', label: 'No Employees' }
+            ], 'All Units')}
+
+            {showFilters.sortBy && renderSelect('sortBy', 'Sort By', [
+              { value: 'name', label: 'Name' },
+              { value: 'createdAt', label: 'Created Date' },
+              { value: 'updatedAt', label: 'Updated Date' },
+              { value: 'teamsCount', label: 'Teams Count' },
+              { value: 'employeeCount', label: 'Employee Count' }
+            ], 'Default Sorting')}
           </div>
 
-          {/* Sort Order */}
-          {showFilters.sortBy && filters.sortBy && (
+          {showFilters.sortBy && (filters as any).sortBy && (
             <div className="mt-4">
               <div className="flex items-center space-x-4">
                 <span className="text-sm font-medium text-gray-700">Sort Order:</span>
@@ -194,8 +161,8 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
                       type="radio"
                       name="sortOrder"
                       value="asc"
-                      checked={filters.sortOrder === 'asc'}
-                      onChange={(e) => updateFilter('sortOrder', e.target.value)}
+                      checked={(filters as any).sortOrder === 'asc'}
+                      onChange={(e) => updateFilter('sortOrder' as any, e.target.value)}
                       className="form-radio h-4 w-4 text-gray-600"
                     />
                     <span className="ml-2 text-sm text-gray-700">Ascending</span>
@@ -205,8 +172,8 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
                       type="radio"
                       name="sortOrder"
                       value="desc"
-                      checked={filters.sortOrder === 'desc'}
-                      onChange={(e) => updateFilter('sortOrder', e.target.value)}
+                      checked={(filters as any).sortOrder === 'desc'}
+                      onChange={(e) => updateFilter('sortOrder' as any, e.target.value)}
                       className="form-radio h-4 w-4 text-gray-600"
                     />
                     <span className="ml-2 text-sm text-gray-700">Descending</span>
@@ -221,4 +188,6 @@ const GenericProductionUnitsFilters: React.FC<GenericProductionUnitsFiltersProps
   );
 };
 
-export default GenericProductionUnitsFilters;
+export default GenericSalesUnitsFilters;
+
+
