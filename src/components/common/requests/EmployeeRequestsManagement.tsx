@@ -61,8 +61,15 @@ const EmployeeRequestsManagement: React.FC = () => {
   const exportMutation = useExportRequests();
 
   // Extract data from queries
-  const requestsData = requestsQuery.data || { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 1, hasNext: false, hasPrev: false } };
-  const allEmployeeRequests = requestsData.data || [];
+  // useEmployeeRequests returns { data: [], meta: {} }, useMyEmployeeRequests returns [] directly
+  const allEmployeeRequests = useMemo(() => {
+    if (!requestsQuery.data) return [];
+    // Check if data is an array (from useMyEmployeeRequests) or object with data property (from useEmployeeRequests)
+    if (Array.isArray(requestsQuery.data)) {
+      return requestsQuery.data;
+    }
+    return requestsQuery.data.data || [];
+  }, [requestsQuery.data]);
   
   // Transform to table format and apply ALL filtering client-side
   const employeeRequests = useMemo(() => {

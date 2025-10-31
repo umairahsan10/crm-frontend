@@ -67,5 +67,11 @@ export const salaryTableConfig: ColumnConfig[] = [
     label: 'Paid On',
     type: 'date',
     width: '15%'
+  },
+  {
+    key: 'actions',
+    label: 'Actions',
+    type: 'custom',
+    width: '10%'
   }
 ];
