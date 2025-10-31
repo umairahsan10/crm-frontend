@@ -250,23 +250,82 @@ export const bulkMarkSalaryAsPaidApi = async (
   return apiPatchJson<{ message: string; marked: number; errors?: number }>(url, data);
 };
 
-// 8. Get Sales Employees Bonus Display
-export const getSalesEmployeesBonus = async (): Promise<SalesEmployeeBonus[]> => {
-  const apiResponse = await apiGetJson<any>('/finance/salary/bonus-display');
+// 8. Get Sales Employees Bonus Display with Pagination and Filters
+export interface BonusFiltersParams {
+  search?: string;
+  minSales?: string;
+  maxSales?: string;
+  minBonus?: string;
+  maxBonus?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface BonusDisplayResponse {
+  employees: SalesEmployeeBonus[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+export const getSalesEmployeesBonus = async (
+  page?: number,
+  limit?: number,
+  filters?: BonusFiltersParams
+): Promise<BonusDisplayResponse> => {
+  const params = new URLSearchParams();
+  if (page !== undefined) params.append('page', page.toString());
+  if (limit !== undefined) params.append('limit', limit.toString());
+  
+  // Add filter parameters
+  if (filters) {
+    if (filters.search) params.append('search', filters.search);
+    if (filters.minSales) params.append('minSales', filters.minSales);
+    if (filters.maxSales) params.append('maxSales', filters.maxSales);
+    if (filters.minBonus) params.append('minBonus', filters.minBonus);
+    if (filters.maxBonus) params.append('maxBonus', filters.maxBonus);
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+  }
+  
+  const queryString = params.toString();
+  const url = `/finance/salary/bonus-display${queryString ? `?${queryString}` : ''}`;
+  
+  const apiResponse = await apiGetJson<any>(url);
   
   // Get the salesEmployees array from response (could be result, data, or direct array)
-  const salesEmployees = apiResponse.result || apiResponse.data || apiResponse.salesEmployees || apiResponse || [];
+  const salesEmployees = apiResponse.result || apiResponse.data || apiResponse.salesEmployees || apiResponse.employees || apiResponse || [];
   
   // Map the API response to the expected format
   // Expected structure: { employee: { id, firstName, lastName }, salesAmount, salesBonus }
-  const result = (Array.isArray(salesEmployees) ? salesEmployees : []).map((record: any) => ({
+  const employees = (Array.isArray(salesEmployees) ? salesEmployees : []).map((record: any) => ({
     id: record.id || record.employee?.id,
     name: record.name || `${record.employee?.firstName || ''} ${record.employee?.lastName || ''}`.trim() || `Employee ${record.id || record.employee?.id}`,
     salesAmount: Number(record.salesAmount || 0),
     bonusAmount: Number(record.bonusAmount || record.salesBonus || 0)
   }));
   
-  return result;
+  // Extract pagination data
+  const paginationData = apiResponse.pagination || apiResponse.meta || apiResponse.paginationMeta || {};
+  
+  const pagination = paginationData.page || paginationData.total ? {
+    page: paginationData.page || page || 1,
+    limit: paginationData.limit || paginationData.take || limit || 20,
+    total: paginationData.total || paginationData.totalItems || paginationData.totalRecords || employees.length,
+    totalPages: paginationData.totalPages || Math.ceil((paginationData.total || employees.length) / (paginationData.limit || limit || 20)),
+    hasNext: paginationData.hasNext !== undefined ? paginationData.hasNext : false,
+    hasPrev: paginationData.hasPrev !== undefined ? paginationData.hasPrev : false
+  } : undefined;
+  
+  return {
+    employees,
+    pagination
+  };
 };
 
 // 7. Update Sales Employee Bonus
