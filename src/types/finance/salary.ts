@@ -81,6 +81,14 @@ export interface SalaryDisplayAll {
   month: string;
   summary: SalarySummary;
   employees: SalaryDisplay[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export interface CommissionBreakdown {

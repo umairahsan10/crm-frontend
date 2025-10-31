@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import type { MetricData } from '../../../types/dashboard';
 import { 
   formatCurrency, 
-  formatDate
+  formatDate,
+  getSalaryPreview
 } from '../../../apis/finance/salary';
 import type { SalaryPreview } from '../../../types/finance/salary';
 import './SalaryCalculatorPage.css';
@@ -17,15 +18,6 @@ const SalaryCalculatorPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  // Mock employee data for autocomplete
-  const mockEmployees = [
-    { id: 1, name: 'John Doe', department: 'Sales' },
-    { id: 2, name: 'Jane Smith', department: 'Marketing' },
-    { id: 3, name: 'Mike Johnson', department: 'Sales' },
-    { id: 4, name: 'Sarah Wilson', department: 'HR' },
-    { id: 5, name: 'David Brown', department: 'Sales' }
-  ];
 
   // Get calculator metrics for MetricGrid
   const getCalculatorMetrics = (): MetricData[] => {
@@ -75,61 +67,37 @@ const SalaryCalculatorPage: React.FC = () => {
     try {
       setIsLoading(true);
       setIsError(false);
+      setPreviewData(null);
       
-      // In a real app, you would call the API
-      // const result = await getSalaryPreview(parseInt(employeeId), endDate);
+      // Extract employee ID if user entered "ID - Name" format
+      const empIdMatch = employeeId.match(/^(\d+)/);
+      const empId = empIdMatch ? parseInt(empIdMatch[1]) : parseInt(employeeId);
       
-      // Mock data for demonstration
-      const mockPreview: SalaryPreview = {
-        employee: {
-          id: parseInt(employeeId),
-          firstName: mockEmployees.find(emp => emp.id === parseInt(employeeId))?.name.split(' ')[0] || 'John',
-          lastName: mockEmployees.find(emp => emp.id === parseInt(employeeId))?.name.split(' ')[1] || 'Doe',
-          email: `${mockEmployees.find(emp => emp.id === parseInt(employeeId))?.name.toLowerCase().replace(' ', '.')}@company.com`,
-          department: mockEmployees.find(emp => emp.id === parseInt(employeeId))?.department || 'Sales',
-          status: 'active',
-          startDate: '2023-01-01T00:00:00.000Z'
-        },
-        salary: {
-          fullBaseSalary: 30000,
-          proratedBaseSalary: 30000,
-          employeeBonus: 500,
-          salesBonus: 1000,
-          totalBonus: 1500,
-          commission: 2500,
-          netSalary: 34000,
-          deductions: 600,
-          finalSalary: 33400
-        },
-        calculationPeriod: {
-          startDay: 1,
-          endDay: 31,
-          daysWorked: 31,
-          year: 2025,
-          month: 1
-        },
-        deductionBreakdown: {
-          absentDeduction: 200,
-          lateDeduction: 150,
-          halfDayDeduction: 100,
-          chargebackDeduction: 100,
-          refundDeduction: 50,
-          totalDeduction: 600
-        }
-      };
+      if (isNaN(empId)) {
+        setNotification({ 
+          type: 'error', 
+          message: 'Please enter a valid employee ID' 
+        });
+        setIsLoading(false);
+        return;
+      }
       
-      setPreviewData(mockPreview);
+      // Call the preview API
+      const result = await getSalaryPreview(empId, endDate || undefined);
+      
+      setPreviewData(result);
       setNotification({ 
         type: 'success', 
         message: 'Salary preview calculated successfully!' 
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calculating preview:', error);
       setIsError(true);
+      const errorMessage = error?.message || 'Failed to calculate salary preview. Please check the employee ID and try again.';
       setNotification({ 
         type: 'error', 
-        message: 'Failed to calculate salary preview' 
+        message: errorMessage
       });
     } finally {
       setIsLoading(false);
@@ -147,13 +115,17 @@ const SalaryCalculatorPage: React.FC = () => {
     setIsError(false);
   };
 
-  const getEmployeeSuggestions = (query: string) => {
-    if (!query) return [];
-    return mockEmployees.filter(emp => 
-      emp.name.toLowerCase().includes(query.toLowerCase()) ||
-      emp.id.toString().includes(query)
-    );
-  };
+  // Auto-dismiss notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -277,15 +249,9 @@ const SalaryCalculatorPage: React.FC = () => {
                   id="employeeId"
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value)}
-                  placeholder="Enter employee ID or search by name..."
+                  placeholder="Enter employee ID (e.g., 37)"
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                  list="employeeSuggestions"
                 />
-                <datalist id="employeeSuggestions">
-                  {getEmployeeSuggestions(employeeId).map(emp => (
-                    <option key={emp.id} value={`${emp.id} - ${emp.name}`} />
-                  ))}
-                </datalist>
               </div>
               
               <div>

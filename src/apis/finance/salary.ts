@@ -9,67 +9,11 @@ import type {
   BonusUpdateResponse,
   CalculateAllResponse
 } from '../../types/finance/salary';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-// Helper function to get auth token
-const getAuthToken = (): string | null => {
-  return localStorage.getItem('token');
-};
-
-// Helper function to make API requests
-const apiRequest = async <T>(
-  endpoint: string, 
-  options: RequestInit = {}
-): Promise<T> => {
-  const token = getAuthToken();
-  
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-  }
-
-  return response.json();
-};
+import { apiGetJson, apiPostJson, apiPatchJson } from '../../utils/apiClient';
 
 // 1. Calculate All Salaries (Bulk Trigger)
 export const calculateAllSalaries = async (): Promise<CalculateAllResponse> => {
-  // For development/testing, simulate API call with mock response
-  // In a real app, you would call the actual API:
-  // return apiRequest<CalculateAllResponse>('/finance/salary/calculate-all', {
-  //   method: 'POST',
-  // });
-  
-  // Mock implementation with real calculation logic
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simulate the backend calculation process
-      console.log('Calculating salaries for all employees...');
-      
-      // In a real implementation, this would:
-      // 1. Fetch all active employees
-      // 2. Get their attendance records for the month
-      // 3. Calculate base salary (prorated if joined mid-month)
-      // 4. Add commissions from completed projects
-      // 5. Add bonuses (employee and sales bonuses)
-      // 6. Calculate deductions (absent, late, half-day, chargebacks, refunds)
-      // 7. Calculate final salary = base + commission + bonus - deductions
-      // 8. Store calculated salaries in database
-      // 9. Update employee salary records
-      
-      resolve({
-        message: "Salary calculation completed for all employees"
-      });
-    }, 2000); // Simulate longer processing time for real calculation
-  });
+  return apiPostJson<CalculateAllResponse>('/finance/salary/calculate-all');
 };
 
 // 2. Salary Preview (Read-Only Calculation)
@@ -83,7 +27,7 @@ export const getSalaryPreview = async (
   const queryString = params.toString();
   const url = `/finance/salary/preview/${employeeId}${queryString ? `?${queryString}` : ''}`;
   
-  return apiRequest<SalaryPreview>(url);
+  return apiGetJson<SalaryPreview>(url);
 };
 
 // 3. Get Salary Display (Single Employee)
@@ -97,22 +41,143 @@ export const getSalaryDisplay = async (
   const queryString = params.toString();
   const url = `/finance/salary/display/${employeeId}${queryString ? `?${queryString}` : ''}`;
   
-  return apiRequest<SalaryDisplay>(url);
+  return apiGetJson<SalaryDisplay>(url);
 };
 
-// 4. Get All Salaries Display (All Employees)
+// 4. Get All Salaries Display (All Employees) with Pagination
 export const getAllSalariesDisplay = async (
-  month?: string
+  month?: string,
+  page?: number,
+  limit?: number
 ): Promise<SalaryDisplayAll> => {
-  // For development/testing, use mock data
-  // In a real app, you would call the actual API:
-  // const params = new URLSearchParams();
-  // if (month) params.append('month', month);
-  // const queryString = params.toString();
-  // const url = `/finance/salary/display-all${queryString ? `?${queryString}` : ''}`;
-  // return apiRequest<SalaryDisplayAll>(url);
+  const params = new URLSearchParams();
+  if (month) params.append('month', month);
+  if (page !== undefined) params.append('page', page.toString());
+  if (limit !== undefined) params.append('limit', limit.toString());
+  const queryString = params.toString();
+  const url = `/finance/salary/display-all${queryString ? `?${queryString}` : ''}`;
   
-  return getMockSalaryData(month);
+  const apiResponse = await apiGetJson<any>(url);
+  
+  // Handle paginated response structure
+  const employeesArray = apiResponse.employees || apiResponse.data?.employees || apiResponse.data || [];
+  const summaryData = apiResponse.summary || apiResponse.data?.summary || {};
+  const paginationData = apiResponse.pagination || apiResponse.meta || apiResponse.paginationMeta || {};
+  
+  console.log('API Response pagination data:', paginationData);
+  console.log('Page:', page, 'Limit:', limit);
+  
+  // Helper to build pagination object
+  const buildPagination = (paginationData: any, employeesCount: number) => {
+    // Check if we have pagination metadata
+    if (paginationData.page || paginationData.total) {
+      return {
+        page: paginationData.page || page || 1,
+        limit: paginationData.limit || paginationData.take || limit || 20,
+        total: paginationData.total || paginationData.totalItems || paginationData.totalRecords || 0,
+        totalPages: paginationData.totalPages || paginationData.totalPages || (paginationData.total ? Math.ceil((paginationData.total || 0) / (paginationData.limit || paginationData.take || limit || 20)) : 1),
+        hasNext: paginationData.hasNext !== undefined ? paginationData.hasNext : ((paginationData.page || page || 1) < (paginationData.totalPages || Math.ceil((paginationData.total || 0) / (paginationData.limit || limit || 20)))),
+        hasPrev: paginationData.hasPrev !== undefined ? paginationData.hasPrev : ((paginationData.page || page || 1) > 1)
+      };
+    }
+    // If no pagination metadata but we requested pagination, calculate from employees returned
+    if (page !== undefined || limit !== undefined) {
+      // If we got fewer employees than the limit, assume this is the last page
+      const actualLimit = limit || 20;
+      const actualPage = page || 1;
+      const hasMore = employeesCount === actualLimit; // If we got exactly the limit, there might be more
+      return {
+        page: actualPage,
+        limit: actualLimit,
+        total: employeesCount, // Unknown total, use count for now
+        totalPages: hasMore ? actualPage + 1 : actualPage, // At least current page, maybe more
+        hasNext: hasMore,
+        hasPrev: actualPage > 1
+      };
+    }
+    return undefined;
+  };
+  
+  // Check if API response already has the correct structure (employees and summary)
+  if (employeesArray.length > 0 || summaryData.totalEmployees !== undefined) {
+    const mappedEmployees = (Array.isArray(employeesArray) ? employeesArray : []).map((emp: any) => ({
+        employeeId: emp.employeeId,
+        employeeName: emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || `Employee ${emp.employeeId}`,
+        department: emp.department || emp.departmentName || 'Unknown',
+        month: emp.month || apiResponse.month || month || getCurrentMonth(),
+        baseSalary: emp.baseSalary || emp.fullBaseSalary || 0,
+        commission: emp.commission || 0,
+        bonus: emp.bonus || emp.totalBonus || (emp.employeeBonus || 0) + (emp.salesBonus || 0),
+        netSalary: emp.netSalary || ((emp.baseSalary || emp.fullBaseSalary || 0) + (emp.commission || 0) + (emp.bonus || emp.totalBonus || 0)),
+        attendanceDeductions: emp.attendanceDeductions || 0,
+        chargebackDeduction: emp.chargebackDeduction || 0,
+        refundDeduction: emp.refundDeduction || 0,
+        deductions: emp.deductions || (emp.attendanceDeductions || 0) + (emp.chargebackDeduction || 0) + (emp.refundDeduction || 0),
+        finalSalary: emp.finalSalary || 0,
+        status: (emp.status === 'unpaid' ? 'pending' : emp.status) || 'pending',
+        paidOn: emp.paidOn || undefined,
+        createdAt: emp.createdAt || new Date().toISOString()
+      }));
+    
+    const pagination = buildPagination(paginationData, mappedEmployees.length);
+    console.log('Built pagination:', pagination);
+    
+    return {
+      month: apiResponse.month || month || getCurrentMonth(),
+      summary: {
+        totalEmployees: summaryData.totalEmployees || mappedEmployees.length || 0,
+        totalBaseSalary: summaryData.totalBaseSalary || 0,
+        totalCommission: summaryData.totalCommission || 0,
+        totalBonus: summaryData.totalBonus || 0,
+        totalNetSalary: summaryData.totalNetSalary || 0,
+        totalDeductions: summaryData.totalDeductions || 0,
+        totalFinalSalary: summaryData.totalFinalSalary || 0
+      },
+      employees: mappedEmployees,
+      pagination
+    };
+  }
+  
+  // Fallback: Handle old API structure with results array
+  const employees: SalaryDisplay[] = (apiResponse.results || []).map((emp: any) => ({
+    employeeId: emp.employeeId,
+    employeeName: `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || `Employee ${emp.employeeId}`,
+    department: emp.departmentName || emp.department || 'Unknown',
+    month: apiResponse.month || month || getCurrentMonth(),
+    baseSalary: emp.baseSalary || emp.fullBaseSalary || 0,
+    commission: emp.commission || 0,
+    bonus: emp.totalBonus || (emp.employeeBonus || 0) + (emp.salesBonus || 0),
+    netSalary: (emp.baseSalary || emp.fullBaseSalary || 0) + (emp.commission || 0) + (emp.totalBonus || 0),
+    attendanceDeductions: emp.attendanceDeductions || 0,
+    chargebackDeduction: emp.chargebackDeduction || 0,
+    refundDeduction: emp.refundDeduction || 0,
+    deductions: emp.deductions || (emp.attendanceDeductions || 0) + (emp.chargebackDeduction || 0) + (emp.refundDeduction || 0),
+    finalSalary: emp.finalSalary || 0,
+    status: emp.status || 'pending',
+    paidOn: emp.paidOn || undefined,
+    createdAt: emp.createdAt || new Date().toISOString()
+  }));
+  
+  // Build summary from API response
+  const summary = {
+    totalEmployees: apiResponse.totalEmployees || apiResponse.summary?.totalEmployees || employees.length,
+    totalBaseSalary: apiResponse.totalBaseSalary || apiResponse.summary?.totalBaseSalary || 0,
+    totalCommission: apiResponse.totalCommission || apiResponse.summary?.totalCommission || 0,
+    totalBonus: apiResponse.totalBonus || apiResponse.summary?.totalBonus || 0,
+    totalNetSalary: apiResponse.totalNetSalary || apiResponse.summary?.totalNetSalary || ((apiResponse.totalBaseSalary || apiResponse.summary?.totalBaseSalary || 0) + (apiResponse.totalCommission || apiResponse.summary?.totalCommission || 0) + (apiResponse.totalBonus || apiResponse.summary?.totalBonus || 0)),
+    totalDeductions: apiResponse.totalDeductions || apiResponse.summary?.totalDeductions || 0,
+    totalFinalSalary: apiResponse.totalFinalSalary || apiResponse.summary?.totalFinalSalary || 0
+  };
+  
+  const pagination = buildPagination(paginationData, employees.length);
+  console.log('Fallback pagination:', pagination);
+  
+  return {
+    month: apiResponse.month || month || getCurrentMonth(),
+    summary,
+    employees,
+    pagination
+  };
 };
 
 // 5. Get Detailed Salary Breakdown
@@ -120,70 +185,45 @@ export const getSalaryBreakdown = async (
   employeeId: number, 
   month?: string
 ): Promise<SalaryBreakdown> => {
-  // For development/testing, use mock data
-  // In a real app, you would call the actual API:
-  // const params = new URLSearchParams();
-  // if (month) params.append('month', month);
-  // const queryString = params.toString();
-  // const url = `/finance/salary/breakdown/${employeeId}${queryString ? `?${queryString}` : ''}`;
-  // return apiRequest<SalaryBreakdown>(url);
+  const params = new URLSearchParams();
+  if (month) params.append('month', month);
+  const queryString = params.toString();
+  const url = `/finance/salary/breakdown/${employeeId}${queryString ? `?${queryString}` : ''}`;
   
-  // Mock implementation for development
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const mockBreakdown: SalaryBreakdown = {
-        employee: {
-          id: employeeId,
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@company.com',
-          department: 'Sales',
-          status: 'active',
-          startDate: '2023-01-01T00:00:00.000Z',
-          endDate: undefined
-        },
-        salary: {
-          baseSalary: 30000,
-          commission: 2500,
-          bonus: 1500,
-          netSalary: 34000,
-          attendanceDeductions: 450,
-          chargebackDeduction: 100,
-          refundDeduction: 50,
-          deductions: 600,
-          finalSalary: 33400
-        },
-        month: month || getCurrentMonth(),
-        status: 'paid',
-        paidOn: '2025-01-05T10:30:00.000Z',
-        createdAt: '2025-01-04T08:00:00.000Z',
-        commissionBreakdown: [
-          {
-            projectId: 101,
-            projectName: 'Website Redesign',
-            clientName: 'ABC Corp',
-            projectValue: 50000,
-            commissionRate: 5.0,
-            commissionAmount: 2500,
-            completedAt: '2025-01-15T00:00:00.000Z',
-            status: 'completed'
-          }
-        ],
-        deductionBreakdown: {
-          absentDeduction: 200,
-          lateDeduction: 150,
-          halfDayDeduction: 100,
-          chargebackDeduction: 100,
-          refundDeduction: 50,
-          totalDeduction: 600
-        }
-      };
-      resolve(mockBreakdown);
-    }, 500); // Simulate API delay
-  });
+  return apiGetJson<SalaryBreakdown>(url);
 };
 
-// 6. Get Sales Employees Bonus Display
+// 6. Mark Salary as Paid (Single Employee)
+export const markSalaryAsPaidApi = async (
+  employeeId: number,
+  month?: string
+): Promise<{ message: string }> => {
+  const params = new URLSearchParams();
+  if (month) params.append('month', month);
+  const queryString = params.toString();
+  const url = `/finance/salary/mark-paid/${employeeId}${queryString ? `?${queryString}` : ''}`;
+  
+  return apiPatchJson<{ message: string }>(url);
+};
+
+// 7. Mark Salary as Paid (Bulk)
+export interface BulkMarkPaidDto {
+  employeeIds: number[];
+  month?: string;
+}
+
+export const bulkMarkSalaryAsPaidApi = async (
+  data: BulkMarkPaidDto
+): Promise<{ message: string; marked: number; errors?: number }> => {
+  const params = new URLSearchParams();
+  if (data.month) params.append('month', data.month);
+  const queryString = params.toString();
+  const url = `/finance/salary/mark-paid-bulk${queryString ? `?${queryString}` : ''}`;
+  
+  return apiPatchJson<{ message: string; marked: number; errors?: number }>(url, data);
+};
+
+// 8. Get Sales Employees Bonus Display
 export const getSalesEmployeesBonus = async (): Promise<SalesEmployeeBonus[]> => {
   // For development/testing, use mock data
   // In a real app, you would call the actual API:
