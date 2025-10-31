@@ -44,16 +44,43 @@ export const getSalaryDisplay = async (
   return apiGetJson<SalaryDisplay>(url);
 };
 
-// 4. Get All Salaries Display (All Employees) with Pagination
+// 4. Get All Salaries Display (All Employees) with Pagination and Filters
+export interface SalaryFiltersParams {
+  search?: string;
+  department?: string;
+  status?: string;
+  fromDate?: string;
+  toDate?: string;
+  minSalary?: string;
+  maxSalary?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 export const getAllSalariesDisplay = async (
   month?: string,
   page?: number,
-  limit?: number
+  limit?: number,
+  filters?: SalaryFiltersParams
 ): Promise<SalaryDisplayAll> => {
   const params = new URLSearchParams();
   if (month) params.append('month', month);
   if (page !== undefined) params.append('page', page.toString());
   if (limit !== undefined) params.append('limit', limit.toString());
+  
+  // Add filter parameters
+  if (filters) {
+    if (filters.search) params.append('search', filters.search);
+    if (filters.department) params.append('department', filters.department);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.fromDate) params.append('fromDate', filters.fromDate);
+    if (filters.toDate) params.append('toDate', filters.toDate);
+    if (filters.minSalary) params.append('minSalary', filters.minSalary);
+    if (filters.maxSalary) params.append('maxSalary', filters.maxSalary);
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+  }
+  
   const queryString = params.toString();
   const url = `/finance/salary/display-all${queryString ? `?${queryString}` : ''}`;
   
@@ -225,36 +252,28 @@ export const bulkMarkSalaryAsPaidApi = async (
 
 // 8. Get Sales Employees Bonus Display
 export const getSalesEmployeesBonus = async (): Promise<SalesEmployeeBonus[]> => {
-  // For development/testing, use mock data
-  // In a real app, you would call the actual API:
-  // return apiRequest<SalesEmployeeBonus[]>('/finance/salary/bonus-display');
+  const apiResponse = await apiGetJson<any>('/finance/salary/bonus-display');
   
-  return getMockSalesBonusData();
+  // Get the salesEmployees array from response (could be result, data, or direct array)
+  const salesEmployees = apiResponse.result || apiResponse.data || apiResponse.salesEmployees || apiResponse || [];
+  
+  // Map the API response to the expected format
+  // Expected structure: { employee: { id, firstName, lastName }, salesAmount, salesBonus }
+  const result = (Array.isArray(salesEmployees) ? salesEmployees : []).map((record: any) => ({
+    id: record.id || record.employee?.id,
+    name: record.name || `${record.employee?.firstName || ''} ${record.employee?.lastName || ''}`.trim() || `Employee ${record.id || record.employee?.id}`,
+    salesAmount: Number(record.salesAmount || 0),
+    bonusAmount: Number(record.bonusAmount || record.salesBonus || 0)
+  }));
+  
+  return result;
 };
 
 // 7. Update Sales Employee Bonus
 export const updateSalesEmployeeBonus = async (
   request: BonusUpdateRequest
 ): Promise<BonusUpdateResponse> => {
-  // For development/testing, simulate API call with mock response
-  // In a real app, you would call the actual API:
-  // return apiRequest<BonusUpdateResponse>('/finance/salary/update-sales-bonus', {
-  //   method: 'PATCH',
-  //   body: JSON.stringify(request),
-  // });
-  
-  // Mock implementation for development
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        id: request.employee_id,
-        name: `Employee ${request.employee_id}`,
-        salesAmount: 5000,
-        bonusAmount: request.bonusAmount,
-        message: `Bonus updated successfully for Employee ${request.employee_id}`
-      });
-    }, 500); // Simulate API delay
-  });
+  return apiPatchJson<BonusUpdateResponse>('/finance/salary/update-sales-bonus', request);
 };
 
 // Additional utility functions for frontend

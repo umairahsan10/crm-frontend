@@ -5,12 +5,12 @@ import SalaryTable from '../../../components/finance/salary/SalaryTable';
 import SalaryDetailsDrawer from '../../../components/finance/salary/SalaryDetailsDrawer';
 import GenericSalaryFilters from '../../../components/finance/salary/GenericSalaryFilters';
 import { 
-  calculateAllSalaries,
   getAllSalariesDisplay,
   getSalaryBreakdown,
   markSalaryAsPaidApi,
   bulkMarkSalaryAsPaidApi,
   type BulkMarkPaidDto,
+  type SalaryFiltersParams,
   getCurrentMonth
 } from '../../../apis/finance/salary';
 import type { SalaryDisplayAll, SalaryDisplay, SalaryBreakdown } from '../../../types/finance/salary';
@@ -32,10 +32,10 @@ const SalaryManagementPage: React.FC = () => {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [lastCalculated, setLastCalculated] = useState<Date | null>(null);
-  const [showLastCalculated, setShowLastCalculated] = useState(false);
-  const [timerRef, setTimerRef] = useState<number | null>(null);
+  // const [isCalculating, setIsCalculating] = useState(false);
+  // const [lastCalculated, setLastCalculated] = useState<Date | null>(null);
+  // const [showLastCalculated, setShowLastCalculated] = useState(false);
+  // const [timerRef, setTimerRef] = useState<number | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
   const [isBulkMarkingPaid, setIsBulkMarkingPaid] = useState(false);
@@ -58,24 +58,34 @@ const SalaryManagementPage: React.FC = () => {
     toDate: '',
     minSalary: '',
     maxSalary: '',
-    createdBy: '',
     sortBy: 'employeeName',
     sortOrder: 'asc' as 'asc' | 'desc'
   });
 
-  // Filtered data state
-  const [filteredEmployees, setFilteredEmployees] = useState<SalaryDisplay[]>([]);
 
   // Handlers
   const handlePageChange = async (page: number) => {
     setPagination(prev => ({ ...prev, currentPage: page }));
-    // Fetch data for the new page
+    // Fetch data for the new page with filters
     setIsLoading(true);
     try {
+      const filtersParams: SalaryFiltersParams = {
+        search: filters.search || undefined,
+        department: filters.department || undefined,
+        status: filters.status || undefined,
+        fromDate: filters.fromDate || undefined,
+        toDate: filters.toDate || undefined,
+        minSalary: filters.minSalary || undefined,
+        maxSalary: filters.maxSalary || undefined,
+        sortBy: filters.sortBy || undefined,
+        sortOrder: filters.sortOrder || undefined
+      };
+      
       const data = await getAllSalariesDisplay(
         selectedMonth,
         page,
-        pagination.itemsPerPage
+        pagination.itemsPerPage,
+        filtersParams
       );
       setSalaryData(data);
       // Update pagination from API response if available
@@ -194,7 +204,7 @@ const SalaryManagementPage: React.FC = () => {
       setIsBulkMarkingPaid(true);
       
       // Filter to only unpaid employees
-      const unpaidEmployeeIds = filteredEmployees
+      const unpaidEmployeeIds = (salaryData?.employees || [])
         .filter(emp => selectedEmployees.includes(emp.employeeId.toString()) && emp.status !== 'paid')
         .map(emp => emp.employeeId);
       
@@ -239,6 +249,8 @@ const SalaryManagementPage: React.FC = () => {
   // Filter handlers
   const handleFiltersChange = useCallback((newFilters: any) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    // Reset to first page when filters change
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -250,159 +262,77 @@ const SalaryManagementPage: React.FC = () => {
       toDate: '',
       minSalary: '',
       maxSalary: '',
-      createdBy: '',
       sortBy: 'employeeName',
       sortOrder: 'asc'
     });
+    // Reset to first page when clearing filters
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
-  // Apply filters to data
-  const applyFilters = useCallback((employees: SalaryDisplay[], currentFilters: typeof filters, currentMonth: string) => {
-    let filtered = employees;
 
-    // Month filter
-    if (currentMonth) {
-      filtered = filtered.filter(emp => emp.month === currentMonth);
-    }
-
-    // Search filter
-    if (currentFilters.search) {
-      const searchTerm = currentFilters.search.toLowerCase();
-      filtered = filtered.filter(emp => 
-        emp.employeeName.toLowerCase().includes(searchTerm) ||
-        emp.department.toLowerCase().includes(searchTerm) ||
-        emp.employeeId.toString().includes(searchTerm)
-      );
-    }
-
-    // Department filter
-    if (currentFilters.department) {
-      filtered = filtered.filter(emp => emp.department === currentFilters.department);
-    }
-
-    // Status filter
-    if (currentFilters.status) {
-      filtered = filtered.filter(emp => emp.status === currentFilters.status);
-    }
-
-    // Salary range filters
-    if (currentFilters.minSalary) {
-      const minSalary = parseFloat(currentFilters.minSalary);
-      if (!isNaN(minSalary)) {
-        filtered = filtered.filter(emp => emp.finalSalary >= minSalary);
-      }
-    }
-
-    if (currentFilters.maxSalary) {
-      const maxSalary = parseFloat(currentFilters.maxSalary);
-      if (!isNaN(maxSalary)) {
-        filtered = filtered.filter(emp => emp.finalSalary <= maxSalary);
-      }
-    }
-
-    // Date range filters
-    if (currentFilters.fromDate) {
-      const fromDate = new Date(currentFilters.fromDate);
-      filtered = filtered.filter(emp => {
-        if (!emp.paidOn) return false;
-        return new Date(emp.paidOn) >= fromDate;
-      });
-    }
-
-    if (currentFilters.toDate) {
-      const toDate = new Date(currentFilters.toDate);
-      filtered = filtered.filter(emp => {
-        if (!emp.paidOn) return false;
-        return new Date(emp.paidOn) <= toDate;
-      });
-    }
-
-    // Created by filter
-    if (currentFilters.createdBy) {
-      const createdByTerm = currentFilters.createdBy.toLowerCase();
-      filtered = filtered.filter(emp => 
-        emp.employeeName.toLowerCase().includes(createdByTerm) ||
-        emp.employeeId.toString().includes(createdByTerm)
-      );
-    }
-
-    return filtered;
-  }, []);
-
-  // Update filtered data when filters, salary data, or selected month changes
-  // Note: When using server-side pagination, we should not recalculate pagination from filtered results
-  useEffect(() => {
-    if (salaryData) {
-      // Apply client-side filters (for search, department, status, etc.)
-      // But keep server-side pagination metadata
-      const filtered = applyFilters(salaryData.employees, filters, selectedMonth);
-      setFilteredEmployees(filtered);
-      
-      // Only update pagination if we don't have server-side pagination metadata
-      // Server-side pagination should take precedence
-      if (!salaryData.pagination) {
-        // Client-side filtering - recalculate pagination
-      setPagination(prev => ({
-        ...prev,
-        totalItems: filtered.length,
-        totalPages: Math.ceil(filtered.length / prev.itemsPerPage),
-        currentPage: 1 // Reset to first page when filters change
-      }));
-      }
-      // If we have server-side pagination, keep it as is (don't override)
-    }
-  }, [salaryData, filters, selectedMonth, applyFilters]);
-
-
-  const handleCalculateAllSalaries = async () => {
-    try {
-      setIsCalculating(true);
-      await calculateAllSalaries();
-      
-      setNotification({ 
-        type: 'success', 
-        message: 'Salary calculation completed for all employees! Values have been updated.' 
-      });
-      
-      // Clear any existing timer
-      if (timerRef) {
-        clearTimeout(timerRef);
-      }
-      
-      // Set calculation timestamp and show it
-      const now = new Date();
-      setLastCalculated(now);
-      setShowLastCalculated(true);
-      
-      // Hide the timestamp after 5 seconds
-      const timer = setTimeout(() => {
-        setShowLastCalculated(false);
-        setTimerRef(null);
-      }, 5000);
-      setTimerRef(timer);
-      
-      // Refresh the data with recalculated flag
-      await fetchSalaryData();
-    } catch (error) {
-      console.error('Error calculating salaries:', error);
-      setNotification({ 
-        type: 'error', 
-        message: 'Failed to calculate salaries' 
-      });
-    } finally {
-      setIsCalculating(false);
-    }
-  };
+  // const handleCalculateAllSalaries = async () => {
+  //   try {
+  //     setIsCalculating(true);
+  //     await calculateAllSalaries();
+  //     
+  //     setNotification({ 
+  //       type: 'success', 
+  //       message: 'Salary calculation completed for all employees! Values have been updated.' 
+  //     });
+  //     
+  //     // Clear any existing timer
+  //     if (timerRef) {
+  //       clearTimeout(timerRef);
+  //     }
+  //     
+  //     // Set calculation timestamp and show it
+  //     const now = new Date();
+  //     setLastCalculated(now);
+  //     setShowLastCalculated(true);
+  //     
+  //     // Hide the timestamp after 5 seconds
+  //     const timer = setTimeout(() => {
+  //       setShowLastCalculated(false);
+  //       setTimerRef(null);
+  //     }, 5000);
+  //     setTimerRef(timer);
+  //     
+  //     // Refresh the data with recalculated flag
+  //     await fetchSalaryData();
+  //   } catch (error) {
+  //     console.error('Error calculating salaries:', error);
+  //     setNotification({ 
+  //       type: 'error', 
+  //       message: 'Failed to calculate salaries' 
+  //     });
+  //   } finally {
+  //     setIsCalculating(false);
+  //   }
+  // };
 
 
   const fetchSalaryData = useCallback(async () => {
     try {
       setIsLoading(true);
       
+      // Convert filters to API parameters
+      const filtersParams: SalaryFiltersParams = {
+        search: filters.search || undefined,
+        department: filters.department || undefined,
+        status: filters.status || undefined,
+        fromDate: filters.fromDate || undefined,
+        toDate: filters.toDate || undefined,
+        minSalary: filters.minSalary || undefined,
+        maxSalary: filters.maxSalary || undefined,
+        sortBy: filters.sortBy || undefined,
+        sortOrder: filters.sortOrder || undefined
+      };
+      
       const data = await getAllSalariesDisplay(
         selectedMonth,
         pagination.currentPage,
-        pagination.itemsPerPage
+        pagination.itemsPerPage,
+        filtersParams
       );
       setSalaryData(data);
       
@@ -437,15 +367,28 @@ const SalaryManagementPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedMonth, pagination.currentPage, pagination.itemsPerPage]);
+  }, [selectedMonth, pagination.currentPage, pagination.itemsPerPage, filters]);
 
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month);
     // Reset to first page when month changes
     setPagination(prev => ({ ...prev, currentPage: 1 }));
-    // Fetch data for the new month directly to avoid duplicate calls
+    // Fetch data for the new month with filters
     setIsLoading(true);
-    getAllSalariesDisplay(month, 1, pagination.itemsPerPage).then(data => {
+    
+    const filtersParams: SalaryFiltersParams = {
+      search: filters.search || undefined,
+      department: filters.department || undefined,
+      status: filters.status || undefined,
+      fromDate: filters.fromDate || undefined,
+      toDate: filters.toDate || undefined,
+      minSalary: filters.minSalary || undefined,
+      maxSalary: filters.maxSalary || undefined,
+      sortBy: filters.sortBy || undefined,
+      sortOrder: filters.sortOrder || undefined
+    };
+    
+    getAllSalariesDisplay(month, 1, pagination.itemsPerPage, filtersParams).then(data => {
       setSalaryData(data);
       // Update pagination from API response if available
       if (data.pagination) {
@@ -474,11 +417,10 @@ const SalaryManagementPage: React.FC = () => {
     setSalaryBreakdown(undefined);
   };
 
-  // Load salary data on component mount only
+  // Load salary data when filters, month, or page changes
   useEffect(() => {
     fetchSalaryData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount, not when fetchSalaryData changes
+  }, [fetchSalaryData]);
 
   // Auto-dismiss notification after 5 seconds
   useEffect(() => {
@@ -492,27 +434,27 @@ const SalaryManagementPage: React.FC = () => {
   }, [notification]);
 
   // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef) {
-        clearTimeout(timerRef);
-      }
-    };
-  }, [timerRef]);
+  // useEffect(() => {
+  //   return () => {
+  //     if (timerRef) {
+  //       clearTimeout(timerRef);
+  //     }
+  //   };
+  // }, [timerRef]);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-              {lastCalculated && showLastCalculated && (
+              {/* {lastCalculated && showLastCalculated && (
             <div className="mb-4 flex items-center text-sm text-green-600 animate-pulse">
                   <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   Last calculated: {lastCalculated.toLocaleString()}
                 </div>
-              )}
+              )} */}
           {/* Action Buttons */}
           <div className="flex items-center justify-between w-full gap-3">
             <button
@@ -525,7 +467,7 @@ const SalaryManagementPage: React.FC = () => {
               {showStatistics ? 'Hide Statistics' : 'Show Statistics'}
             </button>
             
-              <button
+              {/* <button
                 onClick={handleCalculateAllSalaries}
                 disabled={isCalculating}
               className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -534,7 +476,7 @@ const SalaryManagementPage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
                 {isCalculating ? 'Calculating...' : 'Calculate All Salaries'}
-              </button>
+              </button> */}
               
               <button
                 onClick={() => navigate('/finance/salary/calculator')}
@@ -733,7 +675,7 @@ const SalaryManagementPage: React.FC = () => {
         {/* Salary Table */}
         {salaryData && (
           <SalaryTable
-            employees={filteredEmployees}
+            employees={salaryData.employees}
             isLoading={isLoading || isMarkingPaid}
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}

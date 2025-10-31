@@ -36,9 +36,8 @@ export const salaryFilterConfig: Record<keyof SalaryFilters, FilterFieldConfig> 
     placeholder: 'All Status',
     options: [
       { value: '', label: 'All Status' },
-      { value: 'pending', label: 'Pending' },
-      { value: 'paid', label: 'Paid' },
-      { value: 'processing', label: 'Processing' }
+      { value: 'unpaid', label: 'Unpaid' },
+      { value: 'paid', label: 'Paid' }
     ]
   },
   salaryRange: {
