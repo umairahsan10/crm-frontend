@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DynamicTable from '../../../components/common/DynamicTable/DynamicTable';
-import GenericSalaryFilters from '../../../components/finance/salary/GenericSalaryFilters';
 import { 
   getSalesEmployeesBonus,
   updateSalesEmployeeBonus,
   formatCurrency,
-  getCurrentMonth
+  type BonusFiltersParams
 } from '../../../apis/finance/salary';
 import type { SalesEmployeeBonus } from '../../../types/finance/salary';
 import './BonusManagementPage.css';
@@ -16,13 +15,12 @@ const BonusManagementPage: React.FC = () => {
   
   // State management
   const [salesEmployees, setSalesEmployees] = useState<SalesEmployeeBonus[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<SalesEmployeeBonus[]>([]);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [bonusInputs, setBonusInputs] = useState<{ [key: number]: string }>({});
   const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({});
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -32,16 +30,13 @@ const BonusManagementPage: React.FC = () => {
     itemsPerPage: 20
   });
 
-  // Filter state
+  // Filter state (only keeping search and salary/bonus ranges)
   const [filters, setFilters] = useState({
     search: '',
-    department: '',
-    status: '',
-    fromDate: '',
-    toDate: '',
-    minSalary: '',
-    maxSalary: '',
-    createdBy: '',
+    minSales: '',
+    maxSales: '',
+    minBonus: '',
+    maxBonus: '',
     sortBy: 'name',
     sortOrder: 'asc' as 'asc' | 'desc'
   });
@@ -69,128 +64,76 @@ const BonusManagementPage: React.FC = () => {
     };
   };
 
-  // Apply filters to data
-  const applyFilters = useCallback((employees: SalesEmployeeBonus[], currentFilters: typeof filters) => {
-    let filtered = employees;
-
-    // Search filter
-    if (currentFilters.search) {
-      const searchTerm = currentFilters.search.toLowerCase();
-      filtered = filtered.filter(emp => 
-        emp.name.toLowerCase().includes(searchTerm) ||
-        emp.id.toString().includes(searchTerm)
-      );
-    }
-
-    // Sales amount range filters
-    if (currentFilters.minSalary) {
-      const minSales = parseFloat(currentFilters.minSalary);
-      if (!isNaN(minSales)) {
-        filtered = filtered.filter(emp => emp.salesAmount >= minSales);
-      }
-    }
-
-    if (currentFilters.maxSalary) {
-      const maxSales = parseFloat(currentFilters.maxSalary);
-      if (!isNaN(maxSales)) {
-        filtered = filtered.filter(emp => emp.salesAmount <= maxSales);
-      }
-    }
-
-    // Bonus amount range filters
-    if (currentFilters.fromDate) {
-      const minBonus = parseFloat(currentFilters.fromDate);
-      if (!isNaN(minBonus)) {
-        filtered = filtered.filter(emp => emp.bonusAmount >= minBonus);
-      }
-    }
-
-    if (currentFilters.toDate) {
-      const maxBonus = parseFloat(currentFilters.toDate);
-      if (!isNaN(maxBonus)) {
-        filtered = filtered.filter(emp => emp.bonusAmount <= maxBonus);
-      }
-    }
-
-    // Sort
-    filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
-      
-      switch (currentFilters.sortBy) {
-        case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'salesAmount':
-          aValue = a.salesAmount;
-          bValue = b.salesAmount;
-          break;
-        case 'bonusAmount':
-          aValue = a.bonusAmount;
-          bValue = b.bonusAmount;
-          break;
-        default:
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-      }
-
-      if (currentFilters.sortOrder === 'desc') {
-        return bValue > aValue ? 1 : -1;
-      } else {
-        return aValue > bValue ? 1 : -1;
-      }
-    });
-
-    return filtered;
-  }, []);
-
-  // Update filtered data when filters or sales data changes
-  useEffect(() => {
-    if (salesEmployees.length > 0) {
-      const filtered = applyFilters(salesEmployees, filters);
-      setFilteredEmployees(filtered);
-      
-      // Update pagination
-      setPagination(prev => ({
-        ...prev,
-        totalItems: filtered.length,
-        totalPages: Math.ceil(filtered.length / prev.itemsPerPage),
-        currentPage: 1 // Reset to first page when filters change
-      }));
-    }
-  }, [salesEmployees, filters, applyFilters]);
-
   // Filter handlers
-  const handleFiltersChange = useCallback((newFilters: any) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+  const handleFiltersChange = useCallback((field: keyof typeof filters, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+    // Reset to first page when filters change
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
   const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
-      department: '',
-      status: '',
-      fromDate: '',
-      toDate: '',
-      minSalary: '',
-      maxSalary: '',
-      createdBy: '',
+      minSales: '',
+      maxSales: '',
+      minBonus: '',
+      maxBonus: '',
       sortBy: 'name',
       sortOrder: 'asc'
     });
+    // Reset to first page when clearing filters
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
-  const handleMonthChange = useCallback((month: string) => {
-    setSelectedMonth(month);
-  }, []);
+  const handleAmountChange = (type: 'minSales' | 'maxSales' | 'minBonus' | 'maxBonus', value: string) => {
+    const numericValue = value.replace(/[^0-9.]/g, '');
+    if (numericValue === '' || parseFloat(numericValue) >= 0) {
+      handleFiltersChange(type, numericValue);
+    }
+  };
 
-  // Fetch sales employees data
-  const fetchSalesEmployees = async () => {
+  // Fetch sales employees data with pagination and filters
+  const fetchSalesEmployees = useCallback(async () => {
     try {
       setIsLoading(true);
       
-      const data = await getSalesEmployeesBonus();
-      setSalesEmployees(data);
+      const filtersParams: BonusFiltersParams = {
+        search: filters.search || undefined,
+        minSales: filters.minSales || undefined,
+        maxSales: filters.maxSales || undefined,
+        minBonus: filters.minBonus || undefined,
+        maxBonus: filters.maxBonus || undefined,
+        sortBy: filters.sortBy || undefined,
+        sortOrder: filters.sortOrder || undefined
+      };
+      
+      const response = await getSalesEmployeesBonus(
+        pagination.currentPage,
+        pagination.itemsPerPage,
+        filtersParams
+      );
+      
+      setSalesEmployees(response.employees);
+      
+      // Update pagination from API response
+      if (response.pagination) {
+        setPagination(prev => ({
+          ...prev,
+          currentPage: response.pagination!.page,
+          totalPages: response.pagination!.totalPages || 1,
+          totalItems: response.pagination!.total || 0,
+          itemsPerPage: response.pagination!.limit || 20
+        }));
+      } else {
+        // Fallback: calculate from returned data if no pagination metadata
+        const totalItems = response.employees.length;
+        const calculatedPages = Math.ceil(totalItems / pagination.itemsPerPage) || 1;
+        setPagination(prev => ({
+          ...prev,
+          totalItems,
+          totalPages: calculatedPages
+        }));
+      }
       
     } catch (error) {
       console.error('Error fetching sales employees:', error);
@@ -201,7 +144,7 @@ const BonusManagementPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [pagination.currentPage, pagination.itemsPerPage, filters]);
 
   const handleBonusInputChange = (employeeId: number, value: string) => {
     setBonusInputs(prev => ({
@@ -265,11 +208,14 @@ const BonusManagementPage: React.FC = () => {
     fetchSalesEmployees();
   };
 
+  const handlePageChange = async (page: number) => {
+    setPagination(prev => ({ ...prev, currentPage: page }));
+  };
 
-  // Load data on component mount
+  // Load data when filters, pagination, or on mount changes
   useEffect(() => {
     fetchSalesEmployees();
-  }, []);
+  }, [fetchSalesEmployees]);
 
 
   // Table configuration for DynamicTable
@@ -362,13 +308,13 @@ const BonusManagementPage: React.FC = () => {
         )
       }
     ],
-    data: filteredEmployees,
+    data: salesEmployees,
     isLoading,
     currentPage: pagination.currentPage,
     totalPages: pagination.totalPages,
     totalItems: pagination.totalItems,
     itemsPerPage: pagination.itemsPerPage,
-    onPageChange: (page: number) => setPagination(prev => ({ ...prev, currentPage: page })),
+    onPageChange: handlePageChange,
     onRowClick: () => {}, // No row click action needed
     emptyMessage: 'No eligible sales employees found'
   };
@@ -479,10 +425,10 @@ const BonusManagementPage: React.FC = () => {
         )}
 
         {/* Key Metrics Summary Cards */}
-        {salesEmployees.length > 0 && showStatistics && (() => {
+        {showStatistics && (() => {
           const stats = getBonusStatistics();
           return (
-            <div className="mb-8">
+          <div className="mb-8">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Eligible Employees Card */}
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200 p-6 hover:shadow-md transition-shadow">
@@ -540,21 +486,129 @@ const BonusManagementPage: React.FC = () => {
                     <span className="text-xs font-medium text-purple-700 bg-purple-100 px-2 py-1 rounded-full">Average</span>
                   </div>
                   <h3 className="text-sm font-medium text-gray-600 mb-1">Average Sales</h3>
-                  <p className="text-2xl font-bold text-gray-900">${stats.avgSales.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.totalEmployees > 0 
+                      ? `$${stats.avgSales.toLocaleString(undefined, { maximumFractionDigits: 0 })}` 
+                      : '$0'}
+                  </p>
                   <p className="text-xs text-purple-600 mt-2">Per employee</p>
                 </div>
               </div>
-            </div>
+          </div>
           );
         })()}
 
-        {/* Filters */}
-        <GenericSalaryFilters
-          onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
-          selectedMonth={selectedMonth}
-          onMonthChange={handleMonthChange}
-        />
+        {/* Simple Filters */}
+        <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
+          {/* Search Bar */}
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    value={filters.search}
+                    onChange={(e) => handleFiltersChange('search', e.target.value)}
+                    placeholder="Search employees by name or ID..."
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-green-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+                </svg>
+                Filters
+                {(filters.minSales || filters.maxSales || filters.minBonus || filters.maxBonus) && (
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    {[filters.minSales, filters.maxSales, filters.minBonus, filters.maxBonus].filter(Boolean).length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Advanced Filters */}
+          {showAdvancedFilters && (
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Min Sales Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Sales</label>
+                  <input
+                    type="number"
+                    value={filters.minSales}
+                    onChange={(e) => handleAmountChange('minSales', e.target.value)}
+                    placeholder="0"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                  />
+                </div>
+
+                {/* Max Sales Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Sales</label>
+                  <input
+                    type="number"
+                    value={filters.maxSales}
+                    onChange={(e) => handleAmountChange('maxSales', e.target.value)}
+                    placeholder="100000"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                  />
+                </div>
+
+                {/* Min Bonus Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Bonus</label>
+                  <input
+                    type="number"
+                    value={filters.minBonus}
+                    onChange={(e) => handleAmountChange('minBonus', e.target.value)}
+                    placeholder="0"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                  />
+                </div>
+
+                {/* Max Bonus Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Bonus</label>
+                  <input
+                    type="number"
+                    value={filters.maxBonus}
+                    onChange={(e) => handleAmountChange('maxBonus', e.target.value)}
+                    placeholder="10000"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Clear Filters Button */}
+              {(filters.search || filters.minSales || filters.maxSales || filters.minBonus || filters.maxBonus) && (
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <svg className="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                    </svg>
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Table */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-200">
