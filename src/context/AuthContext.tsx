@@ -309,7 +309,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'profile': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior', 'junior'],
       
       // Admin-specific pages
-      'projects': ['admin'],
+      'projects': ['admin', 'dept_manager', 'unit_head', 'team_leads', 'senior', 'junior'],
       'finance': ['admin', 'dept_manager', 'team_leads', 'account_manager'],
       
       'hr-management': ['admin', 'dept_manager'],
