@@ -135,6 +135,7 @@ const Navbar: React.FC<NavbarProps> = ({
             { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
             { id: 'production-units', label: 'Units Management', icon: '🏢', path: '/production/units' },
             { id: 'production-teams', label: 'Teams Management', icon: '👥', path: '/production/teams' },
+            { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects' },
             { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];
         
