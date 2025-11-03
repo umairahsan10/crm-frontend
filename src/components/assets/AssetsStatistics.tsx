@@ -3,23 +3,34 @@ import React from 'react';
 interface AssetsStatisticsProps {
   statistics: {
     totalAssets: number;
-    totalPurchaseValue: string;
-    totalCurrentValue: string;
-    totalDepreciation: string;
-    depreciationRate: string;
+    totalAmount: number;
+    averageAsset: number;
     byCategory: {
-      itEquipment: number;
-      furniture: number;
-      vehicles: number;
-      machinery: number;
-      officeEquipment: number;
-      software: number;
-      property: number;
-      other: number;
+      [key: string]: {
+        count: number;
+        amount: number;
+      };
     };
-    today: {
-      new: number;
-      updated: number;
+    topCategories: Array<{
+      category: string;
+      totalAmount: number;
+      count: number;
+    }>;
+    byPaymentMethod: {
+      [key: string]: {
+        count: number;
+        amount: number;
+      };
+    };
+    byProcessedByRole: {
+      [key: string]: {
+        count: number;
+        amount: number;
+      };
+    };
+    thisMonth: {
+      count: number;
+      amount: number;
     };
   };
   isLoading: boolean;
@@ -41,157 +52,207 @@ const AssetsStatistics: React.FC<AssetsStatisticsProps> = ({ statistics, isLoadi
     );
   }
 
-  const categoryColors = {
-    itEquipment: 'bg-blue-500',
-    furniture: 'bg-brown-500',
-    vehicles: 'bg-purple-500',
-    machinery: 'bg-gray-500',
-    officeEquipment: 'bg-cyan-500',
-    software: 'bg-green-500',
-    property: 'bg-indigo-500',
-    other: 'bg-gray-400'
+  // Helper function to format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Generate color for categories dynamically
+  const getCategoryColor = (index: number) => {
+    const colors = [
+      'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-indigo-500',
+      'bg-cyan-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500',
+      'bg-red-500', 'bg-yellow-500'
+    ];
+    return colors[index % colors.length];
   };
 
   return (
     <div className="space-y-8">
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-indigo-100 rounded-md flex items-center justify-center">
-                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
+        {/* Total Assets Count */}
+        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl shadow-sm border border-indigo-200 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-indigo-500 rounded-lg">
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Assets</p>
-              <p className="text-2xl font-semibold text-gray-900">{statistics.totalAssets}</p>
-            </div>
+            <span className="text-xs font-medium text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full">Count</span>
           </div>
+          <h3 className="text-sm font-medium text-gray-600 mb-1">Total Assets</h3>
+          <p className="text-2xl font-bold text-gray-900">{statistics.totalAssets || 0}</p>
+          <p className="text-xs text-indigo-600 mt-2">Total assets</p>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+        {/* Total Amount */}
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-green-500 rounded-lg">
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Value</p>
-              <p className="text-2xl font-semibold text-gray-900">${statistics.totalCurrentValue}</p>
-            </div>
+            <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full">Total</span>
           </div>
+          <h3 className="text-sm font-medium text-gray-600 mb-1">Total Amount</h3>
+          <p className="text-2xl font-bold text-gray-900">{formatCurrency(statistics.totalAmount || 0)}</p>
+          <p className="text-xs text-green-600 mt-2">Total value</p>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-orange-100 rounded-md flex items-center justify-center">
-                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                </svg>
-              </div>
+        {/* Average Asset */}
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-sm border border-purple-200 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-purple-500 rounded-lg">
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Depreciation</p>
-              <p className="text-2xl font-semibold text-gray-900">${statistics.totalDepreciation}</p>
-            </div>
+            <span className="text-xs font-medium text-purple-700 bg-purple-100 px-2 py-1 rounded-full">Average</span>
           </div>
+          <h3 className="text-sm font-medium text-gray-600 mb-1">Average Asset Value</h3>
+          <p className="text-2xl font-bold text-gray-900">{formatCurrency(statistics.averageAsset || 0)}</p>
+          <p className="text-xs text-purple-600 mt-2">Per asset</p>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+        {/* This Month */}
+        <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl shadow-sm border border-orange-200 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-orange-500 rounded-lg">
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Today's Activity</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {statistics.today.new + statistics.today.updated}
-              </p>
-            </div>
+            <span className="text-xs font-medium text-orange-700 bg-orange-100 px-2 py-1 rounded-full">This Month</span>
           </div>
+          <h3 className="text-sm font-medium text-gray-600 mb-1">This Month</h3>
+          <p className="text-2xl font-bold text-gray-900">{formatCurrency(statistics.thisMonth?.amount || 0)}</p>
+          <p className="text-xs text-orange-600 mt-2">{statistics.thisMonth?.count || 0} assets</p>
         </div>
       </div>
 
-      {/* Category Breakdown */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Assets by Category</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Object.entries(statistics.byCategory).map(([category, count]) => (
-            <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-3 ${categoryColors[category as keyof typeof categoryColors] || 'bg-gray-500'}`}></div>
-                <span className="text-sm font-medium text-gray-700 capitalize">
-                  {category.replace(/([A-Z])/g, ' $1').trim()}
-                </span>
+      {/* Assets by Category */}
+      {statistics.byCategory && Object.keys(statistics.byCategory).length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Assets by Category</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(statistics.byCategory).map(([category, data], index) => (
+              <div key={category} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-center flex-1">
+                  <div className={`w-3 h-3 rounded-full mr-3 ${getCategoryColor(index)}`}></div>
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-700 capitalize block">
+                      {category}
+                    </span>
+                    <span className="text-xs text-gray-500">{data.count} assets</span>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-gray-900 ml-4">{formatCurrency(data.amount)}</span>
               </div>
-              <span className="text-sm font-semibold text-gray-900">{count}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Today's Activity */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Activity</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-indigo-600">{statistics.today.new}</div>
-            <div className="text-sm text-gray-500">New Assets</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{statistics.today.updated}</div>
-            <div className="text-sm text-gray-500">Updated</div>
+      {/* Top Categories */}
+      {statistics.topCategories && statistics.topCategories.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Top Asset Categories</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Assets
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {statistics.topCategories.map((category, index) => (
+                  <tr key={category.category} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className={`w-8 h-8 rounded-full ${getCategoryColor(index)} flex items-center justify-center text-white font-semibold text-sm`}>
+                          {category.category.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900 capitalize">{category.category}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900">{category.count}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-semibold text-gray-900">{formatCurrency(category.totalAmount)}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Value Distribution */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Value Distribution</h3>
-        <div className="space-y-4">
-          <div className="flex items-center">
-            <div className="w-32 text-sm font-medium text-gray-700">Purchase Value</div>
-            <div className="flex-1 mx-4">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="h-2 rounded-full bg-blue-500" style={{ width: '100%' }}></div>
+      {/* Assets by Payment Method */}
+      {statistics.byPaymentMethod && Object.keys(statistics.byPaymentMethod).length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Assets by Payment Method</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(statistics.byPaymentMethod).map(([method, data], index) => (
+              <div key={method} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-center flex-1">
+                  <div className={`w-3 h-3 rounded-full mr-3 ${getCategoryColor(index + 2)}`}></div>
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-700 capitalize block">
+                      {method}
+                    </span>
+                    <span className="text-xs text-gray-500">{data.count} assets</span>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-gray-900 ml-4">{formatCurrency(data.amount)}</span>
               </div>
-            </div>
-            <div className="w-32 text-sm font-semibold text-gray-900 text-right">${statistics.totalPurchaseValue}</div>
-          </div>
-          <div className="flex items-center">
-            <div className="w-32 text-sm font-medium text-gray-700">Current Value</div>
-            <div className="flex-1 mx-4">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="h-2 rounded-full bg-green-500" style={{ width: `${parseFloat(statistics.depreciationRate)}%` }}></div>
-              </div>
-            </div>
-            <div className="w-32 text-sm font-semibold text-gray-900 text-right">${statistics.totalCurrentValue}</div>
-          </div>
-          <div className="flex items-center">
-            <div className="w-32 text-sm font-medium text-gray-700">Depreciation</div>
-            <div className="flex-1 mx-4">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="h-2 rounded-full bg-red-500" style={{ width: `${100 - parseFloat(statistics.depreciationRate)}%` }}></div>
-              </div>
-            </div>
-            <div className="w-32 text-sm font-semibold text-gray-900 text-right">${statistics.totalDepreciation}</div>
+            ))}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Assets by Processed By Role */}
+      {statistics.byProcessedByRole && Object.keys(statistics.byProcessedByRole).length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Assets by Processed By Role</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(statistics.byProcessedByRole).map(([role, data], index) => (
+              <div key={role} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-center flex-1">
+                  <div className={`w-3 h-3 rounded-full mr-3 ${getCategoryColor(index + 4)}`}></div>
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-700 capitalize block">
+                      {role}
+                    </span>
+                    <span className="text-xs text-gray-500">{data.count} assets</span>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-gray-900 ml-4">{formatCurrency(data.amount)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default AssetsStatistics;
-

@@ -207,7 +207,7 @@ export const getAssetsStatisticsApi = async (): Promise<ApiResponse<{
   try {
     console.log('📊 Fetching assets statistics...');
     
-    const data = await apiGetJson<any>('/accountant/assets/statistics');
+    const data = await apiGetJson<any>('/accountant/assets/stats');
     console.log('✅ Assets statistics received:', data);
     
     return {

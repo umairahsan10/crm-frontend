@@ -56,14 +56,17 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
   // Extract data and loading states from queries
   const revenues = (revenueQuery.data as any)?.data || [];
   const statistics = (statisticsQuery.data as any)?.data || {
-    totalRevenues: 0,
+    totalRevenue: 0,
     totalAmount: 0,
-    thisMonthAmount: 0,
-    lastMonthAmount: 0,
-    growthRate: 0,
+    averageRevenue: 0,
     byCategory: {},
+    bySource: {},
     byPaymentMethod: {},
-    recentRevenues: []
+    thisMonth: {
+      count: 0,
+      amount: 0
+    },
+    topGenerators: []
   };
   const isLoading = revenueQuery.isLoading;
 

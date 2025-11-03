@@ -66,11 +66,15 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
   const statistics = (statisticsQuery.data as any)?.data || {
     totalLiabilities: 0,
     totalAmount: 0,
-    paidAmount: 0,
-    unpaidAmount: 0,
-    overdueAmount: 0,
+    averageLiability: 0,
     byCategory: {},
-    recentLiabilities: []
+    topCategories: [],
+    byPaymentMethod: {},
+    byProcessedByRole: {},
+    thisMonth: {
+      count: 0,
+      amount: 0
+    }
   };
   // const vendors = (vendorsQuery.data as any)?.data || []; // Not used in current implementation
   const isLoading = liabilitiesQuery.isLoading;
