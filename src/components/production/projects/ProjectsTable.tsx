@@ -85,7 +85,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
           <ProjectProgressBar
             progress={row._progress}
             showPercentage={true}
-            size="sm"
+            size="xs"
           />
         )
       };
