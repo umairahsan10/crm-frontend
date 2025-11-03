@@ -165,6 +165,26 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
               <>
                 {activeTab === 'details' && (
                   <div className="space-y-6">
+
+                    {/* Progress Section */}
+                    <div className={`bg-white border border-gray-200 rounded-xl shadow-sm ${isMobile ? 'p-4' : 'p-6'}`}>
+                      <div className="mb-6">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                          <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          Live Progress
+                        </h3>
+                      </div>
+                      <div>
+                        <ProjectProgressBar
+                          progress={currentProject.liveProgress}
+                          showPercentage={true}
+                          size="md"
+                        />
+                      </div>
+                    </div>
+                    
                     {/* Project Information */}
                     <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
                       <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
@@ -173,7 +193,7 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                         </svg>
                         Project Information
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
@@ -198,14 +218,7 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                           </span>
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Progress</label>
-                          <ProjectProgressBar
-                            progress={currentProject.liveProgress}
-                            showPercentage={true}
-                            size="md"
-                          />
-                        </div>
+                        
 
                         {currentProject.difficultyLevel && (
                           <div>
@@ -355,29 +368,6 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                       </div>
                     </div>
 
-
-                    {/* Counts */}
-                    <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-4">Statistics</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Tasks</label>
-                          <p className="text-2xl font-bold text-gray-900">{currentProject.tasksCount || 0}</p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Logs</label>
-                          <p className="text-2xl font-bold text-gray-900">{currentProject.logsCount || 0}</p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Chat Participants</label>
-                          <p className="text-2xl font-bold text-gray-900">{currentProject.chatParticipantsCount || 0}</p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Team Members</label>
-                          <p className="text-2xl font-bold text-gray-900">{currentProject.teamMembersCount || 0}</p>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
 

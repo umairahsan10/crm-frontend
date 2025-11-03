@@ -17,13 +17,7 @@ const paymentStageBadgeConfig = {
 
 // Production Projects Table Configuration
 export const productionProjectsTableConfig: ColumnConfig[] = [
-  {
-    key: 'id',
-    label: 'ID',
-    type: 'text',
-    width: '8%',
-    sortable: true
-  },
+  
   {
     key: 'salesRep',
     label: 'Sales Rep',
