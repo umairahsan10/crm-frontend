@@ -56,12 +56,15 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
   const statistics = (statisticsQuery.data as any)?.data || {
     totalExpenses: 0,
     totalAmount: 0,
-    thisMonthAmount: 0,
-    lastMonthAmount: 0,
-    growthRate: 0,
+    averageExpense: 0,
     byCategory: {},
+    topCategories: [],
     byPaymentMethod: {},
-    recentExpenses: []
+    byProcessedByRole: {},
+    thisMonth: {
+      count: 0,
+      amount: 0
+    }
   };
   const isLoading = expensesQuery.isLoading;
 
@@ -165,7 +168,7 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
         {/* Statistics Dashboard */}
         {showStatistics && (
           <div className="mb-8">
-            <ExpensesStatistics statistics={statistics} isLoading={false} />
+            <ExpensesStatistics statistics={statistics} isLoading={statisticsQuery.isLoading} />
           </div>
         )}
 

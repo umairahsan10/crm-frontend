@@ -217,7 +217,7 @@ export const getRevenuesStatisticsApi = async (): Promise<ApiResponse<{
   try {
     console.log('📊 Fetching revenue statistics...');
     
-    const data = await apiGetJson<any>('/accountant/revenue/statistics');
+    const data = await apiGetJson<any>('/accountant/revenue/stats');
     console.log('✅ Revenue statistics received:', data);
     
     return {

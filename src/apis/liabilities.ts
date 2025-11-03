@@ -239,7 +239,7 @@ export const getLiabilitiesStatisticsApi = async (): Promise<ApiResponse<{
   try {
     console.log('📊 Fetching liabilities statistics...');
     
-    const data = await apiGetJson<any>('/accountant/liabilities/statistics');
+    const data = await apiGetJson<any>('/accountant/liabilities/stats');
     console.log('✅ Liabilities statistics received:', data);
     
     return {

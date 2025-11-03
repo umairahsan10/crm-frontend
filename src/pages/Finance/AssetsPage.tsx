@@ -80,11 +80,16 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
   const assets = (assetsQuery.data as any)?.data || [];
   const statistics = (statisticsQuery.data as any)?.data || {
     totalAssets: 0,
-    totalValue: 0,
-    totalPurchaseValue: 0,
-    totalDepreciation: 0,
+    totalAmount: 0,
+    averageAsset: 0,
     byCategory: {},
-    recentAssets: []
+    topCategories: [],
+    byPaymentMethod: {},
+    byProcessedByRole: {},
+    thisMonth: {
+      count: 0,
+      amount: 0
+    }
   };
   const vendors = (vendorsQuery.data as any)?.data || [];
   const isLoading = assetsQuery.isLoading;
