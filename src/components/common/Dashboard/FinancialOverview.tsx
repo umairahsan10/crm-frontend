@@ -1,21 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChartWidget } from './ChartWidget';
 import { MetricCard } from './MetricCard';
-import type { MetricData } from '../../../types/dashboard';
+import { getAccountantAnalyticsApi } from '../../../apis/analytics';
+import type { MetricData, ChartData } from '../../../types/dashboard';
 
 interface FinancialOverviewProps {
   className?: string;
 }
 
 export const FinancialOverview: React.FC<FinancialOverviewProps> = ({ className = '' }) => {
-  const revenueData = [
-    { name: 'Jan', value: 150000 },
-    { name: 'Feb', value: 162000 },
-    { name: 'Mar', value: 175000 },
-    { name: 'Apr', value: 168000 },
-    { name: 'May', value: 180000 },
-    { name: 'Jun', value: 185000 }
-  ];
+  const [revenueData, setRevenueData] = useState<ChartData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Fetch monthly revenue trend data from API
+  useEffect(() => {
+    const fetchMonthlyRevenueTrend = async () => {
+      try {
+        setLoading(true);
+        const response = await getAccountantAnalyticsApi({ period: 'monthly' });
+        
+        if (response.success && response.data?.trends?.monthly) {
+          // Transform monthly trends data to ChartData format
+          const trendData: ChartData[] = response.data.trends.monthly.map((point) => {
+            // Extract month name from date (e.g., "2024-01" -> "Jan")
+            const date = new Date(point.date);
+            const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+            return {
+              name: monthName,
+              value: point.revenue || 0
+            };
+          });
+          setRevenueData(trendData);
+        }
+      } catch (error) {
+        console.error('Error fetching monthly revenue trend data:', error);
+        // Fallback to empty data on error
+        setRevenueData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMonthlyRevenueTrend();
+  }, []);
 
   const financialMetrics: MetricData[] = [
     {
@@ -55,12 +82,18 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({ className 
           <MetricCard key={index} metric={metric} size="sm" />
         ))}
       </div>
-      <ChartWidget
-        title="Monthly Revenue Trend"
-        data={revenueData}
-        type="line"
-        height={280}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center h-[280px]">
+          <div className="animate-pulse text-gray-400">Loading chart data...</div>
+        </div>
+      ) : (
+        <ChartWidget
+          title="Monthly Revenue Trend"
+          data={revenueData.length > 0 ? revenueData : []}
+          type="line"
+          height={280}
+        />
+      )}
     </div>
   );
 };
