@@ -3,7 +3,8 @@ import {
   apiGetJson, 
   apiPostJson, 
   apiPutJson, 
-  apiDeleteJson
+  apiDeleteJson,
+  apiPatchJson
 } from '../utils/apiClient';
 
 export interface ApiError {
@@ -684,5 +685,153 @@ export const getCrackedLeadApi = async (crackedLeadId: number): Promise<ApiRespo
       throw new Error(error.message);
     }
     throw new Error('An unexpected error occurred while fetching cracked lead details');
+  }
+};
+
+// Payment API functions
+export interface PaymentDetails {
+  id: number;
+  amount: number;
+  transactionType: string;
+  paymentMethod?: string;
+  status: string;
+  client?: {
+    id: number;
+    clientName: string;
+    companyName?: string;
+    email: string;
+  };
+  employee?: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface CompletePaymentRequest {
+  paymentMethod?: string;
+  category?: string;
+}
+
+export interface GeneratePaymentLinkRequest {
+  leadId: number;
+  clientName: string;
+  email: string;
+  phone: string;
+  country: string;
+  state: string;
+  postalCode: string;
+  amount: number;
+  companyName?: string;
+  type?: string;
+  method?: string;
+  clientId?: number;
+}
+
+export interface UpdatePaymentLinkRequest {
+  clientName?: string;
+  companyName?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  state?: string;
+  postalCode?: string;
+  amount?: number;
+  type?: string;
+  method?: string;
+}
+
+// Generate payment link (creates transaction)
+export const generatePaymentLinkApi = async (
+  paymentData: GeneratePaymentLinkRequest
+): Promise<ApiResponse<any>> => {
+  try {
+    console.log('Generating payment link with data:', paymentData);
+
+    const data = await apiPostJson<any>('/leads/payment-link-generate', paymentData);
+    console.log('Generate payment link response:', data);
+    
+    return {
+      success: true,
+      data: data,
+      message: data.message || 'Payment link generated successfully'
+    };
+  } catch (error) {
+    console.error('Generate payment link API error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while generating payment link');
+  }
+};
+
+// Get payment details by transaction ID
+export const getPaymentDetailsApi = async (transactionId: number): Promise<ApiResponse<PaymentDetails>> => {
+  try {
+    console.log('Fetching payment details for transaction:', transactionId);
+
+    const data = await apiGetJson<any>(`/leads/transaction/${transactionId}`);
+    console.log('Payment details response:', data);
+    
+    return {
+      success: true,
+      data: data,
+      message: 'Payment details fetched successfully'
+    };
+  } catch (error) {
+    console.error('Get payment details API error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while fetching payment details');
+  }
+};
+
+// Update payment link details
+export const updatePaymentLinkApi = async (
+  transactionId: number,
+  updateData: UpdatePaymentLinkRequest
+): Promise<ApiResponse<any>> => {
+  try {
+    console.log('Updating payment link for transaction:', transactionId, 'with data:', updateData);
+
+    const data = await apiPatchJson<any>(`/leads/payment-link-generate/${transactionId}`, updateData);
+    console.log('Update payment link response:', data);
+    
+    return {
+      success: true,
+      data: data,
+      message: data.message || 'Payment link updated successfully'
+    };
+  } catch (error) {
+    console.error('Update payment link API error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while updating payment link');
+  }
+};
+
+// Complete payment
+export const completePaymentApi = async (
+  transactionId: number,
+  paymentData: CompletePaymentRequest = {}
+): Promise<ApiResponse<any>> => {
+  try {
+    console.log('Completing payment for transaction:', transactionId, 'with data:', paymentData);
+
+    const data = await apiPostJson<any>(`/leads/payment-link-complete/${transactionId}`, paymentData);
+    console.log('Complete payment response:', data);
+    
+    return {
+      success: true,
+      data: data,
+      message: data.message || 'Payment completed successfully'
+    };
+  } catch (error) {
+    console.error('Complete payment API error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while completing payment');
   }
 };
