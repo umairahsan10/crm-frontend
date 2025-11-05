@@ -82,12 +82,18 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({ className 
           <MetricCard key={index} metric={metric} size="sm" />
         ))}
       </div>
-      <ChartWidget
-        title="Monthly Revenue Trend"
-        data={revenueData.length > 0 ? revenueData : []}
-        type="line"
-        height={280}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center h-[280px]">
+          <div className="animate-pulse text-gray-400">Loading chart data...</div>
+        </div>
+      ) : (
+        <ChartWidget
+          title="Monthly Revenue Trend"
+          data={revenueData.length > 0 ? revenueData : []}
+          type="line"
+          height={280}
+        />
+      )}
     </div>
   );
 };

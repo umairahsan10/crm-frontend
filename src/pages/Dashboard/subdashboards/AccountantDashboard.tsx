@@ -600,7 +600,8 @@ const AccountantDashboard: React.FC = () => {
             labels.push(monthName);
             revenue.push(point.revenue || 0);
             expenses.push(point.expense || 0);
-            liabilities.push(point.liability || 0);
+            // TrendDataPoint doesn't have liability property, so we set it to 0
+            liabilities.push(0);
             netProfit.push(point.net || 0);
           });
 
