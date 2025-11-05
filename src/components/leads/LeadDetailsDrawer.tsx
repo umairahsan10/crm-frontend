@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Lead, LeadOutcome } from '../../types';
-import { updateLeadApi, crackLeadApi, pushLeadApi, getLeadByIdApi, type CrackLeadRequest, type PushLeadRequest } from '../../apis/leads';
+import { updateLeadApi, crackLeadApi, pushLeadApi, getLeadByIdApi, type CrackLeadRequest, type PushLeadRequest, getPaymentDetailsApi, completePaymentApi, updatePaymentLinkApi, generatePaymentLinkApi } from '../../apis/leads';
 import { getActiveIndustriesApi, createIndustryApi, type Industry } from '../../apis/industries';
 import { useAuth } from '../../context/AuthContext';
 import { useNavbar } from '../../context/NavbarContext';
@@ -95,6 +95,15 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
   const [showPushModal, setShowPushModal] = useState(false);
   const [pushComment, setPushComment] = useState('');
   const [isPushing, setIsPushing] = useState(false);
+
+  // Payment completion modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedCrackedLead, setSelectedCrackedLead] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState<'full' | 'half'>('full');
+  const [transactionId, setTransactionId] = useState<string>('');
+  const [isCompletingPayment, setIsCompletingPayment] = useState(false);
+  const [isGeneratingTransaction, setIsGeneratingTransaction] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
 
   // Notification state
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -211,6 +220,9 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
       setShowPushModal(false);
       setNotification(null);
       setShowCreateIndustryModal(false);
+      setShowPaymentModal(false);
+      setSelectedCrackedLead(null);
+      setPaymentDetails(null);
     }
   }, [isOpen]);
 
@@ -352,6 +364,197 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsPushing(false);
+    }
+  };
+
+  // Handle transaction generation
+  const handleGenerateTransaction = async (crackedLead: any) => {
+    if (!lead || !crackedLead) return;
+
+    try {
+      setIsGeneratingTransaction(true);
+
+      const remainingAmount = parseFloat(crackedLead.remainingAmount || 0);
+      if (remainingAmount <= 0) {
+        setNotification({ type: 'error', message: 'No remaining amount to pay' });
+        setTimeout(() => setNotification(null), 5000);
+        return;
+      }
+
+      // Calculate amount based on current selection (default to full)
+      const paymentAmountValue = paymentAmount === 'full' ? remainingAmount : remainingAmount / 2;
+
+      // Generate payment link to create transaction
+      const generateResponse = await generatePaymentLinkApi({
+        leadId: typeof lead.id === 'string' ? parseInt(lead.id) : lead.id,
+        clientName: lead.name || 'Client',
+        email: lead.email || 'client@example.com',
+        phone: lead.phone || '+1234567890',
+        country: 'United States', // Default values, can be enhanced
+        state: 'Unknown',
+        postalCode: '00000',
+        amount: paymentAmountValue,
+        type: 'payment',
+        method: 'bank'
+      });
+
+      if (!generateResponse.success) {
+        throw new Error(generateResponse.message || 'Failed to generate transaction');
+      }
+
+      // Extract transactionId from response - could be at data.data.transactionId or data.transactionId
+      const responseData = generateResponse.data?.data || generateResponse.data;
+      const generatedTransactionId = responseData?.transactionId;
+      
+      if (!generatedTransactionId) {
+        throw new Error('Transaction ID not found in response');
+      }
+      setTransactionId(generatedTransactionId.toString());
+      
+      console.log('Transaction generated successfully:', generatedTransactionId);
+
+      // Fetch payment details to show in modal
+      const paymentDetailsResponse = await getPaymentDetailsApi(generatedTransactionId);
+      if (paymentDetailsResponse.success && paymentDetailsResponse.data) {
+        setPaymentDetails(paymentDetailsResponse.data);
+      }
+    } catch (error) {
+      console.error('Transaction generation error:', error);
+      setNotification({ 
+        type: 'error', 
+        message: error instanceof Error ? error.message : 'Failed to generate transaction' 
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsGeneratingTransaction(false);
+    }
+  };
+
+  // Handle payment amount change and update transaction if already generated
+  const handlePaymentAmountChange = async (newAmount: 'full' | 'half') => {
+    setPaymentAmount(newAmount);
+    
+    // If transaction is already generated, update it
+    if (transactionId && selectedCrackedLead && paymentDetails) {
+      try {
+        const remainingAmount = parseFloat(selectedCrackedLead.remainingAmount || 0);
+        const newPaymentAmountValue = newAmount === 'full' ? remainingAmount : remainingAmount / 2;
+        const currentTransactionAmount = parseFloat(paymentDetails.amount || 0);
+
+        if (Math.abs(currentTransactionAmount - newPaymentAmountValue) > 0.01) {
+          console.log('Updating transaction amount due to payment selection change');
+          const updateResponse = await updatePaymentLinkApi(parseInt(transactionId), {
+            amount: newPaymentAmountValue
+          });
+
+          if (updateResponse.success) {
+            // Refresh payment details after update
+            const updatedDetailsResponse = await getPaymentDetailsApi(parseInt(transactionId));
+            if (updatedDetailsResponse.success && updatedDetailsResponse.data) {
+              setPaymentDetails(updatedDetailsResponse.data);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error updating transaction amount:', error);
+        // Don't show error notification here, just log it
+      }
+    }
+  };
+
+  // Handle payment completion
+  const handleCompletePayment = async () => {
+    console.log('handleCompletePayment called', { selectedCrackedLead, transactionId, isGeneratingTransaction });
+    
+    if (!selectedCrackedLead || !transactionId.trim()) {
+      console.error('Missing required data:', { selectedCrackedLead: !!selectedCrackedLead, transactionId });
+      setNotification({ type: 'error', message: 'Transaction ID is required. Please wait for transaction generation.' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    const remainingAmount = parseFloat(selectedCrackedLead.remainingAmount || 0);
+    if (remainingAmount <= 0) {
+      setNotification({ type: 'error', message: 'No remaining amount to pay' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    try {
+      console.log('Starting payment completion process...');
+      setIsCompletingPayment(true);
+
+      const transactionIdNum = parseInt(transactionId);
+      if (isNaN(transactionIdNum)) {
+        throw new Error('Invalid transaction ID');
+      }
+
+      // Calculate the payment amount based on user selection
+      const paymentAmountValue = paymentAmount === 'full' ? remainingAmount : remainingAmount / 2;
+
+      // Step 1: Update transaction amount if it differs from desired amount
+      if (paymentDetails) {
+        const currentTransactionAmount = parseFloat(paymentDetails.amount || 0);
+        if (Math.abs(currentTransactionAmount - paymentAmountValue) > 0.01) {
+          console.log('Updating transaction amount from', currentTransactionAmount, 'to', paymentAmountValue);
+          const updateResponse = await updatePaymentLinkApi(transactionIdNum, {
+            amount: paymentAmountValue
+          });
+
+          if (!updateResponse.success) {
+            throw new Error(updateResponse.message || 'Failed to update transaction amount');
+          }
+
+          // Refresh payment details after update
+          const updatedDetailsResponse = await getPaymentDetailsApi(transactionIdNum);
+          if (updatedDetailsResponse.success && updatedDetailsResponse.data) {
+            setPaymentDetails(updatedDetailsResponse.data);
+          }
+        }
+      }
+
+      // Step 2: Complete payment
+      console.log('Completing payment with amount:', paymentAmountValue);
+      const completeResponse = await completePaymentApi(transactionIdNum, {
+        paymentMethod: 'manual', // Since no gateway is integrated
+        category: `phase_${selectedCrackedLead.currentPhase || 1}`
+      });
+
+      if (!completeResponse.success) {
+        throw new Error(completeResponse.message || 'Failed to complete payment');
+      }
+
+      console.log('Payment completed successfully:', completeResponse.data);
+
+      // Refresh lead data
+      if (lead) {
+        await fetchLeadDetails(lead.id.toString());
+        const updatedLeadResponse = await getLeadByIdApi(lead.id.toString());
+        if (updatedLeadResponse.success && updatedLeadResponse.data) {
+          onLeadUpdated?.(updatedLeadResponse.data);
+        }
+      }
+
+      setShowPaymentModal(false);
+      setSelectedCrackedLead(null);
+      setPaymentDetails(null);
+      setTransactionId('');
+      setPaymentAmount('full');
+
+      setNotification({ 
+        type: 'success', 
+        message: `Payment of $${paymentAmountValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} completed successfully!` 
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } catch (error) {
+      console.error('Payment completion error:', error);
+      setNotification({ 
+        type: 'error', 
+        message: error instanceof Error ? error.message : 'Failed to complete payment' 
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsCompletingPayment(false);
     }
   };
 
@@ -802,6 +1005,39 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                             </div>
                           </div>
                         ))}
+                        {/* Payment Completion Button */}
+                        {(lead as any).crackedLeads && (lead as any).crackedLeads.length > 0 && parseFloat((lead as any).crackedLeads[0].remainingAmount || 0) > 0 && (
+                          <div className="md:col-span-3 pt-4 border-t border-gray-200 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const crackedLead = (lead as any).crackedLeads[0];
+                                  setSelectedCrackedLead(crackedLead);
+                                  setShowPaymentModal(true);
+                                  
+                                  // Auto-generate transaction when modal opens
+                                  console.log('Opening payment modal and generating transaction...');
+                                  await handleGenerateTransaction(crackedLead);
+                                  console.log('Transaction generation completed');
+                                } catch (error) {
+                                  console.error('Error opening payment modal:', error);
+                                  setNotification({ 
+                                    type: 'error', 
+                                    message: 'Failed to open payment modal. Please try again.' 
+                                  });
+                                  setTimeout(() => setNotification(null), 5000);
+                                }
+                              }}
+                              className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm"
+                            >
+                              <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Complete Payment
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1349,6 +1585,188 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                       </>
                     ) : (
                       'Push Lead'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Completion Modal */}
+        {showPaymentModal && selectedCrackedLead && (
+          <div className="fixed inset-0 z-[1200] overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-gray-900 bg-opacity-75" onClick={() => {
+                setShowPaymentModal(false);
+                setSelectedCrackedLead(null);
+                setPaymentDetails(null);
+                setTransactionId('');
+                setPaymentAmount('full');
+              }}></div>
+              
+              <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                      <svg className="h-6 w-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Complete Payment
+                    </h3>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowPaymentModal(false);
+                        setSelectedCrackedLead(null);
+                        setPaymentDetails(null);
+                        setTransactionId('');
+                        setPaymentAmount('full');
+                      }} 
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <p className="text-sm text-blue-700">
+                      Complete payment for this cracked lead. You can pay the remaining amount in full or half of it.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Remaining Amount
+                    </label>
+                    <p className="text-lg text-orange-600 font-bold">
+                      ${parseFloat(selectedCrackedLead.remainingAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Transaction ID <span className="text-red-500">*</span>
+                    </label>
+                    {isGeneratingTransaction ? (
+                      <div className="flex items-center space-x-2">
+                        <svg className="animate-spin h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span className="text-sm text-gray-600">Generating transaction...</span>
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={transactionId}
+                        readOnly
+                        disabled
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-700 cursor-not-allowed"
+                      />
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Transaction ID is automatically generated and locked
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Amount <span className="text-red-500">*</span>
+                    </label>
+                    <div className="space-y-2">
+                      <label className="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          name="paymentAmount"
+                          value="full"
+                          checked={paymentAmount === 'full'}
+                          onChange={(e) => handlePaymentAmountChange(e.target.value as 'full' | 'half')}
+                          disabled={isGeneratingTransaction}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 disabled:opacity-50"
+                        />
+                        <div className="ml-3 flex-1">
+                          <div className="text-sm font-medium text-gray-900">
+                            Pay Full Remaining Amount
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            ${parseFloat(selectedCrackedLead.remainingAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          </div>
+                        </div>
+                      </label>
+                      <label className="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          name="paymentAmount"
+                          value="half"
+                          checked={paymentAmount === 'half'}
+                          onChange={(e) => handlePaymentAmountChange(e.target.value as 'full' | 'half')}
+                          disabled={isGeneratingTransaction}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 disabled:opacity-50"
+                        />
+                        <div className="ml-3 flex-1">
+                          <div className="text-sm font-medium text-gray-900">
+                            Pay Half of Remaining Amount
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            ${(parseFloat(selectedCrackedLead.remainingAmount || 0) / 2).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {paymentDetails && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Payment Details:</p>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>Transaction ID: {paymentDetails.id}</p>
+                        <p>Current Amount: ${paymentDetails.amount?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                        <p>Status: {paymentDetails.status}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPaymentModal(false);
+                      setSelectedCrackedLead(null);
+                      setPaymentDetails(null);
+                      setTransactionId('');
+                      setPaymentAmount('full');
+                    }}
+                    className="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Complete Payment button clicked', { transactionId, isGeneratingTransaction, isCompletingPayment });
+                      handleCompletePayment();
+                    }}
+                    disabled={isCompletingPayment || !transactionId.trim() || isGeneratingTransaction}
+                    className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCompletingPayment ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Completing Payment...
+                      </>
+                    ) : (
+                      'Complete Payment'
                     )}
                   </button>
                 </div>
