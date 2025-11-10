@@ -43,8 +43,10 @@ export const useLeads = (page: number = 1, limit: number = 20, filters: any = {}
   return useQuery({
     queryKey: leadsQueryKeys.list({ page, limit, ...filters }),
     queryFn: () => getLeadsApi(page, limit, filters),
-    staleTime: 2 * 60 * 1000, // 2 minutes - leads data changes frequently
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes - increased for better caching
+    gcTime: 15 * 60 * 1000, // 15 minutes - keep in cache longer
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Don't refetch when component mounts if data exists
     enabled: options.enabled !== false, // Default to true, but allow override
   });
 };
@@ -110,6 +112,8 @@ export const useArchivedLeads = (page: number = 1, limit: number = 20, filters: 
     queryFn: () => getArchivedLeadsApi(page, limit, filters),
     staleTime: 5 * 60 * 1000, // 5 minutes - archived data rarely changes
     gcTime: 15 * 60 * 1000, // 15 minutes
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Don't refetch when component mounts if data exists
     enabled: options.enabled !== false,
   });
 };

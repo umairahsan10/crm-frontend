@@ -190,10 +190,30 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
         comment: ''
       });
       
-      // Fetch complete lead details (including comments and timeline)
-      fetchLeadDetails(lead.id.toString());
+      // Optimize: Use existing data from lead prop for ALL tabs (All Leads, Cracked Leads, Archive Leads)
+      // Skip ALL API calls when clicking rows - use data from the list or empty arrays
+      // This provides instant drawer opening without network delays
+      const leadComments = (lead as any)?.comments || [];
+      const history = (lead as any)?.outcomeHistory || [];
+      const hasComments = Array.isArray(leadComments) && leadComments.length > 0;
+      const hasOutcomeHistory = Array.isArray(history) && history.length > 0;
+      
+      // Use existing data if available, otherwise use empty arrays
+      // No API calls - all data comes from the list we already have
+      if (hasComments || hasOutcomeHistory) {
+        // We have data in the prop - use it directly
+        setComments(leadComments);
+        setOutcomeHistory(history);
+        console.log('✅ Using existing data from lead prop - skipping API call');
+      } else {
+        // No data in prop - use empty arrays, no API call needed
+        // Comments and timeline can be loaded on-demand if user navigates to those tabs
+        setComments([]);
+        setOutcomeHistory([]);
+        console.log('✅ Using empty arrays - skipping API call for instant drawer opening');
+      }
     }
-  }, [lead, isOpen]);
+  }, [lead, isOpen, viewMode]);
 
 
   // Check if device is mobile
@@ -785,15 +805,15 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                      <p className="text-lg text-gray-900 font-medium">{lead.name}</p>
+                      <p className="text-lg text-gray-900 font-medium">{lead.name || (lead as any).lead?.name || 'N/A'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                      <p className="text-lg text-gray-900 font-medium">{lead.email}</p>
+                      <p className="text-lg text-gray-900 font-medium">{lead.email || (lead as any).lead?.email || 'N/A'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                      <p className="text-lg text-gray-900 font-medium">{lead.phone}</p>
+                      <p className="text-lg text-gray-900 font-medium">{lead.phone || (lead as any).lead?.phone || 'N/A'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Lead Source</label>
@@ -992,18 +1012,36 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                             </div>
                           </div>
                         ))}
-                        {/* Payment Completion Button */}
-                        {(lead as any).crackedLeads && (lead as any).crackedLeads.length > 0 && parseFloat((lead as any).crackedLeads[0].remainingAmount || 0) > 0 && (
+                        {/* Payment Button - Only show for the user who cracked the lead */}
+                        {/* Backend only allows the sales rep who cracked the lead to generate payment links */}
+                        {(lead as any).crackedLeads && (lead as any).crackedLeads.length > 0 && parseFloat((lead as any).crackedLeads[0].remainingAmount || 0) > 0 && (() => {
+                          const crackedLead = (lead as any).crackedLeads[0];
+                          // Check if current user is the one who cracked the lead
+                          const currentUserId = user?.id ? (typeof user.id === 'string' ? parseInt(user.id) : user.id) : null;
+                          const crackedById = crackedLead.closedBy || crackedLead.employee?.id || null;
+                          
+                          // Normalize both IDs to numbers for comparison
+                          const normalizedCurrentUserId = currentUserId ? Number(currentUserId) : null;
+                          const normalizedCrackedById = crackedById ? Number(crackedById) : null;
+                          
+                          const isCurrentUserCracked = normalizedCurrentUserId && normalizedCrackedById && normalizedCurrentUserId === normalizedCrackedById;
+                          
+                          // Only show button if current user cracked the lead
+                          // Backend enforces this restriction, so we hide the button to prevent 403 errors
+                          if (!isCurrentUserCracked) {
+                            return null; // Don't render anything
+                          }
+                          
+                          return (
                           <div className="md:col-span-3 pt-4 border-t border-gray-200 flex justify-end">
                             <button
                               type="button"
                               onClick={async () => {
                                 try {
-                                  console.log('🔘 Complete Payment button clicked');
-                                  const crackedLead = (lead as any).crackedLeads[0];
+                                    console.log('🔘 Complete Payment button clicked');
                                   console.log('📋 Cracked lead:', crackedLead);
                                   setSelectedCrackedLead(crackedLead);
-                                  // Open GeneratePaymentLinkModal instead of auto-generating
+                                    // Open GeneratePaymentLinkModal
                                   console.log('🚀 Opening GeneratePaymentLinkModal...');
                                   setShowGeneratePaymentLinkModal(true);
                                   console.log('✅ Modal state set to true');
@@ -1024,7 +1062,8 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                               Complete Payment
                             </button>
                           </div>
-                        )}
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

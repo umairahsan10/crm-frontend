@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import DynamicTable from '../common/DynamicTable/DynamicTable';
 import { crackedLeadsTableConfig } from './tableConfigs';
-import { useCrackedLeadDetail } from '../../hooks/queries/useLeadsQueries';
 
 interface CrackLeadsTableProps {
   leads: any[];
@@ -29,74 +28,79 @@ const CrackLeadsTable: React.FC<CrackLeadsTableProps> = ({
   selectedLeads
 }) => {
   // Transform cracked leads data for the dynamic table
-  const transformedLeads = leads.map((crackedLead: any) => ({
-    ...crackedLead,
-    id: crackedLead.id, // Use cracked lead ID for selection
-    lead: {
-      name: crackedLead.lead?.name,
-      email: crackedLead.lead?.email,
-      phone: crackedLead.lead?.phone
-    },
-    amount: crackedLead.amount,
-    commissionRate: crackedLead.commissionRate,
-    currentPhase: crackedLead.currentPhase,
-    totalPhases: crackedLead.totalPhases,
-    status: 'cracked' // All cracked leads have cracked status
-  }));
+  const transformedLeads = leads.map((crackedLead: any) => {
+    // Extract contact info from nested lead object - API response structure: crackedLead.lead.name, lead.email, lead.phone
+    // The lead object is always present in the API response
+    // For contact type columns, DynamicTable expects name, email, phone at root level OR in the object at column.key
+    const leadInfo = crackedLead.lead || {};
+    return {
+      ...crackedLead,
+      id: crackedLead.id, // Use cracked lead ID for selection
+      // For contact column - DynamicTable passes entire row for contact type, so we need name/email/phone at root
+      name: leadInfo.name,
+      email: leadInfo.email,
+      phone: leadInfo.phone,
+      // Also keep the lead object structure for other uses
+      contact: {
+        name: leadInfo.name,
+        email: leadInfo.email,
+        phone: leadInfo.phone
+      },
+      lead: {
+        name: leadInfo.name,
+        email: leadInfo.email,
+        phone: leadInfo.phone,
+        // Preserve other lead properties
+        ...leadInfo
+      },
+      amount: crackedLead.amount,
+      commissionRate: crackedLead.commissionRate,
+      currentPhase: crackedLead.currentPhase,
+      totalPhases: crackedLead.totalPhases,
+      status: 'cracked' // All cracked leads have cracked status
+    };
+  });
 
-  // State to track which lead detail is being fetched
-  const [selectedCrackedLeadId, setSelectedCrackedLeadId] = useState<number | null>(null);
-  
-  // Use React Query hook to fetch lead details with caching
-  const leadDetailQuery = useCrackedLeadDetail(selectedCrackedLeadId);
-
-  // Handle row click - use cached data if available
-  const handleRowClick = (crackedLead: any) => {
-    // Set the selected ID to trigger the query (or use cached data)
-    setSelectedCrackedLeadId(crackedLead.id);
-  };
-
-  // Watch for data changes and update when query completes or uses cache
-  React.useEffect(() => {
-    if (selectedCrackedLeadId && leadDetailQuery.data) {
-      const response = leadDetailQuery.data;
-      const fullCrackedLeadData = response.data || response;
+  // Handle row click - use existing data directly, no API call needed
+  const handleRowClick = (row: any) => {
+    // Find the original cracked lead data from the leads array
+    const crackedLead = leads.find((lead: any) => lead.id === row.id);
+    
+    if (crackedLead && crackedLead.lead) {
+      // Construct the lead data structure directly from existing data
+      const fullLeadData = {
+        ...crackedLead.lead,
+        crackedLeads: [crackedLead],
+        source: crackedLead.lead?.source,
+        salesUnitId: crackedLead.lead?.salesUnit?.id || crackedLead.lead?.salesUnitId,
+        salesUnit: crackedLead.lead?.salesUnit
+      };
       
-      if (fullCrackedLeadData) {
-        const fullLeadData = {
-          ...fullCrackedLeadData.lead,
-          crackedLeads: [fullCrackedLeadData],
-          source: fullCrackedLeadData.lead?.source || fullCrackedLeadData.lead?.source,
-          salesUnitId: fullCrackedLeadData.lead?.salesUnit?.id || fullCrackedLeadData.lead?.salesUnitId,
-          salesUnit: fullCrackedLeadData.lead?.salesUnit
-        };
-        
-        onLeadClick(fullLeadData);
-      }
+      // Immediately call onLeadClick with the data we already have
+      onLeadClick(fullLeadData);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCrackedLeadId, leadDetailQuery.data]);
+  };
     
     return (
     <DynamicTable
-      data={transformedLeads}
-      columns={crackedLeadsTableConfig}
-      isLoading={isLoading}
-      currentPage={currentPage}
-      totalPages={totalPages}
-      totalItems={totalItems}
-      itemsPerPage={itemsPerPage}
-      selectedItems={selectedLeads}
-      onPageChange={onPageChange}
-      onRowClick={handleRowClick} // Use the custom handler
-      onBulkSelect={onBulkSelect}
-      theme={{
-        primary: 'green',
-        secondary: 'gray',
-        accent: 'green'
-      }}
-      emptyMessage="No cracked leads available"
-    />
+        data={transformedLeads}
+        columns={crackedLeadsTableConfig}
+        isLoading={isLoading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        selectedItems={selectedLeads}
+        onPageChange={onPageChange}
+        onRowClick={handleRowClick} // Use the custom handler
+        onBulkSelect={onBulkSelect}
+        theme={{
+          primary: 'green',
+          secondary: 'gray',
+          accent: 'green'
+        }}
+        emptyMessage="No cracked leads available"
+      />
   );
 };
 

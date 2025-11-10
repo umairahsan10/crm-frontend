@@ -73,7 +73,7 @@ export const regularLeadsTableConfig: ColumnConfig[] = [
 // Cracked Leads Table Configuration
 export const crackedLeadsTableConfig: ColumnConfig[] = [
   {
-    key: 'lead',
+    key: 'contact',
     label: 'Contact Information',
     type: 'contact',
     width: '25%'
