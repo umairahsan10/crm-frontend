@@ -446,6 +446,46 @@ export const bulkUpdateClientsApi = async (clientIds: string[], updates: Partial
   }
 };
 
+/**
+ * Find client by email
+ */
+export interface FindByEmailDto {
+  email: string;
+}
+
+export const findClientByEmailApi = async (email: string): Promise<ApiResponse<Client>> => {
+  try {
+    console.log('🔍 Finding client by email:', email);
+    const data = await apiPostJson<any>('/clients/by-email', { email });
+    console.log('✅ Client found by email:', data);
+    
+    // Handle different response formats
+    if (data && typeof data === 'object') {
+      if (data.status === 'success' && data.data?.client) {
+        return {
+          success: true,
+          data: data.data.client,
+          message: data.message || 'Client found successfully'
+        };
+      } else if (data.client) {
+        return {
+          success: true,
+          data: data.client,
+          message: 'Client found successfully'
+        };
+      }
+    }
+    
+    throw new Error('Invalid response format from server');
+  } catch (error: any) {
+    console.error('💥 Find client by email error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to find client by email');
+  }
+};
+
 export const bulkDeleteClientsApi = async (clientIds: string[]): Promise<ApiResponse<void>> => {
   try {
     const data = await apiPostJson<ApiResponse<void>>('/clients/bulk-delete', { clientIds });

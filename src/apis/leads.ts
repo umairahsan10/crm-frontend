@@ -714,17 +714,20 @@ export interface CompletePaymentRequest {
 
 export interface GeneratePaymentLinkRequest {
   leadId: number;
-  clientName: string;
-  email: string;
-  phone: string;
-  country: string;
-  state: string;
-  postalCode: string;
-  amount: number;
+  // Optional client ID - if provided, use existing client
+  clientId?: number;
+  // Client fields - required only if clientId is not provided
+  clientName?: string;
   companyName?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  state?: string;
+  postalCode?: string;
+  // Transaction fields
+  amount: number;
   type?: string;
   method?: string;
-  clientId?: number;
 }
 
 export interface UpdatePaymentLinkRequest {
