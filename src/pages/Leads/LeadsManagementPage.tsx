@@ -14,7 +14,7 @@ import {
 } from '../../apis/leads';
 import { 
   useLeads, 
-  useCrackedLeads, 
+  useCrackedLeadsAll, 
   useArchivedLeads, 
   useLeadsStatistics,
   useSalesUnits,
@@ -113,9 +113,8 @@ const LeadsManagementPage: React.FC = () => {
     regularFilters,
     { enabled: activeTab === 'leads' }
   );
-  const crackedLeadsQuery = useCrackedLeads(
-    crackedPagination.currentPage, 
-    crackedPagination.itemsPerPage, 
+  // Fetch ALL cracked leads once for client-side pagination
+  const crackedLeadsQuery = useCrackedLeadsAll(
     crackedFilters,
     { enabled: activeTab === 'crack' }
   );
@@ -132,8 +131,105 @@ const LeadsManagementPage: React.FC = () => {
 
   // Extract data and loading states from queries
   const regularLeads = (leadsQuery.data as any)?.data || [];
-  const crackedLeads = (crackedLeadsQuery.data as any)?.data || [];
+  const allCrackedLeads = (crackedLeadsQuery.data as any)?.data || [];
   const archivedLeads = (archivedLeadsQuery.data as any)?.data || [];
+
+  // Client-side filtering and pagination for cracked leads
+  const filteredCrackedLeads = React.useMemo(() => {
+    if (!allCrackedLeads.length) return [];
+    
+    let filtered = [...allCrackedLeads];
+
+    // Apply filters
+    if (crackedFilters.search) {
+      const searchLower = crackedFilters.search.toLowerCase();
+      filtered = filtered.filter((lead: any) => {
+        const leadName = lead.lead?.name?.toLowerCase() || '';
+        const leadEmail = lead.lead?.email?.toLowerCase() || '';
+        const leadPhone = lead.lead?.phone?.toLowerCase() || '';
+        const industryName = lead.industry?.name?.toLowerCase() || '';
+        return leadName.includes(searchLower) || 
+               leadEmail.includes(searchLower) || 
+               leadPhone.includes(searchLower) ||
+               industryName.includes(searchLower);
+      });
+    }
+
+    if (crackedFilters.industryId) {
+      filtered = filtered.filter((lead: any) => 
+        lead.industryId?.toString() === crackedFilters.industryId ||
+        lead.industry?.id?.toString() === crackedFilters.industryId
+      );
+    }
+
+    if (crackedFilters.minAmount) {
+      const minAmount = parseFloat(crackedFilters.minAmount);
+      filtered = filtered.filter((lead: any) => parseFloat(lead.amount || 0) >= minAmount);
+    }
+
+    if (crackedFilters.maxAmount) {
+      const maxAmount = parseFloat(crackedFilters.maxAmount);
+      filtered = filtered.filter((lead: any) => parseFloat(lead.amount || 0) <= maxAmount);
+    }
+
+    if (crackedFilters.closedBy) {
+      filtered = filtered.filter((lead: any) => 
+        lead.closedBy?.toString() === crackedFilters.closedBy ||
+        lead.employee?.id?.toString() === crackedFilters.closedBy
+      );
+    }
+
+    if (crackedFilters.currentPhase) {
+      filtered = filtered.filter((lead: any) => 
+        lead.currentPhase?.toString() === crackedFilters.currentPhase
+      );
+    }
+
+    if (crackedFilters.totalPhases) {
+      filtered = filtered.filter((lead: any) => 
+        lead.totalPhases?.toString() === crackedFilters.totalPhases
+      );
+    }
+
+    // Apply sorting
+    if (crackedFilters.sortBy) {
+      filtered.sort((a: any, b: any) => {
+        let aValue: any;
+        let bValue: any;
+
+        switch (crackedFilters.sortBy) {
+          case 'crackedAt':
+            aValue = new Date(a.crackedAt || 0).getTime();
+            bValue = new Date(b.crackedAt || 0).getTime();
+            break;
+          case 'amount':
+            aValue = parseFloat(a.amount || 0);
+            bValue = parseFloat(b.amount || 0);
+            break;
+          case 'name':
+            aValue = a.lead?.name || '';
+            bValue = b.lead?.name || '';
+            break;
+          default:
+            aValue = a[crackedFilters.sortBy] || '';
+            bValue = b[crackedFilters.sortBy] || '';
+        }
+
+        if (aValue < bValue) return crackedFilters.sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return crackedFilters.sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [allCrackedLeads, crackedFilters]);
+
+  // Client-side pagination for cracked leads
+  const crackedLeads = React.useMemo(() => {
+    const startIndex = (crackedPagination.currentPage - 1) * crackedPagination.itemsPerPage;
+    const endIndex = startIndex + crackedPagination.itemsPerPage;
+    return filteredCrackedLeads.slice(startIndex, endIndex);
+  }, [filteredCrackedLeads, crackedPagination.currentPage, crackedPagination.itemsPerPage]);
   const statistics = (statisticsQuery.data as any)?.data || {
     totalLeads: 0,
     activeLeads: 0,
@@ -166,16 +262,18 @@ const LeadsManagementPage: React.FC = () => {
     }
   }, [(leadsQuery.data as any)?.pagination]);
 
+  // Update pagination for cracked leads based on filtered results (client-side)
   React.useEffect(() => {
-    if ((crackedLeadsQuery.data as any)?.pagination) {
-      setCrackedPagination(prev => ({
-        ...prev,
-        currentPage: (crackedLeadsQuery.data as any).pagination.page,
-        totalPages: (crackedLeadsQuery.data as any).pagination.totalPages,
-        totalItems: (crackedLeadsQuery.data as any).pagination.total,
-      }));
-    }
-  }, [(crackedLeadsQuery.data as any)?.pagination]);
+    const totalItems = filteredCrackedLeads.length;
+    const totalPages = Math.ceil(totalItems / crackedPagination.itemsPerPage);
+    setCrackedPagination(prev => ({
+      ...prev,
+      totalPages: totalPages || 1,
+      totalItems,
+      // Reset to page 1 if current page is out of bounds
+      currentPage: prev.currentPage > totalPages && totalPages > 0 ? 1 : prev.currentPage,
+    }));
+  }, [filteredCrackedLeads.length, crackedPagination.itemsPerPage]);
 
   React.useEffect(() => {
     if ((archivedLeadsQuery.data as any)?.pagination) {
@@ -228,6 +326,8 @@ const LeadsManagementPage: React.FC = () => {
       industryId: newFilters.industry || '', // Map 'industry' to 'industryId'
     };
     setCrackedFilters(prev => ({ ...prev, ...mappedFilters }));
+    // Reset to page 1 when filters change
+    setCrackedPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
   const handleArchivedFiltersChange = useCallback((newFilters: any) => {
@@ -260,6 +360,7 @@ const LeadsManagementPage: React.FC = () => {
       sortBy: 'crackedAt',
       sortOrder: 'desc'
     });
+    setCrackedPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
   const handleArchivedClearFilters = useCallback(() => {

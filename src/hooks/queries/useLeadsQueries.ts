@@ -12,7 +12,8 @@ import {
   getArchivedLeadsApi, 
   getLeadsStatisticsApi,
   getSalesUnitsApi,
-  getFilterEmployeesApi
+  getFilterEmployeesApi,
+  getCrackedLeadApi
 } from '../../apis/leads';
 import { getActiveIndustriesApi } from '../../apis/industries';
 
@@ -29,6 +30,8 @@ export const leadsQueryKeys = {
   industries: () => [...leadsQueryKeys.all, 'industries'] as const,
   cracked: () => [...leadsQueryKeys.all, 'cracked'] as const,
   crackedList: (filters: any) => [...leadsQueryKeys.cracked(), 'list', filters] as const,
+  crackedAll: (filters: any) => [...leadsQueryKeys.cracked(), 'all', filters] as const,
+  crackedDetail: (id: number) => [...leadsQueryKeys.cracked(), 'detail', id] as const,
   archived: () => [...leadsQueryKeys.all, 'archived'] as const,
   archivedList: (filters: any) => [...leadsQueryKeys.archived(), 'list', filters] as const,
 };
@@ -47,7 +50,8 @@ export const useLeads = (page: number = 1, limit: number = 20, filters: any = {}
 };
 
 /**
- * Hook to fetch cracked leads with pagination and filters
+ * Hook to fetch cracked leads with pagination and filters (server-side pagination)
+ * @deprecated Use useCrackedLeadsAll for client-side pagination instead
  */
 export const useCrackedLeads = (page: number = 1, limit: number = 20, filters: any = {}, options: any = {}) => {
   return useQuery({
@@ -56,6 +60,44 @@ export const useCrackedLeads = (page: number = 1, limit: number = 20, filters: a
     staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 8 * 60 * 1000, // 8 minutes
     enabled: options.enabled !== false,
+  });
+};
+
+/**
+ * Hook to fetch ALL cracked leads once for client-side filtering and pagination
+ * Fetches all data in one go (or large chunks) and handles pagination/filtering client-side
+ */
+export const useCrackedLeadsAll = (filters: any = {}, options: any = {}) => {
+  return useQuery({
+    queryKey: leadsQueryKeys.crackedAll(filters),
+    queryFn: async () => {
+      // Fetch all data - use a large limit to get all records
+      // Backend should handle this, or we can fetch in chunks if needed
+      const response = await getCrackedLeadsApi(1, 1000, filters);
+      return response;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes - keep data fresh longer
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Don't refetch when component mounts if data exists
+    enabled: options.enabled !== false,
+  });
+};
+
+/**
+ * Hook to fetch individual cracked lead details with caching
+ * This prevents unnecessary API calls when clicking the same row multiple times
+ */
+export const useCrackedLeadDetail = (crackedLeadId: number | null, options: any = {}) => {
+  return useQuery({
+    queryKey: leadsQueryKeys.crackedDetail(crackedLeadId || 0),
+    queryFn: () => {
+      if (!crackedLeadId) throw new Error('Cracked lead ID is required');
+      return getCrackedLeadApi(crackedLeadId);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes - lead details don't change often
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    enabled: !!crackedLeadId && options.enabled !== false,
   });
 };
 

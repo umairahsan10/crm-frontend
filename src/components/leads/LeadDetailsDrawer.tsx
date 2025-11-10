@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import type { Lead, LeadOutcome } from '../../types';
-import { updateLeadApi, crackLeadApi, pushLeadApi, getLeadByIdApi, type CrackLeadRequest, type PushLeadRequest, getPaymentDetailsApi, completePaymentApi, updatePaymentLinkApi, generatePaymentLinkApi } from '../../apis/leads';
+import { updateLeadApi, crackLeadApi, pushLeadApi, getLeadByIdApi, type CrackLeadRequest, type PushLeadRequest, getPaymentDetailsApi, completePaymentApi, updatePaymentLinkApi } from '../../apis/leads';
 import { getActiveIndustriesApi, createIndustryApi, type Industry } from '../../apis/industries';
 import { useAuth } from '../../context/AuthContext';
 import { useNavbar } from '../../context/NavbarContext';
+import GeneratePaymentLinkModal from '../payments/GeneratePaymentLinkModal';
 
 interface LeadDetailsDrawerProps {
   lead: Lead | null;
@@ -98,6 +99,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
 
   // Payment completion modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showGeneratePaymentLinkModal, setShowGeneratePaymentLinkModal] = useState(false);
   const [selectedCrackedLead, setSelectedCrackedLead] = useState<any>(null);
   const [paymentAmount, setPaymentAmount] = useState<'full' | 'half'>('full');
   const [transactionId, setTransactionId] = useState<string>('');
@@ -367,50 +369,31 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
     }
   };
 
-  // Handle transaction generation
-  const handleGenerateTransaction = async (crackedLead: any) => {
-    if (!lead || !crackedLead) return;
+  // Handle payment link generation success from modal
+  const handlePaymentLinkGenerated = async (paymentLinkData: any) => {
+    if (!lead || !selectedCrackedLead) return;
 
     try {
       setIsGeneratingTransaction(true);
 
-      const remainingAmount = parseFloat(crackedLead.remainingAmount || 0);
-      if (remainingAmount <= 0) {
-        setNotification({ type: 'error', message: 'No remaining amount to pay' });
-        setTimeout(() => setNotification(null), 5000);
-        return;
+      // Extract transactionId from response - handle different response structures
+      // Response could be: { data: { transactionId: ... } } or { transactionId: ... } or nested
+      let generatedTransactionId: number | undefined;
+      
+      if (paymentLinkData?.data?.transactionId) {
+        generatedTransactionId = paymentLinkData.data.transactionId;
+      } else if (paymentLinkData?.transactionId) {
+        generatedTransactionId = paymentLinkData.transactionId;
+      } else if (paymentLinkData?.data?.data?.transactionId) {
+        generatedTransactionId = paymentLinkData.data.data.transactionId;
       }
-
-      // Calculate amount based on current selection (default to full)
-      const paymentAmountValue = paymentAmount === 'full' ? remainingAmount : remainingAmount / 2;
-
-      // Generate payment link to create transaction
-      const generateResponse = await generatePaymentLinkApi({
-        leadId: typeof lead.id === 'string' ? parseInt(lead.id) : lead.id,
-        clientName: lead.name || 'Client',
-        email: lead.email || 'client@example.com',
-        phone: lead.phone || '+1234567890',
-        country: 'United States', // Default values, can be enhanced
-        state: 'Unknown',
-        postalCode: '00000',
-        amount: paymentAmountValue,
-        type: 'payment',
-        method: 'bank'
-      });
-
-      if (!generateResponse.success) {
-        throw new Error(generateResponse.message || 'Failed to generate transaction');
-      }
-
-      // Extract transactionId from response - could be at data.data.transactionId or data.transactionId
-      const responseData = generateResponse.data?.data || generateResponse.data;
-      const generatedTransactionId = responseData?.transactionId;
       
       if (!generatedTransactionId) {
-        throw new Error('Transaction ID not found in response');
+        console.error('Payment link response structure:', paymentLinkData);
+        throw new Error('Transaction ID not found in response. Please check the console for details.');
       }
-      setTransactionId(generatedTransactionId.toString());
       
+      setTransactionId(generatedTransactionId.toString());
       console.log('Transaction generated successfully:', generatedTransactionId);
 
       // Fetch payment details to show in modal
@@ -418,11 +401,15 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
       if (paymentDetailsResponse.success && paymentDetailsResponse.data) {
         setPaymentDetails(paymentDetailsResponse.data);
       }
+
+      // Close GeneratePaymentLinkModal and open payment completion modal
+      setShowGeneratePaymentLinkModal(false);
+      setShowPaymentModal(true);
     } catch (error) {
-      console.error('Transaction generation error:', error);
+      console.error('Error processing payment link:', error);
       setNotification({ 
         type: 'error', 
-        message: error instanceof Error ? error.message : 'Failed to generate transaction' 
+        message: error instanceof Error ? error.message : 'Failed to process payment link' 
       });
       setTimeout(() => setNotification(null), 5000);
     } finally {
@@ -1012,16 +999,16 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                               type="button"
                               onClick={async () => {
                                 try {
+                                  console.log('🔘 Complete Payment button clicked');
                                   const crackedLead = (lead as any).crackedLeads[0];
+                                  console.log('📋 Cracked lead:', crackedLead);
                                   setSelectedCrackedLead(crackedLead);
-                                  setShowPaymentModal(true);
-                                  
-                                  // Auto-generate transaction when modal opens
-                                  console.log('Opening payment modal and generating transaction...');
-                                  await handleGenerateTransaction(crackedLead);
-                                  console.log('Transaction generation completed');
+                                  // Open GeneratePaymentLinkModal instead of auto-generating
+                                  console.log('🚀 Opening GeneratePaymentLinkModal...');
+                                  setShowGeneratePaymentLinkModal(true);
+                                  console.log('✅ Modal state set to true');
                                 } catch (error) {
-                                  console.error('Error opening payment modal:', error);
+                                  console.error('❌ Error opening payment modal:', error);
                                   setNotification({ 
                                     type: 'error', 
                                     message: 'Failed to open payment modal. Please try again.' 
@@ -1591,6 +1578,36 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
               </div>
             </div>
           </div>
+        )}
+
+        {/* Generate Payment Link Modal */}
+        {(() => {
+          const shouldRender = showGeneratePaymentLinkModal && selectedCrackedLead && lead;
+          console.log('🔍 Modal render check:', {
+            showGeneratePaymentLinkModal,
+            hasSelectedCrackedLead: !!selectedCrackedLead,
+            hasLead: !!lead,
+            shouldRender
+          });
+          return shouldRender;
+        })() && (
+          <GeneratePaymentLinkModal
+            isOpen={showGeneratePaymentLinkModal}
+            onClose={() => {
+              console.log('🚪 Closing GeneratePaymentLinkModal');
+              setShowGeneratePaymentLinkModal(false);
+              setSelectedCrackedLead(null);
+            }}
+            leadId={typeof lead.id === 'string' ? parseInt(lead.id) : lead.id}
+            defaultAmount={parseFloat(selectedCrackedLead.remainingAmount || 0)}
+            onSuccess={handlePaymentLinkGenerated}
+            initialLeadData={{
+              // Extract from lead object (handles both transformed and raw API response)
+              name: lead.name || (lead as any).lead?.name || '',
+              email: lead.email || (lead as any).lead?.email || '',
+              phone: lead.phone || (lead as any).lead?.phone || ''
+            }}
+          />
         )}
 
         {/* Payment Completion Modal */}
