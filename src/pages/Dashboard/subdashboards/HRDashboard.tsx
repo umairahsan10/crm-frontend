@@ -7,6 +7,7 @@ import { QuickAccess, HRManagementWidget, HRRequests } from '../../../components
 import { Calendar } from '../../../components/common/Calendar';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
+import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import type {
   ChartData,
   ActivityItem,
@@ -42,6 +43,9 @@ const HRDashboard: React.FC = () => {
 
   const roleLevel = getUserRoleLevel();
   const departments = ['Sales', 'Marketing', 'Production', 'HR', 'Accounting'];
+
+  // Fetch metric grid data from API
+  const { data: metricGridData } = useMetricGrid();
 
   // Department Manager (Full Access) Data
   const departmentManagerData = {
@@ -261,10 +265,18 @@ const HRDashboard: React.FC = () => {
 
   // Get data based on role level
   const getDataForRole = () => {
+    // Use API data for overviewStats, fallback to local data if API is loading or fails
+    const overviewStats = metricGridData && metricGridData.length > 0 
+      ? metricGridData 
+      : (roleLevel === 'department_manager' ? departmentManagerData.overviewStats :
+         roleLevel === 'unit_head' ? unitHeadData.overviewStats :
+         roleLevel === 'team_lead' ? teamLeadData.overviewStats :
+         employeeData.personalStats);
+
     switch (roleLevel) {
       case 'department_manager':
         return {
-          overviewStats: departmentManagerData.overviewStats,
+          overviewStats,
           secondaryStats: [...departmentManagerData.attendanceStats, ...departmentManagerData.payrollStats],
           quickActions: getDepartmentManagerActions(),
           activities: getDepartmentManagerActivities(),
@@ -272,7 +284,7 @@ const HRDashboard: React.FC = () => {
         };
       case 'unit_head':
         return {
-          overviewStats: unitHeadData.overviewStats,
+          overviewStats,
           secondaryStats: unitHeadData.performanceStats,
           quickActions: getUnitHeadActions(),
           activities: getUnitHeadActivities(),
@@ -280,7 +292,7 @@ const HRDashboard: React.FC = () => {
         };
       case 'team_lead':
         return {
-          overviewStats: teamLeadData.overviewStats,
+          overviewStats,
           secondaryStats: teamLeadData.managementStats,
           quickActions: getTeamLeadActions(),
           activities: getTeamLeadActivities(),
@@ -288,7 +300,7 @@ const HRDashboard: React.FC = () => {
         };
       default:
         return {
-          overviewStats: employeeData.personalStats,
+          overviewStats,
           secondaryStats: [],
           quickActions: getEmployeeActions(),
           activities: getEmployeeActivities(),

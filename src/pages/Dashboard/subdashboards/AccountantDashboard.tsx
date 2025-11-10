@@ -4,6 +4,7 @@ import { QuickActionCard } from '../../../components/common/Dashboard/QuickActio
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { getAccountantAnalyticsApi } from '../../../apis/analytics';
+import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -76,6 +77,9 @@ const AccountantDashboard: React.FC = () => {
 
   const roleLevel = getUserRoleLevel();
   const units = ['Accounts Payable', 'Accounts Receivable', 'Tax Department', 'Financial Reporting'];
+
+  // Fetch metric grid data from API
+  const { data: metricGridData } = useMetricGrid();
 
   // Department Manager (Full Access) Data
   const departmentManagerData = {
@@ -337,31 +341,39 @@ const AccountantDashboard: React.FC = () => {
 
   // Get data based on role level
   const getDataForRole = () => {
+    // Use API data for overviewStats, fallback to local data if API is loading or fails
+    const overviewStats = metricGridData && metricGridData.length > 0 
+      ? metricGridData 
+      : (roleLevel === 'department_manager' ? departmentManagerData.financialOverview :
+         roleLevel === 'unit_head' ? unitHeadData.unitPerformance :
+         roleLevel === 'team_lead' ? teamLeadData.teamPerformance :
+         employeeData.personalPerformance);
+
     switch (roleLevel) {
       case 'department_manager':
         return {
-          overviewStats: departmentManagerData.financialOverview,
+          overviewStats,
           quickActions: getDepartmentManagerActions(),
           activities: getDepartmentManagerActivities(),
           showUnitFilter: true
         };
       case 'unit_head':
         return {
-          overviewStats: unitHeadData.unitPerformance,
+          overviewStats,
           quickActions: getUnitHeadActions(),
           activities: getUnitHeadActivities(),
           showUnitFilter: false
         };
       case 'team_lead':
         return {
-          overviewStats: teamLeadData.teamPerformance,
+          overviewStats,
           quickActions: getTeamLeadActions(),
           activities: getTeamLeadActivities(),
           showUnitFilter: false
         };
       default:
         return {
-          overviewStats: employeeData.personalPerformance,
+          overviewStats,
           quickActions: getEmployeeActions(),
           activities: getEmployeeActivities(),
           showUnitFilter: false
