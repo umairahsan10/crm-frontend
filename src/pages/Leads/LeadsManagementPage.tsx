@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import LeadsTable from '../../components/leads/LeadsTable';
 import CrackLeadsTable from '../../components/leads/CrackLeadsTable';
 import ArchiveLeadsTable from '../../components/leads/ArchiveLeadsTable';
