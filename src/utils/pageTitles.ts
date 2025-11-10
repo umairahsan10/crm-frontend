@@ -16,6 +16,7 @@ export const getPageTitle = (pathname: string): string => {
     // HR Management routes
     '/employees': 'Employee Management',
     '/attendance': 'Attendance Management',
+    '/my-attendance': 'My Attendance',
     '/payroll': 'Payroll Management',
     '/hr-logs': 'HR Logs',
     '/hr-management': 'HR Management',
