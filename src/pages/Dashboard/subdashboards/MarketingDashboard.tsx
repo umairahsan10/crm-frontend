@@ -6,6 +6,7 @@ import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
 import { QuickAccess, CampaignOverview } from '../../../components/common/Dashboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
+import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import type { 
   ChartData, 
   ActivityItem,
@@ -41,6 +42,9 @@ const MarketingDashboard: React.FC = () => {
 
   const roleLevel = getUserRoleLevel();
   const units = ['Digital Marketing', 'Content Marketing', 'Social Media', 'Email Marketing'];
+
+  // Fetch metric grid data from API
+  const { data: metricGridData } = useMetricGrid();
 
   // Department Manager (Full Access) Data
   const departmentManagerData = {
@@ -326,10 +330,18 @@ const MarketingDashboard: React.FC = () => {
 
   // Get data based on role level
   const getDataForRole = () => {
+    // Use API data for overviewStats, fallback to local data if API is loading or fails
+    const overviewStats = metricGridData && metricGridData.length > 0 
+      ? metricGridData 
+      : (roleLevel === 'department_manager' ? departmentManagerData.marketingOverview :
+         roleLevel === 'unit_head' ? unitHeadData.unitPerformance :
+         roleLevel === 'team_lead' ? teamLeadData.teamPerformance :
+         employeeData.personalPerformance);
+
     switch (roleLevel) {
       case 'department_manager':
         return {
-          overviewStats: departmentManagerData.marketingOverview,
+          overviewStats,
           secondaryStats: [...departmentManagerData.teamPerformance, ...departmentManagerData.campaignStatus],
           quickActions: getDepartmentManagerActions(),
           activities: getDepartmentManagerActivities(),
@@ -337,7 +349,7 @@ const MarketingDashboard: React.FC = () => {
         };
       case 'unit_head':
         return {
-          overviewStats: unitHeadData.unitPerformance,
+          overviewStats,
           secondaryStats: unitHeadData.teamStatus,
           quickActions: getUnitHeadActions(),
           activities: getUnitHeadActivities(),
@@ -345,7 +357,7 @@ const MarketingDashboard: React.FC = () => {
         };
       case 'team_lead':
         return {
-          overviewStats: teamLeadData.teamPerformance,
+          overviewStats,
           secondaryStats: teamLeadData.teamStatus,
           quickActions: getTeamLeadActions(),
           activities: getTeamLeadActivities(),
@@ -353,7 +365,7 @@ const MarketingDashboard: React.FC = () => {
         };
       default:
         return {
-          overviewStats: employeeData.personalPerformance,
+          overviewStats,
           secondaryStats: employeeData.todaysTasks,
           quickActions: getEmployeeActions(),
           activities: getEmployeeActivities(),
