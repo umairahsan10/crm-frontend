@@ -14,9 +14,8 @@ export const transformMetricGridResponse = (
     value: card.value,
     subtitle: card.subtitle,
     icon: getMetricIcon(card.title),
-    // Optional: Add change/changeType if API provides it in future
-    // change: card.change,
-    // changeType: card.changeType,
+    change: card.change,
+    changeType: card.changeType,
   }));
 };
 

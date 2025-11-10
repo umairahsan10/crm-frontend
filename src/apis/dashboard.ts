@@ -11,6 +11,8 @@ export interface MetricGridApiResponse {
     title: string;
     value: string;
     subtitle?: string;
+    change?: string;
+    changeType?: 'positive' | 'negative' | 'neutral';
   }>;
 }
 

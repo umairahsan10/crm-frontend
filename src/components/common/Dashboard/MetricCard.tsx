@@ -51,8 +51,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         </div>
         
         {metric.change && (
-          <div className="mt-auto pt-4 border-t border-gray-100 group-hover:border-gray-200 transition-colors duration-300">
-            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium group-hover:scale-105 transition-transform duration-300 ${
+          <div className="mt-auto pt-3 border-t border-gray-100 group-hover:border-gray-200 transition-colors duration-300">
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium group-hover:scale-105 transition-transform duration-300 ${
               metric.changeType === 'positive' 
                 ? 'text-green-700 bg-green-50 border border-green-200 group-hover:bg-green-100' 
                 : metric.changeType === 'negative' 
@@ -60,12 +60,12 @@ export const MetricCard: React.FC<MetricCardProps> = ({
                 : 'text-gray-600 bg-gray-50 border border-gray-200 group-hover:bg-gray-100'
             }`}>
               {metric.changeType === 'positive' && (
-                <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
                 </svg>
               )}
               {metric.changeType === 'negative' && (
-                <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               )}

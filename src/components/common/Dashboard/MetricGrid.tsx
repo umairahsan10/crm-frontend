@@ -3,7 +3,7 @@ import { MetricCard } from './MetricCard';
 import type { MetricData } from '../../../types/dashboard';
 
 interface MetricGridProps {
-  title: string;
+  title?: string;
   metrics: MetricData[];
   columns?: 2 | 3 | 4;
   className?: string;
