@@ -668,9 +668,8 @@ const AccountantDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Overview Stats */}
+      {/* Overview Stats - 4 Main Metrics Only */}
       <MetricGrid
-        title="Key Metrics Summary"
         metrics={currentData.overviewStats}
         columns={4}
         headerColor="from-emerald-50 to-transparent"

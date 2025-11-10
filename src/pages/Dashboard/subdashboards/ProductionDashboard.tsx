@@ -624,25 +624,14 @@ const ProductionDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Overview Stats */}
+      {/* Overview Stats - 4 Main Metrics Only */}
       <MetricGrid
-        title="Key Metrics Summary"
         metrics={currentData.overviewStats}
         columns={4}
         headerColor="from-purple-50 to-transparent"
         headerGradient="from-purple-500 to-indigo-600"
         cardSize="md"
       />
-
-      {/* Secondary Stats */}
-      {currentData.secondaryStats.length > 0 && (
-        <MetricGrid
-          title={roleLevel === 'department_manager' ? "Team Performance & Projects" : "Additional Metrics"}
-          metrics={currentData.secondaryStats}
-          columns={4}
-          cardSize="sm"
-        />
-      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
