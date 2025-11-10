@@ -109,7 +109,8 @@ const AttendanceManagement: React.FC = () => {
   const [isBulkMarkingAttendance, setIsBulkMarkingAttendance] = useState(false);
 
   // React Query hooks - Auto caching and refetching
-  const employeesQuery = useEmployees(pagination.currentPage, pagination.itemsPerPage, {}); // Use pagination
+  // Fetch all employees (no server-side pagination) since we're doing client-side pagination
+  const employeesQuery = useEmployees(1, 9999, {}); // Fetch all employees for client-side pagination
   const attendanceQuery = useAttendanceLogs({
         start_date: selectedDate,
         end_date: selectedDate
@@ -121,19 +122,8 @@ const AttendanceManagement: React.FC = () => {
   const attendanceLogs = attendanceQuery.data || [];
   const isLoading = employeesQuery.isLoading || attendanceQuery.isLoading;
 
-  // Update pagination when employees data changes
-  useEffect(() => {
-    if (employeesQuery.data) {
-      const totalItems = (employeesQuery.data as any)?.total || 0;
-      const totalPages = Math.ceil(totalItems / pagination.itemsPerPage);
-      
-      setPagination(prev => ({
-        ...prev,
-        totalPages,
-        totalItems
-      }));
-    }
-  }, [employeesQuery.data, pagination.itemsPerPage]);
+  // Note: Pagination is now handled client-side based on filteredRecords
+  // No need to update pagination from server-side employee data
 
   // Merge employee data with attendance logs - only include active employees
   const attendanceRecords: AttendanceRecord[] = useMemo(() => {
@@ -205,6 +195,26 @@ const AttendanceManagement: React.FC = () => {
     return filtered;
   }, [attendanceRecords, filters, selectedDepartment]);
 
+  // Update pagination state based on filtered records (client-side pagination)
+  useEffect(() => {
+    const totalFilteredItems = filteredRecords.length;
+    const totalPages = Math.ceil(totalFilteredItems / pagination.itemsPerPage) || 1;
+    setPagination(prev => ({
+      ...prev,
+      totalPages: totalPages,
+      totalItems: totalFilteredItems,
+      // Reset to page 1 if current page is out of bounds
+      currentPage: prev.currentPage > totalPages ? 1 : prev.currentPage
+    }));
+  }, [filteredRecords.length, pagination.itemsPerPage]);
+
+  // Client-side pagination - slice filtered records
+  const paginatedRecords = useMemo(() => {
+    const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
+    const endIndex = startIndex + pagination.itemsPerPage;
+    return filteredRecords.slice(startIndex, endIndex);
+  }, [filteredRecords, pagination.currentPage, pagination.itemsPerPage]);
+
   // Calculate statistics
   const statistics = useMemo(() => ({
     total: filteredRecords.length,
@@ -218,6 +228,7 @@ const AttendanceManagement: React.FC = () => {
   // Handlers
   const handleFiltersChange = useCallback((newFilters: any) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on filter change
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -227,6 +238,7 @@ const AttendanceManagement: React.FC = () => {
       startDate: '',
       endDate: ''
     });
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on clear filters
   }, []);
 
   const handleMarkAttendance = async (employeeId: number) => {
@@ -629,6 +641,7 @@ const AttendanceManagement: React.FC = () => {
                 onClick={() => {
                   setSelectedDepartment(null);
                   setSelectedEmployees([]); // Clear selection when changing department
+                  setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on department change
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${
                   selectedDepartment === null
@@ -651,6 +664,7 @@ const AttendanceManagement: React.FC = () => {
                     onClick={() => {
                       setSelectedDepartment(dept);
                       setSelectedEmployees([]); // Clear selection when changing department
+                      setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on department change
                     }}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 font-medium border-b-2 transition-colors ${
                       selectedDepartment === dept
@@ -697,7 +711,7 @@ const AttendanceManagement: React.FC = () => {
         {/* Attendance Table */}
         <DynamicTable
           columns={columns}
-          data={filteredRecords}
+          data={paginatedRecords}
           isLoading={isLoading}
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}

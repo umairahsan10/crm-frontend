@@ -9,6 +9,7 @@ import './App.css';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import EmployeeManagement from './pages/HRManagement/Employees/EmployeeManagement';
 import AttendancePage from './pages/Attendance/AttendancePage';
+import MyAttendancePage from './pages/MyAttendance/MyAttendancePage';
 import LogsPage from './pages/LogFiles/LogPages';
 import HRLogsPage from './pages/LogFiles/subpages/HRLogsPage';
 import AccessLogsPage from './pages/LogFiles/subpages/AccessLogsPage';
@@ -161,6 +162,10 @@ function AppLayout() {
         <Route 
           path="/attendance" 
           element={canAccessPage('attendance') ? <AttendancePage /> : <Navigate to="/login" replace />}
+        />
+        <Route 
+          path="/my-attendance" 
+          element={<MyAttendancePage />}
         />
         <Route 
           path="/payroll" 

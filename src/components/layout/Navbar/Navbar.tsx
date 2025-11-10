@@ -59,6 +59,7 @@ const Navbar: React.FC<NavbarProps> = ({
     if (type === 'admin') {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
+        { id: 'my-attendance', label: 'My Attendance', icon: '📅', path: '/my-attendance' },
         { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
         { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
         { id: 'hr-requests', label: 'HR Requests', icon: '📋', path: '/admin-hr-requests' },
@@ -94,6 +95,7 @@ const Navbar: React.FC<NavbarProps> = ({
     if (type === 'employee') {
       const baseItems = [
         { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
+        { id: 'my-attendance', label: 'My Attendance', icon: '📅', path: '/my-attendance' },
         { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
       ];
 
