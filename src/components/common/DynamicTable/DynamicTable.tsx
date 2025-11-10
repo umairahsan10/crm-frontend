@@ -146,10 +146,10 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-base font-semibold text-gray-700 truncate">
-                {value?.name || 'Unnamed Lead'}
+                {value?.name || 'N/A'}
               </div>
               <div className="text-sm text-gray-400 truncate mt-1">
-                {value?.email || 'No email provided'}
+                {value?.email || 'N/A'}
               </div>
               {value?.phone && (
                 <div className="text-xs text-gray-400 truncate mt-1">

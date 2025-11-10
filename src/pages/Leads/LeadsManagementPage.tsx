@@ -19,13 +19,16 @@ import {
   useLeadsStatistics,
   useSalesUnits,
   useFilterEmployees,
-  useIndustries
+  useIndustries,
+  leadsQueryKeys
 } from '../../hooks/queries/useLeadsQueries';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Lead } from '../../types';
 
 const LeadsManagementPage: React.FC = () => {
   // Auth context
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   // UI State management
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -105,8 +108,8 @@ const LeadsManagementPage: React.FC = () => {
     sortOrder: 'desc' as 'asc' | 'desc'
   });
 
-  // React Query hooks - Data fetching with automatic caching
-  // Only fetch data for the active tab and supporting data
+  // React Query hooks - Enabled for active tab, but prefetch others in background
+  // refetchOnMount: false ensures cached data is used instantly when switching tabs
   const leadsQuery = useLeads(
     regularPagination.currentPage, 
     regularPagination.itemsPerPage, 
@@ -292,6 +295,78 @@ const LeadsManagementPage: React.FC = () => {
       setActiveTab('leads');
     }
   }, [activeTab]);
+
+  // Prefetch other tabs in the background after initial tab loads
+  // This ensures instant tab switching - data is ready before user clicks
+  React.useEffect(() => {
+    // Only prefetch if current tab has loaded successfully
+    const currentTabLoaded = 
+      (activeTab === 'leads' && leadsQuery.data) ||
+      (activeTab === 'crack' && crackedLeadsQuery.data) ||
+      (activeTab === 'archive' && archivedLeadsQuery.data);
+    
+    if (!currentTabLoaded) return; // Wait for current tab to load first
+    
+    // Prefetch other tabs in background
+    const prefetchTimer = setTimeout(() => {
+      // Prefetch cracked leads if not already loaded
+      if (activeTab !== 'crack' && !crackedLeadsQuery.data) {
+        queryClient.prefetchQuery({
+          queryKey: leadsQueryKeys.crackedAll(crackedFilters),
+          queryFn: async () => {
+            const { getCrackedLeadsApi } = await import('../../apis/leads');
+            return getCrackedLeadsApi(1, 1000, crackedFilters);
+          },
+          staleTime: 5 * 60 * 1000,
+        });
+      }
+      
+      // Prefetch archived leads if not already loaded
+      if (activeTab !== 'archive' && !archivedLeadsQuery.data && canAccessArchiveLeads()) {
+        queryClient.prefetchQuery({
+          queryKey: leadsQueryKeys.archivedList({ 
+            page: archivedPagination.currentPage, 
+            limit: archivedPagination.itemsPerPage, 
+            ...archivedFilters 
+          }),
+          queryFn: async () => {
+            const { getArchivedLeadsApi } = await import('../../apis/leads');
+            return getArchivedLeadsApi(archivedPagination.currentPage, archivedPagination.itemsPerPage, archivedFilters);
+          },
+          staleTime: 5 * 60 * 1000,
+        });
+      }
+      
+      // Prefetch regular leads if not already loaded
+      if (activeTab !== 'leads' && !leadsQuery.data) {
+        queryClient.prefetchQuery({
+          queryKey: leadsQueryKeys.list({ 
+            page: regularPagination.currentPage, 
+            limit: regularPagination.itemsPerPage, 
+            ...regularFilters 
+          }),
+          queryFn: async () => {
+            const { getLeadsApi } = await import('../../apis/leads');
+            return getLeadsApi(regularPagination.currentPage, regularPagination.itemsPerPage, regularFilters);
+          },
+          staleTime: 5 * 60 * 1000,
+        });
+      }
+    }, 500); // Small delay to not block initial render
+
+    return () => clearTimeout(prefetchTimer);
+  }, [
+    activeTab, 
+    queryClient, 
+    leadsQuery.data, 
+    crackedLeadsQuery.data, 
+    archivedLeadsQuery.data, 
+    crackedFilters, 
+    archivedFilters, 
+    regularFilters,
+    archivedPagination,
+    regularPagination
+  ]);
 
   // Handlers - Tab-aware page change
   const handlePageChange = (page: number) => {
