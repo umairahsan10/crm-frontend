@@ -1,23 +1,11 @@
 import React, { useState } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
-import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
-import { DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import { MergedQuickAccess, FinancialPerformanceSummary, FinancialPipeline, PaymentTracker, ComprehensiveFinancialChart, TransactionVolumeChart } from '../../../components/common/Dashboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
 import type { 
   ActivityItem,
   QuickActionItem
@@ -589,7 +577,6 @@ const AccountantDashboard: React.FC = () => {
           />
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">
-          <DepartmentQuickAccess department="Accounts" />
           {currentData.showUnitFilter && (
             <DepartmentFilter
               departments={units}
