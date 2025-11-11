@@ -1,56 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
-import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
+import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
+import { MergedQuickAccess, FinancialPerformanceSummary, FinancialPipeline, PaymentTracker, ComprehensiveFinancialChart, TransactionVolumeChart } from '../../../components/common/Dashboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
-import { getAccountantAnalyticsApi } from '../../../apis/analytics';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
-import type { 
+import type {
   ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
 
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-interface MonthlyTrendData {
-  labels: string[];
-  revenue: number[];
-  expenses: number[];
-  liabilities: number[];
-  netProfit: number[];
-}
-
 const AccountantDashboard: React.FC = () => {
   const { user } = useAuth();
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
-  const [trendData, setTrendData] = useState<MonthlyTrendData>({
-    labels: [],
-    revenue: [],
-    expenses: [],
-    liabilities: [],
-    netProfit: []
-  });
-  const [loadingTrendData, setLoadingTrendData] = useState<boolean>(true);
 
   // Determine user role and access level
   const getUserRoleLevel = () => {
@@ -586,62 +548,6 @@ const AccountantDashboard: React.FC = () => {
     }
   ];
 
-  // Fetch monthly trends data (revenue, expenses, liabilities) from API
-  useEffect(() => {
-    const fetchMonthlyTrends = async () => {
-      try {
-        setLoadingTrendData(true);
-        const response = await getAccountantAnalyticsApi({ period: 'monthly' });
-        
-        if (response.success && response.data?.trends?.monthly) {
-          // Transform monthly trends data to include revenue, expenses, liabilities, and net profit
-          const labels: string[] = [];
-          const revenue: number[] = [];
-          const expenses: number[] = [];
-          const liabilities: number[] = [];
-          const netProfit: number[] = [];
-
-          response.data.trends.monthly.forEach((point) => {
-            // Extract month name from date (e.g., "2024-01" -> "Jan 2024")
-            // Handle format "2024-01" by appending "-01" to make it a valid date
-            const dateStr = point.date.includes('-') && point.date.split('-').length === 2 
-              ? `${point.date}-01` 
-              : point.date;
-            const date = new Date(dateStr);
-            const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-            labels.push(monthName);
-            revenue.push(point.revenue || 0);
-            expenses.push(point.expense || 0);
-            // TrendDataPoint doesn't have liability property, so we set it to 0
-            liabilities.push(0);
-            netProfit.push(point.net || 0);
-          });
-
-          setTrendData({
-            labels,
-            revenue,
-            expenses,
-            liabilities,
-            netProfit
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching monthly trends data:', error);
-        // Fallback to empty data on error
-        setTrendData({
-          labels: [],
-          revenue: [],
-          expenses: [],
-          liabilities: [],
-          netProfit: []
-        });
-      } finally {
-        setLoadingTrendData(false);
-      }
-    };
-
-    fetchMonthlyTrends();
-  }, []);
 
   const currentData = getDataForRole();
 
@@ -651,13 +557,14 @@ const AccountantDashboard: React.FC = () => {
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
+            <h1 className="text-2xl font-bold text-gray-900">Financial Dashboard</h1>
             <p className="text-gray-600 mt-1">
               {roleLevel === 'department_manager' && 'Complete financial management and oversight'}
               {roleLevel === 'unit_head' && `Unit-specific financial management for ${user?.department}`}
               {roleLevel === 'team_lead' && 'Team management and financial operations'}
               {roleLevel === 'employee' && 'Personal financial performance and tasks'}
             </p>
-      </div>
+          </div>
           {currentData.showUnitFilter && (
             <DepartmentFilter
               departments={units}
@@ -677,180 +584,69 @@ const AccountantDashboard: React.FC = () => {
         cardSize="md"
       />
 
+      {/* Comprehensive Financial Chart - First thing they see */}
+      <ComprehensiveFinancialChart />
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left Column - Charts and Data */}
         <div className="xl:col-span-2 space-y-6">
-          {/* Financial Trends Chart - Revenue, Expenses, Liabilities */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-transparent">
-              <div className="flex items-center gap-3">
-                <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full" />
-                <h2 className="text-xl font-bold text-gray-900">Monthly Financial Trends</h2>
-              </div>
-            </div>
-            <div className="p-6" style={{ height: '350px' }}>
-              {loadingTrendData ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="animate-pulse text-gray-400">Loading chart data...</div>
-                </div>
-              ) : trendData.labels.length > 0 ? (
-                <Line
-                  data={{
-                    labels: trendData.labels,
-                    datasets: [
-                      {
-                        label: 'Revenue',
-                        data: trendData.revenue,
-                        borderColor: 'rgb(34, 197, 94)', // Green
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                        tension: 0.4,
-                        borderWidth: 3,
-                      },
-                      {
-                        label: 'Expenses',
-                        data: trendData.expenses,
-                        borderColor: 'rgb(239, 68, 68)', // Red
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        tension: 0.4,
-                        borderWidth: 3,
-                      },
-                      {
-                        label: 'Liabilities',
-                        data: trendData.liabilities,
-                        borderColor: 'rgb(245, 158, 11)', // Amber
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        tension: 0.4,
-                        borderWidth: 3,
-                      },
-                      {
-                        label: 'Net Profit',
-                        data: trendData.netProfit,
-                        borderColor: 'rgb(59, 130, 246)', // Blue
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4,
-                        borderWidth: 3,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top' as const,
-                        labels: {
-                          usePointStyle: true,
-                          padding: 20,
-                          font: {
-                            size: 12,
-                            weight: 'normal' as const,
-                          },
-                        },
-                      },
-                      tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: 'white',
-                        bodyColor: 'white',
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                        borderWidth: 1,
-                        cornerRadius: 8,
-                        displayColors: true,
-                      },
-                    },
-                    scales: {
-                      x: {
-                        grid: {
-                          display: false,
-                        },
-                        ticks: {
-                          color: '#6B7280',
-                          font: {
-                            size: 11,
-                          },
-                        },
-                      },
-                      y: {
-                        grid: {
-                          color: 'rgba(0, 0, 0, 0.05)',
-                        },
-                        ticks: {
-                          color: '#6B7280',
-                          font: {
-                            size: 11,
-                          },
-                          callback: function(value) {
-                            return '$' + (value as number).toLocaleString();
-                          },
-                        },
-                      },
-                    },
-                    elements: {
-                      line: {
-                        tension: 0.4,
-                      },
-                      point: {
-                        radius: 4,
-                        hoverRadius: 8,
-                        hoverBorderWidth: 2,
-                        hoverBorderColor: '#ffffff',
-                      },
-                    },
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  <div className="text-center">
-                    <p className="text-sm">No trend data available</p>
-                  </div>
-      </div>
+          {/* Transaction Volume Chart */}
+          <TransactionVolumeChart />
+
+          {/* Financial Pipeline - Only for Department Manager and Unit Head */}
+          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
+            <FinancialPipeline />
+          )}
+
+          {/* Recent Financial Activities Feed - Only for Department Manager and Unit Head */}
+          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
+            <ActivityFeed
+              title="Recent Financial Activities Feed"
+              activities={currentData.activities.filter(activity =>
+                activity.title.includes('transaction') || activity.title.includes('Transaction') ||
+                activity.title.includes('invoice') || activity.title.includes('Invoice') ||
+                activity.title.includes('payment') || activity.title.includes('Payment')
               )}
-            </div>
-          </div>
+              maxItems={5}
+            />
+          )}
+
+          {/* Payment Tracker Summary - Only for Department Manager and Unit Head */}
+          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
+            <PaymentTracker 
+              data={{
+                paid: 45200,
+                pending: 18500,
+                monthly: 63700
+              }}
+            />
+          )}
+
+          {/* Financial Performance Summary - Only for Department Manager and Unit Head */}
+          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
+            <FinancialPerformanceSummary 
+              data={{
+                totalTransactions: 156,
+                averageTransactionSize: 1250,
+                topPerformer: 'Sarah Johnson',
+                processingAccuracy: 99.2,
+                monthlyTarget: 200000,
+                targetProgress: 78
+              }}
+            />
+          )}
         </div>
 
         {/* Right Column - Actions and Activities */}
         <div className="space-y-6">
-          <QuickActionCard
-            title="Quick Action Shortcuts"
-            actions={currentData.quickActions}
-          />
+          <MergedQuickAccess maxItems={8} />
 
-          {/* Accountant Quick Access */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-transparent">
-              <div className="flex items-center gap-3">
-                <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full" />
-                <h2 className="text-xl font-bold text-gray-900">Quick Access</h2>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4">
-                <a
-                  href="/finance"
-                  className="group flex flex-col items-center p-4 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all duration-300 hover:scale-[1.02] text-center"
-                >
-                  <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg group-hover:scale-110 transition-transform duration-300 mb-3">
-                    <span className="text-2xl">💰</span>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">
-                    Finance
-                  </span>
-                </a>
-                <a
-                  href="/profile"
-                  className="group flex flex-col items-center p-4 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all duration-300 hover:scale-[1.02] text-center"
-                >
-                  <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg group-hover:scale-110 transition-transform duration-300 mb-3">
-                    <span className="text-2xl">👤</span>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">
-                    Profile
-                  </span>
-                </a>
-              </div>
-            </div>
-          </div>
+          <ActivityFeed
+            title="Recent Financial Activities"
+            activities={currentData.activities}
+            maxItems={5}
+          />
         </div>
       </div>
     </div>
