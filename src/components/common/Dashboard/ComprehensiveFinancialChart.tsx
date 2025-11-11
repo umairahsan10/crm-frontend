@@ -13,7 +13,7 @@ import {
   Filler,
 } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
-import { getAccountantAnalyticsApi, type AnalyticsDashboardResponse, type TrendDataPoint } from '../../../apis/analytics';
+import { getAccountantAnalyticsApi, type AnalyticsDashboardResponse } from '../../../apis/analytics';
 
 // Register Chart.js components
 ChartJS.register(
@@ -51,7 +51,11 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
     try {
       setLoading(true);
       setError(null);
-      const response = await getAccountantAnalyticsApi({ period: selectedPeriod });
+      // Map period types: daily/weekly -> monthly (API only supports monthly/quarterly/yearly)
+      const apiPeriod = selectedPeriod === 'daily' || selectedPeriod === 'weekly' 
+        ? 'monthly' 
+        : selectedPeriod;
+      const response = await getAccountantAnalyticsApi({ period: apiPeriod as 'monthly' | 'quarterly' | 'yearly' });
       if (response.success && response.data) {
         setAnalytics(response.data);
       } else {
@@ -321,7 +325,7 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
           padding: 20,
           font: {
             size: 12,
-            weight: '600' as const,
+            weight: 'bold' as const,
           },
         },
       },
@@ -350,7 +354,7 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
           color: '#6B7280',
           font: {
             size: 11,
-            weight: '500' as const,
+            weight: 'normal' as const,
           },
         },
       },
@@ -362,7 +366,7 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
           color: '#6B7280',
           font: {
             size: 11,
-            weight: '500' as const,
+            weight: 'normal' as const,
           },
           callback: function(value: any) {
             return formatCurrency(value);
@@ -383,7 +387,7 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
           padding: 20,
           font: {
             size: 12,
-            weight: '600' as const,
+            weight: 'bold' as const,
           },
         },
       },
@@ -412,7 +416,7 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
           color: '#6B7280',
           font: {
             size: 11,
-            weight: '500' as const,
+            weight: 'normal' as const,
           },
         },
       },
@@ -424,7 +428,7 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
           color: '#6B7280',
           font: {
             size: 11,
-            weight: '500' as const,
+            weight: 'normal' as const,
           },
           callback: function(value: any) {
             return formatCurrency(value);
@@ -465,7 +469,7 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
           color: '#6B7280',
           font: {
             size: 11,
-            weight: '500' as const,
+            weight: 'normal' as const,
           },
         },
       },
@@ -477,7 +481,7 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
           color: '#6B7280',
           font: {
             size: 11,
-            weight: '500' as const,
+            weight: 'normal' as const,
           },
           callback: function(value: any) {
             return `${value.toFixed(1)}%`;
@@ -498,7 +502,7 @@ export const ComprehensiveFinancialChart: React.FC<ComprehensiveFinancialChartPr
           padding: 15,
           font: {
             size: 11,
-            weight: '500' as const,
+            weight: 'normal' as const,
           },
         },
       },

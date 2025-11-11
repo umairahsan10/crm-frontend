@@ -11,7 +11,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 import { getAccountantAnalyticsApi, type AnalyticsDashboardResponse } from '../../../apis/analytics';
 
 // Register Chart.js components
@@ -49,7 +49,11 @@ export const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const response = await getAccountantAnalyticsApi({ period: selectedPeriod });
+      // Map period types: daily/weekly -> monthly (API only supports monthly/quarterly/yearly)
+      const apiPeriod = selectedPeriod === 'daily' || selectedPeriod === 'weekly' 
+        ? 'monthly' 
+        : selectedPeriod;
+      const response = await getAccountantAnalyticsApi({ period: apiPeriod as 'monthly' | 'quarterly' | 'yearly' });
       if (response.success && response.data) {
         setAnalytics(response.data);
       } else {
@@ -91,8 +95,8 @@ export const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({
     }
   };
 
-  // Prepare chart data
-  const getChartData = () => {
+  // Prepare bar chart data (transaction volume)
+  const getBarChartData = () => {
     if (!analytics?.trends) return null;
 
     const trendData = analytics.trends[selectedPeriod] || [];
@@ -112,15 +116,30 @@ export const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({
           borderRadius: 6,
           borderSkipped: false,
         },
+      ],
+    };
+  };
+
+  // Prepare line chart data (average transaction value)
+  const getLineChartData = () => {
+    if (!analytics?.trends) return null;
+
+    const trendData = analytics.trends[selectedPeriod] || [];
+    if (trendData.length === 0) return null;
+
+    const labels = trendData.map(item => formatDate(item.date, selectedPeriod));
+    
+    return {
+      labels,
+      datasets: [
         {
-          label: 'Transaction Value',
+          label: 'Average Transaction Value',
           data: trendData.map(item => {
             // Calculate average transaction value
             const count = item.count || 1;
             const revenue = item.revenue || 0;
             return revenue / count;
           }),
-          type: 'line' as const,
           borderColor: 'rgb(59, 130, 246)',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
           borderWidth: 3,
@@ -131,15 +150,15 @@ export const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({
           pointBackgroundColor: 'rgb(59, 130, 246)',
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
-          yAxisID: 'y1',
         },
       ],
     };
   };
 
-  const chartData = getChartData();
+  const barChartData = getBarChartData();
+  const lineChartData = getLineChartData();
 
-  const chartOptions = {
+  const barChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -154,7 +173,7 @@ export const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({
           padding: 20,
           font: {
             size: 12,
-            weight: '600' as const,
+            weight: 'bold' as const,
           },
         },
       },
@@ -187,7 +206,7 @@ export const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({
           color: '#6B7280',
           font: {
             size: 11,
-            weight: '500' as const,
+            weight: 'normal' as const,
           },
         },
       },
@@ -201,7 +220,7 @@ export const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({
           color: '#6B7280',
           font: {
             size: 12,
-            weight: '600' as const,
+            weight: 'bold' as const,
           },
         },
         grid: {
@@ -211,34 +230,7 @@ export const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({
           color: '#6B7280',
           font: {
             size: 11,
-            weight: '500' as const,
-          },
-        },
-      },
-      y1: {
-        type: 'linear' as const,
-        display: true,
-        position: 'right' as const,
-        title: {
-          display: true,
-          text: 'Average Transaction Value',
-          color: '#6B7280',
-          font: {
-            size: 12,
-            weight: '600' as const,
-          },
-        },
-        grid: {
-          drawOnChartArea: false,
-        },
-        ticks: {
-          color: '#6B7280',
-          font: {
-            size: 11,
-            weight: '500' as const,
-          },
-          callback: function(value: any) {
-            return formatCurrency(value);
+            weight: 'normal' as const,
           },
         },
       },
@@ -320,14 +312,53 @@ export const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({
           </div>
         </div>
       </div>
-      <div className="p-6">
-        {chartData ? (
-          <div style={{ height: '300px' }}>
-            <Bar data={chartData} options={chartOptions} />
+      <div className="p-6 space-y-6">
+        {barChartData ? (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Transaction Volume</h3>
+            <div style={{ height: '250px' }}>
+              <Bar data={barChartData} options={barChartOptions} />
+            </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-[300px] text-gray-400">
-            <p className="text-sm">No transaction data available for the selected period</p>
+          <div className="flex items-center justify-center h-[250px] text-gray-400">
+            <p className="text-sm">No transaction volume data available</p>
+          </div>
+        )}
+        {lineChartData ? (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Average Transaction Value</h3>
+            <div style={{ height: '250px' }}>
+              <Line data={lineChartData} options={{
+                ...barChartOptions,
+                scales: {
+                  ...barChartOptions.scales,
+                  y: {
+                    ...barChartOptions.scales.y,
+                    title: {
+                      display: true,
+                      text: 'Average Value ($)',
+                      color: '#6B7280',
+                      font: {
+                        size: 12,
+                        weight: 'bold' as const,
+                      },
+                    },
+                    ticks: {
+                      ...barChartOptions.scales.y?.ticks,
+                      callback: function(value: any) {
+                        return formatCurrency(value);
+                      },
+                    },
+                  },
+                  y1: undefined,
+                },
+              }} />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-[250px] text-gray-400">
+            <p className="text-sm">No transaction value data available</p>
           </div>
         )}
       </div>
