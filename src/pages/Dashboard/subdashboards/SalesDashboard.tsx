@@ -3,10 +3,11 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { QuickAccess, CommissionTracker, SalesPerformanceSummary, SalesLeadsPipeline, SalesTeamPerformance } from '../../../components/common/Dashboard';
+import { QuickAccess, CommissionTracker, SalesPerformanceSummary, SalesLeadsPipeline, SalesTeamPerformance, DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
+import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
 import type {
   ChartData,
   ActivityItem,
@@ -45,6 +46,9 @@ const SalesDashboard: React.FC = () => {
 
   // Fetch metric grid data from API
   const { data: metricGridData } = useMetricGrid();
+  
+  // Fetch activity feed data from API
+  const { data: activityFeedData } = useActivityFeed({ limit: 20 });
 
   // Department Manager (Full Access) Data
   const departmentManagerData = {
@@ -338,13 +342,21 @@ const SalesDashboard: React.FC = () => {
          roleLevel === 'team_lead' ? teamLeadData.teamPerformance :
          employeeData.personalPerformance);
 
+    // Use API data for activities, fallback to local data if API is loading or fails
+    const activities = activityFeedData && activityFeedData.length > 0
+      ? activityFeedData
+      : (roleLevel === 'department_manager' ? getDepartmentManagerActivities() :
+         roleLevel === 'unit_head' ? getUnitHeadActivities() :
+         roleLevel === 'team_lead' ? getTeamLeadActivities() :
+         getEmployeeActivities());
+
     switch (roleLevel) {
       case 'department_manager':
         return {
           overviewStats,
           secondaryStats: [...departmentManagerData.teamPerformance, ...departmentManagerData.pipelineStatus],
           quickActions: getDepartmentManagerActions(),
-          activities: getDepartmentManagerActivities(),
+          activities,
           showUnitFilter: true
         };
       case 'unit_head':
@@ -352,7 +364,7 @@ const SalesDashboard: React.FC = () => {
           overviewStats,
           secondaryStats: unitHeadData.teamStatus,
           quickActions: getUnitHeadActions(),
-          activities: getUnitHeadActivities(),
+          activities,
           showUnitFilter: false
         };
       case 'team_lead':
@@ -360,7 +372,7 @@ const SalesDashboard: React.FC = () => {
           overviewStats,
           secondaryStats: teamLeadData.teamStatus,
           quickActions: getTeamLeadActions(),
-          activities: getTeamLeadActivities(),
+          activities,
           showUnitFilter: false
         };
       default:
@@ -368,7 +380,7 @@ const SalesDashboard: React.FC = () => {
           overviewStats,
           secondaryStats: employeeData.todaysTasks,
           quickActions: getEmployeeActions(),
-          activities: getEmployeeActivities(),
+          activities,
           showUnitFilter: false
         };
     }
@@ -619,17 +631,19 @@ const SalesDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-600 mt-1">
-              {roleLevel === 'department_manager' && 'Complete sales management and oversight'}
-              {roleLevel === 'unit_head' && `Unit-specific sales management for ${user?.department}`}
-              {roleLevel === 'team_lead' && 'Team management and sales operations'}
-              {roleLevel === 'employee' && 'Personal sales performance and tasks'}
-            </p>
-          </div>
+      {/* Overview Stats with Quick Access on Right */}
+      <div className="flex items-start gap-4">
+        <div className="flex-1">
+          <MetricGrid
+            metrics={currentData.overviewStats}
+            columns={4}
+            headerColor="from-blue-50 to-transparent"
+            headerGradient="from-blue-500 to-indigo-600"
+            cardSize="md"
+          />
+        </div>
+        <div className="flex flex-col gap-4 flex-shrink-0 w-56">
+          <DepartmentQuickAccess department="Sales" />
           {currentData.showUnitFilter && (
             <DepartmentFilter
               departments={units}
@@ -640,13 +654,11 @@ const SalesDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Overview Stats - 4 Main Metrics Only */}
-      <MetricGrid
-        metrics={currentData.overviewStats}
-        columns={4}
-        headerColor="from-blue-50 to-transparent"
-        headerGradient="from-blue-500 to-indigo-600"
-        cardSize="md"
+      {/* Recent Activities - Below Metric Grid */}
+      <ActivityFeed
+        title="Recent Sales Activities"
+        activities={currentData.activities}
+        maxItems={5}
       />
 
       {/* Main Content Grid */}
@@ -716,12 +728,6 @@ const SalesDashboard: React.FC = () => {
           <QuickActionCard
             title="Quick Action Shortcuts"
             actions={currentData.quickActions}
-          />
-
-          <ActivityFeed
-            title="Recent Sales Activities"
-            activities={currentData.activities}
-            maxItems={5}
           />
 
           {/* Sales Team Performance - Only for Department Manager and Unit Head */}
