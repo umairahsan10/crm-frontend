@@ -3,12 +3,13 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { QuickAccess, HRManagementWidget, HRRequests, DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import { HRManagementWidget, HRRequests, DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { Calendar } from '../../../components/common/Calendar';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
+import { getMetricIcon } from '../../../utils/metricIcons';
 import type {
   ChartData,
   ActivityItem,
@@ -51,231 +52,48 @@ const HRDashboard: React.FC = () => {
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 20 });
 
-  // Department Manager (Full Access) Data
-  const departmentManagerData = {
-    overviewStats: [
-      {
-        title: 'Total Employees',
-        value: '120',
-        change: '+8 this month',
-        changeType: 'positive' as const,
-        icon: '👥',
-        subtitle: 'Company-wide'
-      },
-      {
-        title: 'New Hires',
-        value: '8',
-        change: '+2 from last month',
-        changeType: 'positive' as const,
-        icon: '🆕',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Terminations',
-        value: '2',
-        change: '-1 from last month',
-        changeType: 'negative' as const,
-        icon: '👋',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Present Today',
-        value: '95/120',
-        change: '79% attendance',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'Currently present'
-      }
-    ],
-    attendanceStats: [
-      {
-        title: 'Late Arrivals',
-        value: '5',
-        change: '-2 from yesterday',
-        changeType: 'positive' as const,
-        icon: '⏰',
-        subtitle: 'Today'
-      },
-      {
-        title: 'On Leave',
-        value: '12',
-        change: '+3 this week',
-        changeType: 'neutral' as const,
-        icon: '🏖️',
-        subtitle: 'Currently on leave'
-      }
-    ],
-    payrollStats: [
-      {
-        title: 'Pending Salaries',
-        value: '0',
-        change: 'All processed',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Bonus Approvals',
-        value: '15',
-        change: '+5 pending',
-        changeType: 'neutral' as const,
-        icon: '🎁',
-        subtitle: 'Awaiting approval'
-      },
-      {
-        title: 'Commission Processing',
-        value: '25',
-        change: '+8 this week',
-        changeType: 'positive' as const,
-        icon: '💼',
-        subtitle: 'In progress'
-      }
-    ]
-  };
-
-  // Unit Head Access Data (Department-Specific)
-  const unitHeadData = {
-    overviewStats: [
-      {
-        title: 'Dept Employees',
-        value: '25',
-        change: '+2 this month',
-        changeType: 'positive' as const,
-        icon: '👥',
-        subtitle: user?.department || 'Your Department'
-      },
-      {
-        title: 'Dept Attendance',
-        value: '22/25',
-        change: '88% today',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'Present today'
-      },
-      {
-        title: 'Dept Leaves',
-        value: '3',
-        change: '1 on vacation',
-        changeType: 'neutral' as const,
-        icon: '🏖️',
-        subtitle: 'Currently on leave'
-      }
-    ],
-    performanceStats: [
-      {
-        title: 'Dept Reviews Pending',
-        value: '5',
-        change: 'Due this week',
-        changeType: 'neutral' as const,
-        icon: '📋',
-        subtitle: 'Performance reviews'
-      },
-      {
-        title: 'Training Completed',
-        value: '18',
-        change: '+3 this month',
-        changeType: 'positive' as const,
-        icon: '🎓',
-        subtitle: 'Team members'
-      }
-    ]
-  };
-
-  // Team Lead Access Data (Team-Specific)
-  const teamLeadData = {
-    overviewStats: [
-      {
-        title: 'Team Size',
-        value: '8',
-        change: 'No change',
-        changeType: 'neutral' as const,
-        icon: '👥',
-        subtitle: 'Team members'
-      },
-      {
-        title: 'Team Attendance',
-        value: '7/8',
-        change: '87.5% today',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'Present today'
-      },
-      {
-        title: 'Team Leaves',
-        value: '1',
-        change: 'Vacation day',
-        changeType: 'neutral' as const,
-        icon: '🏖️',
-        subtitle: 'Currently on leave'
-      }
-    ],
-    managementStats: [
-      {
-        title: 'Pending Approvals',
-        value: '3',
-        change: '2 leave requests',
-        changeType: 'neutral' as const,
-        icon: '⏳',
-        subtitle: 'Awaiting approval'
-      },
-      {
-        title: 'Reviews Due',
-        value: '2',
-        change: 'This week',
-        changeType: 'neutral' as const,
-        icon: '📊',
-        subtitle: 'Performance reviews'
-      }
-    ]
-  };
-
-  // Senior/Junior Access Data (Personal)
-  const employeeData = {
-    personalStats: [
-      {
-        title: 'Attendance Streak',
-        value: '15 days',
-        change: '+2 this week',
-        changeType: 'positive' as const,
-        icon: '🔥',
-        subtitle: 'Consecutive days'
-      },
-      {
-        title: 'Leave Balance',
-        value: '18 days',
-        change: 'Available',
-        changeType: 'positive' as const,
-        icon: '🏖️',
-        subtitle: 'Remaining leave'
-      },
-      {
-        title: 'HR Requests',
-        value: '1',
-        change: 'Pending review',
-        changeType: 'neutral' as const,
-        icon: '📝',
-        subtitle: 'My requests'
-      },
-      {
-        title: 'Performance Review',
-        value: 'Due next week',
-        change: 'Scheduled',
-        changeType: 'neutral' as const,
-        icon: '📊',
-        subtitle: 'Upcoming review'
-      }
-    ]
-  };
+  // Fallback dummy data for HR metric grid (used when API data is not available)
+  const hrFallbackMetrics = [
+    {
+      title: 'Employees',
+      value: '999',
+      subtitle: 'Active employees',
+      change: '+9 from last month',
+      changeType: 'positive' as const,
+      icon: getMetricIcon('Employees')
+    },
+    {
+      title: 'Attendance Rate',
+      value: '100%',
+      subtitle: 'This month',
+      change: '100% from last month',
+      changeType: 'negative' as const,
+      icon: getMetricIcon('Attendance Rate')
+    },
+    {
+      title: 'Request Pending',
+      value: '100',
+      subtitle: 'All pending',
+      change: 'Same as last month',
+      changeType: 'neutral' as const,
+      icon: getMetricIcon('Request Pending')
+    },
+    {
+      title: 'On Leave Today',
+      value: '0',
+      subtitle: 'Currently on leave',
+      change: 'Same as last month',
+      changeType: 'neutral' as const,
+      icon: getMetricIcon('On Leave Today')
+    }
+  ];
 
   // Get data based on role level
   const getDataForRole = () => {
-    // Use API data for overviewStats, fallback to local data if API is loading or fails
+    // Use API data for overviewStats, fallback to dummy data if API is loading or fails
     const overviewStats = metricGridData && metricGridData.length > 0 
       ? metricGridData 
-      : (roleLevel === 'department_manager' ? departmentManagerData.overviewStats :
-         roleLevel === 'unit_head' ? unitHeadData.overviewStats :
-         roleLevel === 'team_lead' ? teamLeadData.overviewStats :
-         employeeData.personalStats);
+      : hrFallbackMetrics;
 
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
@@ -289,7 +107,6 @@ const HRDashboard: React.FC = () => {
       case 'department_manager':
         return {
           overviewStats,
-          secondaryStats: [...departmentManagerData.attendanceStats, ...departmentManagerData.payrollStats],
           quickActions: getDepartmentManagerActions(),
           activities,
           showDepartmentFilter: true
@@ -297,7 +114,6 @@ const HRDashboard: React.FC = () => {
       case 'unit_head':
         return {
           overviewStats,
-          secondaryStats: unitHeadData.performanceStats,
           quickActions: getUnitHeadActions(),
           activities,
           showDepartmentFilter: false
@@ -305,7 +121,6 @@ const HRDashboard: React.FC = () => {
       case 'team_lead':
         return {
           overviewStats,
-          secondaryStats: teamLeadData.managementStats,
           quickActions: getTeamLeadActions(),
           activities,
           showDepartmentFilter: false
@@ -313,7 +128,6 @@ const HRDashboard: React.FC = () => {
       default:
         return {
           overviewStats,
-          secondaryStats: [],
           quickActions: getEmployeeActions(),
           activities,
           showDepartmentFilter: false
@@ -723,8 +537,6 @@ const HRDashboard: React.FC = () => {
           {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
             <HRRequests />
           )}
-
-          <QuickAccess />
         </div>
       </div>
     </div>

@@ -69,6 +69,8 @@ export const getMetricIcon = (title: string): React.ReactNode => {
     'team projects': '📁',
     'active projects': '📁',
     'completed projects': '✅',
+    'production units': '🏭',
+    'units': '🏭',
     'team employees': '👨‍👩‍👧‍👦',
     'team members': '👤',
     'my active tasks': '📋',
