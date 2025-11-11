@@ -39,8 +39,8 @@ export const MetricGrid: React.FC<MetricGridProps> = ({
           </div>
         </div>
       )}
-      <div className="p-6">
-        <div className={`grid gap-6 ${gridClasses[columns]}`}>
+      <div className="p-4">
+        <div className={`grid gap-4 ${gridClasses[columns]}`}>
           {metrics.map((metric, index) => (
             <MetricCard 
               key={index}

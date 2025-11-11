@@ -3,11 +3,12 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { QuickAccess, HRManagementWidget, HRRequests } from '../../../components/common/Dashboard';
+import { QuickAccess, HRManagementWidget, HRRequests, DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { Calendar } from '../../../components/common/Calendar';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
+import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
 import type {
   ChartData,
   ActivityItem,
@@ -46,6 +47,9 @@ const HRDashboard: React.FC = () => {
 
   // Fetch metric grid data from API
   const { data: metricGridData } = useMetricGrid();
+  
+  // Fetch activity feed data from API
+  const { data: activityFeedData } = useActivityFeed({ limit: 20 });
 
   // Department Manager (Full Access) Data
   const departmentManagerData = {
@@ -273,13 +277,21 @@ const HRDashboard: React.FC = () => {
          roleLevel === 'team_lead' ? teamLeadData.overviewStats :
          employeeData.personalStats);
 
+    // Use API data for activities, fallback to local data if API is loading or fails
+    const activities = activityFeedData && activityFeedData.length > 0
+      ? activityFeedData
+      : (roleLevel === 'department_manager' ? getDepartmentManagerActivities() :
+         roleLevel === 'unit_head' ? getUnitHeadActivities() :
+         roleLevel === 'team_lead' ? getTeamLeadActivities() :
+         getEmployeeActivities());
+
     switch (roleLevel) {
       case 'department_manager':
         return {
           overviewStats,
           secondaryStats: [...departmentManagerData.attendanceStats, ...departmentManagerData.payrollStats],
           quickActions: getDepartmentManagerActions(),
-          activities: getDepartmentManagerActivities(),
+          activities,
           showDepartmentFilter: true
         };
       case 'unit_head':
@@ -287,7 +299,7 @@ const HRDashboard: React.FC = () => {
           overviewStats,
           secondaryStats: unitHeadData.performanceStats,
           quickActions: getUnitHeadActions(),
-          activities: getUnitHeadActivities(),
+          activities,
           showDepartmentFilter: false
         };
       case 'team_lead':
@@ -295,7 +307,7 @@ const HRDashboard: React.FC = () => {
           overviewStats,
           secondaryStats: teamLeadData.managementStats,
           quickActions: getTeamLeadActions(),
-          activities: getTeamLeadActivities(),
+          activities,
           showDepartmentFilter: false
         };
       default:
@@ -303,7 +315,7 @@ const HRDashboard: React.FC = () => {
           overviewStats,
           secondaryStats: [],
           quickActions: getEmployeeActions(),
-          activities: getEmployeeActivities(),
+          activities,
           showDepartmentFilter: false
         };
     }
@@ -623,17 +635,19 @@ const HRDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-600 mt-1">
-              {roleLevel === 'department_manager' && 'Complete HR management and oversight'}
-              {roleLevel === 'unit_head' && `Department-specific HR management for ${user?.department}`}
-              {roleLevel === 'team_lead' && 'Team management and HR operations'}
-              {roleLevel === 'employee' && 'Personal HR information and requests'}
-            </p>
-          </div>
+      {/* Overview Stats with Quick Access on Right */}
+      <div className="flex items-start gap-4">
+        <div className="flex-1">
+          <MetricGrid
+            metrics={currentData.overviewStats}
+            columns={4}
+            headerColor="from-blue-50 to-transparent"
+            headerGradient="from-blue-500 to-indigo-600"
+            cardSize="md"
+          />
+        </div>
+        <div className="flex flex-col gap-4 flex-shrink-0 w-56">
+          <DepartmentQuickAccess department="HR" />
           {currentData.showDepartmentFilter && (
             <DepartmentFilter
               departments={departments}
@@ -644,13 +658,11 @@ const HRDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Overview Stats - 4 Main Metrics Only */}
-      <MetricGrid
-        metrics={currentData.overviewStats}
-        columns={4}
-        headerColor="from-blue-50 to-transparent"
-        headerGradient="from-blue-500 to-indigo-600"
-        cardSize="md"
+      {/* Recent Activities - Below Metric Grid */}
+      <ActivityFeed
+        title="Recent HR Activities"
+        activities={currentData.activities}
+        maxItems={5}
       />
 
       {/* Main Content Grid */}
@@ -693,16 +705,7 @@ const HRDashboard: React.FC = () => {
               onEventClick={(event) => console.log('Event clicked:', event)}
             />
           )}
-
-
-          <ActivityFeed
-            title="Recent HR Activities"
-            activities={currentData.activities}
-            maxItems={5}
-          />
-
         </div>
-
 
         {/* Right Column - Actions and Activities */}
         <div className="space-y-6">
@@ -722,7 +725,6 @@ const HRDashboard: React.FC = () => {
           )}
 
           <QuickAccess />
-
         </div>
       </div>
     </div>
