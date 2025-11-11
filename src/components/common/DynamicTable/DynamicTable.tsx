@@ -185,7 +185,7 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
 
       case 'currency':
         return (
-          <div className="text-right">
+          <div className="text-center">
             <div className="text-lg font-bold text-green-600">
               ${parseFloat(value || 0).toLocaleString()}
             </div>
@@ -209,7 +209,7 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
 
       case 'phase':
         return (
-          <div className="space-y-1">
+          <div className="space-y-1 text-center">
             <div className="text-lg font-bold text-green-600">
               ${parseFloat(value || 0).toLocaleString()}
             </div>
@@ -365,7 +365,7 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider ${column.className || ''}`}
+                  className={`px-4 py-2 ${column.type === 'currency' || column.type === 'phase' ? 'text-center' : 'text-left'} text-xs font-semibold text-gray-600 uppercase tracking-wider ${column.className || ''}`}
                   style={column.width ? { width: column.width } : undefined}
                 >
                   {column.label}
