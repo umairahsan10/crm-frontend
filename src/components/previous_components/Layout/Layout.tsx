@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({
   activePage = 'dashboard',
   onLogout
 }) => {
-  const { isNavbarOpen, toggleNavbar, setNavbarOpen } = useNavbar();
+  const { isNavbarOpen, isNavbarExpanded, toggleNavbar, setNavbarOpen } = useNavbar();
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   
@@ -67,12 +67,11 @@ const Layout: React.FC<LayoutProps> = ({
     <div className="layout">
       <Navbar
         isOpen={isNavbarOpen}
-        onToggle={toggleNavbar}
         onNavigate={onNavigate}
         activePage={activePage}
         onLogout={onLogout}
       />
-      <div className={`main-content ${isNavbarOpen ? 'navbar-open' : ''}`}>
+      <div className={`main-content ${isNavbarExpanded ? 'navbar-open' : ''}`}>
         {/* Mobile Navigation Button */}
         {isMobile && (
           <button 

@@ -3,8 +3,10 @@ import type { ReactNode } from 'react';
 
 interface NavbarContextType {
   isNavbarOpen: boolean;
+  isNavbarExpanded: boolean;
   toggleNavbar: () => void;
   setNavbarOpen: (open: boolean) => void;
+  setNavbarExpanded: (expanded: boolean) => void;
 }
 
 const NavbarContext = createContext<NavbarContextType | undefined>(undefined);
@@ -14,7 +16,8 @@ interface NavbarProviderProps {
 }
 
 export const NavbarProvider: React.FC<NavbarProviderProps> = ({ children }) => {
-  const [isNavbarOpen, setIsNavbarOpen] = useState(true); // Start with navbar open
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false); // Start with navbar collapsed
+  const [isNavbarExpanded, setIsNavbarExpanded] = useState(false); // Track if navbar is expanded (hover or manual)
 
   const toggleNavbar = () => {
     setIsNavbarOpen(!isNavbarOpen);
@@ -24,11 +27,17 @@ export const NavbarProvider: React.FC<NavbarProviderProps> = ({ children }) => {
     setIsNavbarOpen(open);
   };
 
+  const setNavbarExpanded = (expanded: boolean) => {
+    setIsNavbarExpanded(expanded);
+  };
+
   return (
     <NavbarContext.Provider value={{
       isNavbarOpen,
+      isNavbarExpanded,
       toggleNavbar,
-      setNavbarOpen
+      setNavbarOpen,
+      setNavbarExpanded
     }}>
       {children}
     </NavbarContext.Provider>

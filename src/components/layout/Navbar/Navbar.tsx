@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { useNavbar } from '../../../context/NavbarContext';
 import {
   AiOutlineDashboard,
   AiOutlineTeam,
@@ -27,7 +28,6 @@ import './Navbar.css';
 
 interface NavbarProps {
   isOpen: boolean;
-  onToggle: () => void;
   onNavigate?: (page: string) => void;
   activePage?: string;
   onLogout?: () => void;
@@ -35,16 +35,25 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ 
   isOpen, 
-  onToggle,
   onNavigate, 
   onLogout
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { setNavbarExpanded } = useNavbar();
   
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [profileDropdownTimeout, setProfileDropdownTimeout] = useState<number | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isProfileHovered, setIsProfileHovered] = useState(false);
+  
+  // Determine if navbar should be expanded (hovered or manually opened)
+  const isExpanded = isHovered || isOpen;
+  
+  // Update context when expanded state changes
+  useEffect(() => {
+    setNavbarExpanded(isExpanded);
+  }, [isExpanded, setNavbarExpanded]);
 
   // Get navigation items based on user type, role, and department
   const getNavigationItems = () => {
@@ -210,42 +219,13 @@ const Navbar: React.FC<NavbarProps> = ({
     return null;
   };
 
-  // Auto-close profile dropdown after 1 second
+  // Control profile dropdown based on hover state
   useEffect(() => {
-    if (profileDropdownOpen) {
-      // Clear any existing timeout
-      if (profileDropdownTimeout) {
-        clearTimeout(profileDropdownTimeout);
-      }
-
-      // Set new timeout
-      const timeout = setTimeout(() => {
-        setProfileDropdownOpen(false);
-      }, 1250);
-
-      setProfileDropdownTimeout(timeout);
-    } else {
-      // Clear timeout if dropdown is closed
-      if (profileDropdownTimeout) {
-        clearTimeout(profileDropdownTimeout);
-        setProfileDropdownTimeout(null);
-      }
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (profileDropdownTimeout) {
-        clearTimeout(profileDropdownTimeout);
-      }
-    };
-  }, [profileDropdownOpen]);
-
-  const handleProfileClick = () => {
-    setProfileDropdownOpen(!profileDropdownOpen);
-  };
+    setProfileDropdownOpen(isProfileHovered);
+  }, [isProfileHovered]);
 
   const handleProfileAction = (action: string) => {
-    setProfileDropdownOpen(false);
+    // Dropdown will close automatically when mouse leaves (hover-based)
     if (action === 'logout' && onLogout) {
       onLogout();
     } else if (action === 'profile') {
@@ -362,21 +342,11 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <div className={`navbar ${isOpen ? 'open' : 'closed'}`}>
-      <div className="navbar-header">
-        <button
-          className="navbar-menu-toggle"
-          onClick={onToggle}
-          aria-label="Toggle navbar"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </button>
-      </div>
-
+    <div 
+      className={`navbar ${isExpanded ? 'open' : 'closed'}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <nav className="navbar-nav">
         <ul className="nav-list">
           {navigationItems.map((item) => (
@@ -384,24 +354,28 @@ const Navbar: React.FC<NavbarProps> = ({
               <button
                 className={`nav-item ${getCurrentActivePage() === item.id ? 'active' : ''}`}
                 onClick={() => handleNavClick(item.id)}
-                title={!isOpen ? item.label : undefined}
+                title={!isExpanded ? item.label : undefined}
               >
                 <span className="nav-icon">
                   {renderIcon(item.icon)}
                 </span>
-                {isOpen && <span className="nav-label">{item.label}</span>}
+                {isExpanded && <span className="nav-label">{item.label}</span>}
               </button>
             </li>
           ))}
         </ul>
       </nav>
 
-      <div className="navbar-footer">
-        <div className="user-profile" onClick={handleProfileClick}>
+      <div 
+        className="navbar-footer"
+        onMouseEnter={() => setIsProfileHovered(true)}
+        onMouseLeave={() => setIsProfileHovered(false)}
+      >
+        <div className="user-profile">
           <div className="user-avatar">
             <AiOutlineUser size={16} />
           </div>
-          {isOpen && (
+          {isExpanded && (
             <div className="user-info">
               <span className="user-name">{user?.name || 'User'}</span>
               <span className="user-role">{user?.role || 'User'}</span>
@@ -414,29 +388,29 @@ const Navbar: React.FC<NavbarProps> = ({
             <button
               className="profile-dropdown-item"
               onClick={() => handleProfileAction('profile')}
-              title={!isOpen ? 'Profile' : undefined}
+              title={!isExpanded ? 'Profile' : undefined}
             >
               <AiOutlineProfile size={16} />
-              {isOpen && <span>Profile</span>}
+              {isExpanded && <span>Profile</span>}
             </button>
             {user?.type === 'admin' && (
               <button
                 className="profile-dropdown-item"
                 onClick={() => handleProfileAction('settings')}
-                title={!isOpen ? 'Settings' : undefined}
+                title={!isExpanded ? 'Settings' : undefined}
               >
                 <AiOutlineSetting size={16} />
-                {isOpen && <span>Settings</span>}
+                {isExpanded && <span>Settings</span>}
               </button>
             )}
             {onLogout && (
               <button
                 className="profile-dropdown-item"
                 onClick={() => handleProfileAction('logout')}
-                title={!isOpen ? 'Logout' : undefined}
+                title={!isExpanded ? 'Logout' : undefined}
               >
                 <AiOutlineLogout size={16} />
-                {isOpen && <span>Logout</span>}
+                {isExpanded && <span>Logout</span>}
               </button>
             )}
           </div>
