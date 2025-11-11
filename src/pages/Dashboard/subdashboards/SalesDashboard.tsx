@@ -3,11 +3,12 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { QuickAccess, CommissionTracker, SalesPerformanceSummary, SalesLeadsPipeline, SalesTeamPerformance, DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import { CommissionTracker, SalesPerformanceSummary, SalesLeadsPipeline, SalesTeamPerformance, DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
+import { getMetricIcon } from '../../../utils/metricIcons';
 import type {
   ChartData,
   ActivityItem,
@@ -50,297 +51,48 @@ const SalesDashboard: React.FC = () => {
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 20 });
 
-  // Department Manager (Full Access) Data
-  const departmentManagerData = {
-    salesOverview: [
-      {
-        title: 'Total Leads',
-        value: '850',
-        change: '+45 this month',
-        changeType: 'positive' as const,
-        icon: '🎯',
-        subtitle: 'Company-wide'
-      },
-      {
-        title: 'Conversion Rate',
-        value: '23%',
-        change: '+3% from last month',
-        changeType: 'positive' as const,
-        icon: '📈',
-        subtitle: 'Lead to sale'
-      },
-      {
-        title: 'Monthly Revenue',
-        value: '$125K',
-        change: '+12% from last month',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'This month'
-      }
-    ],
-    teamPerformance: [
-      {
-        title: 'Active Units',
-        value: '4',
-        change: 'All operational',
-        changeType: 'positive' as const,
-        icon: '🏢',
-        subtitle: 'Sales units'
-      },
-      {
-        title: 'Top Performing Unit',
-        value: 'North Unit',
-        change: '32% conversion',
-        changeType: 'positive' as const,
-        icon: '🏆',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Commission Pending',
-        value: '$18.5K',
-        change: '15 pending payments',
-        changeType: 'neutral' as const,
-        icon: '💼',
-        subtitle: 'Awaiting approval'
-      },
-      {
-        title: 'Avg Deal Size',
-        value: '$1.2K',
-        change: '+$200 increase',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'Average per deal'
-      }
-    ],
-    pipelineStatus: [
-      {
-        title: 'Hot Leads',
-        value: '45',
-        change: '+8 this week',
-        changeType: 'positive' as const,
-        icon: '🔥',
-        subtitle: 'High priority'
-      },
-      {
-        title: 'Cold Leads',
-        value: '120',
-        change: '-12 this week',
-        changeType: 'positive' as const,
-        icon: '❄️',
-        subtitle: 'Follow-up needed'
-      },
-      {
-        title: 'Cracked Leads',
-        value: '89',
-        change: '+15 this week',
-        changeType: 'positive' as const,
-        icon: '💎',
-        subtitle: 'Converted this month'
-      }
-    ]
-  };
-
-  // Unit Head Access Data (Unit-Specific)
-  const unitHeadData = {
-    unitPerformance: [
-      {
-        title: 'Unit Leads',
-        value: '215',
-        change: '+12 this month',
-        changeType: 'positive' as const,
-        icon: '🎯',
-        subtitle: user?.department || 'Your Unit'
-      },
-      {
-        title: 'Unit Conversion',
-        value: '25%',
-        change: '+3% from last month',
-        changeType: 'positive' as const,
-        icon: '📈',
-        subtitle: 'Lead to sale'
-      },
-      {
-        title: 'Unit Revenue',
-        value: '$32K',
-        change: '+8% from last month',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'This month'
-      }
-    ],
-    teamStatus: [
-      {
-        title: 'Teams in Unit',
-        value: '2',
-        change: 'All active',
-        changeType: 'positive' as const,
-        icon: '👥',
-        subtitle: 'Active teams'
-      },
-      {
-        title: 'Top Performer',
-        value: 'Sarah Johnson',
-        change: '18 leads converted',
-        changeType: 'positive' as const,
-        icon: '🏆',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Pending Tasks',
-        value: '7',
-        change: '3 follow-ups due',
-        changeType: 'neutral' as const,
-        icon: '📋',
-        subtitle: 'Awaiting completion'
-      },
-      {
-        title: 'Avg Deal Size',
-        value: '$1.2K',
-        change: '+$200 increase',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'Average per deal'
-      }
-    ]
-  };
-
-  // Team Lead Access Data (Team-Specific)
-  const teamLeadData = {
-    teamPerformance: [
-      {
-        title: 'Team Leads',
-        value: '89',
-        change: '+5 this week',
-        changeType: 'positive' as const,
-        icon: '🎯',
-        subtitle: 'Assigned to team'
-      },
-      {
-        title: 'Team Conversion',
-        value: '22%',
-        change: '+3% from last month',
-        changeType: 'positive' as const,
-        icon: '📈',
-        subtitle: 'Lead to sale'
-      },
-      {
-        title: 'Team Target Progress',
-        value: '78%',
-        change: 'On track',
-        changeType: 'positive' as const,
-        icon: '🎯',
-        subtitle: 'Monthly target'
-      }
-    ],
-    teamStatus: [
-      {
-        title: 'Active Members',
-        value: '6',
-        change: 'All present',
-        changeType: 'positive' as const,
-        icon: '👥',
-        subtitle: 'Team members'
-      },
-      {
-        title: 'Today\'s Tasks',
-        value: '12',
-        change: '8 completed',
-        changeType: 'positive' as const,
-        icon: '📋',
-        subtitle: 'Pending tasks'
-      },
-      {
-        title: 'Pending Approvals',
-        value: '3',
-        change: '2 deals waiting',
-        changeType: 'neutral' as const,
-        icon: '⏳',
-        subtitle: 'Awaiting approval'
-      },
-      {
-        title: 'Avg Deal Size',
-        value: '$1.2K',
-        change: '+$200 increase',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'Average per deal'
-      }
-    ]
-  };
-
-  // Senior/Junior Access Data (Personal)
-  const employeeData = {
-    personalPerformance: [
-      {
-        title: 'Assigned Leads',
-        value: '23',
-        change: '+3 this week',
-        changeType: 'positive' as const,
-        icon: '🎯',
-        subtitle: 'My leads'
-      },
-      {
-        title: 'Conversion Rate',
-        value: '18%',
-        change: '+3% from last month',
-        changeType: 'positive' as const,
-        icon: '📈',
-        subtitle: 'Personal rate'
-      },
-      {
-        title: 'Commission Earned',
-        value: '$3.2K',
-        change: '+$450 this month',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'This month'
-      }
-    ],
-    todaysTasks: [
-      {
-        title: 'Follow-ups',
-        value: '5',
-        change: '2 completed',
-        changeType: 'neutral' as const,
-        icon: '📞',
-        subtitle: 'Due today'
-      },
-      {
-        title: 'New Leads',
-        value: '3',
-        change: 'Fresh leads',
-        changeType: 'positive' as const,
-        icon: '🆕',
-        subtitle: 'Assigned today'
-      },
-      {
-        title: 'Client Calls',
-        value: '2',
-        change: '1 completed',
-        changeType: 'neutral' as const,
-        icon: '📱',
-        subtitle: 'Scheduled'
-      },
-      {
-        title: 'Avg Deal Size',
-        value: '$1.2K',
-        change: '+$200 increase',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'Average per deal'
-      }
-    ]
-  };
+  // Fallback dummy data for Sales metric grid (used when API data is not available)
+  const salesFallbackMetrics = [
+    {
+      title: 'Leads',
+      value: '81',
+      subtitle: 'Active: 32',
+      change: '+70 from last month',
+      changeType: 'positive' as const,
+      icon: getMetricIcon('Leads')
+    },
+    {
+      title: 'Conversion Rate',
+      value: '12.35%',
+      subtitle: 'Cracked / Total',
+      change: '+12.345679012345679 this month',
+      changeType: 'neutral' as const,
+      icon: getMetricIcon('Conversion Rate')
+    },
+    {
+      title: 'Revenue / Commission',
+      value: '$5.4M / $652',
+      subtitle: 'Total / Your share',
+      change: '+$5.4M this month',
+      changeType: 'neutral' as const,
+      icon: getMetricIcon('Revenue')
+    },
+    {
+      title: 'Won Deals',
+      value: '10',
+      subtitle: 'Cracked leads',
+      change: '+10 this month',
+      changeType: 'neutral' as const,
+      icon: getMetricIcon('Won Deals')
+    }
+  ];
 
   // Get data based on role level
   const getDataForRole = () => {
-    // Use API data for overviewStats, fallback to local data if API is loading or fails
+    // Use API data for overviewStats, fallback to dummy data if API is loading or fails
     const overviewStats = metricGridData && metricGridData.length > 0 
       ? metricGridData 
-      : (roleLevel === 'department_manager' ? departmentManagerData.salesOverview :
-         roleLevel === 'unit_head' ? unitHeadData.unitPerformance :
-         roleLevel === 'team_lead' ? teamLeadData.teamPerformance :
-         employeeData.personalPerformance);
+      : salesFallbackMetrics;
 
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
@@ -354,7 +106,6 @@ const SalesDashboard: React.FC = () => {
       case 'department_manager':
         return {
           overviewStats,
-          secondaryStats: [...departmentManagerData.teamPerformance, ...departmentManagerData.pipelineStatus],
           quickActions: getDepartmentManagerActions(),
           activities,
           showUnitFilter: true
@@ -362,7 +113,6 @@ const SalesDashboard: React.FC = () => {
       case 'unit_head':
         return {
           overviewStats,
-          secondaryStats: unitHeadData.teamStatus,
           quickActions: getUnitHeadActions(),
           activities,
           showUnitFilter: false
@@ -370,7 +120,6 @@ const SalesDashboard: React.FC = () => {
       case 'team_lead':
         return {
           overviewStats,
-          secondaryStats: teamLeadData.teamStatus,
           quickActions: getTeamLeadActions(),
           activities,
           showUnitFilter: false
@@ -378,7 +127,6 @@ const SalesDashboard: React.FC = () => {
       default:
         return {
           overviewStats,
-          secondaryStats: employeeData.todaysTasks,
           quickActions: getEmployeeActions(),
           activities,
           showUnitFilter: false
@@ -686,17 +434,6 @@ const SalesDashboard: React.FC = () => {
             <SalesLeadsPipeline />
           )}
 
-          {/* Recent Lead Activities Feed - Only for Department Manager and Unit Head */}
-          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-            <ActivityFeed
-              title="Recent Lead Activities Feed"
-              activities={currentData.activities.filter(activity =>
-                activity.title.includes('lead') || activity.title.includes('Lead')
-              )}
-              maxItems={5}
-            />
-          )}
-
           {/* Commission Tracker Summary - Only for Department Manager and Unit Head */}
           {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
             <CommissionTracker 
@@ -734,8 +471,6 @@ const SalesDashboard: React.FC = () => {
           {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
             <SalesTeamPerformance />
           )}
-
-          <QuickAccess />
         </div>
       </div>
     </div>

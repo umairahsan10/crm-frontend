@@ -3,11 +3,12 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { QuickAccess, ProjectStatus, DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import { ProjectStatus, DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
+import { getMetricIcon } from '../../../utils/metricIcons';
 import type { 
   ChartData, 
   ActivityItem,
@@ -50,297 +51,48 @@ const ProductionDashboard: React.FC = () => {
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 20 });
 
-  // Department Manager (Full Access) Data
-  const departmentManagerData = {
-    productionOverview: [
-      {
-        title: 'Active Projects',
-        value: '12',
-        change: '+2 this month',
-        changeType: 'positive' as const,
-      icon: '🏭',
-        subtitle: 'In progress'
+  // Fallback dummy data for Production metric grid (used when API data is not available)
+  const productionFallbackMetrics = [
+    {
+      title: 'Total Projects',
+      value: '2',
+      subtitle: 'All projects',
+      change: '+2 this month',
+      changeType: 'neutral' as const,
+      icon: getMetricIcon('Total Projects')
     },
     {
-      title: 'Efficiency Rate',
-        value: '94%',
-        change: '+2% from last month',
-        changeType: 'positive' as const,
-      icon: '⚡',
-      subtitle: 'Production efficiency'
+      title: 'Production Units',
+      value: '1',
+      subtitle: 'Total units',
+      change: 'Same as last month',
+      changeType: 'neutral' as const,
+      icon: getMetricIcon('Production Units')
     },
     {
-      title: 'Quality Score',
-      value: '98.7%',
-        change: '+0.5% from last month',
-        changeType: 'positive' as const,
-      icon: '✅',
-      subtitle: 'Defect-free rate'
-      }
-    ],
-    teamPerformance: [
-      {
-        title: 'Active Teams',
-        value: '4',
-        change: 'All operational',
-        changeType: 'positive' as const,
-        icon: '👥',
-        subtitle: 'Production teams'
-      },
-      {
-        title: 'Top Performing Team',
-        value: 'Frontend Team',
-        change: '96% efficiency',
-        changeType: 'positive' as const,
-        icon: '🏆',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Completed Tasks',
-        value: '89',
-        change: '+15 this week',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'This week'
-      },
-      {
-        title: 'Avg Deal Size',
-        value: '$1.2K',
-        change: '+$200 increase',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'Average per deal'
-      }
-    ],
-    projectStatus: [
-      {
-        title: 'On Track',
-        value: '8',
-        change: '+2 this week',
-        changeType: 'positive' as const,
-        icon: '📈',
-        subtitle: 'Projects on schedule'
-      },
-      {
-        title: 'Behind Schedule',
-        value: '2',
-        change: '-1 this week',
-        changeType: 'positive' as const,
-        icon: '⚠️',
-        subtitle: 'Need attention'
-      },
-      {
-        title: 'Completed',
-        value: '2',
-        change: '+1 this week',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'This week'
-      }
-    ]
-  };
-
-  // Unit Head Access Data (Unit-Specific)
-  const unitHeadData = {
-    unitPerformance: [
-      {
-        title: 'Unit Projects',
-        value: '6',
-        change: '+1 this month',
-        changeType: 'positive' as const,
-        icon: '🏭',
-        subtitle: user?.department || 'Your Unit'
-      },
-      {
-        title: 'Unit Efficiency',
-        value: '92%',
-        change: '+3% from last month',
-        changeType: 'positive' as const,
-        icon: '⚡',
-        subtitle: 'Production efficiency'
-      },
-      {
-        title: 'Unit Quality',
-        value: '97.5%',
-        change: '+0.8% from last month',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'Quality score'
-      }
-    ],
-    teamStatus: [
-      {
-        title: 'Teams in Unit',
-        value: '2',
-        change: 'All active',
-        changeType: 'positive' as const,
-        icon: '👥',
-        subtitle: 'Active teams'
-      },
-      {
-        title: 'Top Performer',
-        value: 'Sarah Johnson',
-        change: '12 tasks completed',
-        changeType: 'positive' as const,
-        icon: '🏆',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Pending Reviews',
-        value: '5',
-        change: '3 code reviews due',
-        changeType: 'neutral' as const,
-        icon: '📋',
-        subtitle: 'Awaiting completion'
-      },
-      {
-        title: 'Avg Deal Size',
-        value: '$1.2K',
-        change: '+$200 increase',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'Average per deal'
-      }
-    ]
-  };
-
-  // Team Lead Access Data (Team-Specific)
-  const teamLeadData = {
-    teamPerformance: [
-      {
-        title: 'Team Projects',
-        value: '4',
-        change: '+1 this week',
-        changeType: 'positive' as const,
-        icon: '🏭',
-        subtitle: 'Assigned to team'
-      },
-      {
-        title: 'Team Efficiency',
-        value: '90%',
-        change: '+2% from last month',
-        changeType: 'positive' as const,
-        icon: '⚡',
-        subtitle: 'Team efficiency'
-      },
-      {
-        title: 'Team Target Progress',
-        value: '78%',
-        change: 'On track',
-        changeType: 'positive' as const,
-        icon: '🎯',
-        subtitle: 'Monthly target'
-      }
-    ],
-    teamStatus: [
-      {
-        title: 'Active Members',
-        value: '6',
-        change: 'All present',
-        changeType: 'positive' as const,
-        icon: '👥',
-        subtitle: 'Team members'
-      },
-      {
-        title: 'Today\'s Tasks',
-        value: '12',
-        change: '8 completed',
-        changeType: 'positive' as const,
-        icon: '📋',
-        subtitle: 'Pending tasks'
-      },
-      {
-        title: 'Pending Approvals',
-        value: '3',
-        change: '2 code reviews waiting',
-        changeType: 'neutral' as const,
-        icon: '⏳',
-        subtitle: 'Awaiting approval'
-      },
-      {
-        title: 'Avg Deal Size',
-        value: '$1.2K',
-        change: '+$200 increase',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'Average per deal'
-      }
-    ]
-  };
-
-  // Senior/Junior Access Data (Personal)
-  const employeeData = {
-    personalPerformance: [
-      {
-        title: 'Assigned Tasks',
-        value: '8',
-        change: '+2 this week',
-        changeType: 'positive' as const,
-        icon: '📋',
-        subtitle: 'My tasks'
-      },
-      {
-        title: 'Completion Rate',
-        value: '87%',
-        change: '+5% this month',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'Personal rate'
-      },
-      {
-        title: 'Code Reviews',
-        value: '12',
-        change: '+3 this month',
-        changeType: 'positive' as const,
-        icon: '👀',
-        subtitle: 'This month'
-      }
-    ],
-    todaysTasks: [
-      {
-        title: 'Code Reviews',
-        value: '3',
-        change: '1 completed',
-        changeType: 'neutral' as const,
-        icon: '👀',
-        subtitle: 'Due today'
-      },
-      {
-        title: 'New Tasks',
-        value: '2',
-        change: 'Fresh tasks',
-        changeType: 'positive' as const,
-        icon: '🆕',
-        subtitle: 'Assigned today'
-      },
-      {
-        title: 'Bug Fixes',
-        value: '1',
-        change: '1 completed',
-        changeType: 'neutral' as const,
-        icon: '🐛',
-        subtitle: 'Pending'
-      },
-      {
-        title: 'Avg Deal Size',
-        value: '$1.2K',
-        change: '+$200 increase',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'Average per deal'
-      }
-    ]
-  };
+      title: 'Active Projects',
+      value: '2',
+      subtitle: 'In progress',
+      change: '+2 this month',
+      changeType: 'neutral' as const,
+      icon: getMetricIcon('Active Projects')
+    },
+    {
+      title: 'Most Completed',
+      value: '23',
+      subtitle: 'Production Lead2',
+      change: 'Top performer',
+      changeType: 'neutral' as const,
+      icon: getMetricIcon('Most Completed')
+    }
+  ];
 
   // Get data based on role level
   const getDataForRole = () => {
-    // Use API data for overviewStats, fallback to local data if API is loading or fails
+    // Use API data for overviewStats, fallback to dummy data if API is loading or fails
     const overviewStats = metricGridData && metricGridData.length > 0 
       ? metricGridData 
-      : (roleLevel === 'department_manager' ? departmentManagerData.productionOverview :
-         roleLevel === 'unit_head' ? unitHeadData.unitPerformance :
-         roleLevel === 'team_lead' ? teamLeadData.teamPerformance :
-         employeeData.personalPerformance);
+      : productionFallbackMetrics;
 
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
@@ -354,7 +106,6 @@ const ProductionDashboard: React.FC = () => {
       case 'department_manager':
         return {
           overviewStats,
-          secondaryStats: [...departmentManagerData.teamPerformance, ...departmentManagerData.projectStatus],
           quickActions: getDepartmentManagerActions(),
           activities,
           showUnitFilter: true
@@ -362,7 +113,6 @@ const ProductionDashboard: React.FC = () => {
       case 'unit_head':
         return {
           overviewStats,
-          secondaryStats: unitHeadData.teamStatus,
           quickActions: getUnitHeadActions(),
           activities,
           showUnitFilter: false
@@ -370,7 +120,6 @@ const ProductionDashboard: React.FC = () => {
       case 'team_lead':
         return {
           overviewStats,
-          secondaryStats: teamLeadData.teamStatus,
           quickActions: getTeamLeadActions(),
           activities,
           showUnitFilter: false
@@ -378,7 +127,6 @@ const ProductionDashboard: React.FC = () => {
       default:
         return {
           overviewStats,
-          secondaryStats: employeeData.todaysTasks,
           quickActions: getEmployeeActions(),
           activities,
           showUnitFilter: false
@@ -688,8 +436,6 @@ const ProductionDashboard: React.FC = () => {
             title="Quick Action Shortcuts"
             actions={currentData.quickActions}
           />
-
-          <QuickAccess />
         </div>
       </div>
     </div>

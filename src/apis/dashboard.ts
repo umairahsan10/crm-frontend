@@ -72,3 +72,43 @@ export const getActivityFeedApi = async (limit: number = 20): Promise<ActivityFe
   }
 };
 
+/**
+ * API Response structure from /dashboard/hr-requests
+ */
+export interface HRRequestsApiResponse {
+  department: string;
+  role: string;
+  requests: Array<{
+    id: string;
+    title: string;
+    employee: string;
+    department: string;
+    type: 'Leave' | 'Salary' | 'Training' | 'Complaint' | 'Other';
+    status: 'Pending' | 'Approved' | 'Rejected' | 'Under Review';
+    priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+    submittedDate: string;
+    description: string;
+  }>;
+  total: number;
+}
+
+/**
+ * Fetch HR requests data from API
+ * Backend automatically determines department and role from JWT token
+ * @param limit - Number of requests to return (default: 5, max recommended: 20)
+ */
+export const getHRRequestsApi = async (limit: number = 5): Promise<HRRequestsApiResponse> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (limit) {
+      queryParams.append('limit', limit.toString());
+    }
+    const url = `/dashboard/hr-requests${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const data = await apiGetJson<HRRequestsApiResponse>(url);
+    return data;
+  } catch (error) {
+    console.error('Error fetching HR requests:', error);
+    throw error;
+  }
+};
+

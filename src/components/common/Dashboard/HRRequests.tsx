@@ -1,4 +1,6 @@
 import React from 'react';
+import { useHRRequests } from '../../../hooks/queries/useHRRequests';
+import { useNavigate } from 'react-router-dom';
 
 interface HRRequest {
   id: string;
@@ -14,66 +16,12 @@ interface HRRequest {
 
 interface HRRequestsProps {
   className?: string;
+  limit?: number;
 }
 
-export const HRRequests: React.FC<HRRequestsProps> = ({ className = '' }) => {
-  const recentRequests: HRRequest[] = [
-    {
-      id: '1',
-      title: 'Leave Application',
-      employee: 'Mike Johnson',
-      department: 'Sales',
-      type: 'Leave',
-      status: 'Pending',
-      priority: 'Medium',
-      submittedDate: '2 hours ago',
-      description: 'Requesting 3 days leave for personal reasons'
-    },
-    {
-      id: '2',
-      title: 'Salary Adjustment',
-      employee: 'Sarah Wilson',
-      department: 'Marketing',
-      type: 'Salary',
-      status: 'Approved',
-      priority: 'High',
-      submittedDate: '4 hours ago',
-      description: 'Performance-based salary increase request'
-    },
-    {
-      id: '3',
-      title: 'Training Request',
-      employee: 'Marketing Team',
-      department: 'Marketing',
-      type: 'Training',
-      status: 'Under Review',
-      priority: 'Low',
-      submittedDate: '6 hours ago',
-      description: 'Advanced digital marketing training program'
-    },
-    {
-      id: '4',
-      title: 'Workplace Complaint',
-      employee: 'John Smith',
-      department: 'Production',
-      type: 'Complaint',
-      status: 'Pending',
-      priority: 'Urgent',
-      submittedDate: '1 day ago',
-      description: 'Equipment safety concerns in production area'
-    },
-    {
-      id: '5',
-      title: 'Equipment Request',
-      employee: 'Lisa Brown',
-      department: 'HR',
-      type: 'Other',
-      status: 'Approved',
-      priority: 'Low',
-      submittedDate: '2 days ago',
-      description: 'New laptop for remote work setup'
-    }
-  ];
+export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 5 }) => {
+  const navigate = useNavigate();
+  const { data, isLoading, isError, error } = useHRRequests({ limit });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -122,6 +70,79 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '' }) => {
     }
   };
 
+  const handleManageRequests = () => {
+    // Navigate to employee requests page
+    navigate('/employee-requests');
+  };
+
+  const handleViewAll = () => {
+    // Navigate to employee requests page
+    navigate('/employee-requests');
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
+            <h2 className="text-xl font-bold text-gray-900">Recent HR Requests</h2>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-20 bg-gray-200 rounded-lg"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
+            <h2 className="text-xl font-bold text-gray-900">Recent HR Requests</h2>
+          </div>
+        </div>
+        <div className="p-6 text-center">
+          <p className="text-sm text-red-600 mb-2">Failed to load requests</p>
+          <p className="text-xs text-gray-500">{error?.message || 'Unknown error'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Get requests from API response or empty array
+  const recentRequests: HRRequest[] = data?.requests || [];
+  const totalRequests = data?.total || 0;
+
+  // Empty state
+  if (recentRequests.length === 0) {
+    return (
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
+            <h2 className="text-xl font-bold text-gray-900">Recent HR Requests</h2>
+          </div>
+        </div>
+        <div className="p-6 text-center">
+          <p className="text-sm text-gray-500">No HR requests found</p>
+          <p className="text-xs text-gray-400 mt-1">All requests have been processed</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
       <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
@@ -130,7 +151,10 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '' }) => {
             <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
             <h2 className="text-xl font-bold text-gray-900">Recent HR Requests</h2>
           </div>
-          <button className="text-sm text-orange-600 hover:text-orange-800 font-medium px-3 py-1 rounded-lg hover:bg-orange-50 transition-colors duration-200">
+          <button
+            onClick={handleManageRequests}
+            className="text-sm text-orange-600 hover:text-orange-800 font-medium px-3 py-1 rounded-lg hover:bg-orange-50 transition-colors duration-200"
+          >
             Manage Requests
           </button>
         </div>
@@ -169,8 +193,11 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '' }) => {
         ))}
       </div>
       <div className="p-4 bg-gray-50 border-t border-gray-200">
-        <button className="w-full text-sm text-gray-600 hover:text-gray-800 font-medium py-2 hover:bg-gray-100 rounded-lg transition-colors duration-200">
-          View All Requests ({recentRequests.length})
+        <button
+          onClick={handleViewAll}
+          className="w-full text-sm text-gray-600 hover:text-gray-800 font-medium py-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+        >
+          View All Requests ({totalRequests})
         </button>
       </div>
     </div>

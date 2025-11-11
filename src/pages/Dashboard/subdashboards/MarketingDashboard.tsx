@@ -3,7 +3,7 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { QuickAccess, CampaignOverview, DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import { CampaignOverview, DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
@@ -688,8 +688,6 @@ const MarketingDashboard: React.FC = () => {
             title="Quick Action Shortcuts"
             actions={currentData.quickActions}
           />
-
-          <QuickAccess />
         </div>
       </div>
     </div>

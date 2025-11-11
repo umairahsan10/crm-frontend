@@ -8,6 +8,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getAccountantAnalyticsApi } from '../../../apis/analytics';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
+import { getMetricIcon } from '../../../utils/metricIcons';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -87,273 +88,48 @@ const AccountantDashboard: React.FC = () => {
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 20 });
 
-  // Department Manager (Full Access) Data
-  const departmentManagerData = {
-    financialOverview: [
+  // Fallback dummy data for Accountant metric grid (used when API data is not available)
+  const accountantFallbackMetrics = [
     {
-      title: 'Total Revenue',
-        value: '$2.8M',
-        change: '+12.5% from last month',
-        changeType: 'positive' as const,
-      icon: '💰',
-      subtitle: 'This month'
+      title: 'Profit',
+      value: '$743.4K',
+      subtitle: 'All time',
+      change: '-$904.4K from last month',
+      changeType: 'negative' as const,
+      icon: getMetricIcon('Profit')
     },
     {
-      title: 'Net Profit',
-        value: '$456K',
-        change: '+8.2% from last month',
-        changeType: 'positive' as const,
-      icon: '📈',
-      subtitle: 'Q4 2024'
-    },
-    {
-      title: 'Operating Expenses',
-        value: '$1.2M',
-        change: '-2.1% from last month',
-        changeType: 'positive' as const,
-      icon: '💸',
-      subtitle: 'This month'
-      }
-    ],
-    teamPerformance: [
-      {
-        title: 'Active Departments',
-        value: '4',
-        change: 'All operational',
-        changeType: 'positive' as const,
-        icon: '🏢',
-        subtitle: 'Finance departments'
-      },
-      {
-        title: 'Top Performing Dept',
-        value: 'Accounts Receivable',
-        change: '98% collection rate',
-        changeType: 'positive' as const,
-        icon: '🏆',
-        subtitle: 'This month'
+      title: 'Expense',
+      value: '$0',
+      subtitle: 'This month',
+      change: '-$7.0K from last month',
+      changeType: 'positive' as const,
+      icon: getMetricIcon('Expense')
     },
     {
       title: 'Cash Flow',
-        value: '$789K',
-        change: '+15.3% from last month',
-        changeType: 'positive' as const,
-      icon: '💳',
-      subtitle: 'Available'
-      }
-    ],
-    financialStatus: [
-      {
-        title: 'Outstanding Invoices',
-        value: '$23K',
-        change: '-12% from last week',
-        changeType: 'positive' as const,
-        icon: '📄',
-        subtitle: 'Pending payments'
-      },
-      {
-        title: 'Processed Payments',
-        value: '156',
-        change: '+18 this week',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'This week'
-      },
-      {
-        title: 'Tax Filings',
-        value: '3',
-        change: 'All current',
-        changeType: 'positive' as const,
-        icon: '📋',
-        subtitle: 'Up to date'
-      }
-    ]
-  };
-
-  // Unit Head Access Data (Unit-Specific)
-  const unitHeadData = {
-    unitPerformance: [
-      {
-        title: 'Monthly Income',
-        value: '$450K',
-        change: '+8% from last month',
-        changeType: 'positive' as const,
-        icon: '💰',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Total Expenses',
-        value: '$180K',
-        change: '-3% from last month',
-        changeType: 'positive' as const,
-        icon: '💸',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Net Profit',
-        value: '$270K',
-        change: '+12% from last month',
-        changeType: 'positive' as const,
-        icon: '📈',
-        subtitle: 'Net profit'
-      },
-      {
-        title: 'Outstanding',
-        value: '$25K',
-        change: '12 pending payments',
-        changeType: 'neutral' as const,
-        icon: '⏳',
-        subtitle: 'Awaiting payment'
-      }
-    ],
-    teamStatus: [
-      {
-        title: 'Teams in Unit',
-        value: '2',
-        change: 'All active',
-        changeType: 'positive' as const,
-        icon: '👥',
-        subtitle: 'Active teams'
-      },
-      {
-        title: 'Top Performer',
-        value: 'Sarah Johnson',
-        change: '25 transactions processed',
-        changeType: 'positive' as const,
-        icon: '🏆',
-        subtitle: 'This month'
-      },
-      {
-        title: 'Pending Approvals',
-        value: '7',
-        change: '3 expense reports due',
-        changeType: 'neutral' as const,
-        icon: '📋',
-        subtitle: 'Awaiting completion'
-      }
-    ]
-  };
-
-  // Team Lead Access Data (Team-Specific)
-  const teamLeadData = {
-    teamPerformance: [
-      {
-        title: 'Team Transactions',
-        value: '89',
-        change: '+12 this week',
-        changeType: 'positive' as const,
-        icon: '💳',
-        subtitle: 'Processed this week'
-      },
-      {
-        title: 'Team Accuracy',
-        value: '99.2%',
-        change: '+0.3% from last month',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'Transaction accuracy'
-      },
-      {
-        title: 'Team Target Progress',
-        value: '92%',
-        change: 'On track',
-        changeType: 'positive' as const,
-        icon: '🎯',
-        subtitle: 'Monthly target'
-      }
-    ],
-    teamStatus: [
-      {
-        title: 'Active Members',
-        value: '5',
-        change: 'All present',
-        changeType: 'positive' as const,
-        icon: '👥',
-        subtitle: 'Team members'
-      },
-      {
-        title: 'Today\'s Tasks',
-        value: '15',
-        change: '10 completed',
-        changeType: 'positive' as const,
-        icon: '📋',
-        subtitle: 'Pending tasks'
-      },
-      {
-        title: 'Pending Approvals',
-        value: '4',
-        change: '2 invoices waiting',
-        changeType: 'neutral' as const,
-        icon: '⏳',
-        subtitle: 'Awaiting approval'
-      }
-    ]
-  };
-
-  // Senior/Junior Access Data (Personal)
-  const employeeData = {
-    personalPerformance: [
-      {
-        title: 'Assigned Transactions',
-        value: '23',
-        change: '+5 this week',
-        changeType: 'positive' as const,
-        icon: '💳',
-        subtitle: 'My transactions'
-      },
-      {
-        title: 'Processing Accuracy',
-        value: '98.5%',
-        change: '+1.2% this month',
-        changeType: 'positive' as const,
-        icon: '✅',
-        subtitle: 'Personal accuracy'
-      },
-      {
-        title: 'Invoices Processed',
-        value: '45',
-        change: '+8 this month',
-        changeType: 'positive' as const,
-        icon: '📄',
-        subtitle: 'This month'
-      }
-    ],
-    todaysTasks: [
-      {
-        title: 'Invoice Reviews',
-        value: '5',
-        change: '2 completed',
-        changeType: 'neutral' as const,
-        icon: '📄',
-        subtitle: 'Due today'
-      },
-      {
-        title: 'New Transactions',
-        value: '3',
-        change: 'Fresh transactions',
-        changeType: 'positive' as const,
-        icon: '🆕',
-        subtitle: 'Assigned today'
-      },
-      {
-        title: 'Client Calls',
-        value: '2',
-        change: '1 completed',
-        changeType: 'neutral' as const,
-        icon: '📞',
-        subtitle: 'Scheduled'
-      }
-    ]
-  };
+      value: '$0',
+      subtitle: 'This month',
+      change: '-$904.4K from last month',
+      changeType: 'negative' as const,
+      icon: getMetricIcon('Cash Flow')
+    },
+    {
+      title: 'Revenue',
+      value: '$0',
+      subtitle: 'This month',
+      change: '-$911.3K from last month',
+      changeType: 'negative' as const,
+      icon: getMetricIcon('Revenue')
+    }
+  ];
 
   // Get data based on role level
   const getDataForRole = () => {
-    // Use API data for overviewStats, fallback to local data if API is loading or fails
+    // Use API data for overviewStats, fallback to dummy data if API is loading or fails
     const overviewStats = metricGridData && metricGridData.length > 0 
       ? metricGridData 
-      : (roleLevel === 'department_manager' ? departmentManagerData.financialOverview :
-         roleLevel === 'unit_head' ? unitHeadData.unitPerformance :
-         roleLevel === 'team_lead' ? teamLeadData.teamPerformance :
-         employeeData.personalPerformance);
+      : accountantFallbackMetrics;
 
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
