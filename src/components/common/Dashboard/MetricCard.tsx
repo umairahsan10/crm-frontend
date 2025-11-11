@@ -13,9 +13,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   className = '' 
 }) => {
   const sizeClasses = {
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8'
+    sm: 'p-3',
+    md: 'p-4',
+    lg: 'p-6'
   };
 
 
@@ -25,33 +25,33 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
       <div className="relative z-10 h-full flex flex-col">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-4">
-              {metric.icon && (
-                <div className="p-2.5 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 group-hover:-translate-y-1 group-hover:shadow-lg transition-all duration-300 ease-out">
-                  <span className="text-lg">{metric.icon}</span>
-                </div>
-              )}
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide group-hover:text-gray-700 transition-colors duration-300">
-                {metric.title}
-              </h3>
+        {/* Top section: Title on left, Icon on right */}
+        <div className="flex items-start justify-between mb-2">
+          <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide group-hover:text-gray-700 transition-colors duration-300 flex-1 pr-2">
+            {metric.title}
+          </h3>
+          {metric.icon && (
+            <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 group-hover:-translate-y-1 group-hover:shadow-lg transition-all duration-300 ease-out flex-shrink-0">
+              <span className="text-base">{metric.icon}</span>
             </div>
-            <div className="space-y-2">
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight group-hover:text-gray-800 transition-colors duration-300">
-                {metric.value}
-              </p>
-              {metric.subtitle && (
-                <p className="text-sm text-gray-500 leading-relaxed group-hover:text-gray-600 transition-colors duration-300">
-                  {metric.subtitle}
-                </p>
-              )}
-            </div>
-          </div>
+          )}
         </div>
         
+        {/* Value section */}
+        <div className="mb-2">
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight group-hover:text-gray-800 transition-colors duration-300">
+            {metric.value}
+          </p>
+          {metric.subtitle && (
+            <p className="text-xs text-gray-500 mt-0.5 group-hover:text-gray-600 transition-colors duration-300">
+              {metric.subtitle}
+            </p>
+          )}
+        </div>
+        
+        {/* Change badge */}
         {metric.change && (
-          <div className="mt-auto pt-3 border-t border-gray-100 group-hover:border-gray-200 transition-colors duration-300">
+          <div className="mt-auto pt-2 border-t border-gray-100 group-hover:border-gray-200 transition-colors duration-300">
             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium group-hover:scale-105 transition-transform duration-300 ${
               metric.changeType === 'positive' 
                 ? 'text-green-700 bg-green-50 border border-green-200 group-hover:bg-green-100' 

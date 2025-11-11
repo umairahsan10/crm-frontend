@@ -30,3 +30,45 @@ export const getMetricGridApi = async (): Promise<MetricGridApiResponse> => {
   }
 };
 
+/**
+ * API Response structure from /dashboard/activity-feed
+ */
+export interface ActivityFeedApiResponse {
+  department: string;
+  role: string;
+  activities: Array<{
+    id: string;
+    type: string;
+    title: string;
+    description: string;
+    createdAt: string; // ISO 8601 format
+    actor: string;
+    relatedEntity?: {
+      type: string;
+      id: number | string;
+      name?: string;
+    };
+  }>;
+  total: number;
+}
+
+/**
+ * Fetch activity feed data from API
+ * Backend automatically determines department and role from JWT token
+ * @param limit - Number of activities to return (default: 20, max recommended: 50)
+ */
+export const getActivityFeedApi = async (limit: number = 20): Promise<ActivityFeedApiResponse> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (limit) {
+      queryParams.append('limit', limit.toString());
+    }
+    const url = `/dashboard/activity-feed${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const data = await apiGetJson<ActivityFeedApiResponse>(url);
+    return data;
+  } catch (error) {
+    console.error('Error fetching activity feed:', error);
+    throw error;
+  }
+};
+
