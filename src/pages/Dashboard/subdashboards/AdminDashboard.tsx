@@ -3,7 +3,6 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { QuickAccess } from '../../../components/common/Dashboard/QuickAccess';
 import { 
   UserManagementWidget, 
   DepartmentOverview, 
@@ -750,7 +749,6 @@ const AdminDashboard: React.FC = () => {
             
             <UserManagementWidget />
 
-          <QuickAccess />
         </div>
           </div>
         </div>

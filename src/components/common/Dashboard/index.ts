@@ -3,7 +3,6 @@ export { MetricGrid } from './MetricGrid';
 export { QuickActionCard } from './QuickActionCard';
 export { ActivityFeed } from './ActivityFeed';
 export { ChartWidget } from './ChartWidget';
-export { QuickAccess } from './QuickAccess';
 export { DepartmentQuickAccess } from './DepartmentQuickAccess';
 export { HRManagementWidget } from './HRManagementWidget';
 export { HRRequests } from './HRRequests';
