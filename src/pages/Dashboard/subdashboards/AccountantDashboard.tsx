@@ -432,14 +432,16 @@ const AccountantDashboard: React.FC = () => {
       
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-2">
-        {/* Recent Activities - Below Metric Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Recent Activities - 1/3 width */}
+        <div className="xl:col-span-1">
           <ActivityFeed
             title="Recent Account Activities"
             activities={currentData.activities}
             maxItems={3}
           />
-        {/* Left Column - Charts and Data */}
+        </div>
+        {/* Left Column - Charts and Data - 2/3 width */}
         <div className="xl:col-span-2 space-y-6">
           {/* Financial Trends Chart - Revenue, Expenses, Liabilities */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">

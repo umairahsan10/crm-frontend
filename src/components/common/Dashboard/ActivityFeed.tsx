@@ -43,8 +43,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   const displayActivities = activities.slice(0, maxItems);
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 w-full ${className}`}>
-      <div className="p-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 w-full h-full flex flex-col ${className}`}>
+      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
@@ -52,7 +52,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
           </div>
         </div>
       </div>
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-gray-100 flex-1">
         {displayActivities.map((activity, index) => {
           const styles = getActivityStyles(activity.type);
           return (

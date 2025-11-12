@@ -222,11 +222,11 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
           : 'opacity-0 translate-y-8'
       } ${className}`}
     >
-      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
+      <div className="p-4 py-2 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
-            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+            <h2 className="text-md font-bold text-gray-900">{title}</h2>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-lg bg-orange-100 text-orange-600">

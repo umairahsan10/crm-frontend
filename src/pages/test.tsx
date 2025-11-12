@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { MetricCard } from '../components/common/Dashboard/MetricCard';
 import { MetricGrid } from '../components/common/Dashboard/MetricGrid';
-import { QuickActionCard } from '../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../components/common/Dashboard/ChartWidget';
 import ProgressBar from '../components/common/ProgressBar/ProgressBar';
@@ -34,8 +33,7 @@ import type { Time } from '../components/common/TimePicker/TimePicker';
 import type { 
   MetricData, 
   ChartData, 
-  ActivityItem, 
-  QuickActionItem 
+  ActivityItem
 } from '../types/dashboard';
 
 const testPage: React.FC = () => {
@@ -136,37 +134,6 @@ const testPage: React.FC = () => {
       time: '2 hours ago',
       type: 'warning',
       user: 'Security System'
-    }
-  ];
-
-  const quickActions: QuickActionItem[] = [
-    {
-      title: 'Add New User',
-      description: 'Create a new user account',
-      icon: '👤',
-      href: '/users/add',
-      color: 'bg-blue-100 text-blue-600'
-    },
-    {
-      title: 'Generate Report',
-      description: 'Create system reports',
-      icon: '📊',
-      href: '/reports',
-      color: 'bg-green-100 text-green-600'
-    },
-    {
-      title: 'System Settings',
-      description: 'Configure system parameters',
-      icon: '⚙️',
-      href: '/settings',
-      color: 'bg-purple-100 text-purple-600'
-    },
-    {
-      title: 'View Logs',
-      description: 'Check system logs',
-      icon: '📋',
-      href: '/logs',
-      color: 'bg-orange-100 text-orange-600'
     }
   ];
 
@@ -456,12 +423,6 @@ const testPage: React.FC = () => {
 
             {/* Quick Actions & Activity Feed */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <ComponentCard title="Quick Actions" icon="⚡" color="bg-red-500">
-                <QuickActionCard 
-                  title="Administrative Actions" 
-                  actions={quickActions} 
-                />
-              </ComponentCard>
 
               <ComponentCard title="Activity Feed" icon="🔄" color="bg-indigo-500">
                 <ActivityFeed 

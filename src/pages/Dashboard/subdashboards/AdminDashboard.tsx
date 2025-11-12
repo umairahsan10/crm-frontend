@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
-import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
 import { 
@@ -13,8 +12,7 @@ import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import type { 
   MetricData, 
   ChartData, 
-  ActivityItem, 
-  QuickActionItem 
+  ActivityItem  
 } from '../../../types/dashboard';
 
 const AdminDashboard: React.FC = () => {
@@ -152,37 +150,6 @@ const AdminDashboard: React.FC = () => {
       time: '1 day ago',
       type: 'info',
       user: 'Admin'
-    }
-  ];
-
-  const quickActions: QuickActionItem[] = [
-    {
-      title: 'User Management',
-      description: 'Create User, Manage Roles',
-      icon: '👥',
-      href: '/admin/users',
-      color: 'bg-blue-100 text-blue-600'
-    },
-    {
-      title: 'Company Settings',
-      description: 'Holiday Management, Policy Updates',
-      icon: '⚙️',
-      href: '/admin/settings',
-      color: 'bg-green-100 text-green-600'
-    },
-    {
-      title: 'System Reports',
-      description: 'Access Logs, Audit Trail',
-      icon: '📊',
-      href: '/admin/reports',
-      color: 'bg-purple-100 text-purple-600'
-    },
-    {
-      title: 'Analytics',
-      description: 'Company Reports, Export Data',
-      icon: '📈',
-      href: '/admin/analytics',
-      color: 'bg-orange-100 text-orange-600'
     }
   ];
 
@@ -670,88 +637,85 @@ const AdminDashboard: React.FC = () => {
         />
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Left Column - Performance and Charts */}
-          <div className="xl:col-span-2 space-y-6">
-            <MetricGrid 
-              title="Company Performance" 
-              metrics={performanceMetrics}
-              columns={3}
-            />
-            
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ChartWidget 
-                title="User Activity (Last 7 Days)"
-                data={userActivityData}
-              type="line" 
-                height={250}
-              />
-              <DepartmentOverview />
-        </div>
-
-            <MetricGrid 
-              title="System Health"
-              metrics={systemHealthMetrics}
-              columns={2}
-              headerColor="from-green-50 to-transparent"
-              headerGradient="from-green-500 to-emerald-600"
-              cardSize="sm"
-              cardClassName="border-0 shadow-none bg-gray-50"
-            />
-
-            {/* Department Performance Leaderboard */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Department Performance Leaderboard
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Track and compare performance across departments
-                </p>
-              </div>
-              <div className="p-6">
-                <div className="mb-6">
-                  <DepartmentFilter
-                    departments={departments}
-                    selectedDepartment={selectedDepartment}
-                    onDepartmentSelect={setSelectedDepartment}
-                    className="mb-4"
-                  />
-                  {selectedDepartment && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span>Showing top performers from <strong>{selectedDepartment}</strong> department</span>
-                    </div>
-                  )}
-                </div>
-                <PerformanceLeaderboard 
-                  title={selectedDepartment ? `${selectedDepartment} Top Performers` : "All Departments Top Performers"}
-                  members={topPerformers}
-                  showDepartment={!selectedDepartment}
-                  showRole={true}
-                />
-              </div>
-            </div>
-        </div>
-
-          {/* Right Column - Actions and Activities */}
-          <div className="space-y-6">
-            <QuickActionCard 
-              title="Quick Actions" 
-              actions={quickActions}
-            />
-            
-          <ActivityFeed 
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-stretch">
+          {/* Recent Activities - 1/3 width */}
+          <div className="xl:col-span-1 flex">
+            <ActivityFeed 
               title="Recent System Activities" 
-            activities={activities} 
-            maxItems={3} 
-          />
-            
+              activities={activities} 
+              maxItems={3} 
+              className="flex-1"
+            />
+          </div>
+          {/* Right Column - One component with matching height - 2/3 width */}
+          <div className="xl:col-span-2">
             <UserManagementWidget />
-
-        </div>
           </div>
         </div>
+
+        {/* Additional Content - Moves to next line */}
+        <div className="space-y-6">
+          <MetricGrid 
+            title="Company Performance" 
+            metrics={performanceMetrics}
+            columns={3}
+          />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartWidget 
+              title="User Activity (Last 7 Days)"
+              data={userActivityData}
+              type="line" 
+              height={250}
+            />
+            <DepartmentOverview />
+          </div>
+
+          <MetricGrid 
+            title="System Health"
+            metrics={systemHealthMetrics}
+            columns={2}
+            headerColor="from-green-50 to-transparent"
+            headerGradient="from-green-500 to-emerald-600"
+            cardSize="sm"
+            cardClassName="border-0 shadow-none bg-gray-50"
+          />
+
+          {/* Department Performance Leaderboard */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Department Performance Leaderboard
+              </h3>
+              <p className="text-sm text-gray-600">
+                Track and compare performance across departments
+              </p>
+            </div>
+            <div className="p-6">
+              <div className="mb-6">
+                <DepartmentFilter
+                  departments={departments}
+                  selectedDepartment={selectedDepartment}
+                  onDepartmentSelect={setSelectedDepartment}
+                  className="mb-4"
+                />
+                {selectedDepartment && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Showing top performers from <strong>{selectedDepartment}</strong> department</span>
+                  </div>
+                )}
+              </div>
+              <PerformanceLeaderboard 
+                title={selectedDepartment ? `${selectedDepartment} Top Performers` : "All Departments Top Performers"}
+                members={topPerformers}
+                showDepartment={!selectedDepartment}
+                showRole={true}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </AdminDashboardLayout>
   );
 };

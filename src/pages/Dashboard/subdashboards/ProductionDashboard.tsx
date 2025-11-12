@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
-import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
 import { ProjectStatus, DepartmentQuickAccess } from '../../../components/common/Dashboard';
@@ -386,57 +385,51 @@ const ProductionDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Recent Activities - Below Metric Grid */}
-      <ActivityFeed 
-        title="Recent Production Activities"
-        activities={currentData.activities}
-        maxItems={3} 
-      />
-
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Left Column - Charts and Data */}
-        <div className="xl:col-span-2 space-y-6">
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartWidget 
-              title="Production Volume Trend"
-              data={productionTrendData}
-          type="line" 
-              height={250}
-        />
-        <ChartWidget 
-              title="Top 5 Performing Teams"
-              data={topTeamsData}
-              type="bar"
-              height={250}
-        />
-      </div>
-
-          {/* Project Status - Only for Department Manager and Unit Head */}
-          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-            <ProjectStatus />
-          )}
-
-          {/* Recent Production Activities Feed - Only for Department Manager and Unit Head */}
-          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-            <ActivityFeed
-              title="Recent Production Activities Feed"
-              activities={currentData.activities.filter(activity =>
-                activity.title.includes('production') || activity.title.includes('Production')
-              )}
-              maxItems={3}
-            />
-          )}
-        </div>
-
-        {/* Right Column - Actions and Activities */}
-        <div className="space-y-6">
-          <QuickActionCard
-            title="Quick Action Shortcuts"
-            actions={currentData.quickActions}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-stretch">
+        {/* Recent Activities - 1/3 width */}
+        <div className="xl:col-span-1 flex">
+          <ActivityFeed 
+            title="Recent Production Activities"
+            activities={currentData.activities}
+            maxItems={3}
+            className="flex-1"
           />
         </div>
+        {/* Right Column - One component with matching height - 2/3 width */}
+        <div className="xl:col-span-2">
+          <ChartWidget 
+            title="Production Volume Trend"
+            data={productionTrendData}
+            type="line" 
+            height={250}
+          />
+        </div>
+      </div>
+
+      {/* Additional Content - Moves to next line */}
+      <div className="space-y-6">
+        <ChartWidget 
+          title="Top 5 Performing Teams"
+          data={topTeamsData}
+          type="bar"
+        />
+
+        {/* Project Status - Only for Department Manager and Unit Head */}
+        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
+          <ProjectStatus />
+        )}
+
+        {/* Recent Production Activities Feed - Only for Department Manager and Unit Head */}
+        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
+          <ActivityFeed
+            title="Recent Production Activities Feed"
+            activities={currentData.activities.filter(activity =>
+              activity.title.includes('production') || activity.title.includes('Production')
+            )}
+            maxItems={3}
+          />
+        )}
       </div>
     </div>
   );
