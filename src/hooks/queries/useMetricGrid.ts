@@ -17,15 +17,16 @@ export const metricGridQueryKeys = {
  * Hook to fetch metric grid data
  * Automatically uses user's department and role from auth context
  * Transforms API response to MetricData format
+ * @param selectedDepartment - Optional department filter for Admin dashboard
  */
-export const useMetricGrid = () => {
+export const useMetricGrid = (selectedDepartment?: string | null) => {
   const { user } = useAuth();
 
   return useQuery<MetricData[], Error>({
-    queryKey: metricGridQueryKeys.byUser(user?.department, user?.role),
+    queryKey: [...metricGridQueryKeys.byUser(user?.department, user?.role), selectedDepartment],
     queryFn: async () => {
       const apiData = await getMetricGridApi();
-      return transformMetricGridResponse(apiData);
+      return transformMetricGridResponse(apiData, selectedDepartment);
     },
     enabled: !!user, // Only fetch if user is logged in
     staleTime: 30000, // Data is fresh for 30 seconds

@@ -2,11 +2,24 @@ import { apiGetJson } from '../utils/apiClient';
 
 /**
  * API Response structure from /dashboard/metric-grid
+ * Supports both cardsByDepartment (for Admin) and cards (for other dashboards)
  */
 export interface MetricGridApiResponse {
   department: string;
   role: string;
-  cards: Array<{
+  cardsByDepartment?: {
+    [key: string]: Array<{
+      id: number;
+      title: string;
+      value: string;
+      subtitle?: string;
+      change?: string;
+      changeType?: 'positive' | 'negative' | 'neutral';
+      department?: string;
+    }>;
+  };
+  // Legacy structure for backward compatibility (other dashboards)
+  cards?: Array<{
     id: number;
     title: string;
     value: string;
