@@ -5,11 +5,13 @@ import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed'
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
 import { 
   UserManagementWidget, 
-  DepartmentOverview, 
-  AdminDashboardLayout 
+  DepartmentOverview
 } from '../../../components/common/Dashboard/AdminSpecific';
+import { DepartmentQuickAccess } from '../../../components/common/Dashboard/DepartmentQuickAccess';
 import { PerformanceLeaderboard } from '../../../components/common/Leaderboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
+import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
+import { getMetricIcon } from '../../../utils/metricIcons';
 import type { 
   MetricData, 
   ChartData, 
@@ -24,41 +26,49 @@ const AdminDashboard: React.FC = () => {
   // Available departments
   const departments = ['Sales', 'Marketing', 'Production', 'HR', 'Accounting'];
 
-  // Admin Dashboard Data
-  const overviewStats: MetricData[] = [
+  // Fetch metric grid data from API with department filter
+  const { data: metricGridData } = useMetricGrid(selectedDepartment);
+
+  // Fallback dummy data for Admin metric grid (used when API data is not available)
+  const adminFallbackMetrics: MetricData[] = [
     {
       title: 'Total Users',
       value: '120',
+      subtitle: 'Registered users',
       change: '+8 this month',
       changeType: 'positive',
-      icon: '👥',
-      subtitle: 'Registered users'
+      icon: getMetricIcon('Total Users')
     },
     {
       title: 'Active Today',
       value: '95',
+      subtitle: 'Currently online',
       change: '79% active rate',
       changeType: 'positive',
-      icon: '🟢',
-      subtitle: 'Currently online'
+      icon: getMetricIcon('Active Today')
     },
     {
       title: 'Departments',
       value: '5',
+      subtitle: 'Active departments',
       change: 'All operational',
       changeType: 'positive',
-      icon: '🏢',
-      subtitle: 'Active departments'
+      icon: getMetricIcon('Departments')
     },
     {
       title: 'System Health',
       value: '99.9%',
+      subtitle: 'Server uptime',
       change: '+0.1% uptime',
       changeType: 'positive',
-      icon: '⚡',
-      subtitle: 'Server uptime'
+      icon: getMetricIcon('System Health')
     }
   ];
+
+  // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+  const overviewStats = metricGridData && metricGridData.length > 0 
+    ? metricGridData 
+    : adminFallbackMetrics;
 
   const performanceMetrics: MetricData[] = [
     {
@@ -654,19 +664,37 @@ const AdminDashboard: React.FC = () => {
   }, [filteredPerformanceData]);
 
   return (
-    <AdminDashboardLayout 
-      title="Admin Dashboard" 
-      subtitle="System overview and management tools"
-    >
-      <div className="space-y-6">
-        {/* Overview Stats */}
-        <MetricGrid 
-          title="Overview Statistics"
-          metrics={overviewStats}
-          columns={4}
-          headerColor="from-blue-50 to-transparent"
-          headerGradient="from-blue-500 to-indigo-600"
-          cardSize="md"
+    <div className="space-y-6">
+        {/* Department Filter - On Top */}
+        <div className="flex justify-center">
+          <DepartmentFilter
+            departments={departments}
+            selectedDepartment={selectedDepartment}
+            onDepartmentSelect={setSelectedDepartment}
+          />
+        </div>
+
+        {/* Overview Stats with Quick Access on Right */}
+        <div className="flex items-start gap-4">
+          <div className="flex-1">
+            <MetricGrid
+              metrics={overviewStats}
+              columns={4}
+              headerColor="from-blue-50 to-transparent"
+              headerGradient="from-blue-500 to-indigo-600"
+              cardSize="md"
+            />
+          </div>
+          <div className="flex flex-col gap-4 flex-shrink-0 w-56">
+            <DepartmentQuickAccess department="Admin" />
+          </div>
+        </div>
+
+        {/* Recent Activities - Below Metric Grid */}
+        <ActivityFeed
+          title="Recent System Activities"
+          activities={activities}
+          maxItems={5}
         />
 
         {/* Main Content Grid */}
@@ -711,14 +739,8 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div className="p-6">
                 <div className="mb-6">
-                  <DepartmentFilter
-                    departments={departments}
-                    selectedDepartment={selectedDepartment}
-                    onDepartmentSelect={setSelectedDepartment}
-                    className="mb-4"
-                  />
                   {selectedDepartment && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <span>Showing top performers from <strong>{selectedDepartment}</strong> department</span>
                     </div>
@@ -736,8 +758,8 @@ const AdminDashboard: React.FC = () => {
 
           {/* Right Column - Actions and Activities */}
           <div className="space-y-6">
-            <QuickActionCard 
-              title="Quick Actions" 
+            <QuickActionCard
+              title="Quick Action Shortcuts"
               actions={quickActions}
             />
             
@@ -748,11 +770,9 @@ const AdminDashboard: React.FC = () => {
           />
             
             <UserManagementWidget />
-
-        </div>
           </div>
         </div>
-    </AdminDashboardLayout>
+    </div>
   );
 };
 
