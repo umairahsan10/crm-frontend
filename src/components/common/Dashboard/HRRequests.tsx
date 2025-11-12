@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useHRRequests } from '../../../hooks/queries/useHRRequests';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 
 interface HRRequest {
   id: string;
@@ -19,9 +20,16 @@ interface HRRequestsProps {
   limit?: number;
 }
 
-export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 5 }) => {
+export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 3 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { data, isLoading, isError, error } = useHRRequests({ limit });
+  
+  // Check if user is Admin
+  const isAdmin = user?.role === 'admin';
+  
+  // Tab state for Admin users
+  const [activeTab, setActiveTab] = useState<'employeeToHr' | 'hrToAdmin'>('employeeToHr');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -71,23 +79,46 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
   };
 
   const handleManageRequests = () => {
-    // Navigate to employee requests page
-    navigate('/employee-requests');
+    // For Admin users: navigate based on active tab
+    if (isAdmin) {
+      if (activeTab === 'employeeToHr') {
+        // Navigate to employee-to-HR requests page
+        navigate('/employee-requests');
+      } else if (activeTab === 'hrToAdmin') {
+        // Navigate to HR-to-Admin requests page
+        navigate('/admin-hr-requests');
+      }
+    } else {
+      // For HR users: navigate to employee requests page
+      navigate('/employee-requests');
+    }
   };
 
-  const handleViewAll = () => {
-    // Navigate to employee requests page
-    navigate('/employee-requests');
+  // Get requests based on user role and active tab
+  const getCurrentRequests = (): HRRequest[] => {
+    if (!data) return [];
+    
+    if (isAdmin && data.requestsByType) {
+      // Admin users: return requests based on active tab
+      return activeTab === 'employeeToHr' 
+        ? data.requestsByType.employeeToHr || []
+        : data.requestsByType.hrToAdmin || [];
+    } else {
+      // HR users: return regular requests array
+      return data.requests || [];
+    }
   };
+
+  const recentRequests = getCurrentRequests();
 
   // Loading state
   if (isLoading) {
     return (
       <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
           <div className="flex items-center gap-3">
-            <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
-            <h2 className="text-xl font-bold text-gray-900">Recent HR Requests</h2>
+            <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
+            <h2 className="text-md font-bold text-gray-900">Recent HR Requests</h2>
           </div>
         </div>
         <div className="p-6">
@@ -107,10 +138,10 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
   if (isError) {
     return (
       <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
           <div className="flex items-center gap-3">
-            <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
-            <h2 className="text-xl font-bold text-gray-900">Recent HR Requests</h2>
+            <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
+            <h2 className="text-md font-bold text-gray-900">Recent HR Requests</h2>
           </div>
         </div>
         <div className="p-6 text-center">
@@ -121,18 +152,14 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
     );
   }
 
-  // Get requests from API response or empty array
-  const recentRequests: HRRequest[] = data?.requests || [];
-  const totalRequests = data?.total || 0;
-
   // Empty state
   if (recentRequests.length === 0) {
     return (
       <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
           <div className="flex items-center gap-3">
-            <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
-            <h2 className="text-xl font-bold text-gray-900">Recent HR Requests</h2>
+            <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
+            <h2 className="text-md font-bold text-gray-900">Recent HR Requests</h2>
           </div>
         </div>
         <div className="p-6 text-center">
@@ -145,26 +172,63 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
 
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
-      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-transparent">
+      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
-            <h2 className="text-xl font-bold text-gray-900">Recent HR Requests</h2>
+            <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
+            <h2 className="text-md font-bold text-gray-900">Recent HR Requests</h2>
           </div>
           <button
             onClick={handleManageRequests}
-            className="text-sm text-orange-600 hover:text-orange-800 font-medium px-3 py-1 rounded-lg hover:bg-orange-50 transition-colors duration-200"
+            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1 rounded-lg hover:bg-indigo-50 transition-colors duration-200"
           >
             Manage Requests
           </button>
         </div>
       </div>
+      
+      {/* Tabs for Admin users */}
+      {isAdmin && data?.requestsByType && (
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('employeeToHr')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'employeeToHr'
+                ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50/50'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Employee Requests
+            {data.requestsByType.employeeToHr && (
+              <span className="ml-2 px-2 py-0.5 rounded-full text-xs bg-gray-200 text-gray-700">
+                {data.requestsByType.employeeToHr.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('hrToAdmin')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'hrToAdmin'
+                ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50/50'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            HR Requests
+            {data.requestsByType.hrToAdmin && (
+              <span className="ml-2 px-2 py-0.5 rounded-full text-xs bg-gray-200 text-gray-700">
+                {data.requestsByType.hrToAdmin.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
       <div className="divide-y divide-gray-200">
         {recentRequests.map((request) => (
           <div key={request.id} className="p-4 hover:bg-gray-50 transition-colors duration-200">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3 flex-1">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm">
                   <span className="text-sm font-semibold text-white">
                     {getTypeIcon(request.type)}
                   </span>
@@ -192,14 +256,14 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
           </div>
         ))}
       </div>
-      <div className="p-4 bg-gray-50 border-t border-gray-200">
+      {/* <div className="p-4 bg-gray-50 border-t border-gray-200">
         <button
           onClick={handleViewAll}
           className="w-full text-sm text-gray-600 hover:text-gray-800 font-medium py-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
         >
           View All Requests ({totalRequests})
         </button>
-      </div>
+      </div> */}
     </div>
   );
 };

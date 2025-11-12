@@ -87,11 +87,14 @@ export const getActivityFeedApi = async (limit: number): Promise<ActivityFeedApi
 
 /**
  * API Response structure from /dashboard/hr-requests
+ * For HR users: returns requests array
+ * For Admin users: returns requestsByType object with separated requests
  */
 export interface HRRequestsApiResponse {
   department: string;
   role: string;
-  requests: Array<{
+  // For HR users
+  requests?: Array<{
     id: string;
     title: string;
     employee: string;
@@ -102,6 +105,31 @@ export interface HRRequestsApiResponse {
     submittedDate: string;
     description: string;
   }>;
+  // For Admin users
+  requestsByType?: {
+    employeeToHr: Array<{
+      id: string;
+      title: string;
+      employee: string;
+      department: string;
+      type: 'Leave' | 'Salary' | 'Training' | 'Complaint' | 'Other';
+      status: 'Pending' | 'Approved' | 'Rejected' | 'Under Review';
+      priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+      submittedDate: string;
+      description: string;
+    }>;
+    hrToAdmin: Array<{
+      id: string;
+      title: string;
+      employee: string;
+      department: string;
+      type: 'Leave' | 'Salary' | 'Training' | 'Complaint' | 'Other';
+      status: 'Pending' | 'Approved' | 'Rejected' | 'Under Review';
+      priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+      submittedDate: string;
+      description: string;
+    }>;
+  };
   total: number;
 }
 
@@ -121,6 +149,106 @@ export const getHRRequestsApi = async (limit: number = 5): Promise<HRRequestsApi
     return data;
   } catch (error) {
     console.error('Error fetching HR requests:', error);
+    throw error;
+  }
+};
+
+/**
+ * API Response structure from /dashboard/attendance-trends
+ */
+export interface AttendanceTrendsApiResponse {
+  department: string;
+  role: string;
+  period: 'daily' | 'monthly';
+  summary: {
+    currentPeriod: {
+      averageAttendanceRate: number;
+      totalEmployees: number;
+      averagePresent: number;
+      averageAbsent: number;
+      bestDay?: { date: string; rate: number };
+      worstDay?: { date: string; rate: number };
+    };
+    previousPeriod?: {
+      averageAttendanceRate: number;
+      totalEmployees: number;
+      averagePresent: number;
+      averageAbsent: number;
+    };
+    change?: {
+      rate: number;
+      trend: 'up' | 'down' | 'neutral';
+      percentage: number;
+    };
+  };
+  data: Array<{
+    date: string;
+    label: string;
+    fullLabel: string;
+    attendanceRate: number;
+    totalEmployees: number;
+    present: number;
+    absent: number;
+    onLeave?: number;
+    remote?: number;
+    late?: number;
+    chartValue: number;
+    isWeekend?: boolean;
+    isHoliday?: boolean;
+    monthNumber?: number;
+    year?: number;
+    workingDays?: number;
+  }>;
+  metadata: {
+    dateRange: { start: string; end: string };
+    totalDays?: number;
+    workingDays?: number;
+    weekendDays?: number;
+    totalMonths?: number;
+    generatedAt: string;
+  };
+}
+
+/**
+ * Fetch attendance trends data from API
+ * Backend automatically determines department and role from JWT token
+ * @param period - 'daily' or 'monthly' (default: 'daily')
+ */
+export const getAttendanceTrendsApi = async (period: 'daily' | 'monthly' = 'daily'): Promise<AttendanceTrendsApiResponse> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('period', period);
+    const url = `/dashboard/attendance-trends?${queryParams.toString()}`;
+    const data = await apiGetJson<AttendanceTrendsApiResponse>(url);
+    return data;
+  } catch (error) {
+    console.error('Error fetching attendance trends:', error);
+    throw error;
+  }
+};
+
+/**
+ * API Response structure from /dashboard/employee-count-by-department
+ */
+export interface DepartmentDistributionApiResponse {
+  departments: Array<{
+    department: string;
+    count: number;
+  }>;
+  total: number;
+}
+
+/**
+ * Fetch department distribution data from API
+ * Backend automatically determines department and role from JWT token
+ */
+export const getDepartmentDistributionApi = async (): Promise<DepartmentDistributionApiResponse> => {
+  try {
+    const url = '/dashboard/employee-count-by-department';
+    const data = await apiGetJson<DepartmentDistributionApiResponse>(url);
+    return data;
+  } catch (error) {
+    console.error('Error fetching department distribution:', error);
     throw error;
   }
 };

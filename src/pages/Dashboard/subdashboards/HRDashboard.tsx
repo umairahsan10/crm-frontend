@@ -1,23 +1,48 @@
 import React, { useState } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
-import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import {DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import { DepartmentQuickAccess, HRRequests } from '../../../components/common/Dashboard';
+import { DepartmentDistributionChart } from '../../../components/common/Dashboard/DepartmentDistributionChart';
 import { Calendar } from '../../../components/common/Calendar';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
+import { useAttendanceTrends } from '../../../hooks/queries/useAttendanceTrends';
+import { useDepartmentDistribution } from '../../../hooks/queries/useDepartmentDistribution';
 import { getMetricIcon } from '../../../utils/metricIcons';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import type {
   ChartData,
   ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
 
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 const HRDashboard: React.FC = () => {
   const { user } = useAuth();
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+  const [attendanceView, setAttendanceView] = useState<'daily' | 'monthly'>('daily');
 
   // Determine user role and access level
   const getUserRoleLevel = () => {
@@ -50,6 +75,13 @@ const HRDashboard: React.FC = () => {
   
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
+
+  // Fetch attendance trends data from API
+  const { data: dailyTrendApiData } = useAttendanceTrends('daily');
+  const { data: monthlyTrendApiData } = useAttendanceTrends('monthly');
+
+  // Fetch department distribution data from API
+  const { data: departmentDistributionApiData } = useDepartmentDistribution();
 
   // Fallback dummy data for HR metric grid (used when API data is not available)
   const hrFallbackMetrics = [
@@ -412,8 +444,8 @@ const HRDashboard: React.FC = () => {
     }
   ];
 
-  // Chart data for attendance trends
-  const attendanceTrendData: ChartData[] = [
+  // Fallback dummy data for daily attendance trend (used when API data is not available)
+  const dailyAttendanceFallbackData: ChartData[] = [
     { name: 'Mon', value: 95 },
     { name: 'Tue', value: 92 },
     { name: 'Wed', value: 88 },
@@ -423,14 +455,44 @@ const HRDashboard: React.FC = () => {
     { name: 'Sun', value: 30 }
   ];
 
-  // Department distribution data
-  const departmentDistributionData: ChartData[] = [
+  // Fallback dummy data for monthly attendance trend (used when API data is not available)
+  const monthlyAttendanceFallbackData: ChartData[] = [
+    { name: 'Jan', value: 92 },
+    { name: 'Feb', value: 88 },
+    { name: 'Mar', value: 90 },
+    { name: 'Apr', value: 94 },
+    { name: 'May', value: 91 },
+    { name: 'Jun', value: 89 },
+    { name: 'Jul', value: 93 },
+    { name: 'Aug', value: 87 },
+    { name: 'Sep', value: 95 },
+    { name: 'Oct', value: 92 },
+    { name: 'Nov', value: 90 },
+    { name: 'Dec', value: 94 }
+  ];
+
+  // Use API data for attendance trends, fallback to dummy data if API is loading or fails
+  const dailyAttendanceTrendData = dailyTrendApiData && dailyTrendApiData.length > 0
+    ? dailyTrendApiData
+    : dailyAttendanceFallbackData;
+
+  const monthlyAttendanceTrendData = monthlyTrendApiData && monthlyTrendApiData.length > 0
+    ? monthlyTrendApiData
+    : monthlyAttendanceFallbackData;
+
+  // Fallback dummy data for department distribution (used when API data is not available)
+  const departmentDistributionFallbackData: ChartData[] = [
     { name: 'Sales', value: 28 },
     { name: 'Marketing', value: 18 },
     { name: 'Production', value: 35 },
     { name: 'HR', value: 12 },
     { name: 'Accounting', value: 15 }
   ];
+
+  // Use API data for department distribution, fallback to dummy data if API is loading or fails
+  const departmentDistributionData = departmentDistributionApiData && departmentDistributionApiData.length > 0
+    ? departmentDistributionApiData
+    : departmentDistributionFallbackData;
 
   const currentData = getDataForRole();
 
@@ -484,33 +546,134 @@ const HRDashboard: React.FC = () => {
         </div>
         {/* Right Column - One component with matching height - 2/3 width */}
         <div className="xl:col-span-2">
-          <ChartWidget
-            title="Monthly Attendance Trend"
-            data={attendanceTrendData}
-            type="line"
-          />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Tabs Header */}
+            <div className="bg-gradient-to-r from-orange-50 to-transparent">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
+                  <h2 className="text-md font-bold text-gray-900">Attendance Trend</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="p-2.5 rounded-lg bg-orange-100 text-orange-600">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              {/* Tabs */}
+              <div className="flex border-b border-gray-200">
+                <button
+                  onClick={() => setAttendanceView('daily')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                    attendanceView === 'daily'
+                      ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50/50'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Daily Trend
+                </button>
+                <button
+                  onClick={() => setAttendanceView('monthly')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                    attendanceView === 'monthly'
+                      ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50/50'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Monthly Trend
+                </button>
+              </div>
+            </div>
+            {/* Chart Content */}
+            <div className="p-6" style={{ height: '350px' }}>
+              {(() => {
+                const currentData = attendanceView === 'daily' ? dailyAttendanceTrendData : monthlyAttendanceTrendData;
+                const chartData = {
+                  labels: currentData.map(item => item.name),
+                  datasets: [
+                    {
+                      label: 'Attendance Rate (%)',
+                      data: currentData.map(item => item.value),
+                      backgroundColor: '#3B82F6',
+                      borderColor: '#3B82F6',
+                      borderWidth: 3,
+                      tension: 0.4,
+                      pointRadius: 4,
+                      pointHoverRadius: 8,
+                      pointHoverBorderWidth: 2,
+                      pointHoverBorderColor: '#ffffff',
+                    },
+                  ],
+                };
+                const options = {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: 'top' as const,
+                      labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                          size: 12,
+                          weight: 'normal' as const,
+                        },
+                      },
+                    },
+                    tooltip: {
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      titleColor: 'white',
+                      bodyColor: 'white',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      borderWidth: 1,
+                      cornerRadius: 8,
+                      displayColors: true,
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        display: false,
+                      },
+                      ticks: {
+                        color: '#6B7280',
+                        font: {
+                          size: 11,
+                        },
+                      },
+                    },
+                    y: {
+                      grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                      },
+                      ticks: {
+                        color: '#6B7280',
+                        font: {
+                          size: 11,
+                        },
+                      },
+                      min: 0,
+                      max: 100,
+                    },
+                  },
+                };
+                return <Line data={chartData} options={options} />;
+              })()}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Additional Content - Moves to next line */}
       <div className="space-y-6">
-        <ChartWidget
-          title="Department-wise Employee Distribution"
-          data={departmentDistributionData}
-          type="pie"
-          height={250}
-        />
-
-        {/* HR Requests Feed - Only for Department Manager and Unit Head */}
-        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-          <ActivityFeed
-            title="Recent HR Requests Feed"
-            activities={currentData.activities.filter(activity =>
-              activity.title.includes('HR Request')
-            )}
-            maxItems={3}
-          />
-        )}
+        {/* HR Requests and Department Distribution - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <HRRequests limit={3} />
+          <DepartmentDistributionChart data={departmentDistributionData} />
+        </div>
 
         {/* Upcoming Leave Calendar - Only for Department Manager and Unit Head */}
         {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (

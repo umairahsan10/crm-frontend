@@ -6,14 +6,15 @@ import {
   Legend,
 } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
-import { useDepartmentDistribution } from '../../../../hooks/queries/useDepartmentDistribution';
-import type { ChartData } from '../../../../types/dashboard';
+import type { ChartData } from '../../../types/dashboard';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-interface DepartmentOverviewProps {
+interface DepartmentDistributionChartProps {
+  data: ChartData[];
   className?: string;
+  title?: string;
 }
 
 // Department-specific color palette
@@ -29,32 +30,19 @@ const getDepartmentColor = (department: string): string => {
   return colorMap[department] || '#6B7280'; // Gray as default
 };
 
-export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ className = '' }) => {
+export const DepartmentDistributionChart: React.FC<DepartmentDistributionChartProps> = ({ 
+  data, 
+  className = '',
+  title = 'Department-wise Employee Distribution'
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
-  // Fetch department distribution data from API
-  const { data: departmentDistributionApiData, isLoading } = useDepartmentDistribution();
-
-  // Fallback dummy data for department distribution (used when API data is not available)
-  const departmentDistributionFallbackData: ChartData[] = [
-    { name: 'Sales', value: 35 },
-    { name: 'Production', value: 28 },
-    { name: 'HR', value: 15 },
-    { name: 'Marketing', value: 12 },
-    { name: 'Accounting', value: 10 },
-  ];
-
-  // Use API data for department distribution, fallback to dummy data if API is loading or fails
-  const departmentData = departmentDistributionApiData && departmentDistributionApiData.length > 0
-    ? departmentDistributionApiData
-    : departmentDistributionFallbackData;
-
   // Calculate total employees
-  const totalEmployees = departmentData.reduce((sum, dept) => sum + dept.value, 0);
+  const totalEmployees = data.reduce((sum, dept) => sum + dept.value, 0);
 
   // Calculate percentages
-  const dataWithPercentages = departmentData.map(dept => ({
+  const dataWithPercentages = data.map(dept => ({
     ...dept,
     percentage: ((dept.value / totalEmployees) * 100).toFixed(1)
   }));
@@ -156,24 +144,6 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
     },
   };
 
-  if (isLoading) {
-    return (
-      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
-        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
-          <div className="flex items-center gap-3">
-            <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
-            <h2 className="text-md font-bold text-gray-900">Department Distribution</h2>
-          </div>
-        </div>
-        <div className="p-6">
-          <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded-lg"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div 
       ref={chartRef}
@@ -187,7 +157,7 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
-            <h2 className="text-md font-bold text-gray-900">Department Distribution</h2>
+            <h2 className="text-md font-bold text-gray-900">{title}</h2>
           </div>
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
@@ -196,7 +166,7 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
           </div>
         </div>
       </div>
-      <div className="p-6" style={{ height: '280px' }}>
+      <div className="p-6" style={{ height: '250px' }}>
         <Pie data={chartData} options={options} />
       </div>
       {/* Summary Stats */}
@@ -217,3 +187,4 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
     </div>
   );
 };
+

@@ -7,9 +7,11 @@ import {
   DepartmentOverview
 } from '../../../components/common/Dashboard/AdminSpecific';
 import { DepartmentQuickAccess } from '../../../components/common/Dashboard/DepartmentQuickAccess';
+import { HRRequests } from '../../../components/common/Dashboard';
 import { PerformanceLeaderboard } from '../../../components/common/Leaderboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
+import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
 import { getMetricIcon } from '../../../utils/metricIcons';
 import type { 
   MetricData, 
@@ -26,6 +28,9 @@ const AdminDashboard: React.FC = () => {
 
   // Fetch metric grid data from API with department filter
   const { data: metricGridData } = useMetricGrid(selectedDepartment);
+  
+  // Fetch activity feed data from API
+  const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
   // Fallback dummy data for Admin metric grid (used when API data is not available)
   const adminFallbackMetrics: MetricData[] = [
@@ -67,6 +72,55 @@ const AdminDashboard: React.FC = () => {
   const overviewStats = metricGridData && metricGridData.length > 0 
     ? metricGridData 
     : adminFallbackMetrics;
+
+  // Fallback dummy data for Admin activities (used when API data is not available)
+  const adminFallbackActivities: ActivityItem[] = [
+    {
+      id: '1',
+      title: 'New user registration',
+      description: 'John Smith joined as Sales Manager',
+      time: '2 hours ago',
+      type: 'success',
+      user: 'System'
+    },
+    {
+      id: '2',
+      title: 'System backup completed',
+      description: 'Daily backup completed successfully',
+      time: '4 hours ago',
+      type: 'info',
+      user: 'System'
+    },
+    {
+      id: '3',
+      title: 'Policy update',
+      description: 'Holiday policy updated by HR',
+      time: '6 hours ago',
+      type: 'info',
+      user: 'HR Admin'
+    },
+    {
+      id: '4',
+      title: 'Login issue resolved',
+      description: 'Fixed authentication problem for 3 users',
+      time: '8 hours ago',
+      type: 'success',
+      user: 'IT Support'
+    },
+    {
+      id: '5',
+      title: 'New department created',
+      description: 'R&D department added to system',
+      time: '1 day ago',
+      type: 'info',
+      user: 'Admin'
+    }
+  ];
+
+  // Use API data for activities, fallback to dummy data if API is loading or fails
+  const activities = activityFeedData && activityFeedData.length > 0
+    ? activityFeedData
+    : adminFallbackActivities;
 
   const performanceMetrics: MetricData[] = [
     {
@@ -119,49 +173,6 @@ const AdminDashboard: React.FC = () => {
     }
   ];
 
-
-  const activities: ActivityItem[] = [
-    {
-      id: '1',
-      title: 'New user registration',
-      description: 'John Smith joined as Sales Manager',
-      time: '2 hours ago',
-      type: 'success',
-      user: 'System'
-    },
-    {
-      id: '2',
-      title: 'System backup completed',
-      description: 'Daily backup completed successfully',
-      time: '4 hours ago',
-      type: 'info',
-      user: 'System'
-    },
-    {
-      id: '3',
-      title: 'Policy update',
-      description: 'Holiday policy updated by HR',
-      time: '6 hours ago',
-      type: 'info',
-      user: 'HR Admin'
-    },
-    {
-      id: '4',
-      title: 'Login issue resolved',
-      description: 'Fixed authentication problem for 3 users',
-      time: '8 hours ago',
-      type: 'success',
-      user: 'IT Support'
-    },
-    {
-      id: '5',
-      title: 'New department created',
-      description: 'R&D department added to system',
-      time: '1 day ago',
-      type: 'info',
-      user: 'Admin'
-    }
-  ];
 
   const userActivityData: ChartData[] = [
     { name: 'Mon', value: 85 },
@@ -676,6 +687,12 @@ const AdminDashboard: React.FC = () => {
 
         {/* Additional Content - Moves to next line */}
         <div className="space-y-6">
+          {/* HR Requests and Department Distribution - Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <HRRequests limit={3} />
+            <DepartmentOverview />
+          </div>
+
           <MetricGrid 
             title="Company Performance" 
             metrics={performanceMetrics}
@@ -689,7 +706,6 @@ const AdminDashboard: React.FC = () => {
               type="line" 
               height={250}
             />
-            <DepartmentOverview />
           </div>
 
           <MetricGrid 
