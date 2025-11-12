@@ -27,6 +27,10 @@ const EmployeeRequestsManagement: React.FC = () => {
   // Check if user is HR or Admin
   const isHROrAdmin = user?.role === 'admin' || user?.department === 'HR';
   
+  // Check if user should be able to create requests (exclude HR dept managers and admins)
+  // HR department managers and admins cannot create employee requests
+  const canCreateRequest = !isHROrAdmin;
+  
   // Filter states
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -375,15 +379,17 @@ const EmployeeRequestsManagement: React.FC = () => {
                 </svg>
                 {showStatistics ? 'Hide Statistics' : 'Show Statistics'}
               </button>
-              <button
-                onClick={() => setCreateModalOpen(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Create Request
-              </button>
+              {canCreateRequest && (
+                <button
+                  onClick={() => setCreateModalOpen(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Create Request
+                </button>
+              )}
             </div>
           </div>
         </div>
