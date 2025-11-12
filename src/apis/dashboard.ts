@@ -55,9 +55,9 @@ export interface ActivityFeedApiResponse {
 /**
  * Fetch activity feed data from API
  * Backend automatically determines department and role from JWT token
- * @param limit - Number of activities to return (default: 20, max recommended: 50)
+ * @param limit - Number of activities to return (default: 3, max recommended: 50)
  */
-export const getActivityFeedApi = async (limit: number = 20): Promise<ActivityFeedApiResponse> => {
+export const getActivityFeedApi = async (limit: number): Promise<ActivityFeedApiResponse> => {
   try {
     const queryParams = new URLSearchParams();
     if (limit) {

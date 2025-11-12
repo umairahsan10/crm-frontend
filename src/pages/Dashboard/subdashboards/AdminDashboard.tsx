@@ -744,7 +744,7 @@ const AdminDashboard: React.FC = () => {
           <ActivityFeed 
               title="Recent System Activities" 
             activities={activities} 
-            maxItems={5} 
+            maxItems={3} 
           />
             
             <UserManagementWidget />

@@ -48,7 +48,7 @@ const MarketingDashboard: React.FC = () => {
   const { data: metricGridData } = useMetricGrid();
   
   // Fetch activity feed data from API
-  const { data: activityFeedData } = useActivityFeed({ limit: 20 });
+  const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
   // Department Manager (Full Access) Data
   const departmentManagerData = {
@@ -642,7 +642,7 @@ const MarketingDashboard: React.FC = () => {
       <ActivityFeed 
         title="Recent Marketing Activities"
         activities={currentData.activities}
-        maxItems={5} 
+        maxItems={3} 
       />
 
       {/* Main Content Grid */}
@@ -677,7 +677,7 @@ const MarketingDashboard: React.FC = () => {
               activities={currentData.activities.filter(activity =>
                 activity.title.includes('campaign') || activity.title.includes('Campaign')
               )}
-              maxItems={5}
+              maxItems={3}
             />
           )}
         </div>

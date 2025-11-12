@@ -49,7 +49,7 @@ const ProductionDashboard: React.FC = () => {
   const { data: metricGridData } = useMetricGrid();
   
   // Fetch activity feed data from API
-  const { data: activityFeedData } = useActivityFeed({ limit: 20 });
+  const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
   // Fallback dummy data for Production metric grid (used when API data is not available)
   const productionFallbackMetrics = [
@@ -390,7 +390,7 @@ const ProductionDashboard: React.FC = () => {
       <ActivityFeed 
         title="Recent Production Activities"
         activities={currentData.activities}
-        maxItems={5} 
+        maxItems={3} 
       />
 
       {/* Main Content Grid */}
@@ -425,7 +425,7 @@ const ProductionDashboard: React.FC = () => {
               activities={currentData.activities.filter(activity =>
                 activity.title.includes('production') || activity.title.includes('Production')
               )}
-              maxItems={5}
+              maxItems={3}
             />
           )}
         </div>
