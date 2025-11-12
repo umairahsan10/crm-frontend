@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
-import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
@@ -20,7 +19,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import type { 
+import type {
   ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
@@ -59,22 +58,22 @@ const AccountantDashboard: React.FC = () => {
   // Determine user role and access level
   const getUserRoleLevel = () => {
     if (!user) return 'employee';
-    
+
     // Check if user is Finance/Accountant department manager (full access)
     if (user.role === 'accountant' && user.department === 'Finance') {
       return 'department_manager';
     }
-    
+
     // Check if user is unit head (unit-specific access)
     if (user.role === 'dep_manager') {
       return 'unit_head';
     }
-    
+
     // Check if user is team lead
     if (user.role === 'team_lead') {
       return 'team_lead';
     }
-    
+
     // Default to employee level
     return 'employee';
   };
@@ -84,9 +83,9 @@ const AccountantDashboard: React.FC = () => {
 
   // Fetch metric grid data from API
   const { data: metricGridData } = useMetricGrid();
-  
+
   // Fetch activity feed data from API
-  const { data: activityFeedData } = useActivityFeed({ limit: 20 });
+  const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
   // Fallback dummy data for Accountant metric grid (used when API data is not available)
   const accountantFallbackMetrics = [
@@ -127,23 +126,22 @@ const AccountantDashboard: React.FC = () => {
   // Get data based on role level
   const getDataForRole = () => {
     // Use API data for overviewStats, fallback to dummy data if API is loading or fails
-    const overviewStats = metricGridData && metricGridData.length > 0 
-      ? metricGridData 
+    const overviewStats = metricGridData && metricGridData.length > 0
+      ? metricGridData
       : accountantFallbackMetrics;
 
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
       ? activityFeedData
       : (roleLevel === 'department_manager' ? getDepartmentManagerActivities() :
-         roleLevel === 'unit_head' ? getUnitHeadActivities() :
-         roleLevel === 'team_lead' ? getTeamLeadActivities() :
-         getEmployeeActivities());
+        roleLevel === 'unit_head' ? getUnitHeadActivities() :
+          roleLevel === 'team_lead' ? getTeamLeadActivities() :
+            getEmployeeActivities());
 
     switch (roleLevel) {
       case 'department_manager':
         return {
           overviewStats,
-          quickActions: getDepartmentManagerActions(),
           activities,
           showUnitFilter: true
         };
@@ -172,36 +170,7 @@ const AccountantDashboard: React.FC = () => {
   };
 
   // Quick Actions based on role
-  const getDepartmentManagerActions = (): QuickActionItem[] => [
-    {
-      title: 'Financial Management',
-      description: 'Revenue Tracking, Expense Management, Budget Planning',
-      icon: '💰',
-      href: '/finance',
-      color: 'bg-blue-100 text-blue-600'
-    },
-    {
-      title: 'Invoice Management',
-      description: 'Invoice Processing, Payment Tracking, Collections',
-      icon: '📄',
-      href: '/finance',
-      color: 'bg-green-100 text-green-600'
-    },
-    {
-      title: 'Tax Management',
-      description: 'Tax Filing, Tax Planning, Compliance',
-      icon: '📋',
-      href: '/finance',
-      color: 'bg-purple-100 text-purple-600'
-    },
-    {
-      title: 'Financial Reporting',
-      description: 'Financial Reports, Analytics, Forecasting',
-      icon: '📊',
-      href: '/reports',
-      color: 'bg-orange-100 text-orange-600'
-    }
-  ];
+
 
   const getUnitHeadActions = (): QuickActionItem[] => [
     {
@@ -382,7 +351,7 @@ const AccountantDashboard: React.FC = () => {
       try {
         setLoadingTrendData(true);
         const response = await getAccountantAnalyticsApi({ period: 'monthly' });
-        
+
         if (response.success && response.data?.trends?.monthly) {
           // Transform monthly trends data to include revenue, expenses, liabilities, and net profit
           const labels: string[] = [];
@@ -394,8 +363,8 @@ const AccountantDashboard: React.FC = () => {
           response.data.trends.monthly.forEach((point) => {
             // Extract month name from date (e.g., "2024-01" -> "Jan 2024")
             // Handle format "2024-01" by appending "-01" to make it a valid date
-            const dateStr = point.date.includes('-') && point.date.split('-').length === 2 
-              ? `${point.date}-01` 
+            const dateStr = point.date.includes('-') && point.date.split('-').length === 2
+              ? `${point.date}-01`
               : point.date;
             const date = new Date(dateStr);
             const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -460,26 +429,27 @@ const AccountantDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Recent Activities - Below Metric Grid */}
-      <ActivityFeed 
-        title="Recent Account Activities"
-        activities={currentData.activities}
-        maxItems={5} 
-      />
+      
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-2">
+        {/* Recent Activities - Below Metric Grid */}
+          <ActivityFeed
+            title="Recent Account Activities"
+            activities={currentData.activities}
+            maxItems={3}
+          />
         {/* Left Column - Charts and Data */}
         <div className="xl:col-span-2 space-y-6">
           {/* Financial Trends Chart - Revenue, Expenses, Liabilities */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-transparent">
+            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-transparent">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full" />
-                <h2 className="text-xl font-bold text-gray-900">Monthly Financial Trends</h2>
+                <h2 className="text-md font-bold text-gray-900">Monthly Financial Trends</h2>
               </div>
             </div>
-            <div className="p-6" style={{ height: '350px' }}>
+            <div className="p-6" style={{ height: '400px' }}>
               {loadingTrendData ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="animate-pulse text-gray-400">Loading chart data...</div>
@@ -569,7 +539,7 @@ const AccountantDashboard: React.FC = () => {
                           font: {
                             size: 11,
                           },
-                          callback: function(value) {
+                          callback: function (value) {
                             return '$' + (value as number).toLocaleString();
                           },
                         },
@@ -593,19 +563,10 @@ const AccountantDashboard: React.FC = () => {
                   <div className="text-center">
                     <p className="text-sm">No trend data available</p>
                   </div>
-      </div>
+                </div>
               )}
             </div>
           </div>
-        </div>
-
-        {/* Right Column - Actions and Activities */}
-        <div className="space-y-6">
-          <QuickActionCard
-            title="Quick Action Shortcuts"
-            actions={currentData.quickActions}
-          />
-
         </div>
       </div>
     </div>

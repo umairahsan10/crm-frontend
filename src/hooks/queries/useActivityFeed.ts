@@ -25,12 +25,15 @@ export const activityFeedQueryKeys = {
  */
 export const useActivityFeed = (options: UseActivityFeedOptions = {}) => {
   const { user } = useAuth();
-  const { limit = 20, enabled = true } = options;
+  const { enabled = true } = options;
+  
+  // Always use limit of 3
+  const finalLimit = 3;
 
   return useQuery<ActivityItem[], Error>({
-    queryKey: activityFeedQueryKeys.byUser(user?.department, user?.role, limit),
+    queryKey: activityFeedQueryKeys.byUser(user?.department, user?.role, finalLimit),
     queryFn: async () => {
-      const apiData = await getActivityFeedApi(limit);
+      const apiData = await getActivityFeedApi(finalLimit);
       return transformActivityFeedResponse(apiData);
     },
     enabled: enabled && !!user, // Only fetch if user is logged in and enabled

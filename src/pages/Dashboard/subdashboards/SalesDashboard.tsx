@@ -49,7 +49,7 @@ const SalesDashboard: React.FC = () => {
   const { data: metricGridData } = useMetricGrid();
   
   // Fetch activity feed data from API
-  const { data: activityFeedData } = useActivityFeed({ limit: 20 });
+  const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
   // Fallback dummy data for Sales metric grid (used when API data is not available)
   const salesFallbackMetrics = [
@@ -406,7 +406,7 @@ const SalesDashboard: React.FC = () => {
       <ActivityFeed
         title="Recent Sales Activities"
         activities={currentData.activities}
-        maxItems={5}
+        maxItems={3}
       />
 
       {/* Main Content Grid */}

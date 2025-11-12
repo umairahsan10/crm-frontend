@@ -11,33 +11,29 @@ interface ActivityFeedProps {
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({ 
   title,
   activities,
-  maxItems = 5,
+  maxItems = 3,
   className = ''
 }) => {
   const getActivityStyles = (type: string) => {
     switch (type) {
       case 'success': 
         return {
-          badge: 'bg-green-100 text-green-800 border-green-200',
           dot: 'bg-green-500',
           border: 'border-green-200'
         };
       case 'warning': 
         return {
-          badge: 'bg-yellow-100 text-yellow-800 border-yellow-200',
           dot: 'bg-yellow-500',
           border: 'border-yellow-200'
         };
       case 'error': 
         return {
-          badge: 'bg-red-100 text-red-800 border-red-200',
           dot: 'bg-red-500',
           border: 'border-red-200'
         };
       case 'info':
       default: 
         return {
-          badge: 'bg-gray-100 text-gray-800 border-gray-200',
           dot: 'bg-gray-500',
           border: 'border-gray-200'
         };
@@ -47,23 +43,20 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   const displayActivities = activities.slice(0, maxItems);
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
-      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 w-full ${className}`}>
+      <div className="p-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
-            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+            <h2 className="text-md font-bold text-gray-900">{title}</h2>
           </div>
-          <button className="px-4 py-2 text-sm font-medium text-indigo-600 hover:text-white hover:bg-indigo-600 rounded-lg transition-all duration-300 border border-indigo-200 hover:border-indigo-600">
-            View All
-          </button>
         </div>
       </div>
       <div className="divide-y divide-gray-100">
         {displayActivities.map((activity, index) => {
           const styles = getActivityStyles(activity.type);
           return (
-            <div key={activity.id} className="p-6 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-transparent hover:shadow-sm transition-all duration-300 group">
+            <div key={activity.id} className="p-6 py-4 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-transparent hover:shadow-sm transition-all duration-300 group">
               <div className="flex items-start gap-4">
                 <div className="relative flex-shrink-0">
                   <div className={`w-3 h-3 rounded-full ${styles.dot} ring-4 ring-white group-hover:scale-110 transition-transform duration-300`} />
@@ -81,9 +74,6 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                         {activity.description}
                       </p>
                     </div>
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border ${styles.badge} w-16 h-6 justify-center transition-all duration-300 hover:scale-105 hover:shadow-sm cursor-default`}>
-                      {activity.type}
-                    </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-gray-500">
                     {activity.user && (

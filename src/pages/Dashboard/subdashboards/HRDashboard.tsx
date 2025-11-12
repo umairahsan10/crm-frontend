@@ -50,7 +50,7 @@ const HRDashboard: React.FC = () => {
   const { data: metricGridData } = useMetricGrid();
   
   // Fetch activity feed data from API
-  const { data: activityFeedData } = useActivityFeed({ limit: 20 });
+  const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
   // Fallback dummy data for HR metric grid (used when API data is not available)
   const hrFallbackMetrics = [
@@ -476,7 +476,7 @@ const HRDashboard: React.FC = () => {
       <ActivityFeed
         title="Recent HR Activities"
         activities={currentData.activities}
-        maxItems={5}
+        maxItems={3}
       />
 
       {/* Main Content Grid */}
@@ -506,7 +506,7 @@ const HRDashboard: React.FC = () => {
               activities={currentData.activities.filter(activity =>
                 activity.title.includes('HR Request')
               )}
-              maxItems={5}
+              maxItems={3}
             />
           )}
 
