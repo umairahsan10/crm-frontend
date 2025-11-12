@@ -36,11 +36,11 @@ export const UserManagementWidget: React.FC<UserManagementWidgetProps> = ({ clas
 
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
-      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent">
+      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full" />
-            <h2 className="text-xl font-bold text-gray-900">Recent User Activity</h2>
+            <h2 className="text-md font-bold text-gray-900">Recent User Activity</h2>
           </div>
           <button className="text-sm text-blue-600 hover:text-blue-800 font-medium px-3 py-1 rounded-lg hover:bg-blue-50 transition-colors duration-200">
             Manage Users
