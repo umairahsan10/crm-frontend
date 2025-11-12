@@ -606,41 +606,6 @@ const AccountantDashboard: React.FC = () => {
             actions={currentData.quickActions}
           />
 
-          {/* Accountant Quick Access */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-transparent">
-              <div className="flex items-center gap-3">
-                <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full" />
-                <h2 className="text-xl font-bold text-gray-900">Quick Access</h2>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4">
-                <a
-                  href="/finance"
-                  className="group flex flex-col items-center p-4 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all duration-300 hover:scale-[1.02] text-center"
-                >
-                  <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg group-hover:scale-110 transition-transform duration-300 mb-3">
-                    <span className="text-2xl">💰</span>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">
-                    Finance
-                  </span>
-                </a>
-                <a
-                  href="/profile"
-                  className="group flex flex-col items-center p-4 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all duration-300 hover:scale-[1.02] text-center"
-                >
-                  <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg group-hover:scale-110 transition-transform duration-300 mb-3">
-                    <span className="text-2xl">👤</span>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">
-                    Profile
-                  </span>
-                </a>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

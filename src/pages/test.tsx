@@ -4,7 +4,6 @@ import { MetricGrid } from '../components/common/Dashboard/MetricGrid';
 import { QuickActionCard } from '../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../components/common/Dashboard/ChartWidget';
-import { QuickAccess } from '../components/common/Dashboard/QuickAccess';
 import ProgressBar from '../components/common/ProgressBar/ProgressBar';
 
 // Common Components
@@ -473,10 +472,7 @@ const testPage: React.FC = () => {
               </ComponentCard>
             </div>
 
-            {/* Quick Access */}
-            <ComponentCard title="Quick Access" icon="🚀" color="bg-pink-500">
-              <QuickAccess />
-            </ComponentCard>
+            
 
             {/* Progress Bars */}
             <ComponentCard title="Progress Bars" icon="📈" color="bg-teal-500">
