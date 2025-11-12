@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
-import { QuickActionCard } from '../../../components/common/Dashboard/QuickActionCard';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { HRManagementWidget, HRRequests, DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import {DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { Calendar } from '../../../components/common/Calendar';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
@@ -472,72 +471,56 @@ const HRDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Recent Activities - Below Metric Grid */}
-      <ActivityFeed
-        title="Recent HR Activities"
-        activities={currentData.activities}
-        maxItems={3}
-      />
-
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Left Column - Charts and Data */}
-        <div className="xl:col-span-2 space-y-6">
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ChartWidget
-              title="Monthly Attendance Trend"
-              data={attendanceTrendData}
-              type="line"
-              height={250}
-            />
-            <ChartWidget
-              title="Department-wise Employee Distribution"
-              data={departmentDistributionData}
-              type="pie"
-              height={250}
-            />
-          </div>
-
-          {/* HR Requests Feed - Only for Department Manager and Unit Head */}
-          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-            <ActivityFeed
-              title="Recent HR Requests Feed"
-              activities={currentData.activities.filter(activity =>
-                activity.title.includes('HR Request')
-              )}
-              maxItems={3}
-            />
-          )}
-
-          {/* Upcoming Leave Calendar - Only for Department Manager and Unit Head */}
-          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-            <Calendar
-              title="Upcoming Leave Calendar"
-              events={calendarEvents}
-              onDateClick={(date) => console.log('Date clicked:', date)}
-              onEventClick={(event) => console.log('Event clicked:', event)}
-            />
-          )}
-        </div>
-
-        {/* Right Column - Actions and Activities */}
-        <div className="space-y-6">
-          <QuickActionCard
-            title="Quick Action Shortcuts"
-            actions={currentData.quickActions}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-stretch">
+        {/* Recent Activities - 1/3 width */}
+        <div className="xl:col-span-1 flex">
+          <ActivityFeed
+            title="Recent HR Activities"
+            activities={currentData.activities}
+            maxItems={3}
+            className="flex-1"
           />
-
-          {/* HR Management Widget - Only for Department Manager and Unit Head */}
-          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-            <HRManagementWidget />
-          )}
-
-          {/* HR Requests Widget - Only for Department Manager and Unit Head */}
-          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-            <HRRequests />
-          )}
         </div>
+        {/* Right Column - One component with matching height - 2/3 width */}
+        <div className="xl:col-span-2">
+          <ChartWidget
+            title="Monthly Attendance Trend"
+            data={attendanceTrendData}
+            type="line"
+          />
+        </div>
+      </div>
+
+      {/* Additional Content - Moves to next line */}
+      <div className="space-y-6">
+        <ChartWidget
+          title="Department-wise Employee Distribution"
+          data={departmentDistributionData}
+          type="pie"
+          height={250}
+        />
+
+        {/* HR Requests Feed - Only for Department Manager and Unit Head */}
+        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
+          <ActivityFeed
+            title="Recent HR Requests Feed"
+            activities={currentData.activities.filter(activity =>
+              activity.title.includes('HR Request')
+            )}
+            maxItems={3}
+          />
+        )}
+
+        {/* Upcoming Leave Calendar - Only for Department Manager and Unit Head */}
+        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
+          <Calendar
+            title="Upcoming Leave Calendar"
+            events={calendarEvents}
+            onDateClick={(date) => console.log('Date clicked:', date)}
+            onEventClick={(event) => console.log('Event clicked:', event)}
+          />
+        )}
       </div>
     </div>
   );
