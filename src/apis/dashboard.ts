@@ -253,3 +253,31 @@ export const getDepartmentDistributionApi = async (): Promise<DepartmentDistribu
   }
 };
 
+/**
+ * API Response structure from /dashboard/current-projects
+ */
+export interface CurrentProjectsApiResponse {
+  projects: Array<{
+    name: string;
+    progress: number;
+    status: 'on-track' | 'ahead' | 'delayed';
+    deadline: string; // YYYY-MM-DD format
+    team: string;
+  }>;
+}
+
+/**
+ * Fetch current projects data from API
+ * Backend automatically determines department and role from JWT token
+ * Returns up to 5 projects (running projects first, then completed)
+ */
+export const getCurrentProjectsApi = async (): Promise<CurrentProjectsApiResponse> => {
+  try {
+    const data = await apiGetJson<CurrentProjectsApiResponse>('/dashboard/current-projects');
+    return data;
+  } catch (error) {
+    console.error('Error fetching current projects:', error);
+    throw error;
+  }
+};
+

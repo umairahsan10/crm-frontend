@@ -398,12 +398,17 @@ const ProductionDashboard: React.FC = () => {
         </div>
         {/* Right Column - One component with matching height - 2/3 width */}
         <div className="xl:col-span-2">
-          <ChartWidget 
-            title="Production Volume Trend"
-            data={productionTrendData}
-            type="line" 
-            height={250}
-          />
+          {/* Project Status - Only for Department Manager and Unit Head */}
+          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') ? (
+            <ProjectStatus className="h-full" />
+          ) : (
+            <ChartWidget 
+              title="Production Volume Trend"
+              data={productionTrendData}
+              type="line" 
+              height={250}
+            />
+          )}
         </div>
       </div>
 
@@ -415,10 +420,13 @@ const ProductionDashboard: React.FC = () => {
           type="bar"
         />
 
-        {/* Project Status - Only for Department Manager and Unit Head */}
-        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-          <ProjectStatus />
-        )}
+        {/* Production Volume Trend - Moved from main grid */}
+        <ChartWidget 
+          title="Production Volume Trend"
+          data={productionTrendData}
+          type="line" 
+          height={250}
+        />
 
         {/* Recent Production Activities Feed - Only for Department Manager and Unit Head */}
         {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (

@@ -17,6 +17,7 @@ interface ProfileData {
   employeeId: string;
   startDate: string;
   manager?: string;
+  teamLead?: string;
   theme: 'light' | 'dark';
 }
 
@@ -37,6 +38,35 @@ const ProfilePage: React.FC = () => {
   const updateProfileMutation = useUpdateProfile();
   const updatePasswordMutation = useUpdatePassword();
 
+  // Format role name nicely (e.g., "dept_manager" -> "Department Manager")
+  const formatRoleName = (roleName: string): string => {
+    if (!roleName) return '';
+    
+    // Handle common role formats
+    const roleMap: Record<string, string> = {
+      'dept_manager': 'Department Manager',
+      'dep_manager': 'Department Manager',
+      'department_manager': 'Department Manager',
+      'unit_head': 'Unit Head',
+      'team_lead': 'Team Lead',
+      'team_leads': 'Team Lead',
+      'senior': 'Senior',
+      'junior': 'Junior',
+      'admin': 'Administrator',
+    };
+
+    const normalized = roleName.toLowerCase().trim();
+    if (roleMap[normalized]) {
+      return roleMap[normalized];
+    }
+
+    // If not in map, format by replacing underscores and capitalizing
+    return roleName
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Transform API data to ProfileData format
   const profileData: ProfileData | null = useMemo(() => {
     if (!apiData) return null;
@@ -47,26 +77,31 @@ const ProfilePage: React.FC = () => {
         email: apiData.email,
         phone: '',
         department: 'Admin',
-        role: apiData.role,
+        role: formatRoleName(apiData.role || 'admin'),
         avatar: '',
         address: '',
         employeeId: apiData.id.toString(),
         startDate: '',
         manager: '',
+        teamLead: '',
         theme: theme,
       };
     } else {
+      const roleName = apiData.role?.name || '';
+      const formattedRole = formatRoleName(roleName);
+      
       return {
         name: `${apiData.firstName} ${apiData.lastName}`,
         email: apiData.email,
         phone: apiData.phone || '',
         department: apiData.department?.name || '',
-        role: apiData.role?.name || '',
+        role: formattedRole,
         avatar: apiData.avatar || '',
         address: apiData.address || '',
         employeeId: apiData.id.toString(),
         startDate: apiData.startDate || '',
         manager: apiData.manager ? `${apiData.manager.firstName} ${apiData.manager.lastName}` : '',
+        teamLead: apiData.teamLead ? `${apiData.teamLead.firstName} ${apiData.teamLead.lastName}` : '',
         theme: theme,
       };
     }
@@ -151,83 +186,64 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-150 py-8">
-     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="h-100px bg-white dark:bg-gray-150">
+     <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-4">
     {/* Header */}
-    <div className="mb-8">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Profile</h1>
-      <p className="mt-3 text-gray-600 dark:text-gray-300">
-        Manage your account settings and preferences
-      </p>
-    </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Profile Card */}
-      <div className="lg:col-span-1">
-        <div className=" dark:bg-gray-271 rounded-lg shadow-lg border border-gray-100">
+      <div className="lg:col-span-1 flex">
+        <div className="dark:bg-gray-271 rounded-lg shadow-lg border border-gray-100 flex flex-col w-full">
           {/* Avatar Section */}
-          <div className="p-6 text-center border-b border-gray-100">
-            <div className="relative inline-block">
-              <img
-                className="w-24 h-24 rounded-full mx-auto object-cover"
-                src={profileData.avatar || '/default-avatar.svg'}
-                alt="Profile"
-              />
-              {isEditing && (
-                <button className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition-colors">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </button>
-              )}
+          <div className="p-6 border-b border-gray-100 flex-shrink-0">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-semibold text-gray-600">{profileData.department}</span>
+              <span className="text-sm font-semibold text-gray-900">{profileData.role}</span>
             </div>
-            <h2 className="mt-4 text-xl font-bold text-gray-900 ">
-              {profileData.name || 'No Name Set'}
-            </h2>
-            <p className="text-gray-700">{profileData.role}</p>
-            <p className="text-sm text-gray-600">{profileData.department}</p>
+            <div className="text-center">
+              <div className="relative inline-block">
+                <img
+                  className="w-55 h-55 rounded-full mx-auto object-cover"
+                  src={profileData.avatar || '/default-avatar.svg'}
+                  alt="Profile"
+                />
+                {isEditing && (
+                  <button className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              <h2 className="mt-4 text-xl font-bold text-gray-900">
+                {profileData.name || 'No Name Set'}
+              </h2>
+            </div>
           </div>
 
-          {/* Quick Stats */}
-          <div className="p-6 ">
-            <h3 className="text-lg font-bold text-gray-900  mb-4">Quick Info</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-900 font-medium" >Employee ID</span>
-                <span className=" text-gray-700">{profileData.employeeId}</span>
-              </div>
-              {user?.type !== 'admin' && (
-                <div className="flex justify-between">
-                  <span className="text-gray-900 font-medium" >Manager</span>
-                  <span className=" text-gray-700">
-                    {profileData.manager || 'Not assigned'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-              {/* Action Buttons */}
-              <div className="p-6 border-t border-gray-200 dark:border-gray-100 space-y-3">
+          {/* Action Buttons */}
+              <div className="p-6 border-t border-gray-200 dark:border-gray-100 flex-shrink-0">
                 {!isEditing ? (
                   <>
                     {canEditProfile && (
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="w-full bg-blue-700 indigo-500 text-white py-2 px-4 rounded-lg hover:bg-blue-500 transition-colors font-medium"
-                      >
-                        Edit Profile
-                      </button>
-                    )}
-                    {canEditProfile && (
-                      <button
-                        onClick={() => setIsEditingPassword(true)}
-                        className="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 hover:shadow-md transition-colors  font-medium"                      >
-                        Change Password
-                      </button>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="w-1/3 bg-blue-700 indigo-500 text-white py-2 px-4 rounded-lg hover:bg-blue-500 transition-colors font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setIsEditingPassword(true)}
+                          className="w-2/3 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 hover:shadow-md transition-colors font-medium"
+                        >
+                          Change Password
+                        </button>
+                      </div>
                     )}
                     {!canEditProfile && (
-                      <div className="text-center py-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="text-center ">
+                        <p className="text-sm py-2 text-gray-500 dark:text-gray-400">
                           Only Admin and HR can edit employee profiles
                         </p>
                       </div>
@@ -236,7 +252,7 @@ const ProfilePage: React.FC = () => {
                 ) : (
                   <button
                     onClick={handleCancel}
-                    className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                    className="w-1/2 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
                   >
                     Cancel Editing
                   </button>
@@ -245,15 +261,17 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Profile Details */}
-          <div className="lg:col-span-2">
-            {isEditing ? (
+          {/* Personal Information */}
+          {isEditing ? (
+            <div className="lg:col-span-2">
               <ProfileEditForm
                 profileData={profileData}
                 onSave={handleSaveProfile}
                 onCancel={handleCancel}
               />
-            ) : isEditingPassword ? (
+            </div>
+          ) : isEditingPassword ? (
+            <div className="lg:col-span-2">
               <div className="dark:bg-gray-271 rounded-lg shadow-lg border border-gray-200">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-200">
                   <h3 className="text-lg font-bold  dark:text-gray-900">Change Password</h3>
@@ -310,22 +328,23 @@ const ProfilePage: React.FC = () => {
                   </form>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Personal Information */}
-                <div className="dark:bg-gray-271 rounded-lg shadow-lg border border-gray-100">
-                  <div className="p-6 border-b border-gray-200 dark:border-gray-200">
+            </div>
+          ) : (
+            <>
+              <div className="lg:col-span-1 flex">
+                <div className="dark:bg-gray-271 rounded-lg shadow-lg border border-gray-100 flex flex-col w-full h-full">
+                  <div className="p-6 border-b border-gray-200 dark:border-gray-200 flex-shrink-0">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-gray-900">Personal Information</h3>
                   </div>
-                  <div className="p-6 border-t border-gray-200 dark:border-white">
-                    <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                  <div className="p-6 border-t border-gray-200 dark:border-white flex-1">
+                    <dl className="space-y-4">
                       <div>
                         <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Full Name</dt>
                         <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">{profileData.name || 'Not set'}</dd>
                       </div>
                       <div>
                         <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Email Address</dt>
-                        <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">{profileData.email}</dd>
+                        <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">{profileData.email || 'Not set'}</dd>
                       </div>
                       {user?.type !== 'admin' && (
                         <>
@@ -342,33 +361,100 @@ const ProfilePage: React.FC = () => {
                     </dl>
                   </div>
                 </div>
+              </div>
 
-                {/* Work Information */}
-                <div className="dark:bg-gray-271 rounded-lg shadow-lg border border-gray-100">
-                  <div className="p-6 border-b border-gray-200 dark:border-gray-200">
+              {/* Work Information */}
+              <div className="lg:col-span-1 flex">
+                <div className="dark:bg-gray-271 rounded-lg shadow-lg border border-gray-100 flex flex-col w-full h-full">
+                  <div className="p-6 border-b border-gray-200 dark:border-gray-200 flex-shrink-0">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-gray-900">Work Information</h3>
                   </div>
-                  <div className="p-6">
-                    <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                  <div className="p-6 flex-1">
+                    <dl className="space-y-4">
                       <div>
                         <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Department</dt>
-                        <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">{profileData.department}</dd>
+                        <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">{profileData.department || 'Not set'}</dd>
                       </div>
                       <div>
                         <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Role</dt>
-                        <dd className="mt-1 text-sm text-gray-900  font-medium dark:text-gray-600">{profileData.role}</dd>
+                        <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">{profileData.role || 'Not set'}</dd>
                       </div>
                       <div>
                         <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Employee ID</dt>
-                        <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">{profileData.employeeId}</dd>
+                        <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">{profileData.employeeId || 'Not set'}</dd>
                       </div>
+                      {user?.type !== 'admin' && (() => {
+                        const roleName = (apiData?.role?.name || '').toLowerCase();
+                        const isManager = roleName.includes('dep_manager') || roleName.includes('department_manager');
+                        const isUnitHead = roleName.includes('unit_head');
+                        const isTeamLead = roleName.includes('team_lead') || roleName.includes('team_leads');
+                        const isSeniorOrJunior = roleName.includes('senior') || roleName.includes('junior');
+
+                        // Don't show manager or team lead for managers
+                        if (isManager) {
+                          return null;
+                        }
+
+                        // Show manager for unit head (always show field)
+                        if (isUnitHead) {
+                          return (
+                            <div>
+                              <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Manager</dt>
+                              <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">
+                                {profileData.manager || 'Not assigned'}
+                              </dd>
+                            </div>
+                          );
+                        }
+
+                        // Show manager for team leads (always show field)
+                        if (isTeamLead) {
+                          return (
+                            <div>
+                              <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Manager</dt>
+                              <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">
+                                {profileData.manager || 'Not assigned'}
+                              </dd>
+                            </div>
+                          );
+                        }
+
+                        // Show both team lead and manager for senior/junior (always show both fields)
+                        if (isSeniorOrJunior) {
+                          return (
+                            <>
+                              <div>
+                                <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Team Lead</dt>
+                                <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">
+                                  {profileData.teamLead || 'Not assigned'}
+                                </dd>
+                              </div>
+                              <div>
+                                <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Manager</dt>
+                                <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">
+                                  {profileData.manager || 'Not assigned'}
+                                </dd>
+                              </div>
+                            </>
+                          );
+                        }
+
+                        // Default: show manager field (always show, even if not assigned)
+                        return (
+                          <div>
+                            <dt className="text-sm font-bold text-gray-500 dark:text-gray-900">Manager</dt>
+                            <dd className="mt-1 text-sm text-gray-900 font-medium dark:text-gray-600">
+                              {profileData.manager || 'Not assigned'}
+                            </dd>
+                          </div>
+                        );
+                      })()}
                     </dl>
                   </div>
                 </div>
-
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>
