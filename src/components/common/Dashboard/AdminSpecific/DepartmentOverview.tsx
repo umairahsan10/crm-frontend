@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -30,8 +30,6 @@ const getDepartmentColor = (department: string): string => {
 };
 
 export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ className = '' }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const chartRef = useRef<HTMLDivElement>(null);
 
   // Fetch department distribution data from API
   const { data: departmentDistributionApiData, isLoading } = useDepartmentDistribution();
@@ -59,24 +57,6 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
     percentage: ((dept.value / totalEmployees) * 100).toFixed(1)
   }));
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (chartRef.current) {
-      observer.observe(chartRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
   // Prepare chart data with department-specific colors
   const chartData = {
     labels: dataWithPercentages.map(item => `${item.name} (${item.percentage}%)`),
@@ -98,8 +78,8 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
     maintainAspectRatio: false,
     animation: {
       animateRotate: true,
-      animateScale: isVisible,
-      duration: isVisible ? 1000 : 0,
+      animateScale: true,
+      duration: 1000,
       easing: 'easeOutQuart' as const,
     },
     plugins: {
@@ -145,11 +125,15 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
         padding: 12,
         displayColors: true,
         callbacks: {
+          title: (context: any) => {
+            const label = context[0]?.label || '';
+            const departmentName = label.split(' (')[0];
+            return departmentName;
+          },
           label: (context: any) => {
-            const label = context.label || '';
             const value = context.parsed || 0;
             const percentage = ((value / totalEmployees) * 100).toFixed(1);
-            return `${label.split(' (')[0]}: ${value} employees (${percentage}%)`;
+            return `${value} employees (${percentage}%)`;
           },
         },
       },
@@ -165,9 +149,9 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
             <h2 className="text-md font-bold text-gray-900">Department Distribution</h2>
           </div>
         </div>
-        <div className="p-6">
+        <div className="p-4 pb-6">
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded-lg"></div>
+            <div className="h-96 bg-gray-200 rounded-lg"></div>
           </div>
         </div>
       </div>
@@ -176,12 +160,7 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
 
   return (
     <div 
-      ref={chartRef}
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-700 ${
-        isVisible 
-          ? 'opacity-100 translate-y-0' 
-          : 'opacity-0 translate-y-8'
-      } ${className}`}
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}
     >
       <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
         <div className="flex items-center justify-between">
@@ -196,23 +175,8 @@ export const DepartmentOverview: React.FC<DepartmentOverviewProps> = ({ classNam
           </div>
         </div>
       </div>
-      <div className="p-6" style={{ height: '280px' }}>
+      <div className="p-4 pb-6" style={{ height: '400px' }}>
         <Pie data={chartData} options={options} />
-      </div>
-      {/* Summary Stats */}
-      <div className="px-6 pb-4 border-t border-gray-100">
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          {dataWithPercentages.slice(0, 4).map((dept) => (
-            <div key={dept.name} className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded-full" 
-                style={{ backgroundColor: getDepartmentColor(dept.name) }}
-              />
-              <span className="text-xs text-gray-600 font-medium">{dept.name}</span>
-              <span className="text-xs text-gray-400 ml-auto">{dept.percentage}%</span>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
