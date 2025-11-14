@@ -70,7 +70,8 @@ export const apiRequest = async (
 
   // Create abort controller for timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  // If timeout is 0, skip timeout (no timeout for bulk operations)
+  const timeoutId = timeout > 0 ? setTimeout(() => controller.abort(), timeout) : null;
 
   try {
     // Construct full URL with base URL
@@ -82,7 +83,7 @@ export const apiRequest = async (
       signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
 
     // Handle HTTP errors (but not 304 Not Modified)
     if (!response.ok && response.status !== 304) {
@@ -100,7 +101,7 @@ export const apiRequest = async (
 
     return response;
   } catch (error) {
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
     
     if (error instanceof ApiError) {
       throw error;

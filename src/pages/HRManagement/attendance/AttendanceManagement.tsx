@@ -21,9 +21,11 @@ import { useEmployees, useAttendanceLogs, useAttendanceMutation } from '../../..
 import { 
   checkinApi, 
   bulkMarkPresentApi,
+  bulkCheckoutApi,
   updateAttendanceLogStatusApi,
   type CheckinDto, 
   type BulkMarkPresentDto,
+  type BulkCheckoutDto,
   type UpdateAttendanceLogStatusDto
 } from '../../../apis/attendance';
 import './AttendanceManagement.css';
@@ -47,15 +49,16 @@ interface AttendanceRecord {
 const AttendanceManagement: React.FC = () => {
   const { user } = useAuth();
   
-  // Get the date for the current shift (handles night shifts 21:00-05:00)
-  // If time is between 00:00-05:00, use previous day (shift started yesterday)
-  // Otherwise use current day
+  // Get the date for attendance logs based on local time
+  // If local time is between 00:00 (midnight) and 09:00 (9:00 AM), show logs for previous day
+  // If local time is between 09:01 AM and 11:59 PM, show logs for current day
   const getShiftDate = () => {
     const now = new Date();
     const hours = now.getHours();
+    const minutes = now.getMinutes();
     
-    // If between 00:00 and 05:00, use previous day
-    if (hours >= 0 && hours < 5) {
+    // If between 00:00 and 09:00 (inclusive), use previous day
+    if (hours >= 0 && (hours < 9 || (hours === 9 && minutes === 0))) {
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
       const year = yesterday.getFullYear();
@@ -64,7 +67,7 @@ const AttendanceManagement: React.FC = () => {
       return `${year}-${month}-${day}`;
     }
     
-    // Otherwise use current day
+    // Otherwise (09:01 AM to 11:59 PM), use current day
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -78,6 +81,8 @@ const AttendanceManagement: React.FC = () => {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showBulkMarkModal, setShowBulkMarkModal] = useState(false);
   const [bulkMarkReason, setBulkMarkReason] = useState('');
+  const [showBulkCheckoutModal, setShowBulkCheckoutModal] = useState(false);
+  const [bulkCheckoutReason, setBulkCheckoutReason] = useState('');
   const [showStatistics, setShowStatistics] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
@@ -107,6 +112,7 @@ const AttendanceManagement: React.FC = () => {
   // Loading states for mark attendance actions
   const [isMarkingAttendance, setIsMarkingAttendance] = useState(false);
   const [isBulkMarkingAttendance, setIsBulkMarkingAttendance] = useState(false);
+  const [isBulkCheckingOut, setIsBulkCheckingOut] = useState(false);
 
   // React Query hooks - Auto caching and refetching
   // Fetch all employees (no server-side pagination) since we're doing client-side pagination
@@ -249,9 +255,11 @@ const AttendanceManagement: React.FC = () => {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const offset_minutes = -new Date().getTimezoneOffset();
       
+      // Always use current date based on local time for marking attendance (not the selected date which might be for viewing)
+      const currentDateForMarking = getShiftDate();
       const checkinData: CheckinDto = {
         employee_id: employeeId,
-        date: selectedDate,
+        date: currentDateForMarking,
         checkin: currentTime,
         mode: 'onsite',
         timezone,
@@ -260,8 +268,8 @@ const AttendanceManagement: React.FC = () => {
 
       const response = await checkinApi(checkinData);
       
-      // Invalidate and refetch attendance data
-      invalidateAttendance({ start_date: selectedDate, end_date: selectedDate });
+      // Invalidate and refetch attendance data - use the date we actually sent to the API
+      invalidateAttendance({ start_date: currentDateForMarking, end_date: currentDateForMarking });
 
       setNotification({
         type: 'success',
@@ -310,17 +318,18 @@ const AttendanceManagement: React.FC = () => {
       }
       
       // Use bulk-mark-present endpoint
-      // If employee_ids provided, marks only those employees; otherwise marks all active employees
+      // Always use current date based on local time for bulk operations (not the selected date which might be for viewing)
+      const currentDateForBulk = getShiftDate();
       const bulkMarkData: BulkMarkPresentDto = {
-        date: selectedDate,
+        date: currentDateForBulk,
         employee_ids: unmarkedEmployeeIds.length > 0 ? unmarkedEmployeeIds : undefined,
         reason: bulkMarkReason || undefined
       };
 
       const response = await bulkMarkPresentApi(bulkMarkData);
       
-      // Invalidate and refetch
-      invalidateAttendance({ start_date: selectedDate, end_date: selectedDate });
+      // Invalidate and refetch - use the date we actually sent to the API
+      invalidateAttendance({ start_date: currentDateForBulk, end_date: currentDateForBulk });
 
       // Build success message based on response
       const successCount = response.marked_present || 0;
@@ -355,6 +364,91 @@ const AttendanceManagement: React.FC = () => {
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsBulkMarkingAttendance(false);
+    }
+  };
+
+  const handleBulkCheckout = async () => {
+    try {
+      setIsBulkCheckingOut(true);
+      const employeeIds = selectedEmployees.map(id => parseInt(id));
+      
+      // If no employees selected but a department is selected, use all employees from filtered records
+      const employeesToCheckout = employeeIds.length > 0 
+        ? employeeIds 
+        : (selectedDepartment !== null 
+            ? filteredRecords.map(r => r.employeeId) // All employees from selected department
+            : []); // No department selected and no employees selected - will checkout all (employee_ids undefined)
+      
+      // Filter to only include employees who have checked in but not checked out
+      const employeesWithCheckin = employeesToCheckout.filter(employeeId => {
+        const record = filteredRecords.find(r => r.employeeId === employeeId);
+        return record && record.checkin && !record.checkout;
+      });
+      
+      // If employees were specified (selected or from department) but none have active check-ins, show a message
+      if (employeesToCheckout.length > 0 && employeesWithCheckin.length === 0) {
+        setNotification({
+          type: 'success',
+          message: 'No employees with active check-ins found'
+        });
+        setTimeout(() => setNotification(null), 3000);
+        setShowBulkCheckoutModal(false);
+        setBulkCheckoutReason('');
+        return;
+      }
+      
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const offset_minutes = -new Date().getTimezoneOffset();
+      
+      // Use bulk-checkout endpoint
+      // Always use current date based on local time for bulk operations (not the selected date which might be for viewing)
+      const currentDateForBulk = getShiftDate();
+      const bulkCheckoutData: BulkCheckoutDto = {
+        date: currentDateForBulk,
+        employee_ids: employeesWithCheckin.length > 0 ? employeesWithCheckin : undefined,
+        reason: bulkCheckoutReason || undefined,
+        timezone,
+        offset_minutes
+      };
+
+      const response = await bulkCheckoutApi(bulkCheckoutData);
+      
+      // Invalidate and refetch - use the date we actually sent to the API
+      invalidateAttendance({ start_date: currentDateForBulk, end_date: currentDateForBulk });
+
+      // Build success message based on response
+      const successCount = response.checked_out || 0;
+      const errorCount = response.errors || 0;
+      const skippedCount = response.skipped || 0;
+      
+      let message = `Successfully checked out ${successCount} employees`;
+      if (errorCount > 0) {
+        message += `, ${errorCount} failed`;
+      }
+      if (skippedCount > 0) {
+        message += `, ${skippedCount} skipped`;
+      }
+      if (employeesToCheckout.length > 0 && employeesToCheckout.length > employeesWithCheckin.length) {
+        message += ` (${employeesToCheckout.length - employeesWithCheckin.length} had no active check-in)`;
+      }
+
+      setNotification({
+        type: successCount > 0 ? 'success' : 'error',
+        message
+      });
+      setTimeout(() => setNotification(null), 3000);
+
+      setSelectedEmployees([]);
+      setShowBulkCheckoutModal(false);
+      setBulkCheckoutReason('');
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to bulk checkout'
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsBulkCheckingOut(false);
     }
   };
 
@@ -410,11 +504,9 @@ const AttendanceManagement: React.FC = () => {
   };
 
   const handleSelectAll = useCallback(() => {
-    // Only select employees who don't have attendance marked yet
-    const unmarkedEmployeeIds = filteredRecords
-      .filter(record => record.status === 'not_marked' || record.status === null || record.status === undefined)
-      .map(record => record.id);
-    setSelectedEmployees(unmarkedEmployeeIds);
+    // Select all employees (not just unmarked) to allow bulk checkout even when all are marked
+    const allEmployeeIds = filteredRecords.map(record => record.id);
+    setSelectedEmployees(allEmployeeIds);
   }, [filteredRecords]);
 
   const handleDeselectAll = useCallback(() => {
@@ -695,15 +787,26 @@ const AttendanceManagement: React.FC = () => {
                   Clear selection
                 </button>
               </div>
-              <button
-                onClick={() => setShowBulkMarkModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-              >
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Mark Selected Attendance
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setShowBulkCheckoutModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                  </svg>
+                  Bulk Checkout
+                </button>
+                <button
+                  onClick={() => setShowBulkMarkModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Mark Selected Attendance
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -767,6 +870,41 @@ const AttendanceManagement: React.FC = () => {
                   <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
                   <button onClick={() => setShowBulkMarkModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
                   <button onClick={handleBulkMarkAttendance} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">Mark Attendance</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Checkout Modal */}
+        {showBulkCheckoutModal && (
+          <div className="fixed inset-0 z-50 overflow-hidden">
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowBulkCheckoutModal(false)}></div>
+              <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-gray-900">Bulk Checkout</h3>
+                    <button onClick={() => setShowBulkCheckoutModal(false)} className="text-gray-400 hover:text-gray-600">
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                </div>
+                  <div className="p-6">
+                  <p className="text-sm text-gray-600 mb-4">
+                    {selectedEmployees.length > 0 
+                      ? `Check out ${selectedEmployees.length} selected employee${selectedEmployees.length > 1 ? 's' : ''} for ${new Date(selectedDate).toLocaleDateString()}${selectedDepartment ? ` (${selectedDepartment})` : ''}`
+                      : `Check out all ${selectedDepartment ? `${selectedDepartment} ` : ''}employees with active check-ins for ${new Date(selectedDate).toLocaleDateString()}`
+                    }
+                  </p>
+                    <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Reason (Optional)</label>
+                    <textarea value={bulkCheckoutReason} onChange={(e) => setBulkCheckoutReason(e.target.value)} placeholder="Enter reason for bulk checkout..." rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                  <button onClick={() => setShowBulkCheckoutModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
+                  <button onClick={handleBulkCheckout} className="px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md hover:bg-orange-700">Checkout</button>
                 </div>
               </div>
             </div>
@@ -864,12 +1002,16 @@ const AttendanceManagement: React.FC = () => {
 
         {/* Overlay during mark attendance actions */}
         <Loading
-          isLoading={isMarkingAttendance || isBulkMarkingAttendance}
+          isLoading={isMarkingAttendance || isBulkMarkingAttendance || isBulkCheckingOut}
           position="overlay"
           size="lg"
           theme="primary"
           backdropBlur
-          message={isMarkingAttendance ? "Marking attendance..." : "Bulk marking attendance..."}
+          message={
+            isMarkingAttendance ? "Marking attendance..." : 
+            isBulkMarkingAttendance ? "Bulk marking attendance..." : 
+            "Bulk checking out..."
+          }
         />
       </div>
     </div>
