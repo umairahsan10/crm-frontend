@@ -3,10 +3,10 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
 import { 
-  UserManagementWidget, 
   DepartmentOverview
 } from '../../../components/common/Dashboard/AdminSpecific';
 import { DepartmentQuickAccess } from '../../../components/common/Dashboard/DepartmentQuickAccess';
+import { ProjectStatus } from '../../../components/common/Dashboard/ProjectStatus';
 import { HRRequests } from '../../../components/common/Dashboard';
 import { PerformanceLeaderboard } from '../../../components/common/Leaderboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
@@ -593,7 +593,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Overview Stats with Quick Access on Right */}
-        <div className="flex items-start gap-4">
+        <div className="flex items-stretch gap-4">
           <div className="flex-1">
             <MetricGrid
               metrics={overviewStats}
@@ -609,9 +609,9 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {/* Recent Activities - 1/3 width */}
-          <div className="xl:col-span-1 flex">
+          <div className="lg:col-span-1 flex">
             <ActivityFeed 
               title="Recent System Activities" 
               activities={activities} 
@@ -620,8 +620,9 @@ const AdminDashboard: React.FC = () => {
             />
           </div>
           {/* Right Column - One component with matching height - 2/3 width */}
-          <div className="xl:col-span-2">
-            <UserManagementWidget />
+          <div className="lg:col-span-2 flex">
+            {/* Project Status - Available for all roles */}
+            <ProjectStatus className="h-full w-full" />
           </div>
         </div>
 

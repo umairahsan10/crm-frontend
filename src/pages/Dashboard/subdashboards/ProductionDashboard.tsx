@@ -363,7 +363,7 @@ const ProductionDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Overview Stats with Quick Access on Right */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-stretch gap-4">
         <div className="flex-1">
           <MetricGrid
             metrics={currentData.overviewStats}
@@ -386,9 +386,9 @@ const ProductionDashboard: React.FC = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Recent Activities - 1/3 width */}
-        <div className="xl:col-span-1 flex">
+        <div className="lg:col-span-1 flex">
           <ActivityFeed 
             title="Recent Production Activities"
             activities={currentData.activities}
@@ -397,18 +397,9 @@ const ProductionDashboard: React.FC = () => {
           />
         </div>
         {/* Right Column - One component with matching height - 2/3 width */}
-        <div className="xl:col-span-2">
-          {/* Project Status - Only for Department Manager and Unit Head */}
-          {(roleLevel === 'department_manager' || roleLevel === 'unit_head') ? (
-            <ProjectStatus className="h-full" />
-          ) : (
-            <ChartWidget 
-              title="Production Volume Trend"
-              data={productionTrendData}
-              type="line" 
-              height={250}
-            />
-          )}
+        <div className="lg:col-span-2 flex">
+          {/* Project Status - Available for all roles */}
+          <ProjectStatus className="h-full w-full" />
         </div>
       </div>
 
