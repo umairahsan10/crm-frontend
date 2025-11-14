@@ -122,58 +122,6 @@ const AdminDashboard: React.FC = () => {
     ? activityFeedData
     : adminFallbackActivities;
 
-  const performanceMetrics: MetricData[] = [
-    {
-      title: 'Monthly Revenue',
-      value: '$180K',
-      change: '+12% from last month',
-      changeType: 'positive',
-      icon: '💰',
-      subtitle: 'This month'
-    },
-    {
-      title: 'Employee Count',
-      value: '120',
-      change: '+8 new hires',
-      changeType: 'positive',
-      icon: '👤',
-      subtitle: 'Total employees'
-    },
-    {
-      title: 'Total Tasks',
-      value: '245',
-      change: '189 completed',
-      changeType: 'positive',
-      icon: '📋',
-      subtitle: 'This month'
-    },
-    {
-      title: 'Completed Tasks',
-      value: '189',
-      change: '77% completion rate',
-      changeType: 'positive',
-      icon: '✅',
-      subtitle: 'Success rate'
-    },
-    {
-      title: 'In Progress',
-      value: '56',
-      change: '23% in progress',
-      changeType: 'neutral',
-      icon: '⏳',
-      subtitle: 'Pending tasks'
-    },
-    {
-      title: 'System Alerts',
-      value: '3',
-      change: '2 resolved today',
-      changeType: 'positive',
-      icon: '🚨',
-      subtitle: 'Active alerts'
-    }
-  ];
-
-
   const userActivityData: ChartData[] = [
     { name: 'Mon', value: 85 },
     { name: 'Tue', value: 92 },
@@ -628,18 +576,10 @@ const AdminDashboard: React.FC = () => {
     }
   ];
 
-  // Filter performance data based on selected department
-  const filteredPerformanceData = useMemo(() => {
-    if (!selectedDepartment) {
-      return performanceData;
-    }
-    return performanceData.filter(member => member.department === selectedDepartment);
-  }, [selectedDepartment]);
-
-  // Get top 6 employees for the selected department
+  // Get top 6 employees (always show all departments, not filtered by toggle)
   const topPerformers = useMemo(() => {
-    return filteredPerformanceData.slice(0, 6);
-  }, [filteredPerformanceData]);
+    return performanceData.slice(0, 6);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -693,12 +633,6 @@ const AdminDashboard: React.FC = () => {
             <DepartmentOverview />
           </div>
 
-          <MetricGrid 
-            title="Company Performance" 
-            metrics={performanceMetrics}
-            columns={3}
-          />
-          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ChartWidget 
               title="User Activity (Last 7 Days)"
@@ -729,18 +663,10 @@ const AdminDashboard: React.FC = () => {
                 </p>
               </div>
               <div className="p-6">
-                <div className="mb-6">
-                  {selectedDepartment && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span>Showing top performers from <strong>{selectedDepartment}</strong> department</span>
-                    </div>
-                  )}
-                </div>
                 <PerformanceLeaderboard 
-                  title={selectedDepartment ? `${selectedDepartment} Top Performers` : "All Departments Top Performers"}
+                  title="All Departments Top Performers"
                   members={topPerformers}
-                  showDepartment={!selectedDepartment}
+                  showDepartment={true}
                   showRole={true}
                 />
               </div>
