@@ -511,7 +511,7 @@ const HRDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Overview Stats with Quick Access on Right */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-stretch gap-4">
         <div className="flex-1">
           <MetricGrid
             metrics={currentData.overviewStats}

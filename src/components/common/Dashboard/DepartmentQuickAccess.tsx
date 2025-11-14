@@ -152,9 +152,9 @@ export const DepartmentQuickAccess: React.FC<DepartmentQuickAccessProps> = ({
     : [...commonItems, departmentItems[department]];
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
-      <div className="p-3">
-        <div className="space-y-2">
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col ${className}`}>
+      <div className="p-3 flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col gap-2">
           {quickLinks.map((link, index) => {
             const LinkComponent = link.disabled ? 'div' : 'a';
             const linkProps = link.disabled 
@@ -165,7 +165,7 @@ export const DepartmentQuickAccess: React.FC<DepartmentQuickAccessProps> = ({
               <LinkComponent
                 key={index}
                 {...linkProps}
-                className={`group relative overflow-hidden flex items-center gap-3 p-2.5 rounded-lg bg-gradient-to-r from-gray-50 to-white border border-gray-200 transition-all duration-300 ${
+                className={`group relative overflow-hidden flex items-center gap-3 p-2.5 rounded-lg bg-gradient-to-r from-gray-50 to-white border border-gray-200 transition-all duration-300 flex-1 ${
                   link.disabled 
                     ? 'opacity-50 cursor-not-allowed' 
                     : 'hover:border-blue-300 hover:shadow-sm hover:scale-[1.01] cursor-pointer'

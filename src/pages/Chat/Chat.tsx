@@ -23,6 +23,8 @@ const Chat: React.FC<ChatProps> = ({
     messages,
     participants,
     loading,
+    loadingChatsList,
+    loadingMessagesArea,
     error,
     typingUsers,
     availableEmployees,
@@ -54,7 +56,7 @@ const Chat: React.FC<ChatProps> = ({
             chats={chats}
             currentUser={currentUser}
             onChatSelect={handleChatSelect}
-            loading={loading}
+            loading={loadingChatsList}
           />
         </div>
         
@@ -72,7 +74,7 @@ const Chat: React.FC<ChatProps> = ({
               availableEmployees={availableEmployees}
               loadingEmployees={loadingEmployees}
               typingUsers={typingUsers}
-              loading={loading}
+              loading={loadingMessagesArea}
             />
           )}
         </div>

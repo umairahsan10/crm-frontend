@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { getMetricGridApi } from '../../apis/dashboard';
 import { transformMetricGridResponse } from '../../utils/metricTransform';
+import type { MetricData } from '../../types/dashboard';
 import type { MetricGridApiResponse } from '../../apis/dashboard';
 import { useAuth } from '../../context/AuthContext';
 
