@@ -22,7 +22,6 @@ const Chat: React.FC<ChatProps> = ({
     currentChat,
     messages,
     participants,
-    loading,
     loadingChatsList,
     loadingMessagesArea,
     error,

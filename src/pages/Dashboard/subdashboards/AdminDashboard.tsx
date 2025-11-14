@@ -3,7 +3,6 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
 import { 
-  UserManagementWidget, 
   DepartmentOverview
 } from '../../../components/common/Dashboard/AdminSpecific';
 import { DepartmentQuickAccess } from '../../../components/common/Dashboard/DepartmentQuickAccess';
