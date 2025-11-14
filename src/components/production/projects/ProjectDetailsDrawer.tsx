@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import type { Project } from '../../../types/production/projects';
 import { useProject } from '../../../hooks/queries/useProjectsQueries';
 import { useNavbar } from '../../../context/NavbarContext';
+import { useAuth } from '../../../context/AuthContext';
 import ProjectProgressBar from './ProjectProgressBar';
+import PhaseProgressBar from './PhaseProgressBar';
+import PhaseProgressEditor from './PhaseProgressEditor';
 import UpdateProjectForm from './UpdateProjectForm';
 
 interface ProjectDetailsDrawerProps {
@@ -25,6 +28,7 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
   canAssignTeam = false
 }) => {
   const { isNavbarOpen } = useNavbar();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'details' | 'employees' | 'update'>('details');
   const [isMobile, setIsMobile] = useState(false);
 
@@ -85,6 +89,10 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
     hard: 'Hard',
     difficult: 'Difficult'
   };
+
+  // Check if user is team lead and can update progress
+  const isTeamLead = user?.role === 'team_lead' || user?.role === 'team_leads';
+  const canUpdateProgress = isTeamLead && currentProject.team?.teamLead?.id === parseInt(user?.id || '0', 10);
 
    // Note: canCompleteProject removed - Actions section removed from Details tab
 
@@ -173,16 +181,39 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                           <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                           </svg>
-                          Live Progress
+                          Project Progress
                         </h3>
                       </div>
-                      <div>
-                        <ProjectProgressBar
-                          progress={currentProject.liveProgress}
-                          showPercentage={true}
-                          size="md"
-                        />
-                      </div>
+
+                      {/* Phase Progress Bar */}
+                      <PhaseProgressBar
+                        project={currentProject}
+                        showLabels={true}
+                        size="md"
+                      />
+
+                      {/* Progress Editor for Team Leads */}
+                      {canUpdateProgress && (
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                          <PhaseProgressEditor
+                            project={currentProject}
+                            onUpdate={(updatedProject) => {
+                              if (onProjectUpdated) {
+                                onProjectUpdated(updatedProject);
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Info for team leads without access */}
+                      {isTeamLead && !canUpdateProgress && (
+                        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <p className="text-sm text-yellow-800">
+                            You can only update progress for projects assigned to your team.
+                          </p>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Project Information */}

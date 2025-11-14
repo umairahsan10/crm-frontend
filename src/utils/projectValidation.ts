@@ -64,12 +64,12 @@ export const validateCompletionRequirements = (
  * Update Permissions (as of latest backend changes):
  * - Manager (dep_manager/admin): Can update ALL fields including liveProgress and paymentStage (can override automatic calculation)
  * - Unit Head: Can update status, difficultyLevel, deadline, teamId (liveProgress and paymentStage are automatic)
- * - Team Lead: READ-ONLY access (no updates allowed)
+ * - Team Lead: Can ONLY update liveProgress (current phase progress, 0-100%)
  * - Senior/Junior: No update permissions
  * 
  * Note: 
- * - liveProgress is automatically calculated based on payment phases:
- *   Phase 1: 0%, Phase 2: 25%, Phase 3: 50%, Phase 4: 75%, Completion: 100%
+ * - liveProgress in request = current phase progress (0-100%), not overall progress
+ * - Backend calculates overall progress automatically from current phase progress
  * - paymentStage is automatically updated based on payment processing
  */
 export const validateFieldPermissions = (
@@ -121,11 +121,19 @@ export const validateFieldPermissions = (
     };
   }
 
-  // Team Lead permissions - READ-ONLY (no updates allowed)
+  // Team Lead permissions - can ONLY update liveProgress (current phase progress)
   if (userRole === 'team_lead' || userRole === 'team_leads') {
+    // Team leads can ONLY update liveProgress (current phase progress)
+    if (field === 'liveProgress') {
+      // Note: Additional validation can be added here to ensure
+      // the team lead is assigned to the project's team
+      return { valid: true };
+    }
+    
+    // All other fields are read-only for team leads
     return {
       valid: false,
-      error: 'Team leads have read-only access. Progress is automatically calculated based on payment phases.'
+      error: 'Team leads can only update live progress. Other fields are read-only.'
     };
   }
 
