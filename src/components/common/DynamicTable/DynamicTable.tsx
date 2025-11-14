@@ -104,6 +104,7 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
 
   const isAllSelected = data.length > 0 && selectedItems.length === data.length;
   const isPartiallySelected = selectedItems.length > 0 && selectedItems.length < data.length;
+  const hasSelectedItems = selectedItems.length > 0;
 
   // Helper function to get badge styling
   const getBadgeClass = (value: string, badgeConfig?: { [key: string]: { className: string; text: string } }) => {
@@ -348,17 +349,35 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
               {/* Select All Checkbox - Only show if selectable */}
               {selectable && (
                 <th className="px-4 py-2 w-12">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    ref={(input) => {
-                      if (input) {
-                        input.indeterminate = isPartiallySelected;
-                      }
-                    }}
-                    onChange={handleSelectAll}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
-                  />
+                  <div 
+                    className="relative inline-block"
+                    onClick={handleSelectAll}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      ref={(input) => {
+                        if (input) {
+                          input.indeterminate = isPartiallySelected;
+                        }
+                      }}
+                      onChange={handleSelectAll}
+                      className="sr-only"
+                    />
+                    <div 
+                      className={`h-4 w-4 rounded border-2 cursor-pointer flex items-center justify-center transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-0 ${
+                        hasSelectedItems 
+                          ? 'bg-blue-600 border-blue-600' 
+                          : 'bg-white border-gray-300'
+                      }`}
+                    >
+                      {hasSelectedItems && (
+                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
                 </th>
               )}
               {/* Data Columns */}
@@ -390,16 +409,37 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
                   {/* Checkbox Cell - Only show if selectable */}
                   {selectable && (
                     <td className="px-4 py-2 w-12">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) => {
+                      <div 
+                        className="relative inline-block"
+                        onClick={(e) => {
                           e.stopPropagation();
                           handleSelectRow(rowId);
                         }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
-                      />
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleSelectRow(rowId);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="sr-only"
+                        />
+                        <div 
+                          className={`h-4 w-4 rounded border-2 cursor-pointer flex items-center justify-center transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-0 ${
+                            isSelected 
+                              ? 'bg-blue-600 border-blue-600' 
+                              : 'bg-white border-gray-300'
+                          }`}
+                        >
+                          {isSelected && (
+                            <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
                     </td>
                   )}
                   {/* Data Cells */}

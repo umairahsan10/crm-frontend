@@ -22,6 +22,14 @@ export interface BulkMarkPresentDto {
   reason?: string; // Optional reason for marking employees present
 }
 
+export interface BulkCheckoutDto {
+  date?: string; // YYYY-MM-DD format, optional - defaults to current PKT date
+  employee_ids?: number[]; // Optional array of employee IDs - if not provided, checks out all employees with active check-ins
+  reason?: string; // Optional reason for bulk checkout
+  timezone?: string; // IANA timezone name, e.g., "Asia/Karachi"
+  offset_minutes?: number; // Offset from UTC in minutes at event time
+}
+
 export interface CheckinResponseDto {
   id: number;
   employee_id: number;
@@ -53,6 +61,13 @@ export interface CheckoutResponseDto {
 export interface BulkMarkPresentResponseDto {
   message: string;
   marked_present: number;
+  errors: number;
+  skipped: number;
+}
+
+export interface BulkCheckoutResponseDto {
+  message: string;
+  checked_out: number;
   errors: number;
   skipped: number;
 }
@@ -132,13 +147,27 @@ export const checkoutApi = async (checkoutData: CheckoutDto): Promise<CheckoutRe
 
 export const bulkMarkPresentApi = async (bulkMarkData: BulkMarkPresentDto): Promise<BulkMarkPresentResponseDto> => {
   try {
-    return await apiPostJson<BulkMarkPresentResponseDto>('/hr/attendance/bulk-mark-present', bulkMarkData);
+    // No timeout for bulk operations - they can take a long time
+    return await apiPostJson<BulkMarkPresentResponseDto>('/hr/attendance/bulk-mark-present', bulkMarkData, { timeout: 0 });
   } catch (error: any) {
     console.error('Bulk mark present API error:', error);
     if (error instanceof ApiError) {
       throw new Error(error.message);
     }
     throw new Error('Failed to bulk mark attendance');
+  }
+};
+
+export const bulkCheckoutApi = async (bulkCheckoutData: BulkCheckoutDto): Promise<BulkCheckoutResponseDto> => {
+  try {
+    // No timeout for bulk operations - they can take a long time
+    return await apiPostJson<BulkCheckoutResponseDto>('/hr/attendance/bulk-checkout', bulkCheckoutData, { timeout: 0 });
+  } catch (error: any) {
+    console.error('Bulk checkout API error:', error);
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
+    }
+    throw new Error('Failed to bulk checkout');
   }
 };
 
