@@ -20,7 +20,6 @@ const PhaseProgressEditor: React.FC<PhaseProgressEditorProps> = ({
   // Determine if this is a company project (no phases)
   const isCompanyProject = !project.crackedLeadId;
   const currentPhase = project.currentPhase ?? 1;
-  const overallProgress = project.liveProgress ?? 0;
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
@@ -85,7 +84,7 @@ const PhaseProgressEditor: React.FC<PhaseProgressEditorProps> = ({
       </div>
 
       {/* Overall Progress Display (Read-only) */}
-      <div>
+      {/* <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Overall Project Progress
         </label>
@@ -103,7 +102,7 @@ const PhaseProgressEditor: React.FC<PhaseProgressEditorProps> = ({
         <p className="text-xs text-gray-500 mt-1">
           This is calculated automatically from phase progress
         </p>
-      </div>
+      </div> */}
 
       {/* Current Phase Progress Editor */}
       <div>
@@ -116,13 +115,21 @@ const PhaseProgressEditor: React.FC<PhaseProgressEditorProps> = ({
         </label>
         <div className="space-y-2">
           <div className="flex items-center space-x-3">
+          <button
+            onClick={handleSave}
+            disabled={isUpdating || !hasChanges}
+            className="w-10px px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isUpdating ? 'Updating...' : 'Save'}
+          </button>
             <input
               type="range"
               min="0"
               max="100"
               value={localProgress}
               onChange={handleProgressChange}
-              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="flex-1 h-3 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-600"
+              style={{ width: `${localProgress}%` }}
             />
             <input
               type="number"
@@ -130,32 +137,26 @@ const PhaseProgressEditor: React.FC<PhaseProgressEditorProps> = ({
               max="100"
               value={localProgress}
               onChange={handleNumberInputChange}
-              className="w-20 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-15 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <span className="text-sm font-semibold text-gray-700">%</span>
           </div>
-          <div className="flex-1 bg-gray-200 rounded-full h-3">
+          {/* <div className="flex-1 bg-gray-200 rounded-full h-3">
             <div
               className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-300"
               style={{ width: `${localProgress}%` }}
             />
-          </div>
-          {!isCompanyProject && (
+          </div> */}
+          {/* {!isCompanyProject && (
             <p className="text-xs text-gray-500">
               Update progress for Phase {currentPhase}. Overall progress will be calculated automatically.
             </p>
-          )}
+          )} */}
         </div>
       </div>
 
       {/* Save Button */}
-      <button
-        onClick={handleSave}
-        disabled={isUpdating || !hasChanges}
-        className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        {isUpdating ? 'Updating...' : 'Save Progress'}
-      </button>
+      
 
       {updateProjectMutation.error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg">

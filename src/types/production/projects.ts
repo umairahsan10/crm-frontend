@@ -20,11 +20,14 @@ export interface Project {
   // Phase information (from backend API)
   currentPhase?: number;  // Current phase number (1, 2, 3, 4, etc.)
   currentPhaseProgress?: number;  // Current phase progress (0-100%)
-  totalPhases?: number;  // Total number of phases (from crackedLead)
   createdAt: string;
   updatedAt: string;
   
   // Minimal relations (from API response)
+  crackedLead?: {
+    currentPhase: number;
+    totalPhases: number;
+  };
   salesRep?: {
     id: number;
     firstName: string;
