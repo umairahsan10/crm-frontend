@@ -7,7 +7,7 @@
 
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { getMyProfileApi, updateProfileApi } from '../../apis/profile';
-import { getMyAdminProfileApi } from '../../apis/admin';
+import { getMyAdminProfileApi, updateAdminProfileApi } from '../../apis/admin';
 
 // Query Keys - Centralized for consistency
 export const profileQueryKeys = {
@@ -58,39 +58,92 @@ export const useMyAdminProfile = (
 
 /**
  * Hook to update profile with optimistic updates
+ * Handles both admin and employee profile updates
  */
-export const useUpdateProfile = () => {
+export const useUpdateProfile = (userType?: 'admin' | 'employee') => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (profileData: any) => {
-      const response = await updateProfileApi(profileData);
-      return response;
+      // Determine user type from profileData or parameter
+      const isAdmin = userType === 'admin' || profileData.userType === 'admin';
+      
+      if (isAdmin) {
+        // Transform ProfileData format to AdminData format
+        const adminUpdateData: any = {};
+        
+        // Handle name field (split into firstName and lastName)
+        // Only include fields that meet validation requirements (min 2 chars for firstName/lastName)
+        if (profileData.name) {
+          const nameParts = profileData.name.trim().split(/\s+/).filter((part: string) => part.length > 0);
+          
+          if (nameParts.length > 0) {
+            const firstName = nameParts[0];
+            // Only include firstName if it's at least 2 characters
+            if (firstName.length >= 2) {
+              adminUpdateData.firstName = firstName;
+            }
+            
+            // Only include lastName if there are multiple parts and it's at least 2 characters
+            if (nameParts.length > 1) {
+              const lastName = nameParts.slice(1).join(' ');
+              if (lastName.length >= 2) {
+                adminUpdateData.lastName = lastName;
+              }
+            }
+            // If only one word, don't include lastName (it's optional in the API)
+          }
+        }
+        
+        // Map other fields
+        if (profileData.email !== undefined && profileData.email.trim().length > 0) {
+          adminUpdateData.email = profileData.email;
+        }
+        
+        // Note: Admin profile might not support phone, address, etc. based on AdminData interface
+        // Only update fields that exist in AdminData
+        
+        const response = await updateAdminProfileApi(adminUpdateData);
+        return response;
+      } else {
+        const response = await updateProfileApi(profileData);
+        return response;
+      }
     },
     onMutate: async (newProfile) => {
+      // Determine which query key to use
+      const isAdmin = userType === 'admin' || newProfile.userType === 'admin';
+      const queryKey = isAdmin ? profileQueryKeys.adminProfile() : profileQueryKeys.myProfile();
+      
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: profileQueryKeys.myProfile() });
+      await queryClient.cancelQueries({ queryKey });
 
       // Snapshot previous value
-      const previousProfile = queryClient.getQueryData(profileQueryKeys.myProfile());
+      const previousProfile = queryClient.getQueryData(queryKey);
 
       // Optimistically update profile
-      queryClient.setQueryData(profileQueryKeys.myProfile(), (old: any) => ({
+      queryClient.setQueryData(queryKey, (old: any) => ({
         ...old,
         ...newProfile,
       }));
 
-      return { previousProfile };
+      return { previousProfile, queryKey };
     },
     onError: (_err, _newProfile, context) => {
       // Rollback on error
-      if (context?.previousProfile) {
-        queryClient.setQueryData(profileQueryKeys.myProfile(), context.previousProfile);
+      if (context?.previousProfile && context?.queryKey) {
+        queryClient.setQueryData(context.queryKey, context.previousProfile);
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, _variables, context) => {
       // Invalidate and refetch to ensure data is up-to-date
-      queryClient.invalidateQueries({ queryKey: profileQueryKeys.myProfile() });
+      if (context?.queryKey) {
+        queryClient.invalidateQueries({ queryKey: context.queryKey });
+      } else {
+        // Fallback: invalidate both
+        queryClient.invalidateQueries({ queryKey: profileQueryKeys.myProfile() });
+        queryClient.invalidateQueries({ queryKey: profileQueryKeys.adminProfile() });
+      }
     },
   });
 };
