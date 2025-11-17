@@ -1,5 +1,5 @@
 import React from 'react';
-import { MetricCard } from './MetricCard';
+import { MetricCard, type MetricCardColorTheme } from './MetricCard';
 import type { MetricData } from '../../../types/dashboard';
 
 interface MetricGridProps {
@@ -11,6 +11,7 @@ interface MetricGridProps {
   headerGradient?: string;
   cardSize?: 'sm' | 'md' | 'lg';
   cardClassName?: string;
+  colorThemes?: (MetricCardColorTheme | undefined)[];
 }
 
 export const MetricGrid: React.FC<MetricGridProps> = ({ 
@@ -21,7 +22,8 @@ export const MetricGrid: React.FC<MetricGridProps> = ({
   headerColor = 'from-blue-50 to-transparent',
   headerGradient = 'from-blue-500 to-indigo-600',
   cardSize = 'md',
-  cardClassName = ''
+  cardClassName = '',
+  colorThemes
 }) => {
   const gridClasses = {
     2: 'grid-cols-1 md:grid-cols-2',
@@ -40,13 +42,14 @@ export const MetricGrid: React.FC<MetricGridProps> = ({
         </div>
       )}
       <div className="p-4">
-        <div className={`grid gap-4 ${gridClasses[columns]}`}>
+        <div className={`grid gap-6 ${gridClasses[columns]}`}>
           {metrics.map((metric, index) => (
             <MetricCard 
               key={index}
               metric={metric}
               size={cardSize}
               className={cardClassName}
+              colorTheme={colorThemes?.[index]}
             />
           ))}
         </div>

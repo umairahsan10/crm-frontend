@@ -33,6 +33,7 @@ interface ChartWidgetProps {
   type: 'bar' | 'line' | 'pie';
   height?: number;
   className?: string;
+  loading?: boolean;
 }
 
 export const ChartWidget: React.FC<ChartWidgetProps> = ({ 
@@ -40,7 +41,8 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
   data,
   type,
   height = 350,
-  className = ''
+  className = '',
+  loading = false
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -238,7 +240,13 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
         </div>
       </div>
       <div className="p-6" style={{ height: `${height}px` }}>
-        {renderChart()}
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+          </div>
+        ) : (
+          renderChart()
+        )}
       </div>
     </div>
   );

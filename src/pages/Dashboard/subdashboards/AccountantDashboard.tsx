@@ -8,6 +8,7 @@ import { getAccountantAnalyticsApi } from '../../../apis/analytics';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
 import { getMetricIcon } from '../../../utils/metricIcons';
+import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -87,6 +88,54 @@ const AccountantDashboard: React.FC = () => {
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
+  // SVG Icons for financial metrics
+  const ProfitIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+  );
+
+  const ExpenseIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  );
+
+  const CashFlowIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+    </svg>
+  );
+
+  const RevenueIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+
+
+  // Helper function to get SVG icon for financial metrics
+  const getFinancialMetricIcon = (title: string): React.ReactNode => {
+    const normalizedTitle = title.trim().toLowerCase();
+    
+    if (normalizedTitle.includes('profit')) {
+      return <ProfitIcon />;
+    }
+    if (normalizedTitle.includes('expense')) {
+      return <ExpenseIcon />;
+    }
+    if (normalizedTitle.includes('cash flow') || normalizedTitle.includes('cashflow')) {
+      return <CashFlowIcon />;
+    }
+    if (normalizedTitle.includes('revenue') || normalizedTitle.includes('income')) {
+      return <RevenueIcon />;
+    }
+    
+    // Fallback to default icon if no match
+    return getMetricIcon(title);
+  };
+
+
   // Fallback dummy data for Accountant metric grid (used when API data is not available)
   const accountantFallbackMetrics = [
     {
@@ -95,7 +144,7 @@ const AccountantDashboard: React.FC = () => {
       subtitle: 'All time',
       change: '-$904.4K from last month',
       changeType: 'negative' as const,
-      icon: getMetricIcon('Profit')
+      icon: <ProfitIcon />
     },
     {
       title: 'Expense',
@@ -103,7 +152,7 @@ const AccountantDashboard: React.FC = () => {
       subtitle: 'This month',
       change: '-$7.0K from last month',
       changeType: 'positive' as const,
-      icon: getMetricIcon('Expense')
+      icon: <ExpenseIcon />
     },
     {
       title: 'Cash Flow',
@@ -111,7 +160,7 @@ const AccountantDashboard: React.FC = () => {
       subtitle: 'This month',
       change: '-$904.4K from last month',
       changeType: 'negative' as const,
-      icon: getMetricIcon('Cash Flow')
+      icon: <CashFlowIcon />
     },
     {
       title: 'Revenue',
@@ -119,16 +168,23 @@ const AccountantDashboard: React.FC = () => {
       subtitle: 'This month',
       change: '-$911.3K from last month',
       changeType: 'negative' as const,
-      icon: getMetricIcon('Revenue')
+      icon: <RevenueIcon />
     }
   ];
 
   // Get data based on role level
   const getDataForRole = () => {
     // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+    // Replace icons with SVG icons for financial metrics
     const overviewStats = metricGridData && metricGridData.length > 0
-      ? metricGridData
+      ? metricGridData.map(metric => ({
+          ...metric,
+          icon: getFinancialMetricIcon(metric.title)
+        }))
       : accountantFallbackMetrics;
+
+    // Get color themes for each metric
+    const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
@@ -142,12 +198,14 @@ const AccountantDashboard: React.FC = () => {
       case 'department_manager':
         return {
           overviewStats,
+          metricColorThemes,
           activities,
           showUnitFilter: true
         };
       case 'unit_head':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getUnitHeadActions(),
           activities,
           showUnitFilter: false
@@ -155,6 +213,7 @@ const AccountantDashboard: React.FC = () => {
       case 'team_lead':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getTeamLeadActions(),
           activities,
           showUnitFilter: false
@@ -162,6 +221,7 @@ const AccountantDashboard: React.FC = () => {
       default:
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getEmployeeActions(),
           activities,
           showUnitFilter: false
@@ -415,6 +475,7 @@ const AccountantDashboard: React.FC = () => {
             headerColor="from-emerald-50 to-transparent"
             headerGradient="from-emerald-500 to-teal-600"
             cardSize="md"
+            colorThemes={currentData.metricColorThemes}
           />
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">

@@ -7,11 +7,97 @@ import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
+import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
 import type { 
   ChartData, 
   ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
+
+// SVG Icon Components
+const CampaignIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  </svg>
+);
+
+const TrendIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+  </svg>
+);
+
+const MoneyIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const TeamsIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>
+);
+
+const TrophyIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+  </svg>
+);
+
+const AnalyticsIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  </svg>
+);
+
+const SearchIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>
+);
+
+const MobileIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+  </svg>
+);
+
+const EmailIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+);
+
+const TasksIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+  </svg>
+);
+
+const PendingIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const ContentIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+  </svg>
+);
+
+const NewIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+  </svg>
+);
+
+const PhoneIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+  </svg>
+);
 
 const MarketingDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -57,7 +143,7 @@ const MarketingDashboard: React.FC = () => {
         value: '12',
         change: '+3 this month',
         changeType: 'positive' as const,
-        icon: '🎯',
+        icon: <CampaignIcon />,
         subtitle: 'Active campaigns'
       },
       {
@@ -65,7 +151,7 @@ const MarketingDashboard: React.FC = () => {
         value: '12%',
         change: '+2% from last month',
         changeType: 'positive' as const,
-        icon: '📈',
+        icon: <TrendIcon />,
         subtitle: 'Lead to customer'
       },
       {
@@ -73,7 +159,7 @@ const MarketingDashboard: React.FC = () => {
         value: '$45K',
         change: '+$5K from last month',
         changeType: 'positive' as const,
-        icon: '💰',
+        icon: <MoneyIcon />,
         subtitle: 'This month'
       }
     ],
@@ -83,7 +169,7 @@ const MarketingDashboard: React.FC = () => {
         value: '4',
         change: 'All operational',
         changeType: 'positive' as const,
-        icon: '👥',
+        icon: <TeamsIcon />,
         subtitle: 'Marketing teams'
       },
       {
@@ -91,7 +177,7 @@ const MarketingDashboard: React.FC = () => {
         value: 'Digital Marketing',
         change: '15% conversion',
         changeType: 'positive' as const,
-        icon: '🏆',
+        icon: <TrophyIcon />,
         subtitle: 'This month'
       },
       {
@@ -99,7 +185,7 @@ const MarketingDashboard: React.FC = () => {
         value: '3.2x',
         change: '+0.4x improvement',
         changeType: 'positive' as const,
-        icon: '📊',
+        icon: <AnalyticsIcon />,
         subtitle: 'Return on investment'
       },
       {
@@ -107,7 +193,7 @@ const MarketingDashboard: React.FC = () => {
         value: '$1.2K',
         change: '+$200 increase',
         changeType: 'positive' as const,
-        icon: '💰',
+        icon: <MoneyIcon />,
         subtitle: 'Average per deal'
       }
     ],
@@ -117,7 +203,7 @@ const MarketingDashboard: React.FC = () => {
         value: '5',
         change: '+1 this week',
         changeType: 'positive' as const,
-        icon: '🔍',
+        icon: <SearchIcon />,
         subtitle: 'Active PPC'
       },
       {
@@ -125,7 +211,7 @@ const MarketingDashboard: React.FC = () => {
         value: '8',
         change: '+2 this week',
         changeType: 'positive' as const,
-        icon: '📱',
+        icon: <MobileIcon />,
         subtitle: 'Active campaigns'
       },
       {
@@ -133,7 +219,7 @@ const MarketingDashboard: React.FC = () => {
         value: '3',
         change: '+1 this week',
         changeType: 'positive' as const,
-        icon: '📧',
+        icon: <EmailIcon />,
         subtitle: 'Scheduled'
       }
     ]
@@ -147,7 +233,7 @@ const MarketingDashboard: React.FC = () => {
         value: '6',
         change: '+2 this month',
         changeType: 'positive' as const,
-        icon: '🎯',
+        icon: <CampaignIcon />,
         subtitle: user?.department || 'Your Unit'
       },
       {
@@ -155,7 +241,7 @@ const MarketingDashboard: React.FC = () => {
         value: '14%',
         change: '+2% from last month',
         changeType: 'positive' as const,
-        icon: '📈',
+        icon: <TrendIcon />,
         subtitle: 'Lead to customer'
       },
       {
@@ -163,7 +249,7 @@ const MarketingDashboard: React.FC = () => {
         value: '$18K',
         change: '+$2K from last month',
         changeType: 'positive' as const,
-        icon: '💰',
+        icon: <MoneyIcon />,
         subtitle: 'This month'
       }
     ],
@@ -173,7 +259,7 @@ const MarketingDashboard: React.FC = () => {
         value: '2',
         change: 'All active',
         changeType: 'positive' as const,
-        icon: '👥',
+        icon: <TeamsIcon />,
         subtitle: 'Active teams'
       },
       {
@@ -181,7 +267,7 @@ const MarketingDashboard: React.FC = () => {
         value: 'Sarah Johnson',
         change: '8 campaigns completed',
         changeType: 'positive' as const,
-        icon: '🏆',
+        icon: <TrophyIcon />,
         subtitle: 'This month'
       },
       {
@@ -189,7 +275,7 @@ const MarketingDashboard: React.FC = () => {
         value: '5',
         change: '3 content reviews due',
         changeType: 'neutral' as const,
-        icon: '📋',
+        icon: <TasksIcon />,
         subtitle: 'Awaiting completion'
       },
       {
@@ -197,7 +283,7 @@ const MarketingDashboard: React.FC = () => {
         value: '$1.2K',
         change: '+$200 increase',
         changeType: 'positive' as const,
-        icon: '💰',
+        icon: <MoneyIcon />,
         subtitle: 'Average per deal'
       }
     ]
@@ -211,7 +297,7 @@ const MarketingDashboard: React.FC = () => {
         value: '4',
         change: '+1 this week',
         changeType: 'positive' as const,
-        icon: '🎯',
+        icon: <CampaignIcon />,
         subtitle: 'Assigned to team'
       },
       {
@@ -219,7 +305,7 @@ const MarketingDashboard: React.FC = () => {
         value: '11%',
         change: '+2% from last month',
         changeType: 'positive' as const,
-        icon: '📈',
+        icon: <TrendIcon />,
         subtitle: 'Lead to customer'
       },
       {
@@ -227,7 +313,7 @@ const MarketingDashboard: React.FC = () => {
         value: '85%',
         change: 'On track',
         changeType: 'positive' as const,
-        icon: '🎯',
+        icon: <CampaignIcon />,
         subtitle: 'Monthly target'
       }
     ],
@@ -237,7 +323,7 @@ const MarketingDashboard: React.FC = () => {
         value: '5',
         change: 'All present',
         changeType: 'positive' as const,
-        icon: '👥',
+        icon: <TeamsIcon />,
         subtitle: 'Team members'
       },
       {
@@ -245,7 +331,7 @@ const MarketingDashboard: React.FC = () => {
         value: '8',
         change: '5 completed',
         changeType: 'positive' as const,
-        icon: '📋',
+        icon: <TasksIcon />,
         subtitle: 'Pending tasks'
       },
       {
@@ -253,7 +339,7 @@ const MarketingDashboard: React.FC = () => {
         value: '2',
         change: '1 campaign waiting',
         changeType: 'neutral' as const,
-        icon: '⏳',
+        icon: <PendingIcon />,
         subtitle: 'Awaiting approval'
       },
       {
@@ -261,7 +347,7 @@ const MarketingDashboard: React.FC = () => {
         value: '$1.2K',
         change: '+$200 increase',
         changeType: 'positive' as const,
-        icon: '💰',
+        icon: <MoneyIcon />,
         subtitle: 'Average per deal'
       }
     ]
@@ -275,15 +361,15 @@ const MarketingDashboard: React.FC = () => {
         value: '3',
         change: '+1 this week',
         changeType: 'positive' as const,
-      icon: '🎯',
+        icon: <CampaignIcon />,
         subtitle: 'My campaigns'
-    },
-    {
-      title: 'Conversion Rate',
+      },
+      {
+        title: 'Conversion Rate',
         value: '9%',
         change: '+2% from last month',
         changeType: 'positive' as const,
-      icon: '📈',
+        icon: <TrendIcon />,
         subtitle: 'Personal rate'
       },
       {
@@ -291,7 +377,7 @@ const MarketingDashboard: React.FC = () => {
         value: '45',
         change: '+8 this month',
         changeType: 'positive' as const,
-        icon: '🎯',
+        icon: <CampaignIcon />,
         subtitle: 'This month'
       }
     ],
@@ -301,7 +387,7 @@ const MarketingDashboard: React.FC = () => {
         value: '3',
         change: '1 completed',
         changeType: 'neutral' as const,
-        icon: '📝',
+        icon: <ContentIcon />,
         subtitle: 'Due today'
       },
       {
@@ -309,7 +395,7 @@ const MarketingDashboard: React.FC = () => {
         value: '1',
         change: 'Fresh campaign',
         changeType: 'positive' as const,
-        icon: '🆕',
+        icon: <NewIcon />,
         subtitle: 'Assigned today'
       },
       {
@@ -317,7 +403,7 @@ const MarketingDashboard: React.FC = () => {
         value: '2',
         change: '1 completed',
         changeType: 'neutral' as const,
-        icon: '📞',
+        icon: <PhoneIcon />,
         subtitle: 'Scheduled'
       },
       {
@@ -325,7 +411,7 @@ const MarketingDashboard: React.FC = () => {
         value: '$1.2K',
         change: '+$200 increase',
         changeType: 'positive' as const,
-        icon: '💰',
+        icon: <MoneyIcon />,
         subtitle: 'Average per deal'
       }
     ]
@@ -341,6 +427,9 @@ const MarketingDashboard: React.FC = () => {
          roleLevel === 'team_lead' ? teamLeadData.teamPerformance :
          employeeData.personalPerformance);
 
+    // Get color themes for each metric
+    const metricColorThemes = getColorThemesForMetrics(overviewStats);
+
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
       ? activityFeedData
@@ -353,6 +442,7 @@ const MarketingDashboard: React.FC = () => {
       case 'department_manager':
         return {
           overviewStats,
+          metricColorThemes,
           secondaryStats: [...departmentManagerData.teamPerformance, ...departmentManagerData.campaignStatus],
           quickActions: getDepartmentManagerActions(),
           activities,
@@ -361,6 +451,7 @@ const MarketingDashboard: React.FC = () => {
       case 'unit_head':
         return {
           overviewStats,
+          metricColorThemes,
           secondaryStats: unitHeadData.teamStatus,
           quickActions: getUnitHeadActions(),
           activities,
@@ -369,6 +460,7 @@ const MarketingDashboard: React.FC = () => {
       case 'team_lead':
         return {
           overviewStats,
+          metricColorThemes,
           secondaryStats: teamLeadData.teamStatus,
           quickActions: getTeamLeadActions(),
           activities,
@@ -377,6 +469,7 @@ const MarketingDashboard: React.FC = () => {
       default:
         return {
           overviewStats,
+          metricColorThemes,
           secondaryStats: employeeData.todaysTasks,
           quickActions: getEmployeeActions(),
           activities,
@@ -390,28 +483,28 @@ const MarketingDashboard: React.FC = () => {
     {
       title: 'Campaign Management',
       description: 'Create Campaign, Campaign Analytics, Budget Planning',
-      icon: '🎯',
+      icon: <CampaignIcon />,
       href: '/marketing',
       color: 'bg-blue-100 text-blue-600'
     },
     {
       title: 'Lead Management',
       description: 'Lead Analytics, Lead Scoring, Lead Nurturing',
-      icon: '👥',
+      icon: <TeamsIcon />,
       href: '/leads',
       color: 'bg-green-100 text-green-600'
     },
     {
       title: 'Content Management',
       description: 'Content Calendar, Content Creation, Content Analytics',
-      icon: '📝',
+      icon: <ContentIcon />,
       href: '/marketing',
       color: 'bg-purple-100 text-purple-600'
     },
     {
       title: 'Budget Management',
       description: 'Budget Allocation, Spend Tracking, ROI Analysis',
-      icon: '💰',
+      icon: <MoneyIcon />,
       href: '/finance',
       color: 'bg-orange-100 text-orange-600'
     }
@@ -421,21 +514,21 @@ const MarketingDashboard: React.FC = () => {
     {
       title: 'Campaign Management',
       description: 'Unit Campaign Dashboard, Campaign Analytics',
-      icon: '🎯',
+      icon: <CampaignIcon />,
       href: '/marketing',
       color: 'bg-blue-100 text-blue-600'
     },
     {
       title: 'Budget Tracking',
       description: 'Unit Budget Dashboard, Performance Reports',
-      icon: '💰',
+      icon: <MoneyIcon />,
       href: '/finance',
       color: 'bg-purple-100 text-purple-600'
     },
     {
       title: 'Team Management',
       description: 'Teams Management',
-      icon: '👥',
+      icon: <TeamsIcon />,
       href: '/marketing',
       color: 'bg-orange-100 text-orange-600'
     }
@@ -445,14 +538,14 @@ const MarketingDashboard: React.FC = () => {
     {
       title: 'Campaign Management',
       description: 'Team Campaign Dashboard, Assign Campaigns',
-      icon: '🎯',
+      icon: <CampaignIcon />,
       href: '/marketing',
       color: 'bg-blue-100 text-blue-600'
     },
     {
       title: 'Content Pipeline',
       description: 'Content Overview, Content Planning',
-      icon: '📝',
+      icon: <ContentIcon />,
       href: '/marketing',
       color: 'bg-purple-100 text-purple-600'
     }
@@ -462,28 +555,28 @@ const MarketingDashboard: React.FC = () => {
     {
       title: 'My Campaigns',
       description: 'View and manage assigned campaigns',
-      icon: '🎯',
+      icon: <CampaignIcon />,
       href: '/marketing',
       color: 'bg-blue-100 text-blue-600'
     },
     {
       title: 'Content Creation',
       description: 'Create and edit marketing content',
-      icon: '📝',
+      icon: <ContentIcon />,
       href: '/marketing',
       color: 'bg-green-100 text-green-600'
     },
     {
       title: 'Lead Management',
       description: 'Manage marketing leads',
-      icon: '👥',
+      icon: <TeamsIcon />,
       href: '/leads',
       color: 'bg-purple-100 text-purple-600'
     },
     {
       title: 'Analytics',
       description: 'View campaign performance metrics',
-      icon: '📊',
+      icon: <AnalyticsIcon />,
       href: '/marketing',
       color: 'bg-orange-100 text-orange-600'
     }
@@ -623,6 +716,7 @@ const MarketingDashboard: React.FC = () => {
             headerColor="from-green-50 to-transparent"
             headerGradient="from-green-500 to-emerald-600"
             cardSize="md"
+            colorThemes={currentData.metricColorThemes}
           />
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">
