@@ -159,11 +159,11 @@ const Navbar: React.FC<NavbarProps> = ({
           ];
         
         case 'accounts':
+        case 'accounting':
           return [
             ...baseItems,
             { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
             { id: 'salary', label: 'Salary Management', icon: '💵', path: '/finance/salary' },
-            { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];
         
         default:

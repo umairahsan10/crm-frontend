@@ -304,7 +304,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'leads': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior'],
       'leads-create': ['admin', 'dept_manager', 'team_leads', 'marketing'],
       'company': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior'],
-      'chats': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior', 'junior'],
+      'chats': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior', 'junior'], // Excludes accounts department
       'settings': ['admin'],
       'profile': ['admin', 'dept_manager', 'team_leads', 'unit_head', 'senior', 'junior'],
       
@@ -338,6 +338,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userRole = user.role?.toLowerCase();
     const userDepartment = user.department?.toLowerCase();
     const allowedRoles = pagePermissions[pageId] || [];
+    
+    // Block accounts department from accessing chats
+    if (pageId === 'chats' && (userDepartment === 'accounts' || userDepartment === 'accounting')) {
+      console.log('Accounts department blocked from accessing chats');
+      return false;
+    }
     
     // Enhanced matching for actual database roles and departments
     const canAccess = allowedRoles.includes(userRole) || 

@@ -2,17 +2,45 @@ import React, { useState } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { CommissionTracker, SalesPerformanceSummary, SalesLeadsPipeline, DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import { DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import { PerformanceLeaderboard } from '../../../components/common/Leaderboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
-import { getMetricIcon } from '../../../utils/metricIcons';
+import { useSalesTrends } from '../../../hooks/queries/useSalesTrends';
+import { useTopPerformersLeaderboard } from '../../../hooks/queries/useTopPerformers';
+import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
 import type {
   ChartData,
   ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
+
+// SVG Icon Components
+const LeadsIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+);
+
+const ConversionRateIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+  </svg>
+);
+
+const RevenueIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const WonDealsIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
 
 const SalesDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -50,6 +78,32 @@ const SalesDashboard: React.FC = () => {
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
+  // Fetch sales trends data from API
+  const { data: salesTrendApiData, isLoading: isLoadingSalesTrends } = useSalesTrends('monthly');
+
+  // Fetch top performers data from API for leaderboard
+  const { data: topPerformersApiData, isLoading: isLoadingTopPerformers } = useTopPerformersLeaderboard(5, 'monthly', undefined, undefined, undefined, 'deals');
+
+  // Helper function to get SVG icon for sales metrics
+  const getSalesMetricIcon = (title: string): React.ReactNode => {
+    const normalizedTitle = title.trim().toLowerCase();
+    
+    if (normalizedTitle.includes('lead')) {
+      return <LeadsIcon />;
+    }
+    if (normalizedTitle.includes('conversion')) {
+      return <ConversionRateIcon />;
+    }
+    if (normalizedTitle.includes('revenue') || normalizedTitle.includes('commission')) {
+      return <RevenueIcon />;
+    }
+    if (normalizedTitle.includes('won') || normalizedTitle.includes('deal')) {
+      return <WonDealsIcon />;
+    }
+    
+    return <LeadsIcon />; // Default fallback
+  };
+
   // Fallback dummy data for Sales metric grid (used when API data is not available)
   const salesFallbackMetrics = [
     {
@@ -58,7 +112,7 @@ const SalesDashboard: React.FC = () => {
       subtitle: 'Active: 32',
       change: '+70 from last month',
       changeType: 'positive' as const,
-      icon: getMetricIcon('Leads')
+      icon: <LeadsIcon />
     },
     {
       title: 'Conversion Rate',
@@ -66,7 +120,7 @@ const SalesDashboard: React.FC = () => {
       subtitle: 'Cracked / Total',
       change: '+12.345679012345679 this month',
       changeType: 'neutral' as const,
-      icon: getMetricIcon('Conversion Rate')
+      icon: <ConversionRateIcon />
     },
     {
       title: 'Revenue / Commission',
@@ -74,7 +128,7 @@ const SalesDashboard: React.FC = () => {
       subtitle: 'Total / Your share',
       change: '+$5.4M this month',
       changeType: 'neutral' as const,
-      icon: getMetricIcon('Revenue')
+      icon: <RevenueIcon />
     },
     {
       title: 'Won Deals',
@@ -82,16 +136,23 @@ const SalesDashboard: React.FC = () => {
       subtitle: 'Cracked leads',
       change: '+10 this month',
       changeType: 'neutral' as const,
-      icon: getMetricIcon('Won Deals')
+      icon: <WonDealsIcon />
     }
   ];
 
   // Get data based on role level
   const getDataForRole = () => {
     // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+    // Replace icons with SVG icons for sales metrics
     const overviewStats = metricGridData && metricGridData.length > 0 
-      ? metricGridData 
+      ? metricGridData.map(metric => ({
+          ...metric,
+          icon: getSalesMetricIcon(metric.title)
+        }))
       : salesFallbackMetrics;
+
+    // Get color themes for each metric
+    const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
@@ -105,6 +166,7 @@ const SalesDashboard: React.FC = () => {
       case 'department_manager':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getDepartmentManagerActions(),
           activities,
           showUnitFilter: true
@@ -112,6 +174,7 @@ const SalesDashboard: React.FC = () => {
       case 'unit_head':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getUnitHeadActions(),
           activities,
           showUnitFilter: false
@@ -119,6 +182,7 @@ const SalesDashboard: React.FC = () => {
       case 'team_lead':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getTeamLeadActions(),
           activities,
           showUnitFilter: false
@@ -126,6 +190,7 @@ const SalesDashboard: React.FC = () => {
       default:
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getEmployeeActions(),
           activities,
           showUnitFilter: false
@@ -354,25 +419,200 @@ const SalesDashboard: React.FC = () => {
     }
   ];
 
-  // Chart data for sales trends
-  const salesTrendData: ChartData[] = [
-    { name: 'Mon', value: 12000 },
-    { name: 'Tue', value: 15000 },
-    { name: 'Wed', value: 18000 },
-    { name: 'Thu', value: 22000 },
-    { name: 'Fri', value: 19000 },
-    { name: 'Sat', value: 8000 },
-    { name: 'Sun', value: 5000 }
+  // Fallback dummy data for sales trends (used when API data is not available)
+  const salesTrendFallbackData: ChartData[] = [
+    { name: 'Jan', value: 420000 },
+    { name: 'Feb', value: 480000 },
+    { name: 'Mar', value: 650000 },
+    { name: 'Apr', value: 520000 },
+    { name: 'May', value: 580000 },
+    { name: 'Jun', value: 610000 },
+    { name: 'Jul', value: 590000 },
+    { name: 'Aug', value: 630000 },
+    { name: 'Sep', value: 670000 },
+    { name: 'Oct', value: 640000 },
+    { name: 'Nov', value: 680000 },
+    { name: 'Dec', value: 720000 }
   ];
 
-  // Top performing team members data
-  const topPerformersData: ChartData[] = [
-    { name: 'Sarah Johnson', value: 18 },
-    { name: 'Mike Chen', value: 15 },
-    { name: 'Lisa Wilson', value: 12 },
-    { name: 'David Brown', value: 10 },
-    { name: 'Emma Davis', value: 8 }
+  // Use API data for sales trends, fallback to dummy data if API is loading or fails
+  const salesTrendData = salesTrendApiData && salesTrendApiData.length > 0
+    ? salesTrendApiData
+    : salesTrendFallbackData;
+
+  // Fallback dummy data for top performers (used when API data is not available)
+  const topPerformersFallbackData = [
+    {
+      id: '1',
+      name: 'Sarah Johnson',
+      avatar: 'SJ',
+      department: 'Sales',
+      role: 'Senior Sales Rep',
+      metrics: [
+        {
+          label: 'Deals Closed',
+          currentValue: 18,
+          targetValue: 20,
+          progress: 90,
+          status: 'on-track' as const,
+          unit: 'deals'
+        },
+        {
+          label: 'Sales Amount',
+          currentValue: 450000,
+          targetValue: 500000,
+          progress: 90,
+          status: 'on-track' as const,
+          unit: '$'
+        },
+        {
+          label: 'Conversion Rate',
+          currentValue: 40,
+          targetValue: 30,
+          progress: 133,
+          status: 'exceeded' as const,
+          unit: '%'
+        }
+      ]
+    },
+    {
+      id: '2',
+      name: 'Mike Chen',
+      avatar: 'MC',
+      department: 'Sales',
+      role: 'Sales Rep',
+      metrics: [
+        {
+          label: 'Deals Closed',
+          currentValue: 15,
+          targetValue: 20,
+          progress: 75,
+          status: 'on-track' as const,
+          unit: 'deals'
+        },
+        {
+          label: 'Sales Amount',
+          currentValue: 380000,
+          targetValue: 400000,
+          progress: 95,
+          status: 'on-track' as const,
+          unit: '$'
+        },
+        {
+          label: 'Conversion Rate',
+          currentValue: 39.5,
+          targetValue: 30,
+          progress: 132,
+          status: 'exceeded' as const,
+          unit: '%'
+        }
+      ]
+    },
+    {
+      id: '3',
+      name: 'Lisa Wilson',
+      avatar: 'LW',
+      department: 'Sales',
+      role: 'Sales Rep',
+      metrics: [
+        {
+          label: 'Deals Closed',
+          currentValue: 12,
+          targetValue: 20,
+          progress: 60,
+          status: 'below-target' as const,
+          unit: 'deals'
+        },
+        {
+          label: 'Sales Amount',
+          currentValue: 300000,
+          targetValue: 400000,
+          progress: 75,
+          status: 'on-track' as const,
+          unit: '$'
+        },
+        {
+          label: 'Conversion Rate',
+          currentValue: 34.3,
+          targetValue: 30,
+          progress: 114,
+          status: 'exceeded' as const,
+          unit: '%'
+        }
+      ]
+    },
+    {
+      id: '4',
+      name: 'David Brown',
+      avatar: 'DB',
+      department: 'Sales',
+      role: 'Sales Rep',
+      metrics: [
+        {
+          label: 'Deals Closed',
+          currentValue: 10,
+          targetValue: 20,
+          progress: 50,
+          status: 'below-target' as const,
+          unit: 'deals'
+        },
+        {
+          label: 'Sales Amount',
+          currentValue: 250000,
+          targetValue: 400000,
+          progress: 62.5,
+          status: 'below-target' as const,
+          unit: '$'
+        },
+        {
+          label: 'Conversion Rate',
+          currentValue: 31.3,
+          targetValue: 30,
+          progress: 104,
+          status: 'exceeded' as const,
+          unit: '%'
+        }
+      ]
+    },
+    {
+      id: '5',
+      name: 'Emma Davis',
+      avatar: 'ED',
+      department: 'Sales',
+      role: 'Sales Rep',
+      metrics: [
+        {
+          label: 'Deals Closed',
+          currentValue: 8,
+          targetValue: 20,
+          progress: 40,
+          status: 'below-target' as const,
+          unit: 'deals'
+        },
+        {
+          label: 'Sales Amount',
+          currentValue: 200000,
+          targetValue: 400000,
+          progress: 50,
+          status: 'below-target' as const,
+          unit: '$'
+        },
+        {
+          label: 'Conversion Rate',
+          currentValue: 28.6,
+          targetValue: 30,
+          progress: 95,
+          status: 'on-track' as const,
+          unit: '%'
+        }
+      ]
+    }
   ];
+
+  // Use API data for top performers, fallback to dummy data if API is loading or fails
+  const topPerformersData = topPerformersApiData && topPerformersApiData.length > 0
+    ? topPerformersApiData
+    : topPerformersFallbackData;
 
   const currentData = getDataForRole();
 
@@ -387,6 +627,7 @@ const SalesDashboard: React.FC = () => {
             headerColor="from-blue-50 to-transparent"
             headerGradient="from-blue-500 to-indigo-600"
             cardSize="md"
+            colorThemes={currentData.metricColorThemes}
           />
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">
@@ -418,48 +659,38 @@ const SalesDashboard: React.FC = () => {
             title="Monthly Sales Trend"
             data={salesTrendData}
             type="line"
+            loading={isLoadingSalesTrends}
           />
         </div>
       </div>
 
       {/* Additional Content - Moves to next line */}
       <div className="space-y-6">
-        <ChartWidget
-          title="Top 5 Performing Team Members"
-          data={topPerformersData}
-          type="bar"
-          height={250}
-        />
-
-        {/* Sales Pipeline - Only for Department Manager and Unit Head */}
-        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-          <SalesLeadsPipeline />
-        )}
-
-        {/* Commission Tracker Summary - Only for Department Manager and Unit Head */}
-        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-          <CommissionTracker 
-            data={{
-              paid: 45200,
-              pending: 18500,
-              monthly: 63700
-            }}
-          />
-        )}
-
-        {/* Sales Performance Summary - Only for Department Manager and Unit Head */}
-        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-          <SalesPerformanceSummary 
-            data={{
-              totalDeals: 47,
-              averageDealSize: 2650,
-              topPerformer: 'Sarah Johnson',
-              conversionRate: 23,
-              monthlyTarget: 100000,
-              targetProgress: 75
-            }}
-          />
-        )}
+        {/* Top Performers Leaderboard */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Sales Department Top Performers
+            </h3>
+            <p className="text-sm text-gray-600">
+              Track and compare performance across the sales team
+            </p>
+          </div>
+          <div className="p-6">
+            {isLoadingTopPerformers ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <PerformanceLeaderboard 
+                title="Top 5 Performing Team Members"
+                members={topPerformersData}
+                showDepartment={false}
+                showRole={false}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

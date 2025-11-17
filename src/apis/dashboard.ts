@@ -254,6 +254,171 @@ export const getDepartmentDistributionApi = async (): Promise<DepartmentDistribu
 };
 
 /**
+ * API Response structure from /dashboard/sales-trends
+ */
+export interface SalesTrendsApiResponse {
+  status: string;
+  department: string;
+  role: string;
+  period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+  summary: {
+    currentPeriod: {
+      totalRevenue: number;
+      totalDeals: number;
+      averageDealSize: number;
+      conversionRate: number;
+      bestMonth?: {
+        date: string;
+        revenue: number;
+        label: string;
+      };
+      worstMonth?: {
+        date: string;
+        revenue: number;
+        label: string;
+      };
+    };
+    previousPeriod?: {
+      totalRevenue: number;
+      totalDeals: number;
+      averageDealSize: number;
+      conversionRate: number;
+    };
+    change?: {
+      revenue: number;
+      revenuePercentage: number;
+      deals: number;
+      dealsPercentage: number;
+      trend: 'up' | 'down' | 'neutral';
+    };
+  };
+  data: Array<{
+    date: string;
+    label: string;
+    fullLabel: string;
+    revenue: number;
+    deals: number;
+    conversionRate: number;
+    averageDealSize: number;
+    chartValue: number;
+    monthNumber?: number;
+    year?: number;
+  }>;
+  metadata: {
+    dateRange: {
+      start: string;
+      end: string;
+    };
+    totalMonths?: number;
+    generatedAt: string;
+  };
+}
+
+/**
+ * Fetch sales trends data from API
+ * Backend automatically determines department and role from JWT token
+ * @param period - 'daily', 'weekly', 'monthly', 'quarterly', or 'yearly' (default: 'monthly')
+ * @param fromDate - Start date in ISO 8601 format (optional)
+ * @param toDate - End date in ISO 8601 format (optional)
+ * @param unit - Filter by specific sales unit (optional, only for department managers)
+ */
+export const getSalesTrendsApi = async (
+  period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' = 'monthly',
+  fromDate?: string,
+  toDate?: string,
+  unit?: string
+): Promise<SalesTrendsApiResponse> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('period', period);
+    if (fromDate) queryParams.append('fromDate', fromDate);
+    if (toDate) queryParams.append('toDate', toDate);
+    if (unit) queryParams.append('unit', unit);
+    
+    const url = `/dashboard/sales-trends?${queryParams.toString()}`;
+    const data = await apiGetJson<SalesTrendsApiResponse>(url);
+    return data;
+  } catch (error) {
+    console.error('Error fetching sales trends:', error);
+    throw error;
+  }
+};
+
+/**
+ * API Response structure from /dashboard/top-performers
+ */
+export interface TopPerformersApiResponse {
+  status: string;
+  department: string;
+  role: string;
+  period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+  metric: 'deals' | 'revenue' | 'conversion_rate' | 'leads';
+  summary: {
+    totalTeamMembers: number;
+    periodStart: string;
+    periodEnd: string;
+    averagePerformance: number;
+  };
+  data: Array<{
+    employeeId: number;
+    employeeName: string;
+    value: number;
+    metric: string;
+    additionalMetrics: {
+      revenue?: number;
+      leads?: number;
+      conversionRate?: number;
+      averageDealSize?: number;
+    };
+    rank: number;
+    change?: {
+      value: number;
+      percentage: number;
+      trend: 'up' | 'down' | 'neutral';
+    };
+  }>;
+  metadata: {
+    generatedAt: string;
+  };
+}
+
+/**
+ * Fetch top performers data from API
+ * Backend automatically determines department and role from JWT token
+ * @param limit - Number of top performers to return (default: 5, max: 20)
+ * @param period - 'daily', 'weekly', 'monthly', 'quarterly', or 'yearly' (default: 'monthly')
+ * @param fromDate - Start date in ISO 8601 format (optional)
+ * @param toDate - End date in ISO 8601 format (optional)
+ * @param unit - Filter by specific sales unit (optional, only for department managers)
+ * @param metric - Performance metric: 'deals', 'revenue', 'conversion_rate', or 'leads' (default: 'deals')
+ */
+export const getTopPerformersApi = async (
+  limit: number = 5,
+  period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' = 'monthly',
+  fromDate?: string,
+  toDate?: string,
+  unit?: string,
+  metric: 'deals' | 'revenue' | 'conversion_rate' | 'leads' = 'deals'
+): Promise<TopPerformersApiResponse> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('limit', limit.toString());
+    queryParams.append('period', period);
+    queryParams.append('metric', metric);
+    if (fromDate) queryParams.append('fromDate', fromDate);
+    if (toDate) queryParams.append('toDate', toDate);
+    if (unit) queryParams.append('unit', unit);
+    
+    const url = `/dashboard/top-performers?${queryParams.toString()}`;
+    const data = await apiGetJson<TopPerformersApiResponse>(url);
+    return data;
+  } catch (error) {
+    console.error('Error fetching top performers:', error);
+    throw error;
+  }
+};
+
+/**
  * API Response structure from /dashboard/current-projects
  */
 export interface CurrentProjectsApiResponse {

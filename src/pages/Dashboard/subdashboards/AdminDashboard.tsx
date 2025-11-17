@@ -12,12 +12,56 @@ import { PerformanceLeaderboard } from '../../../components/common/Leaderboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
-import { getMetricIcon } from '../../../utils/metricIcons';
+import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
 import type { 
   MetricData, 
   ChartData, 
   ActivityItem  
 } from '../../../types/dashboard';
+
+// SVG Icon Components for Admin Metrics
+const UsersIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+  </svg>
+);
+
+const ActiveIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z" />
+  </svg>
+);
+
+const DepartmentsIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+  </svg>
+);
+
+const SystemHealthIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+  </svg>
+);
+
+// SVG Icon Components for System Health
+const StatusIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const SpeedIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+  </svg>
+);
+
+const StorageIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+  </svg>
+);
 
 const AdminDashboard: React.FC = () => {
   // State for department filtering
@@ -32,6 +76,26 @@ const AdminDashboard: React.FC = () => {
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
+  // Helper function to get SVG icon for admin metrics
+  const getAdminMetricIcon = (title: string): React.ReactNode => {
+    const normalizedTitle = title.trim().toLowerCase();
+    
+    if (normalizedTitle.includes('user')) {
+      return <UsersIcon />;
+    }
+    if (normalizedTitle.includes('active')) {
+      return <ActiveIcon />;
+    }
+    if (normalizedTitle.includes('department')) {
+      return <DepartmentsIcon />;
+    }
+    if (normalizedTitle.includes('health') || normalizedTitle.includes('system')) {
+      return <SystemHealthIcon />;
+    }
+    
+    return <UsersIcon />; // Default fallback
+  };
+
   // Fallback dummy data for Admin metric grid (used when API data is not available)
   const adminFallbackMetrics: MetricData[] = [
     {
@@ -40,7 +104,7 @@ const AdminDashboard: React.FC = () => {
       subtitle: 'Registered users',
       change: '+8 this month',
       changeType: 'positive',
-      icon: getMetricIcon('Total Users')
+      icon: <UsersIcon />
     },
     {
       title: 'Active Today',
@@ -48,7 +112,7 @@ const AdminDashboard: React.FC = () => {
       subtitle: 'Currently online',
       change: '79% active rate',
       changeType: 'positive',
-      icon: getMetricIcon('Active Today')
+      icon: <ActiveIcon />
     },
     {
       title: 'Departments',
@@ -56,7 +120,7 @@ const AdminDashboard: React.FC = () => {
       subtitle: 'Active departments',
       change: 'All operational',
       changeType: 'positive',
-      icon: getMetricIcon('Departments')
+      icon: <DepartmentsIcon />
     },
     {
       title: 'System Health',
@@ -64,14 +128,21 @@ const AdminDashboard: React.FC = () => {
       subtitle: 'Server uptime',
       change: '+0.1% uptime',
       changeType: 'positive',
-      icon: getMetricIcon('System Health')
+      icon: <SystemHealthIcon />
     }
   ];
 
   // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+  // Replace icons with SVG icons for admin metrics
   const overviewStats = metricGridData && metricGridData.length > 0 
-    ? metricGridData 
+    ? metricGridData.map(metric => ({
+        ...metric,
+        icon: getAdminMetricIcon(metric.title)
+      }))
     : adminFallbackMetrics;
+
+  // Get color themes for each metric
+  const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
   // Fallback dummy data for Admin activities (used when API data is not available)
   const adminFallbackActivities: ActivityItem[] = [
@@ -136,7 +207,7 @@ const AdminDashboard: React.FC = () => {
     {
       title: 'System Status',
       value: 'Healthy',
-      icon: '🟢',
+      icon: <StatusIcon />,
       changeType: 'positive',
       change: 'All systems operational',
       subtitle: 'Last checked: 2 min ago'
@@ -144,7 +215,7 @@ const AdminDashboard: React.FC = () => {
     {
       title: 'Server Uptime',
       value: '99.9%',
-      icon: '⚡',
+      icon: <SpeedIcon />,
       changeType: 'positive',
       change: '+0.2% from last month',
       subtitle: 'Last 30 days'
@@ -152,7 +223,7 @@ const AdminDashboard: React.FC = () => {
     {
       title: 'Response Time',
       value: '120ms',
-      icon: '⚡',
+      icon: <SpeedIcon />,
       changeType: 'positive',
       change: '-15ms improvement',
       subtitle: 'Average response'
@@ -160,12 +231,15 @@ const AdminDashboard: React.FC = () => {
     {
       title: 'Storage Used',
       value: '68%',
-      icon: '💾',
+      icon: <StorageIcon />,
       changeType: 'neutral',
       change: '2.4TB / 3.5TB',
       subtitle: 'Available space'
     }
   ];
+
+  // Get color themes for system health metrics
+  const systemHealthColorThemes = getColorThemesForMetrics(systemHealthMetrics);
 
   const performanceData = [
     // Sales Department
@@ -601,6 +675,7 @@ const AdminDashboard: React.FC = () => {
               headerColor="from-blue-50 to-transparent"
               headerGradient="from-blue-500 to-indigo-600"
               cardSize="md"
+              colorThemes={metricColorThemes}
             />
           </div>
           <div className="flex flex-col gap-4 flex-shrink-0 w-56">
@@ -651,6 +726,7 @@ const AdminDashboard: React.FC = () => {
             headerGradient="from-green-500 to-emerald-600"
             cardSize="sm"
             cardClassName="border-0 shadow-none bg-gray-50"
+            colorThemes={systemHealthColorThemes}
           />
 
             {/* Department Performance Leaderboard */}

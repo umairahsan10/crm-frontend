@@ -7,12 +7,37 @@ import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
-import { getMetricIcon } from '../../../utils/metricIcons';
+import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
 import type { 
   ChartData, 
   ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
+
+// SVG Icon Components
+const ProjectsIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+  </svg>
+);
+
+const UnitsIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+  </svg>
+);
+
+const ActiveProjectsIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const CompletedIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+  </svg>
+);
 
 const ProductionDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -50,6 +75,26 @@ const ProductionDashboard: React.FC = () => {
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
+  // Helper function to get SVG icon for production metrics
+  const getProductionMetricIcon = (title: string): React.ReactNode => {
+    const normalizedTitle = title.trim().toLowerCase();
+    
+    if (normalizedTitle.includes('project')) {
+      return <ProjectsIcon />;
+    }
+    if (normalizedTitle.includes('unit')) {
+      return <UnitsIcon />;
+    }
+    if (normalizedTitle.includes('active')) {
+      return <ActiveProjectsIcon />;
+    }
+    if (normalizedTitle.includes('completed') || normalizedTitle.includes('most')) {
+      return <CompletedIcon />;
+    }
+    
+    return <ProjectsIcon />; // Default fallback
+  };
+
   // Fallback dummy data for Production metric grid (used when API data is not available)
   const productionFallbackMetrics = [
     {
@@ -58,7 +103,7 @@ const ProductionDashboard: React.FC = () => {
       subtitle: 'All projects',
       change: '+2 this month',
       changeType: 'neutral' as const,
-      icon: getMetricIcon('Total Projects')
+      icon: <ProjectsIcon />
     },
     {
       title: 'Production Units',
@@ -66,7 +111,7 @@ const ProductionDashboard: React.FC = () => {
       subtitle: 'Total units',
       change: 'Same as last month',
       changeType: 'neutral' as const,
-      icon: getMetricIcon('Production Units')
+      icon: <UnitsIcon />
     },
     {
       title: 'Active Projects',
@@ -74,7 +119,7 @@ const ProductionDashboard: React.FC = () => {
       subtitle: 'In progress',
       change: '+2 this month',
       changeType: 'neutral' as const,
-      icon: getMetricIcon('Active Projects')
+      icon: <ActiveProjectsIcon />
     },
     {
       title: 'Most Completed',
@@ -82,16 +127,23 @@ const ProductionDashboard: React.FC = () => {
       subtitle: 'Production Lead2',
       change: 'Top performer',
       changeType: 'neutral' as const,
-      icon: getMetricIcon('Most Completed')
+      icon: <CompletedIcon />
     }
   ];
 
   // Get data based on role level
   const getDataForRole = () => {
     // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+    // Replace icons with SVG icons for production metrics
     const overviewStats = metricGridData && metricGridData.length > 0 
-      ? metricGridData 
+      ? metricGridData.map(metric => ({
+          ...metric,
+          icon: getProductionMetricIcon(metric.title)
+        }))
       : productionFallbackMetrics;
+
+    // Get color themes for each metric
+    const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
@@ -105,6 +157,7 @@ const ProductionDashboard: React.FC = () => {
       case 'department_manager':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getDepartmentManagerActions(),
           activities,
           showUnitFilter: true
@@ -112,6 +165,7 @@ const ProductionDashboard: React.FC = () => {
       case 'unit_head':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getUnitHeadActions(),
           activities,
           showUnitFilter: false
@@ -119,6 +173,7 @@ const ProductionDashboard: React.FC = () => {
       case 'team_lead':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getTeamLeadActions(),
           activities,
           showUnitFilter: false
@@ -126,6 +181,7 @@ const ProductionDashboard: React.FC = () => {
       default:
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getEmployeeActions(),
           activities,
           showUnitFilter: false
@@ -371,6 +427,7 @@ const ProductionDashboard: React.FC = () => {
             headerColor="from-purple-50 to-transparent"
             headerGradient="from-purple-500 to-indigo-600"
             cardSize="md"
+            colorThemes={currentData.metricColorThemes}
           />
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">

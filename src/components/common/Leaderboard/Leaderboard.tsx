@@ -64,7 +64,13 @@ export const PerformanceLeaderboard: React.FC<PerformanceLeaderboardProps> = ({
       <div className="divide-y divide-gray-100">
         {animatedMembers.map((member, index) => {
           const isExpanded = expandedMember === member.id;
-          const overallPerformance = Math.round(member.metrics.reduce((acc, m) => acc + m.progress, 0) / member.metrics.length);
+          // Calculate overall performance, handling NaN and division by zero
+          const totalProgress = member.metrics.reduce((acc, m) => {
+            const progress = isNaN(m.progress) ? 0 : m.progress;
+            return acc + progress;
+          }, 0);
+          const metricsCount = member.metrics.length || 1; // Prevent division by zero
+          const overallPerformance = isNaN(totalProgress / metricsCount) ? 0 : Math.round(totalProgress / metricsCount);
           
           return (
             <div 
@@ -208,7 +214,7 @@ export const PerformanceLeaderboard: React.FC<PerformanceLeaderboardProps> = ({
                                 }{metric.unit && ` ${metric.unit}`}
                               </span>
                               <span className="text-xs font-medium text-gray-600">
-                                {Math.round(metric.progress)}%
+                                {isNaN(metric.progress) ? '0' : Math.round(metric.progress)}%
                               </span>
                             </div>
                           </div>

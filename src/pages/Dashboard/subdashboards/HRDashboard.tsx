@@ -3,14 +3,13 @@ import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { DepartmentQuickAccess, HRRequests } from '../../../components/common/Dashboard';
 import { DepartmentDistributionChart } from '../../../components/common/Dashboard/DepartmentDistributionChart';
-import { Calendar } from '../../../components/common/Calendar';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
 import { useAttendanceTrends } from '../../../hooks/queries/useAttendanceTrends';
 import { useDepartmentDistribution } from '../../../hooks/queries/useDepartmentDistribution';
-import { getMetricIcon } from '../../../utils/metricIcons';
+import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -37,6 +36,31 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend
+);
+
+// SVG Icon Components
+const EmployeesIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>
+);
+
+const AttendanceIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+);
+
+const RequestIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+);
+
+const LeaveIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
 );
 
 const HRDashboard: React.FC = () => {
@@ -83,6 +107,26 @@ const HRDashboard: React.FC = () => {
   // Fetch department distribution data from API
   const { data: departmentDistributionApiData } = useDepartmentDistribution();
 
+  // Helper function to get SVG icon for HR metrics
+  const getHRMetricIcon = (title: string): React.ReactNode => {
+    const normalizedTitle = title.trim().toLowerCase();
+    
+    if (normalizedTitle.includes('employee')) {
+      return <EmployeesIcon />;
+    }
+    if (normalizedTitle.includes('attendance')) {
+      return <AttendanceIcon />;
+    }
+    if (normalizedTitle.includes('request') || normalizedTitle.includes('pending')) {
+      return <RequestIcon />;
+    }
+    if (normalizedTitle.includes('leave')) {
+      return <LeaveIcon />;
+    }
+    
+    return <EmployeesIcon />; // Default fallback
+  };
+
   // Fallback dummy data for HR metric grid (used when API data is not available)
   const hrFallbackMetrics = [
     {
@@ -91,7 +135,7 @@ const HRDashboard: React.FC = () => {
       subtitle: 'Active employees',
       change: '+9 from last month',
       changeType: 'positive' as const,
-      icon: getMetricIcon('Employees')
+      icon: <EmployeesIcon />
     },
     {
       title: 'Attendance Rate',
@@ -99,7 +143,7 @@ const HRDashboard: React.FC = () => {
       subtitle: 'This month',
       change: '100% from last month',
       changeType: 'negative' as const,
-      icon: getMetricIcon('Attendance Rate')
+      icon: <AttendanceIcon />
     },
     {
       title: 'Request Pending',
@@ -107,7 +151,7 @@ const HRDashboard: React.FC = () => {
       subtitle: 'All pending',
       change: 'Same as last month',
       changeType: 'neutral' as const,
-      icon: getMetricIcon('Request Pending')
+      icon: <RequestIcon />
     },
     {
       title: 'On Leave Today',
@@ -115,16 +159,23 @@ const HRDashboard: React.FC = () => {
       subtitle: 'Currently on leave',
       change: 'Same as last month',
       changeType: 'neutral' as const,
-      icon: getMetricIcon('On Leave Today')
+      icon: <LeaveIcon />
     }
   ];
 
   // Get data based on role level
   const getDataForRole = () => {
     // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+    // Replace icons with SVG icons for HR metrics
     const overviewStats = metricGridData && metricGridData.length > 0 
-      ? metricGridData 
+      ? metricGridData.map(metric => ({
+          ...metric,
+          icon: getHRMetricIcon(metric.title)
+        }))
       : hrFallbackMetrics;
+
+    // Get color themes for each metric
+    const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
     // Use API data for activities, fallback to local data if API is loading or fails
     const activities = activityFeedData && activityFeedData.length > 0
@@ -138,6 +189,7 @@ const HRDashboard: React.FC = () => {
       case 'department_manager':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getDepartmentManagerActions(),
           activities,
           showDepartmentFilter: true
@@ -145,6 +197,7 @@ const HRDashboard: React.FC = () => {
       case 'unit_head':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getUnitHeadActions(),
           activities,
           showDepartmentFilter: false
@@ -152,6 +205,7 @@ const HRDashboard: React.FC = () => {
       case 'team_lead':
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getTeamLeadActions(),
           activities,
           showDepartmentFilter: false
@@ -159,6 +213,7 @@ const HRDashboard: React.FC = () => {
       default:
         return {
           overviewStats,
+          metricColorThemes,
           quickActions: getEmployeeActions(),
           activities,
           showDepartmentFilter: false
@@ -496,18 +551,6 @@ const HRDashboard: React.FC = () => {
 
   const currentData = getDataForRole();
 
-  // Calendar events data
-  const calendarEvents = [
-    { id: '1', title: 'Sarah\'s Vacation', date: 15, type: 'leave' as const, employee: 'Sarah Johnson' },
-    { id: '2', title: 'Mike\'s PTO', date: 8, type: 'leave' as const, employee: 'Mike Chen' },
-    { id: '3', title: 'Team Meeting', date: 20, type: 'meeting' as const, employee: 'All Team' },
-    { id: '4', title: 'Safety Training', date: 25, type: 'training' as const, employee: 'New Hires' },
-    { id: '5', title: 'Christmas Day', date: 25, type: 'holiday' as const },
-    { id: '6', title: 'Project Review', date: 12, type: 'meeting' as const, employee: 'Dev Team' },
-    { id: '7', title: 'John\'s Sick Leave', date: 7, type: 'leave' as const, employee: 'John Smith' },
-    { id: '8', title: 'Quarterly Training', date: 22, type: 'training' as const, employee: 'All Staff' },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Overview Stats with Quick Access on Right */}
@@ -519,6 +562,7 @@ const HRDashboard: React.FC = () => {
             headerColor="from-blue-50 to-transparent"
             headerGradient="from-blue-500 to-indigo-600"
             cardSize="md"
+            colorThemes={currentData.metricColorThemes}
           />
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">
@@ -674,16 +718,6 @@ const HRDashboard: React.FC = () => {
           <HRRequests limit={3} />
           <DepartmentDistributionChart data={departmentDistributionData} />
         </div>
-
-        {/* Upcoming Leave Calendar - Only for Department Manager and Unit Head */}
-        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-          <Calendar
-            title="Upcoming Leave Calendar"
-            events={calendarEvents}
-            onDateClick={(date) => console.log('Date clicked:', date)}
-            onEventClick={(event) => console.log('Event clicked:', event)}
-          />
-        )}
       </div>
     </div>
   );
