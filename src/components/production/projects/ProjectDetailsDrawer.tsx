@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import type { Project } from '../../../types/production/projects';
 import { useProject } from '../../../hooks/queries/useProjectsQueries';
 import { useNavbar } from '../../../context/NavbarContext';
-import ProjectProgressBar from './ProjectProgressBar';
+import { useAuth } from '../../../context/AuthContext';
+import PhaseProgressBar from './PhaseProgressBar';
+import PhaseProgressEditor from './PhaseProgressEditor';
 import UpdateProjectForm from './UpdateProjectForm';
 
 interface ProjectDetailsDrawerProps {
@@ -25,6 +27,7 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
   canAssignTeam = false
 }) => {
   const { isNavbarOpen } = useNavbar();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'details' | 'employees' | 'update'>('details');
   const [isMobile, setIsMobile] = useState(false);
 
@@ -86,6 +89,10 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
     difficult: 'Difficult'
   };
 
+  // Check if user is team lead and can update progress
+  const isTeamLead = user?.role === 'team_lead' || user?.role === 'team_leads';
+  const canUpdateProgress = isTeamLead && currentProject.team?.teamLead?.id === parseInt(user?.id || '0', 10);
+
    // Note: canCompleteProject removed - Actions section removed from Details tab
 
   return (
@@ -135,7 +142,7 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
               {[
                 { id: 'details', name: 'Details' },
                 { id: 'employees', name: 'Employees' },
-                ...(canUpdate ? [{ id: 'update', name: 'Update' }] : [])
+                ...(canUpdate || canUpdateProgress ? [{ id: 'update', name: 'Update' }] : [])
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -173,16 +180,16 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                           <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                           </svg>
-                          Live Progress
+                          Project Progress
                         </h3>
                       </div>
-                      <div>
-                        <ProjectProgressBar
-                          progress={currentProject.liveProgress}
-                          showPercentage={true}
-                          size="md"
-                        />
-                      </div>
+
+                      {/* Phase Progress Bar - Read Only */}
+                      <PhaseProgressBar
+                        project={currentProject}
+                        showLabels={true}
+                        size="md"
+                      />
                     </div>
                     
                     {/* Project Information */}
@@ -430,28 +437,52 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                   </div>
                 )}
 
-                {activeTab === 'update' && canUpdate && (
+                {activeTab === 'update' && (canUpdate || canUpdateProgress) && (
                   <div className="space-y-4">
-                    <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                        <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Update Project
-                      </h3>
-                      
-                      {/* Update Form */}
-                      <UpdateProjectForm 
-                        project={currentProject}
-                        onUpdate={(updatedProject) => {
-                          if (onProjectUpdated) {
-                            onProjectUpdated(updatedProject);
-                          }
-                          setActiveTab('details');
-                        }}
-                        onCancel={() => setActiveTab('details')}
-                      />
-                    </div>
+                    {/* Progress Editor for Team Leads */}
+                    {canUpdateProgress && (
+                      <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                          <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          Update Project Progress
+                        </h3>
+                        
+                        <PhaseProgressEditor
+                          project={currentProject}
+                          onUpdate={(updatedProject) => {
+                            if (onProjectUpdated) {
+                              onProjectUpdated(updatedProject);
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Update Form for Others with Update Permission */}
+                    {canUpdate && !canUpdateProgress && (
+                      <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                          <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Update Project
+                        </h3>
+                        
+                        {/* Update Form */}
+                        <UpdateProjectForm 
+                          project={currentProject}
+                          onUpdate={(updatedProject) => {
+                            if (onProjectUpdated) {
+                              onProjectUpdated(updatedProject);
+                            }
+                            setActiveTab('details');
+                          }}
+                          onCancel={() => setActiveTab('details')}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </>
