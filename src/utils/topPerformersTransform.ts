@@ -1,6 +1,6 @@
 import type { ChartData } from '../types/dashboard';
-import type { TopPerformersApiResponse } from '../apis/dashboard';
-import type { PerformanceMember } from '../components/common/Leaderboard/Leaderboard';
+import type { TopPerformersApiResponse, CrossDepartmentTopPerformersResponseDto } from '../apis/dashboard';
+import type { PerformanceMember, PerformanceMetric } from '../components/common/Leaderboard/Leaderboard';
 
 /**
  * Transforms API response to ChartData format for chart visualization
@@ -165,6 +165,273 @@ export const transformTopPerformersToLeaderboard = (
       avatar: initials,
       department: apiData.department || 'Sales',
       role: 'Sales Rep', // Could be enhanced to get actual role from API
+      metrics: metrics
+    };
+  });
+};
+
+/**
+ * Helper function to transform department-specific metrics to PerformanceMetric format
+ * Handles different metric types based on department
+ */
+const transformDepartmentMetrics = (
+  metrics: { [key: string]: any },
+  department: string,
+  performancePercentage: number
+): PerformanceMetric[] => {
+  const performanceMetrics: PerformanceMetric[] = [];
+  
+  // Use performancePercentage as the primary metric
+  const targetPerformance = 100; // 100% is the baseline target
+  const progress = safeCalculateProgress(performancePercentage, targetPerformance, 200);
+  performanceMetrics.push({
+    label: 'Overall Performance',
+    currentValue: performancePercentage,
+    targetValue: targetPerformance,
+    progress: progress,
+    status: performancePercentage >= 120 ? 'exceeded' as const :
+            performancePercentage >= 100 ? 'on-track' as const : 'below-target' as const,
+    unit: '%'
+  });
+
+  // Department-specific metrics
+  if (department === 'Sales') {
+    if (metrics.deals !== undefined) {
+      const targetDeals = metrics.deals > 0 ? Math.ceil(metrics.deals * 1.2) : 20;
+      const progress = safeCalculateProgress(metrics.deals, targetDeals, 150);
+      performanceMetrics.push({
+        label: 'Deals Closed',
+        currentValue: safeNumber(metrics.deals),
+        targetValue: targetDeals,
+        progress: progress,
+        status: metrics.deals >= targetDeals ? 'exceeded' as const :
+                metrics.deals >= targetDeals * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: 'deals'
+      });
+    }
+    if (metrics.revenue !== undefined) {
+      const targetRevenue = metrics.revenue > 0 ? Math.ceil(metrics.revenue * 1.2) : 100000;
+      const progress = safeCalculateProgress(metrics.revenue, targetRevenue, 150);
+      performanceMetrics.push({
+        label: 'Revenue Generated',
+        currentValue: safeNumber(metrics.revenue),
+        targetValue: targetRevenue,
+        progress: progress,
+        status: metrics.revenue >= targetRevenue ? 'exceeded' as const :
+                metrics.revenue >= targetRevenue * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: '$'
+      });
+    }
+    if (metrics.leads !== undefined) {
+      const targetLeads = metrics.leads > 0 ? Math.ceil(metrics.leads * 1.2) : 50;
+      const progress = safeCalculateProgress(metrics.leads, targetLeads, 150);
+      performanceMetrics.push({
+        label: 'Leads Handled',
+        currentValue: safeNumber(metrics.leads),
+        targetValue: targetLeads,
+        progress: progress,
+        status: metrics.leads >= targetLeads ? 'exceeded' as const :
+                metrics.leads >= targetLeads * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: 'leads'
+      });
+    }
+    if (metrics.conversionRate !== undefined) {
+      const targetConversion = 30;
+      const progress = safeCalculateProgress(metrics.conversionRate, targetConversion, 150);
+      performanceMetrics.push({
+        label: 'Conversion Rate',
+        currentValue: safeNumber(metrics.conversionRate),
+        targetValue: targetConversion,
+        progress: progress,
+        status: metrics.conversionRate >= targetConversion ? 'exceeded' as const :
+                metrics.conversionRate >= targetConversion * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: '%'
+      });
+    }
+  } else if (department === 'Marketing') {
+    if (metrics.campaignsRun !== undefined) {
+      const targetCampaigns = metrics.campaignsRun > 0 ? Math.ceil(metrics.campaignsRun * 1.2) : 6;
+      const progress = safeCalculateProgress(metrics.campaignsRun, targetCampaigns, 150);
+      performanceMetrics.push({
+        label: 'Campaigns Run',
+        currentValue: safeNumber(metrics.campaignsRun),
+        targetValue: targetCampaigns,
+        progress: progress,
+        status: metrics.campaignsRun >= targetCampaigns ? 'exceeded' as const :
+                metrics.campaignsRun >= targetCampaigns * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: 'campaigns'
+      });
+    }
+    if (metrics.leadQualityScore !== undefined) {
+      const targetScore = 4.0;
+      const progress = safeCalculateProgress(metrics.leadQualityScore, targetScore, 150);
+      performanceMetrics.push({
+        label: 'Lead Quality Score',
+        currentValue: safeNumber(metrics.leadQualityScore),
+        targetValue: targetScore,
+        progress: progress,
+        status: metrics.leadQualityScore >= targetScore ? 'exceeded' as const :
+                metrics.leadQualityScore >= targetScore * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: '/5'
+      });
+    }
+    if (metrics.leadGeneration !== undefined) {
+      const targetLeads = metrics.leadGeneration > 0 ? Math.ceil(metrics.leadGeneration * 1.2) : 120;
+      const progress = safeCalculateProgress(metrics.leadGeneration, targetLeads, 150);
+      performanceMetrics.push({
+        label: 'Lead Generation',
+        currentValue: safeNumber(metrics.leadGeneration),
+        targetValue: targetLeads,
+        progress: progress,
+        status: metrics.leadGeneration >= targetLeads ? 'exceeded' as const :
+                metrics.leadGeneration >= targetLeads * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: 'leads'
+      });
+    }
+  } else if (department === 'Production') {
+    if (metrics.projectsCompleted !== undefined) {
+      const targetProjects = metrics.projectsCompleted > 0 ? Math.ceil(metrics.projectsCompleted * 1.2) : 10;
+      const progress = safeCalculateProgress(metrics.projectsCompleted, targetProjects, 150);
+      performanceMetrics.push({
+        label: 'Projects Completed',
+        currentValue: safeNumber(metrics.projectsCompleted),
+        targetValue: targetProjects,
+        progress: progress,
+        status: metrics.projectsCompleted >= targetProjects ? 'exceeded' as const :
+                metrics.projectsCompleted >= targetProjects * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: 'projects'
+      });
+    }
+    if (metrics.taskCompletion !== undefined || metrics.tasksCompleted !== undefined) {
+      const taskCompletion = metrics.taskCompletion || (metrics.tasksCompleted && metrics.totalTasks 
+        ? (metrics.tasksCompleted / metrics.totalTasks) * 100 : 0);
+      const targetCompletion = 90;
+      const progress = safeCalculateProgress(taskCompletion, targetCompletion, 150);
+      performanceMetrics.push({
+        label: 'Task Completion',
+        currentValue: safeNumber(taskCompletion),
+        targetValue: targetCompletion,
+        progress: progress,
+        status: taskCompletion >= targetCompletion ? 'exceeded' as const :
+                taskCompletion >= targetCompletion * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: '%'
+      });
+    }
+  } else if (department === 'HR') {
+    if (metrics.recruitments !== undefined) {
+      const targetRecruitments = metrics.recruitments > 0 ? Math.ceil(metrics.recruitments * 1.2) : 6;
+      const progress = safeCalculateProgress(metrics.recruitments, targetRecruitments, 150);
+      performanceMetrics.push({
+        label: 'Recruitments',
+        currentValue: safeNumber(metrics.recruitments),
+        targetValue: targetRecruitments,
+        progress: progress,
+        status: metrics.recruitments >= targetRecruitments ? 'exceeded' as const :
+                metrics.recruitments >= targetRecruitments * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: 'hires'
+      });
+    }
+    if (metrics.requestProcessing !== undefined) {
+      const targetRequests = metrics.requestProcessing > 0 ? Math.ceil(metrics.requestProcessing * 1.2) : 40;
+      const progress = safeCalculateProgress(metrics.requestProcessing, targetRequests, 150);
+      performanceMetrics.push({
+        label: 'Request Processing',
+        currentValue: safeNumber(metrics.requestProcessing),
+        targetValue: targetRequests,
+        progress: progress,
+        status: metrics.requestProcessing >= targetRequests ? 'exceeded' as const :
+                metrics.requestProcessing >= targetRequests * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: 'requests'
+      });
+    }
+    if (metrics.employeeSatisfaction !== undefined) {
+      const targetSatisfaction = 4.0;
+      const progress = safeCalculateProgress(metrics.employeeSatisfaction, targetSatisfaction, 150);
+      performanceMetrics.push({
+        label: 'Employee Satisfaction',
+        currentValue: safeNumber(metrics.employeeSatisfaction),
+        targetValue: targetSatisfaction,
+        progress: progress,
+        status: metrics.employeeSatisfaction >= targetSatisfaction ? 'exceeded' as const :
+                metrics.employeeSatisfaction >= targetSatisfaction * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: '/5'
+      });
+    }
+  } else if (department === 'Accounts' || department === 'Finance' || department === 'Accounting') {
+    if (metrics.transactionsProcessed !== undefined) {
+      const targetTransactions = metrics.transactionsProcessed > 0 ? Math.ceil(metrics.transactionsProcessed * 1.2) : 50;
+      const progress = safeCalculateProgress(metrics.transactionsProcessed, targetTransactions, 150);
+      performanceMetrics.push({
+        label: 'Transactions Processed',
+        currentValue: safeNumber(metrics.transactionsProcessed),
+        targetValue: targetTransactions,
+        progress: progress,
+        status: metrics.transactionsProcessed >= targetTransactions ? 'exceeded' as const :
+                metrics.transactionsProcessed >= targetTransactions * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: 'transactions'
+      });
+    }
+    if (metrics.invoicesProcessed !== undefined) {
+      const targetInvoices = metrics.invoicesProcessed > 0 ? Math.ceil(metrics.invoicesProcessed * 1.2) : 25;
+      const progress = safeCalculateProgress(metrics.invoicesProcessed, targetInvoices, 150);
+      performanceMetrics.push({
+        label: 'Invoices Processed',
+        currentValue: safeNumber(metrics.invoicesProcessed),
+        targetValue: targetInvoices,
+        progress: progress,
+        status: metrics.invoicesProcessed >= targetInvoices ? 'exceeded' as const :
+                metrics.invoicesProcessed >= targetInvoices * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: 'invoices'
+      });
+    }
+    if (metrics.transactionAmount !== undefined) {
+      const targetAmount = metrics.transactionAmount > 0 ? Math.ceil(metrics.transactionAmount * 1.2) : 1000000;
+      const progress = safeCalculateProgress(metrics.transactionAmount, targetAmount, 150);
+      performanceMetrics.push({
+        label: 'Transaction Amount',
+        currentValue: safeNumber(metrics.transactionAmount),
+        targetValue: targetAmount,
+        progress: progress,
+        status: metrics.transactionAmount >= targetAmount ? 'exceeded' as const :
+                metrics.transactionAmount >= targetAmount * 0.8 ? 'on-track' as const : 'below-target' as const,
+        unit: '$'
+      });
+    }
+  }
+
+  return performanceMetrics;
+};
+
+/**
+ * Transforms cross-department top performers API response to PerformanceMember format
+ * Maps backend cross-department structure to frontend PerformanceMember interface
+ * @param apiData - API response data
+ */
+export const transformCrossDepartmentTopPerformersToLeaderboard = (
+  apiData: CrossDepartmentTopPerformersResponseDto
+): PerformanceMember[] => {
+  return apiData.data.map((performer) => {
+    // Get initials for avatar
+    const initials = performer.employeeName
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+
+    // Transform department-specific metrics
+    const metrics = transformDepartmentMetrics(
+      performer.metrics,
+      performer.department,
+      performer.performancePercentage
+    );
+
+    return {
+      id: performer.employeeId.toString(),
+      name: performer.employeeName,
+      avatar: initials,
+      department: performer.department,
+      role: performer.role,
       metrics: metrics
     };
   });

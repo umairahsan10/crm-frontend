@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
-import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
 import { 
   DepartmentOverview
 } from '../../../components/common/Dashboard/AdminSpecific';
@@ -12,12 +11,43 @@ import { PerformanceLeaderboard } from '../../../components/common/Leaderboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
+import { useCrossDepartmentTopPerformers } from '../../../hooks/queries/useCrossDepartmentTopPerformers';
+import { getAccountantAnalyticsApi } from '../../../apis/analytics';
 import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import type { 
   MetricData, 
-  ChartData, 
   ActivityItem  
 } from '../../../types/dashboard';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+interface MonthlyTrendData {
+  labels: string[];
+  revenue: number[];
+  expenses: number[];
+  liabilities: number[];
+  netProfit: number[];
+}
 
 // SVG Icon Components for Admin Metrics
 const UsersIcon = () => (
@@ -44,28 +74,19 @@ const SystemHealthIcon = () => (
   </svg>
 );
 
-// SVG Icon Components for System Health
-const StatusIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-
-const SpeedIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-  </svg>
-);
-
-const StorageIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-  </svg>
-);
-
 const AdminDashboard: React.FC = () => {
   // State for department filtering
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+  
+  // State for monthly financial trends
+  const [trendData, setTrendData] = useState<MonthlyTrendData>({
+    labels: [],
+    revenue: [],
+    expenses: [],
+    liabilities: [],
+    netProfit: []
+  });
+  const [loadingTrendData, setLoadingTrendData] = useState<boolean>(true);
 
   // Available departments
   const departments = ['Sales', 'Marketing', 'Production', 'HR', 'Accounting'];
@@ -193,467 +214,65 @@ const AdminDashboard: React.FC = () => {
     ? activityFeedData
     : adminFallbackActivities;
 
-  const userActivityData: ChartData[] = [
-    { name: 'Mon', value: 85 },
-    { name: 'Tue', value: 92 },
-    { name: 'Wed', value: 78 },
-    { name: 'Thu', value: 95 },
-    { name: 'Fri', value: 89 },
-    { name: 'Sat', value: 45 },
-    { name: 'Sun', value: 32 }
-  ];
+  // Fetch monthly trends data (revenue, expenses, liabilities) from API
+  useEffect(() => {
+    const fetchMonthlyTrends = async () => {
+      try {
+        setLoadingTrendData(true);
+        const response = await getAccountantAnalyticsApi({ period: 'monthly' });
 
-  const systemHealthMetrics: MetricData[] = [
-    {
-      title: 'System Status',
-      value: 'Healthy',
-      icon: <StatusIcon />,
-      changeType: 'positive',
-      change: 'All systems operational',
-      subtitle: 'Last checked: 2 min ago'
-    },
-    {
-      title: 'Server Uptime',
-      value: '99.9%',
-      icon: <SpeedIcon />,
-      changeType: 'positive',
-      change: '+0.2% from last month',
-      subtitle: 'Last 30 days'
-    },
-    {
-      title: 'Response Time',
-      value: '120ms',
-      icon: <SpeedIcon />,
-      changeType: 'positive',
-      change: '-15ms improvement',
-      subtitle: 'Average response'
-    },
-    {
-      title: 'Storage Used',
-      value: '68%',
-      icon: <StorageIcon />,
-      changeType: 'neutral',
-      change: '2.4TB / 3.5TB',
-      subtitle: 'Available space'
-    }
-  ];
+        if (response.success && response.data?.trends?.monthly) {
+          // Transform monthly trends data to include revenue, expenses, liabilities, and net profit
+          const labels: string[] = [];
+          const revenue: number[] = [];
+          const expenses: number[] = [];
+          const liabilities: number[] = [];
+          const netProfit: number[] = [];
 
-  // Get color themes for system health metrics
-  const systemHealthColorThemes = getColorThemesForMetrics(systemHealthMetrics);
+          response.data.trends.monthly.forEach((point) => {
+            // Extract month name from date (e.g., "2024-01" -> "Jan 2024")
+            // Handle format "2024-01" by appending "-01" to make it a valid date
+            const dateStr = point.date.includes('-') && point.date.split('-').length === 2
+              ? `${point.date}-01`
+              : point.date;
+            const date = new Date(dateStr);
+            const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            labels.push(monthName);
+            revenue.push(point.revenue || 0);
+            expenses.push(point.expense || 0);
+            // TrendDataPoint doesn't have liability property, so we set it to 0
+            liabilities.push(0);
+            netProfit.push(point.net || 0);
+          });
 
-  const performanceData = [
-    // Sales Department
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      avatar: 'SJ',
-      department: 'Sales',
-      role: 'Senior Sales Rep',
-      metrics: [
-        {
-          label: 'Leads Closed',
-          currentValue: 24,
-          targetValue: 20,
-          progress: 120,
-          status: 'exceeded' as const,
-          unit: 'leads'
-        },
-        {
-          label: 'Sales Amount',
-          currentValue: 125000,
-          targetValue: 100000,
-          progress: 125,
-          status: 'exceeded' as const,
-          unit: '$'
-        },
-        {
-          label: 'Commission Earned',
-          currentValue: 12500,
-          targetValue: 10000,
-          progress: 125,
-          status: 'exceeded' as const,
-          unit: '$'
+          setTrendData({
+            labels,
+            revenue,
+            expenses,
+            liabilities,
+            netProfit
+          });
         }
-      ]
-    },
-    {
-      id: '2',
-      name: 'Mike Chen',
-      avatar: 'MC',
-      department: 'Sales',
-      role: 'Sales Rep',
-      metrics: [
-        {
-          label: 'Leads Closed',
-          currentValue: 18,
-          targetValue: 20,
-          progress: 90,
-          status: 'on-track' as const,
-          unit: 'leads'
-        },
-        {
-          label: 'Sales Amount',
-          currentValue: 85000,
-          targetValue: 100000,
-          progress: 85,
-          status: 'on-track' as const,
-          unit: '$'
-        },
-        {
-          label: 'Commission Earned',
-          currentValue: 6800,
-          targetValue: 10000,
-          progress: 68,
-          status: 'below-target' as const,
-          unit: '$'
-        }
-      ]
-    },
-    // Marketing Department
-    {
-      id: '3',
-      name: 'Emma Wilson',
-      avatar: 'EW',
-      department: 'Marketing',
-      role: 'Marketing Specialist',
-      metrics: [
-        {
-          label: 'Campaigns Run',
-          currentValue: 8,
-          targetValue: 6,
-          progress: 133,
-          status: 'exceeded' as const,
-          unit: 'campaigns'
-        },
-        {
-          label: 'Lead Quality Score',
-          currentValue: 4.2,
-          targetValue: 4.0,
-          progress: 105,
-          status: 'exceeded' as const,
-          unit: '/5'
-        },
-        {
-          label: 'Lead Generation',
-          currentValue: 150,
-          targetValue: 120,
-          progress: 125,
-          status: 'exceeded' as const,
-          unit: 'leads'
-        }
-      ]
-    },
-    // Production Department
-    {
-      id: '4',
-      name: 'Alex Rodriguez',
-      avatar: 'AR',
-      department: 'Production',
-      role: 'Senior Developer',
-      metrics: [
-        {
-          label: 'Projects Completed',
-          currentValue: 12,
-          targetValue: 10,
-          progress: 120,
-          status: 'exceeded' as const,
-          unit: 'projects'
-        },
-        {
-          label: 'Code Quality Score',
-          currentValue: 4.5,
-          targetValue: 4.0,
-          progress: 112,
-          status: 'exceeded' as const,
-          unit: '/5'
-        },
-        {
-          label: 'Task Completion',
-          currentValue: 95,
-          targetValue: 90,
-          progress: 105,
-          status: 'exceeded' as const,
-          unit: '%'
-        }
-      ]
-    },
-    // HR Department
-    {
-      id: '5',
-      name: 'Lisa Thompson',
-      avatar: 'LT',
-      department: 'HR',
-      role: 'HR Manager',
-      metrics: [
-        {
-          label: 'Recruitments',
-          currentValue: 8,
-          targetValue: 6,
-          progress: 133,
-          status: 'exceeded' as const,
-          unit: 'hires'
-        },
-        {
-          label: 'Employee Satisfaction',
-          currentValue: 4.3,
-          targetValue: 4.0,
-          progress: 107,
-          status: 'exceeded' as const,
-          unit: '/5'
-        },
-        {
-          label: 'Request Processing',
-          currentValue: 45,
-          targetValue: 40,
-          progress: 112,
-          status: 'exceeded' as const,
-          unit: 'requests'
-        }
-      ]
-    },
-    // Accounting Department
-    {
-      id: '6',
-      name: 'David Kim',
-      avatar: 'DK',
-      department: 'Accounting',
-      role: 'Senior Accountant',
-      metrics: [
-        {
-          label: 'Invoices Processed',
-          currentValue: 180,
-          targetValue: 200,
-          progress: 90,
-          status: 'on-track' as const,
-          unit: 'invoices'
-        },
-        {
-          label: 'Accuracy Rate',
-          currentValue: 98.5,
-          targetValue: 95,
-          progress: 103,
-          status: 'exceeded' as const,
-          unit: '%'
-        },
-        {
-          label: 'Reports Generated',
-          currentValue: 15,
-          targetValue: 12,
-          progress: 125,
-          status: 'exceeded' as const,
-          unit: 'reports'
-        }
-      ]
-    },
-    // Additional Sales employees
-    {
-      id: '7',
-      name: 'Jennifer Lee',
-      avatar: 'JL',
-      department: 'Sales',
-      role: 'Sales Manager',
-      metrics: [
-        {
-          label: 'Leads Closed',
-          currentValue: 32,
-          targetValue: 25,
-          progress: 128,
-          status: 'exceeded' as const,
-          unit: 'leads'
-        },
-        {
-          label: 'Sales Amount',
-          currentValue: 180000,
-          targetValue: 150000,
-          progress: 120,
-          status: 'exceeded' as const,
-          unit: '$'
-        },
-        {
-          label: 'Commission Earned',
-          currentValue: 18000,
-          targetValue: 15000,
-          progress: 120,
-          status: 'exceeded' as const,
-          unit: '$'
-        }
-      ]
-    },
-    {
-      id: '8',
-      name: 'Robert Taylor',
-      avatar: 'RT',
-      department: 'Sales',
-      role: 'Sales Rep',
-      metrics: [
-        {
-          label: 'Leads Closed',
-          currentValue: 15,
-          targetValue: 20,
-          progress: 75,
-          status: 'below-target' as const,
-          unit: 'leads'
-        },
-        {
-          label: 'Sales Amount',
-          currentValue: 75000,
-          targetValue: 100000,
-          progress: 75,
-          status: 'below-target' as const,
-          unit: '$'
-        },
-        {
-          label: 'Commission Earned',
-          currentValue: 6000,
-          targetValue: 10000,
-          progress: 60,
-          status: 'below-target' as const,
-          unit: '$'
-        }
-      ]
-    },
-    // Additional Marketing employees
-    {
-      id: '9',
-      name: 'Sophie Martinez',
-      avatar: 'SM',
-      department: 'Marketing',
-      role: 'Marketing Manager',
-      metrics: [
-        {
-          label: 'Campaigns Run',
-          currentValue: 12,
-          targetValue: 8,
-          progress: 150,
-          status: 'exceeded' as const,
-          unit: 'campaigns'
-        },
-        {
-          label: 'Lead Quality Score',
-          currentValue: 4.6,
-          targetValue: 4.0,
-          progress: 115,
-          status: 'exceeded' as const,
-          unit: '/5'
-        },
-        {
-          label: 'Lead Generation',
-          currentValue: 200,
-          targetValue: 150,
-          progress: 133,
-          status: 'exceeded' as const,
-          unit: 'leads'
-        }
-      ]
-    },
-    // Additional Production employees
-    {
-      id: '10',
-      name: 'James Wilson',
-      avatar: 'JW',
-      department: 'Production',
-      role: 'Lead Developer',
-      metrics: [
-        {
-          label: 'Projects Completed',
-          currentValue: 15,
-          targetValue: 12,
-          progress: 125,
-          status: 'exceeded' as const,
-          unit: 'projects'
-        },
-        {
-          label: 'Code Quality Score',
-          currentValue: 4.8,
-          targetValue: 4.0,
-          progress: 120,
-          status: 'exceeded' as const,
-          unit: '/5'
-        },
-        {
-          label: 'Task Completion',
-          currentValue: 98,
-          targetValue: 90,
-          progress: 108,
-          status: 'exceeded' as const,
-          unit: '%'
-        }
-      ]
-    },
-    // Additional HR employees
-    {
-      id: '11',
-      name: 'Maria Garcia',
-      avatar: 'MG',
-      department: 'HR',
-      role: 'HR Specialist',
-      metrics: [
-        {
-          label: 'Recruitments',
-          currentValue: 5,
-          targetValue: 6,
-          progress: 83,
-          status: 'on-track' as const,
-          unit: 'hires'
-        },
-        {
-          label: 'Employee Satisfaction',
-          currentValue: 4.1,
-          targetValue: 4.0,
-          progress: 102,
-          status: 'exceeded' as const,
-          unit: '/5'
-        },
-        {
-          label: 'Request Processing',
-          currentValue: 35,
-          targetValue: 40,
-          progress: 87,
-          status: 'on-track' as const,
-          unit: 'requests'
-        }
-      ]
-    },
-    // Additional Accounting employees
-    {
-      id: '12',
-      name: 'Kevin Brown',
-      avatar: 'KB',
-      department: 'Accounting',
-      role: 'Accountant',
-      metrics: [
-        {
-          label: 'Invoices Processed',
-          currentValue: 220,
-          targetValue: 200,
-          progress: 110,
-          status: 'exceeded' as const,
-          unit: 'invoices'
-        },
-        {
-          label: 'Accuracy Rate',
-          currentValue: 99.2,
-          targetValue: 95,
-          progress: 104,
-          status: 'exceeded' as const,
-          unit: '%'
-        },
-        {
-          label: 'Reports Generated',
-          currentValue: 18,
-          targetValue: 12,
-          progress: 150,
-          status: 'exceeded' as const,
-          unit: 'reports'
-        }
-      ]
-    }
-  ];
+      } catch (error) {
+        console.error('Error fetching monthly trends data:', error);
+        // Fallback to empty data on error
+        setTrendData({
+          labels: [],
+          revenue: [],
+          expenses: [],
+          liabilities: [],
+          netProfit: []
+        });
+      } finally {
+        setLoadingTrendData(false);
+      }
+    };
 
-  // Get top 6 employees (always show all departments, not filtered by toggle)
-  const topPerformers = useMemo(() => {
-    return performanceData.slice(0, 6);
+    fetchMonthlyTrends();
   }, []);
+
+  // Fetch cross-department top performers from API
+  const { data: topPerformers = [], isLoading: isLoadingTopPerformers } = useCrossDepartmentTopPerformers('monthly', 6);
 
   return (
     <div className="space-y-6">
@@ -709,25 +328,132 @@ const AdminDashboard: React.FC = () => {
             <DepartmentOverview />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ChartWidget 
-              title="User Activity (Last 7 Days)"
-              data={userActivityData}
-              type="line" 
-              height={250}
-            />
+          {/* Monthly Financial Trends Chart */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full" />
+                <h2 className="text-md font-bold text-gray-900">Monthly Financial Trends</h2>
+              </div>
+            </div>
+            <div className="p-6" style={{ height: '400px' }}>
+              {loadingTrendData ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-pulse text-gray-400">Loading chart data...</div>
+                </div>
+              ) : trendData.labels.length > 0 ? (
+                <Line
+                  data={{
+                    labels: trendData.labels,
+                    datasets: [
+                      {
+                        label: 'Revenue',
+                        data: trendData.revenue,
+                        borderColor: 'rgb(34, 197, 94)', // Green
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 3,
+                      },
+                      {
+                        label: 'Expenses',
+                        data: trendData.expenses,
+                        borderColor: 'rgb(239, 68, 68)', // Red
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 3,
+                      },
+                      {
+                        label: 'Liabilities',
+                        data: trendData.liabilities,
+                        borderColor: 'rgb(245, 158, 11)', // Amber
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 3,
+                      },
+                      {
+                        label: 'Net Profit',
+                        data: trendData.netProfit,
+                        borderColor: 'rgb(59, 130, 246)', // Blue
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 3,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'top' as const,
+                        labels: {
+                          usePointStyle: true,
+                          padding: 20,
+                          font: {
+                            size: 12,
+                            weight: 'normal' as const,
+                          },
+                        },
+                      },
+                      tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: true,
+                      },
+                    },
+                    scales: {
+                      x: {
+                        grid: {
+                          display: false,
+                        },
+                        ticks: {
+                          color: '#6B7280',
+                          font: {
+                            size: 11,
+                          },
+                        },
+                      },
+                      y: {
+                        grid: {
+                          color: 'rgba(0, 0, 0, 0.05)',
+                        },
+                        ticks: {
+                          color: '#6B7280',
+                          font: {
+                            size: 11,
+                          },
+                          callback: function (value) {
+                            return '$' + (value as number).toLocaleString();
+                          },
+                        },
+                      },
+                    },
+                    elements: {
+                      line: {
+                        tension: 0.4,
+                      },
+                      point: {
+                        radius: 4,
+                        hoverRadius: 8,
+                        hoverBorderWidth: 2,
+                        hoverBorderColor: '#ffffff',
+                      },
+                    },
+                  }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  <div className="text-center">
+                    <p className="text-sm">No trend data available</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-
-          <MetricGrid 
-            title="System Health"
-            metrics={systemHealthMetrics}
-            columns={2}
-            headerColor="from-green-50 to-transparent"
-            headerGradient="from-green-500 to-emerald-600"
-            cardSize="sm"
-            cardClassName="border-0 shadow-none bg-gray-50"
-            colorThemes={systemHealthColorThemes}
-          />
 
             {/* Department Performance Leaderboard */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
@@ -740,12 +466,24 @@ const AdminDashboard: React.FC = () => {
                 </p>
               </div>
               <div className="p-6">
+                {isLoadingTopPerformers ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-pulse text-gray-400">Loading top performers...</div>
+                  </div>
+                ) : topPerformers.length > 0 ? (
                 <PerformanceLeaderboard 
                   title="All Departments Top Performers"
                   members={topPerformers}
                   showDepartment={true}
                   showRole={true}
                 />
+                ) : (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500">No top performers data available</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
         </div>

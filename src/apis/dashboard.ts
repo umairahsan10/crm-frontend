@@ -446,3 +446,61 @@ export const getCurrentProjectsApi = async (): Promise<CurrentProjectsApiRespons
   }
 };
 
+/**
+ * API Response structure from /dashboard/cross-department-top-performers
+ */
+export interface CrossDepartmentTopPerformerDto {
+  employeeId: number;
+  employeeName: string;
+  department: string;
+  role: string;
+  performancePercentage: number;
+  rank: number;
+  metrics: {
+    [key: string]: any;
+  };
+}
+
+export interface CrossDepartmentTopPerformersSummaryDto {
+  totalDepartments: number;
+  periodStart: string;
+  periodEnd: string;
+  averagePerformance: number;
+}
+
+export interface CrossDepartmentTopPerformersMetadataDto {
+  generatedAt: string;
+}
+
+export interface CrossDepartmentTopPerformersResponseDto {
+  status: string;
+  period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+  summary: CrossDepartmentTopPerformersSummaryDto;
+  data: CrossDepartmentTopPerformerDto[];
+  metadata: CrossDepartmentTopPerformersMetadataDto;
+}
+
+/**
+ * Fetch cross-department top performers data from API
+ * Returns top performers from all departments
+ * @param period - 'daily', 'weekly', 'monthly', 'quarterly', or 'yearly' (default: 'monthly')
+ * @param limit - Number of top performers to return (optional, backend may have default)
+ */
+export const getCrossDepartmentTopPerformersApi = async (
+  period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' = 'monthly',
+  limit?: number
+): Promise<CrossDepartmentTopPerformersResponseDto> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('period', period);
+    if (limit) queryParams.append('limit', limit.toString());
+    
+    const url = `/dashboard/cross-department-top-performers?${queryParams.toString()}`;
+    const data = await apiGetJson<CrossDepartmentTopPerformersResponseDto>(url);
+    return data;
+  } catch (error) {
+    console.error('Error fetching cross-department top performers:', error);
+    throw error;
+  }
+};
+

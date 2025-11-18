@@ -24,7 +24,6 @@ import HRRequestAdminPage from './pages/HRManagement/HRRequestAdminPage';
 import AdminHRRequestsPage from './pages/Admin/AdminHRRequestsPage';
 import PayrollPage from './pages/HRManagement/Payroll/PayrollPage';
 import DealsPage from './pages/Deals/DealsPage';
-import ReportsPage from './pages/Sales/ReportsPage';
 import LeadsManagementPage from './pages/Leads/LeadsManagementPage';
 import LeadsCreationPage from './pages/Leads/LeadsCreationPage';
 import SettingsPage from './pages/Settings/SettingsPage';
@@ -43,24 +42,13 @@ import FinancePage from './pages/Finance/FinancePage';
 import SalaryManagementPage from './pages/Finance/Salary/SalaryManagementPage';
 import SalaryCalculatorPage from './pages/Finance/Salary/SalaryCalculatorPage';
 import BonusManagementPage from './pages/Finance/Salary/BonusManagementPage';
-import HRManagementPage from './pages/HRManagement/HRManagementPage';
-import MarketingPage from './pages/Marketing/MarketingPage';
-import ProductionPage from './pages/Production/ProductionPage';
 import ProductionUnitsManagementPage from './pages/Production/ProductionUnitsManagementPage';
 import ProductionTeamsManagementPage from './pages/Production/ProductionTeamsManagementPage';
 import SalesTeamsManagementPage from './pages/Sales/SalesTeamsManagementPage';
 import SalesUnitsManagementPage from './pages/Sales/SalesUnitsManagementPage';
 import ClientsPage from './pages/Clients/ClientsPage';
-import AdminReportsPage from './pages/Reports/ReportsPage';
-import AnalyticsPage from './pages/Analytics/AnalyticsPage';
 import SystemLogsPage from './pages/SystemLogs/SystemLogsPage';
-import AuditTrailPage from './pages/AuditTrail/AuditTrailPage';
-import NotificationsPage from './pages/Notifications/NotificationsPage';
-import BackupPage from './pages/Backup/BackupPage';
 import IntegrationsPage from './pages/Integrations/IntegrationsPage';
-import SecurityPage from './pages/Security/SecurityPage';
-import MaintenancePage from './pages/Maintenance/MaintenancePage';
-import TestPage from './pages/test';
 import ProfilePage from './pages/Profile/ProfilePage';
 import ChatPage from './pages/Chat/Chat';
 
@@ -91,7 +79,6 @@ function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/test" element={<TestPage />} />
             <Route
               path="/*"
               element={
@@ -227,10 +214,6 @@ function AppLayout() {
           element={canAccessPage('deals') ? <DealsPage /> : <Navigate to="/login" replace />} 
         />
         <Route 
-          path="/sales" 
-          element={canAccessPage('sales') ? <ReportsPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
           path="/leads" 
           element={canAccessPage('leads') ? <LeadsManagementPage /> : <Navigate to="/login" replace />} 
         />
@@ -273,18 +256,6 @@ function AppLayout() {
           element={canAccessPage('finance') ? <BonusManagementPage /> : <Navigate to="/login" replace />} 
         />
         <Route 
-          path="/hr-management" 
-          element={canAccessPage('hr-management') ? <HRManagementPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/marketing" 
-          element={canAccessPage('marketing') ? <MarketingPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/production" 
-          element={canAccessPage('production') ? <ProductionPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
           path="/production/units" 
           element={canAccessPage('production') ? <ProductionUnitsManagementPage /> : <Navigate to="/login" replace />} 
         />
@@ -305,40 +276,12 @@ function AppLayout() {
           element={canAccessPage('clients') ? <ClientsPage /> : <Navigate to="/login" replace />} 
         />
         <Route 
-          path="/reports" 
-          element={canAccessPage('reports') ? <AdminReportsPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/analytics" 
-          element={canAccessPage('analytics') ? <AnalyticsPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
           path="/system-logs" 
           element={canAccessPage('system-logs') ? <SystemLogsPage /> : <Navigate to="/login" replace />} 
         />
         <Route 
-          path="/audit-trail" 
-          element={canAccessPage('audit-trail') ? <AuditTrailPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/notifications" 
-          element={canAccessPage('notifications') ? <NotificationsPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/backup" 
-          element={canAccessPage('backup') ? <BackupPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
           path="/integrations" 
           element={canAccessPage('integrations') ? <IntegrationsPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/security" 
-          element={canAccessPage('security') ? <SecurityPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/maintenance" 
-          element={canAccessPage('maintenance') ? <MaintenancePage /> : <Navigate to="/login" replace />} 
         />
         
         <Route path="*" element={<Navigate to="/login" replace />} />
