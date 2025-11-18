@@ -61,20 +61,33 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'Leave':
-        return '🏖️';
-      case 'Salary':
-        return '💰';
-      case 'Training':
-        return '🎓';
-      case 'Complaint':
-        return '⚠️';
-      case 'Other':
-        return '📋';
+  const getRequestStyles = (status: string) => {
+    switch (status) {
+      case 'Approved':
+        return {
+          dot: 'bg-green-500',
+          border: 'border-green-200'
+        };
+      case 'Pending':
+        return {
+          dot: 'bg-yellow-500',
+          border: 'border-yellow-200'
+        };
+      case 'Under Review':
+        return {
+          dot: 'bg-blue-500',
+          border: 'border-blue-200'
+        };
+      case 'Rejected':
+        return {
+          dot: 'bg-red-500',
+          border: 'border-red-200'
+        };
       default:
-        return '📌';
+        return {
+          dot: 'bg-gray-500',
+          border: 'border-gray-200'
+        };
     }
   };
 
@@ -114,7 +127,7 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
   // Loading state
   if (isLoading) {
     return (
-      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 w-full h-full flex flex-col ${className}`}>
         <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
@@ -137,7 +150,7 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
   // Error state
   if (isError) {
     return (
-      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 w-full h-full flex flex-col ${className}`}>
         <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
@@ -155,7 +168,7 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
   // Empty state
   if (recentRequests.length === 0) {
     return (
-      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 w-full h-full flex flex-col ${className}`}>
         <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
@@ -171,7 +184,7 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
   }
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 w-full h-full flex flex-col ${className}`}>
       <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -223,38 +236,59 @@ export const HRRequests: React.FC<HRRequestsProps> = ({ className = '', limit = 
         </div>
       )}
 
-      <div className="divide-y divide-gray-200">
-        {recentRequests.map((request) => (
-          <div key={request.id} className="p-4 hover:bg-gray-50 transition-colors duration-200">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm">
-                  <span className="text-sm font-semibold text-white">
-                    {getTypeIcon(request.type)}
-                  </span>
+      <div className="divide-y divide-gray-100 flex-1">
+        {recentRequests.map((request, index) => {
+          const styles = getRequestStyles(request.status);
+          return (
+            <div key={request.id} className="p-6 py-4 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-transparent hover:shadow-sm transition-all duration-300 group">
+              <div className="flex items-start gap-4">
+                <div className="relative flex-shrink-0">
+                  <div className={`w-3 h-3 rounded-full ${styles.dot} ring-4 ring-white group-hover:scale-110 transition-transform duration-300`} />
+                  {index < recentRequests.length - 1 && (
+                    <div className="absolute top-3 left-1.5 w-0.5 h-8 bg-gray-200" />
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-semibold text-gray-900">{request.title}</p>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
-                      {request.priority}
+                <div className="flex-1 min-w-0 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                          {request.title}
+                        </p>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
+                          {request.priority}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                        {request.description}
+                      </p>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(request.status)} flex-shrink-0`}>
+                      {request.status}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mb-1">
-                    {request.employee} • {request.department}
-                  </p>
-                  <p className="text-xs text-gray-600 mb-2 line-clamp-2">{request.description}</p>
-                  <p className="text-xs text-gray-400">Submitted: {request.submittedDate}</p>
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-medium">{request.employee}</span>
+                    </div>
+                    <span>•</span>
+                    <span>{request.department}</span>
+                    <span>•</span>
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                      </svg>
+                      <span>Submitted: {request.submittedDate}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="text-right ml-4">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
-                  {request.status}
-                </span>
-              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       {/* <div className="p-4 bg-gray-50 border-t border-gray-200">
         <button
