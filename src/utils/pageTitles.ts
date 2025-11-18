@@ -19,7 +19,6 @@ export const getPageTitle = (pathname: string): string => {
     '/my-attendance': 'My Attendance',
     '/payroll': 'Payroll Management',
     '/hr-logs': 'HR Logs',
-    '/hr-management': 'HR Management',
     '/employee-requests': 'Employee Requests',
     '/admin-hr-requests': 'HR Requests',
     '/hr-request-admin': 'Request Admin',
@@ -39,7 +38,6 @@ export const getPageTitle = (pathname: string): string => {
     '/leads': 'Leads Management',
     '/leads/create': 'Create Lead',
     '/deals': 'Deals Management',
-    '/sales': 'Sales Management',
     '/clients': 'Clients Management',
     
     // Project Management routes
@@ -52,8 +50,6 @@ export const getPageTitle = (pathname: string): string => {
     '/finance/salary/bonus': 'Bonus Management',
     
     // Department routes
-    '/marketing': 'Marketing',
-    '/production': 'Production',
     '/production/units': 'Production Units Management',
     '/production/teams': 'Production Teams Management',
     '/sales/units': 'Sales Units Management',
@@ -64,14 +60,7 @@ export const getPageTitle = (pathname: string): string => {
     
     // System routes
     '/system-logs': 'System Logs',
-    '/reports': 'Reports',
-    '/analytics': 'Analytics',
-    '/audit-trail': 'Audit Trail',
-    '/notifications': 'Notifications',
-    '/backup': 'Backup',
     '/integrations': 'Integrations',
-    '/security': 'Security',
-    '/maintenance': 'Maintenance',
     
     // User routes
     '/settings': 'Settings',

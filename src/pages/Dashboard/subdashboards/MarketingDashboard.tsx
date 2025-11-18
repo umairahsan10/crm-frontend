@@ -484,7 +484,7 @@ const MarketingDashboard: React.FC = () => {
       title: 'Campaign Management',
       description: 'Create Campaign, Campaign Analytics, Budget Planning',
       icon: <CampaignIcon />,
-      href: '/marketing',
+      href: '/leads',
       color: 'bg-blue-100 text-blue-600'
     },
     {
@@ -498,7 +498,7 @@ const MarketingDashboard: React.FC = () => {
       title: 'Content Management',
       description: 'Content Calendar, Content Creation, Content Analytics',
       icon: <ContentIcon />,
-      href: '/marketing',
+      href: '/leads',
       color: 'bg-purple-100 text-purple-600'
     },
     {
@@ -515,7 +515,7 @@ const MarketingDashboard: React.FC = () => {
       title: 'Campaign Management',
       description: 'Unit Campaign Dashboard, Campaign Analytics',
       icon: <CampaignIcon />,
-      href: '/marketing',
+      href: '/leads',
       color: 'bg-blue-100 text-blue-600'
     },
     {
@@ -529,7 +529,7 @@ const MarketingDashboard: React.FC = () => {
       title: 'Team Management',
       description: 'Teams Management',
       icon: <TeamsIcon />,
-      href: '/marketing',
+      href: '/leads',
       color: 'bg-orange-100 text-orange-600'
     }
   ];
@@ -539,14 +539,14 @@ const MarketingDashboard: React.FC = () => {
       title: 'Campaign Management',
       description: 'Team Campaign Dashboard, Assign Campaigns',
       icon: <CampaignIcon />,
-      href: '/marketing',
+      href: '/leads',
       color: 'bg-blue-100 text-blue-600'
     },
     {
       title: 'Content Pipeline',
       description: 'Content Overview, Content Planning',
       icon: <ContentIcon />,
-      href: '/marketing',
+      href: '/leads',
       color: 'bg-purple-100 text-purple-600'
     }
   ];
@@ -556,14 +556,14 @@ const MarketingDashboard: React.FC = () => {
       title: 'My Campaigns',
       description: 'View and manage assigned campaigns',
       icon: <CampaignIcon />,
-      href: '/marketing',
+      href: '/leads',
       color: 'bg-blue-100 text-blue-600'
     },
     {
       title: 'Content Creation',
       description: 'Create and edit marketing content',
       icon: <ContentIcon />,
-      href: '/marketing',
+      href: '/leads',
       color: 'bg-green-100 text-green-600'
     },
     {
@@ -577,7 +577,7 @@ const MarketingDashboard: React.FC = () => {
       title: 'Analytics',
       description: 'View campaign performance metrics',
       icon: <AnalyticsIcon />,
-      href: '/marketing',
+      href: '/leads',
       color: 'bg-orange-100 text-orange-600'
     }
   ];

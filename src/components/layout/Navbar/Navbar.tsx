@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavbar } from '../../../context/NavbarContext';
@@ -23,6 +23,7 @@ import {
   AiOutlineLock,
   AiOutlineTool,
   AiOutlineWallet,
+  AiOutlineDown,
 } from 'react-icons/ai';
 import './Navbar.css';
 
@@ -31,6 +32,26 @@ interface NavbarProps {
   onNavigate?: (page: string) => void;
   activePage?: string;
   onLogout?: () => void;
+}
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon: string;
+  path: string;
+}
+
+interface NavGroup {
+  id: string;
+  label: string;
+  icon: string;
+  items: NavItem[];
+}
+
+type NavigationItem = NavItem | NavGroup;
+
+function isNavGroup(item: NavigationItem): item is NavGroup {
+  return 'items' in item;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -46,6 +67,9 @@ const Navbar: React.FC<NavbarProps> = ({
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isProfileHovered, setIsProfileHovered] = useState(false);
+  const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
   
   // Determine if navbar should be expanded (hovered or manually opened)
   const isExpanded = isHovered || isOpen;
@@ -54,6 +78,19 @@ const Navbar: React.FC<NavbarProps> = ({
   useEffect(() => {
     setNavbarExpanded(isExpanded);
   }, [isExpanded, setNavbarExpanded]);
+
+  // Update dropdown positions when hover state or expanded state changes
+  useEffect(() => {
+    if (hoveredGroupId) {
+      const button = buttonRefs.current[hoveredGroupId];
+      const dropdown = dropdownRefs.current[hoveredGroupId];
+      if (button && dropdown) {
+        const rect = button.getBoundingClientRect();
+        dropdown.style.top = `${rect.top}px`;
+        dropdown.style.left = `${isExpanded ? rect.right + 8 : 70 + 8}px`;
+      }
+    }
+  }, [hoveredGroupId, isExpanded]);
 
   // Get navigation items based on user type, role, and department
   const getNavigationItems = () => {
@@ -68,34 +105,56 @@ const Navbar: React.FC<NavbarProps> = ({
     if (type === 'admin') {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
-        { id: 'my-attendance', label: 'My Attendance', icon: '📅', path: '/my-attendance' },
-        { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
-        { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
-        { id: 'hr-requests', label: 'HR Requests', icon: '📋', path: '/admin-hr-requests' },
-        { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
+        {
+          id: 'employee-management-group',
+          label: 'Employee Management',
+          icon: '👥',
+          items: [
+            { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
+            { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
+          ],
+        },
+        {
+          id: 'requests-group',
+          label: 'Request Management',
+          icon: '📝',
+          items: [
+            { id: 'requests', label: 'Requests', icon: '📝', path: '/employee-requests' },
+            { id: 'hr-requests', label: 'HR Requests', icon: '📋', path: '/admin-hr-requests' },
+          ],
+        },
+        {
+          id: 'finance-management-group',
+          label: 'Finance Management',
+          icon: '💰',
+          items: [
+            { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
+            { id: 'salary', label: 'Salary Management', icon: '💵', path: '/finance/salary' },
+          ],
+        },
+        {
+          id: 'team-management-group',
+          label: 'Team Management',
+          icon: '👥',
+          items: [
+            { id: 'production-teams', label: 'Production Teams', icon: '👥', path: '/production/teams' },
+            { id: 'sales-teams', label: 'Sales Teams', icon: '👥', path: '/sales/teams' },
+          ],
+        },
+        {
+          id: 'unit-management-group',
+          label: 'Unit Management',
+          icon: '🏢',
+          items: [
+            { id: 'production-units', label: 'Production Units', icon: '🏢', path: '/production/units' },
+            { id: 'sales-units', label: 'Sales Units', icon: '🏢', path: '/sales/units' },
+          ],
+        },
         { id: 'logs', label: 'Logs', icon: '📋', path: '/logs' },
         { id: 'leads', label: 'Leads', icon: '⭕', path: '/leads' },
         { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
         { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects' },
-        { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
-        { id: 'salary', label: 'Salary Management', icon: '💵', path: '/finance/salary' },
-        { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
-        { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing' },
-        { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
-        { id: 'production-units', label: 'Units Management', icon: '🏢', path: '/production/units' },
-        { id: 'production-teams', label: 'Teams Management', icon: '👥', path: '/production/teams' },
-        { id: 'sales', label: 'Sales', icon: '📈', path: '/sales' },
-        { id: 'sales-units', label: 'Sales Units', icon: '🏢', path: '/sales/units' },
-        { id: 'sales-teams', label: 'Sales Teams', icon: '👥', path: '/sales/teams' },
-        { id: 'reports', label: 'Reports', icon: '📊', path: '/reports' },
-        { id: 'analytics', label: 'Analytics', icon: '📈', path: '/analytics' },
-        { id: 'audit-trail', label: 'Audit Trail', icon: '🔍', path: '/audit-trail' },
-        { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/notifications' },
-        { id: 'backup', label: 'Backup & Restore', icon: '💾', path: '/backup' },
         { id: 'integrations', label: 'Integrations', icon: '🔗', path: '/integrations' },
-        { id: 'security', label: 'Security', icon: '🔒', path: '/security' },
-        { id: 'maintenance', label: 'Maintenance', icon: '⚙️', path: '/maintenance' },
-        { id: 'test', label: 'Test Page', icon: '🧪', path: '/test' },
       ];
     }
 
@@ -119,7 +178,6 @@ const Navbar: React.FC<NavbarProps> = ({
             { id: 'employees', label: 'Employees', icon: '👥', path: '/employees' },
             { id: 'attendance', label: 'Attendance', icon: '📅', path: '/attendance' },
             { id: 'logs', label: 'Logs', icon: '📋', path: '/logs' },
-            { id: 'hr-management', label: 'HR Management', icon: '👨‍💼', path: '/hr-management' },
             { id: 'finance', label: 'Finance', icon: '💰', path: '/finance' },
             { id: 'salary', label: 'Salary Management', icon: '💵', path: '/finance/salary' },
             { id: 'chats', label: 'Chats', icon: '💬', path: '/chats' },
@@ -141,7 +199,6 @@ const Navbar: React.FC<NavbarProps> = ({
         case 'production':
           return [
             ...baseItems,
-            { id: 'production', label: 'Production', icon: '🏭', path: '/production' },
             { id: 'production-units', label: 'Units Management', icon: '🏢', path: '/production/units' },
             { id: 'production-teams', label: 'Teams Management', icon: '👥', path: '/production/teams' },
             { id: 'projects', label: 'Projects', icon: '🚀', path: '/projects' },
@@ -151,7 +208,6 @@ const Navbar: React.FC<NavbarProps> = ({
         case 'marketing':
           return [
             ...baseItems,
-            { id: 'marketing', label: 'Marketing', icon: '📢', path: '/marketing' },
             { id: 'leads-create', label: 'Create Leads', icon: '➕', path: '/leads/create' },
             { id: 'chats', label: 'Chat', icon: '💬', path: '/chats' },
           ];
@@ -180,10 +236,27 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const navigationItems = getNavigationItems();
 
-  const handleNavClick = (itemId: string) => {
-    const navItem = navigationItems.find(item => item.id === itemId);
-    if (navItem) {
-      navigate(navItem.path);
+  const handleNavClick = (itemId: string, path?: string) => {
+    if (path) {
+      navigate(path);
+    } else {
+      const navItem = navigationItems.find(item => {
+        if (isNavGroup(item)) {
+          return item.items.some(subItem => subItem.id === itemId);
+        }
+        return item.id === itemId;
+      });
+      
+      if (navItem) {
+        if (isNavGroup(navItem)) {
+          const subItem = navItem.items.find(sub => sub.id === itemId);
+          if (subItem) {
+            navigate(subItem.path);
+          }
+        } else {
+          navigate(navItem.path);
+        }
+      }
     }
     if (onNavigate) {
       onNavigate(itemId);
@@ -194,18 +267,23 @@ const Navbar: React.FC<NavbarProps> = ({
   const getCurrentActivePage = () => {
     const currentPath = location.pathname;
     
-    // Find exact match first
-    const exactMatch = navigationItems.find(item => item.path === currentPath);
-    if (exactMatch) {
-      return exactMatch.id;
-    }
-    
-    // Handle sub-routes - check if current path starts with any navbar path
-    const subRouteMatch = navigationItems.find(item => 
-      item.path !== '/' && currentPath.startsWith(item.path + '/')
-    );
-    if (subRouteMatch) {
-      return subRouteMatch.id;
+    // Check regular items first
+    for (const item of navigationItems) {
+      if (isNavGroup(item)) {
+        // Check items within the group
+        for (const subItem of item.items) {
+          if (subItem.path === currentPath || 
+              (subItem.path !== '/' && currentPath.startsWith(subItem.path + '/'))) {
+            return subItem.id;
+          }
+        }
+      } else {
+        // Check regular item
+        if (item.path === currentPath || 
+            (item.path !== '/' && currentPath.startsWith(item.path + '/'))) {
+          return item.id;
+        }
+      }
     }
     
     // Special case: if we're on dashboard, highlight dashboard
@@ -347,20 +425,87 @@ const Navbar: React.FC<NavbarProps> = ({
     >
       <nav className="navbar-nav">
         <ul className="nav-list">
-          {navigationItems.map((item) => (
-            <li key={item.id}>
-              <button
-                className={`nav-item ${getCurrentActivePage() === item.id ? 'active' : ''}`}
-                onClick={() => handleNavClick(item.id)}
-                title={!isExpanded ? item.label : undefined}
-              >
-                <span className="nav-icon">
-                  {renderIcon(item.icon)}
-                </span>
-                {isExpanded && <span className="nav-label">{item.label}</span>}
-              </button>
-            </li>
-          ))}
+          {navigationItems.map((item) => {
+            if (isNavGroup(item)) {
+              const isGroupHovered = hoveredGroupId === item.id;
+              const isGroupActive = item.items.some(subItem => getCurrentActivePage() === subItem.id);
+              
+              return (
+                <li 
+                  key={item.id}
+                  className="nav-group-item"
+                  onMouseEnter={() => setHoveredGroupId(item.id)}
+                  onMouseLeave={() => {
+                    // Small delay to allow moving to dropdown
+                    setTimeout(() => {
+                      const dropdown = dropdownRefs.current[item.id];
+                      if (dropdown && !dropdown.matches(':hover')) {
+                        setHoveredGroupId(null);
+                      }
+                    }, 150);
+                  }}
+                >
+                  <div className="nav-group-wrapper">
+                    <button
+                      ref={(el) => { buttonRefs.current[item.id] = el; }}
+                      className={`nav-item nav-group-button ${isGroupActive ? 'active' : ''}`}
+                      title={!isExpanded ? item.label : undefined}
+                    >
+                      <span className="nav-icon">
+                        {renderIcon(item.icon)}
+                      </span>
+                      {isExpanded && (
+                        <>
+                          <span className="nav-label">{item.label}</span>
+                          <AiOutlineDown 
+                            size={14} 
+                            className={`nav-group-arrow ${isGroupHovered ? 'open' : ''}`}
+                          />
+                        </>
+                      )}
+                    </button>
+                    {isGroupHovered && (
+                      <div 
+                        ref={(el) => { dropdownRefs.current[item.id] = el; }}
+                        className="nav-group-dropdown"
+                        onMouseEnter={() => setHoveredGroupId(item.id)}
+                        onMouseLeave={() => setHoveredGroupId(null)}
+                      >
+                        {item.items.map((subItem) => (
+                          <button
+                            key={subItem.id}
+                            className={`nav-group-dropdown-item ${getCurrentActivePage() === subItem.id ? 'active' : ''}`}
+                            onClick={() => handleNavClick(subItem.id, subItem.path)}
+                            title={!isExpanded ? subItem.label : undefined}
+                          >
+                            <span className="nav-icon">
+                              {renderIcon(subItem.icon)}
+                            </span>
+                            <span className="nav-label">{subItem.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              );
+            } else {
+              return (
+                <li key={item.id}>
+                  <button
+                    className={`nav-item ${getCurrentActivePage() === item.id ? 'active' : ''}`}
+                    onClick={() => handleNavClick(item.id, item.path)}
+                    title={!isExpanded ? item.label : undefined}
+                  >
+                    <span className="nav-icon">
+                      {renderIcon(item.icon)}
+                    </span>
+                    {isExpanded && <span className="nav-label">{item.label}</span>}
+                  </button>
+                </li>
+              );
+            }
+          })}
         </ul>
       </nav>
 

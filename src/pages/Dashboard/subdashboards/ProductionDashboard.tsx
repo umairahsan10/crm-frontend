@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
-import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
 import { ProjectStatus, DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
@@ -9,7 +8,6 @@ import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
 import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
 import type { 
-  ChartData, 
   ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
@@ -394,26 +392,6 @@ const ProductionDashboard: React.FC = () => {
     }
   ];
 
-  // Chart data for production trends
-  const productionTrendData: ChartData[] = [
-    { name: 'Mon', value: 10000 },
-    { name: 'Tue', value: 12000 },
-    { name: 'Wed', value: 11500 },
-    { name: 'Thu', value: 13000 },
-    { name: 'Fri', value: 12500 },
-    { name: 'Sat', value: 8000 },
-    { name: 'Sun', value: 5000 }
-  ];
-
-  // Top performing teams data
-  const topTeamsData: ChartData[] = [
-    { name: 'Frontend Team', value: 96 },
-    { name: 'Backend Team', value: 94 },
-    { name: 'Mobile Team', value: 92 },
-    { name: 'DevOps Team', value: 90 },
-    { name: 'QA Team', value: 88 }
-  ];
-
   const currentData = getDataForRole();
 
   return (
@@ -458,34 +436,6 @@ const ProductionDashboard: React.FC = () => {
           {/* Project Status - Available for all roles */}
           <ProjectStatus className="h-full w-full" />
         </div>
-      </div>
-
-      {/* Additional Content - Moves to next line */}
-      <div className="space-y-6">
-        <ChartWidget 
-          title="Top 5 Performing Teams"
-          data={topTeamsData}
-          type="bar"
-        />
-
-        {/* Production Volume Trend - Moved from main grid */}
-        <ChartWidget 
-          title="Production Volume Trend"
-          data={productionTrendData}
-          type="line" 
-          height={250}
-        />
-
-        {/* Recent Production Activities Feed - Only for Department Manager and Unit Head */}
-        {(roleLevel === 'department_manager' || roleLevel === 'unit_head') && (
-          <ActivityFeed
-            title="Recent Production Activities Feed"
-            activities={currentData.activities.filter(activity =>
-              activity.title.includes('production') || activity.title.includes('Production')
-            )}
-            maxItems={3}
-          />
-        )}
       </div>
     </div>
   );
