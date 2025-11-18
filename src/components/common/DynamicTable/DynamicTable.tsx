@@ -221,11 +221,38 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
         );
 
       case 'date':
-        return (
-          <div className="text-sm text-gray-900">
-            {value ? new Date(value).toLocaleDateString() : 'N/A'}
-          </div>
-        );
+        if (!value) {
+          return (
+            <div className="text-sm text-gray-500">
+              Not Set
+            </div>
+          );
+        }
+        try {
+          const date = new Date(value);
+          if (isNaN(date.getTime())) {
+            return (
+              <div className="text-sm text-gray-500">
+                Not Set
+              </div>
+            );
+          }
+          return (
+            <div className="text-sm text-gray-900">
+              {date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+              })}
+            </div>
+          );
+        } catch (error) {
+          return (
+            <div className="text-sm text-gray-500">
+              Not Set
+            </div>
+          );
+        }
 
       case 'avatar':
         return (

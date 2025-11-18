@@ -53,15 +53,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = ({
     // Format team name
     const team = project.team?.name || 'Unassigned';
 
-    // Format deadline
-    const deadline = project.deadline ? (() => {
-      try {
-        const date = new Date(project.deadline);
-        return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
-      } catch {
-        return 'N/A';
-      }
-    })() : 'N/A';
+    // Keep deadline as raw string - DynamicTable will format it
+    // The deadline field is already in ISO format from API: "2025-11-20T00:00:00.000Z"
+    const deadline = project.deadline || null;
 
     return {
       ...project,

@@ -4,11 +4,14 @@ import {
   getProjectByIdApi,
   createProjectFromPaymentApi,
   assignUnitHeadApi,
+  assignTeamApi,
+  getAvailableTeamsForProjectApi,
   updateProjectApi
 } from '../../apis/projects';
 import type {
   CreateProjectFromPaymentRequest,
   AssignUnitHeadRequest,
+  AssignTeamRequest,
   UnifiedUpdateProjectDto,
   ProjectQueryParams
 } from '../../types/production/projects';
@@ -82,6 +85,32 @@ export const useAssignUnitHead = () => {
       queryClient.invalidateQueries({ queryKey: projectsQueryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: projectsQueryKeys.detail(variables.projectId.toString()) });
     },
+  });
+};
+
+// Assign team to project
+export const useAssignTeam = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, assignData }: { projectId: number; assignData: AssignTeamRequest }) =>
+      assignTeamApi(projectId, assignData),
+    onSuccess: (_, variables) => {
+      // Invalidate and refetch projects list and specific project
+      queryClient.invalidateQueries({ queryKey: projectsQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: projectsQueryKeys.detail(variables.projectId.toString()) });
+    },
+  });
+};
+
+// Get available teams for project assignment
+export const useAvailableTeamsForProject = (options: any = {}) => {
+  return useQuery({
+    queryKey: [...projectsQueryKeys.all, 'available-teams'],
+    queryFn: () => getAvailableTeamsForProjectApi(),
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 8 * 60 * 1000, // 8 minutes
+    ...options,
   });
 };
 

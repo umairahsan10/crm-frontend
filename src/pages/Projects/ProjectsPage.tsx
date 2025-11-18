@@ -51,8 +51,9 @@ const ProjectsPage: React.FC = () => {
 
   // Role-based access control
   const canSeeAllProjects = user?.role === 'dep_manager' || user?.role === 'admin';
-  const canCreateProjects = user?.role === 'dep_manager' || user?.role === 'unit_head';
   const canAssignUnitHead = user?.role === 'dep_manager' || user?.role === 'admin';
+  // Only Unit Heads can assign teams (enforced by ProjectAssignmentGuard)
+  const canAssignTeam = user?.role === 'unit_head';
   const showFilters = canSeeAllProjects;
 
   // Convert filters to API format
@@ -160,39 +161,6 @@ const ProjectsPage: React.FC = () => {
 
   return (
     <div className="production-projects-management-page p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Projects Management</h1>
-            <p className="text-sm text-gray-900">
-              {canSeeAllProjects
-                ? 'Manage and track all company projects, assignments, and progress'
-                : 'View your assigned projects'}
-            </p>
-          </div>
-          {canCreateProjects && (
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => {
-                  setNotification({
-                    type: 'info',
-                    message: 'Create project from payment feature - requires selecting a cracked lead with payment. This functionality will be integrated with the Payments/Leads module.'
-                  });
-                  setTimeout(() => setNotification(null), 5000);
-                }}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                title="Create project from completed payment/cracked lead"
-              >
-                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Create Project
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Filters - Only show for users who can see all projects */}
       {showFilters && (
@@ -263,7 +231,7 @@ const ProjectsPage: React.FC = () => {
         canUpdate={canSeeAllProjects || (user?.role === 'unit_head' && selectedProject?.unitHeadId === (user?.id ? parseInt(user.id, 10) : undefined))}
         // Note: Team leads have read-only access, so they don't get canUpdate=true
         canAssignUnitHead={canAssignUnitHead}
-        canAssignTeam={user?.role === 'unit_head' && selectedProject?.unitHeadId === (user?.id ? parseInt(user.id, 10) : undefined)}
+        canAssignTeam={canAssignTeam}
       />
 
       {/* Confirmation Modal */}

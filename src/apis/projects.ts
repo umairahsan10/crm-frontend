@@ -3,6 +3,7 @@ import type {
   Project,
   CreateProjectFromPaymentRequest,
   AssignUnitHeadRequest,
+  AssignTeamRequest,
   UnifiedUpdateProjectDto,
   ProjectQueryParams,
   ApiResponse,
@@ -166,7 +167,82 @@ export const assignUnitHeadApi = async (
   }
 };
 
-// 5. Update project (unified endpoint)
+// 5. Assign team to project
+export const assignTeamApi = async (
+  projectId: number,
+  assignData: AssignTeamRequest
+): Promise<ApiResponse<Project>> => {
+  try {
+    console.log(`Assigning team to project ${projectId}:`, assignData);
+    const data = await apiPutJson<any>(`/projects/${projectId}/assign-team`, assignData);
+    console.log('Team assigned successfully:', data);
+    
+    // Handle API response format
+    if (typeof data === 'object' && 'success' in data) {
+      return {
+        success: data.success,
+        message: data.message || 'Team assigned successfully',
+        data: data.data
+      };
+    }
+    
+    throw new Error('Invalid response format from assign team API');
+  } catch (error: any) {
+    console.error('Error assigning team:', error);
+    
+    // Handle different types of errors
+    if (error?.response?.status === 400) {
+      throw new Error(error.message || 'Invalid data provided');
+    } else if (error?.response?.status === 403) {
+      throw new Error('Access denied: Only managers and unit heads can assign teams');
+    } else if (error?.response?.status === 404) {
+      throw new Error('Project or team not found');
+    } else if (error?.response?.status === 401) {
+      throw new Error('Authentication required: Please login again');
+    } else if (error?.message) {
+      throw new Error(error.message);
+    }
+    
+    throw new Error('An unexpected error occurred while assigning team');
+  }
+};
+
+// 6. Get available teams for project assignment
+export const getAvailableTeamsForProjectApi = async (): Promise<ApiResponse<any[]>> => {
+  try {
+    console.log('Fetching available teams for project assignment');
+    const data = await apiGetJson<any>('/projects/available-teams');
+    console.log('Available teams fetched successfully:', data);
+    
+    // Handle API response format
+    if (typeof data === 'object' && 'success' in data && 'data' in data) {
+      return {
+        success: data.success,
+        message: data.message || 'Available teams fetched successfully',
+        data: data.data || []
+      };
+    }
+    
+    throw new Error('Invalid response format from available teams API');
+  } catch (error: any) {
+    console.error('Error fetching available teams:', error);
+    
+    // Handle different types of errors
+    if (error?.response?.status === 400) {
+      throw new Error(error.message || 'Failed to retrieve available teams');
+    } else if (error?.response?.status === 403) {
+      throw new Error('Access denied: You do not have permission to view available teams');
+    } else if (error?.response?.status === 401) {
+      throw new Error('Authentication required: Please login again');
+    } else if (error?.message) {
+      throw new Error(error.message);
+    }
+    
+    throw new Error('An unexpected error occurred while fetching available teams');
+  }
+};
+
+// 7. Update project (unified endpoint)
 export const updateProjectApi = async (
   projectId: number,
   updateData: UnifiedUpdateProjectDto

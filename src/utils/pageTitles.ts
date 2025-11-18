@@ -40,7 +40,6 @@ export const getPageTitle = (pathname: string): string => {
     '/leads/create': 'Create Lead',
     '/deals': 'Deals Management',
     '/sales': 'Sales Management',
-    '/company': 'Company Management',
     '/clients': 'Clients Management',
     
     // Project Management routes

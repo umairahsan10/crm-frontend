@@ -1,4 +1,4 @@
-import { apiGetJson, apiPutJson, ApiError } from '../utils/apiClient';
+import { apiGetJson, apiPutJson, apiPostJson, apiDeleteJson, ApiError } from '../utils/apiClient';
 
 export type AdminRole = 'admin' | 'super_manager';
 
@@ -20,6 +20,14 @@ export interface AdminResponse {
   role: AdminRole;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateAdminDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role?: AdminRole;
 }
 
 export interface UpdateAdminDto {
@@ -147,5 +155,43 @@ export const updateAdminProfileApi = async (adminData: UpdateAdminDto): Promise<
       throw error;
     }
     throw new Error('Failed to update admin profile');
+  }
+};
+
+export const createAdminApi = async (adminData: CreateAdminDto): Promise<AdminData> => {
+  try {
+    const response = await apiPostJson<AdminResponse>('/admin', adminData);
+    return response;
+  } catch (error) {
+    console.error('Create admin API Error:', error);
+    if (error instanceof ApiError) {
+      if (error.status === 409) {
+        throw new Error('Email already exists');
+      }
+      if (error.status === 400) {
+        throw new Error(`Validation error: ${error.message}`);
+      }
+      throw new Error(`Failed to create admin: ${error.message}`);
+    }
+    throw new Error('Failed to create admin');
+  }
+};
+
+export const deleteAdminApi = async (id: number): Promise<{ message: string }> => {
+  try {
+    const response = await apiDeleteJson<{ message: string }>(`/admin/${id}`);
+    return response;
+  } catch (error) {
+    console.error('Delete admin API Error:', error);
+    if (error instanceof ApiError) {
+      if (error.status === 404) {
+        throw new Error('Admin not found');
+      }
+      if (error.status === 400) {
+        throw new Error(`Cannot delete: ${error.message}`);
+      }
+      throw new Error(`Failed to delete admin: ${error.message}`);
+    }
+    throw new Error('Failed to delete admin');
   }
 };
