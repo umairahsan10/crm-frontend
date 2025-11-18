@@ -35,7 +35,7 @@ const ProfilePage: React.FC = () => {
   // React Query hooks - automatic caching and loading states
   const userType = user?.type === 'admin' ? 'admin' : 'employee';
   const { data: apiData, isLoading, error, refetch } = useProfile(userType);
-  const updateProfileMutation = useUpdateProfile();
+  const updateProfileMutation = useUpdateProfile(userType);
   const updatePasswordMutation = useUpdatePassword();
 
   // Format role name nicely (e.g., "dept_manager" -> "Department Manager")
@@ -73,14 +73,14 @@ const ProfilePage: React.FC = () => {
 
     if (user?.type === 'admin') {
       return {
-        name: `${apiData.firstName} ${apiData.lastName}`,
-        email: apiData.email,
+        name: `${apiData.firstName || ''} ${apiData.lastName || ''}`,
+        email: apiData.email || '',
         phone: '',
         department: 'Admin',
         role: formatRoleName(apiData.role || 'admin'),
         avatar: '',
         address: '',
-        employeeId: apiData.id.toString(),
+        employeeId: apiData.id ? apiData.id.toString() : '',
         startDate: '',
         manager: '',
         teamLead: '',
@@ -91,14 +91,14 @@ const ProfilePage: React.FC = () => {
       const formattedRole = formatRoleName(roleName);
       
       return {
-        name: `${apiData.firstName} ${apiData.lastName}`,
-        email: apiData.email,
+        name: `${apiData.firstName || ''} ${apiData.lastName || ''}`,
+        email: apiData.email || '',
         phone: apiData.phone || '',
         department: apiData.department?.name || '',
         role: formattedRole,
         avatar: apiData.avatar || '',
         address: apiData.address || '',
-        employeeId: apiData.id.toString(),
+        employeeId: apiData.id ? apiData.id.toString() : '',
         startDate: apiData.startDate || '',
         manager: apiData.manager ? `${apiData.manager.firstName} ${apiData.manager.lastName}` : '',
         teamLead: apiData.teamLead ? `${apiData.teamLead.firstName} ${apiData.teamLead.lastName}` : '',

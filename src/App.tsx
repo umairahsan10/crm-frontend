@@ -27,7 +27,6 @@ import DealsPage from './pages/Deals/DealsPage';
 import ReportsPage from './pages/Sales/ReportsPage';
 import LeadsManagementPage from './pages/Leads/LeadsManagementPage';
 import LeadsCreationPage from './pages/Leads/LeadsCreationPage';
-import CompanyManagementPage from './pages/Company/CompanyManagementPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 
 // Import dashboard components
@@ -238,10 +237,6 @@ function AppLayout() {
         <Route 
           path="/leads/create" 
           element={canAccessPage('leads') ? <LeadsCreationPage /> : <Navigate to="/login" replace />} 
-        />
-        <Route 
-          path="/company" 
-          element={canAccessPage('company') ? <CompanyManagementPage /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/settings" 

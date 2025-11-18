@@ -85,6 +85,10 @@ export interface AssignUnitHeadRequest {
   unitHeadId: number;
 }
 
+export interface AssignTeamRequest {
+  teamId: number;
+}
+
 export interface UnifiedUpdateProjectDto {
   description?: string;
   difficulty?: DifficultyLevel;

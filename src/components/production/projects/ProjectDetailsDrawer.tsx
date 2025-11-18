@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import type { Project } from '../../../types/production/projects';
-import { useProject } from '../../../hooks/queries/useProjectsQueries';
+import React, { useState, useEffect, useMemo } from 'react';
+import type { Project, UnifiedUpdateProjectDto } from '../../../types/production/projects';
+import { useProject, useAssignUnitHead, useUpdateProject, useAvailableTeamsForProject } from '../../../hooks/queries/useProjectsQueries';
+import { useAvailableUnitHeads } from '../../../hooks/queries/useProductionUnitsQueries';
 import { useNavbar } from '../../../context/NavbarContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useNotification } from '../../../hooks/useNotification';
 import PhaseProgressBar from './PhaseProgressBar';
 import PhaseProgressEditor from './PhaseProgressEditor';
 import UpdateProjectForm from './UpdateProjectForm';
@@ -28,11 +30,30 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
 }) => {
   const { isNavbarOpen } = useNavbar();
   const { user } = useAuth();
+  const notification = useNotification();
   const [activeTab, setActiveTab] = useState<'details' | 'employees' | 'update'>('details');
   const [isMobile, setIsMobile] = useState(false);
+  const [showAssignUnitHeadDropdown, setShowAssignUnitHeadDropdown] = useState(false);
+  const [showAssignTeamDropdown, setShowAssignTeamDropdown] = useState(false);
+
+  // Fetch available unit heads when dropdown should be shown
+  const { data: unitHeadsData, isLoading: isLoadingUnitHeads } = useAvailableUnitHeads(undefined, {
+    enabled: showAssignUnitHeadDropdown && canAssignUnitHead
+  });
+
+  // Fetch available teams when dropdown should be shown
+  const { data: teamsData, isLoading: isLoadingTeams } = useAvailableTeamsForProject({
+    enabled: showAssignTeamDropdown && canAssignTeam
+  });
+
+  // Assign unit head mutation
+  const assignUnitHeadMutation = useAssignUnitHead();
+
+  // Update project mutation (used for team assignment)
+  const updateProjectMutation = useUpdateProject();
 
   // Fetch detailed project data
-  const { data: projectData, isLoading: isLoadingProject } = useProject(
+  const { data: projectData, isLoading: isLoadingProject, refetch: refetchProject } = useProject(
     project?.id?.toString() || '',
     { enabled: !!project?.id && isOpen }
   );
@@ -52,14 +73,188 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
   useEffect(() => {
     if (project) {
       setActiveTab('details');
+      setShowAssignUnitHeadDropdown(false);
+      setShowAssignTeamDropdown(false);
     }
   }, [project]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showAssignUnitHeadDropdown && !target.closest('.unit-head-dropdown')) {
+        setShowAssignUnitHeadDropdown(false);
+      }
+      if (showAssignTeamDropdown && !target.closest('.team-dropdown')) {
+        setShowAssignTeamDropdown(false);
+      }
+    };
+
+    if (showAssignUnitHeadDropdown || showAssignTeamDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showAssignUnitHeadDropdown, showAssignTeamDropdown]);
+
+  // Extract available unit heads from API response
+  const availableUnitHeads = useMemo(() => {
+    if (!unitHeadsData) return [];
+    const response = unitHeadsData as any;
+    
+    // Handle different response structures
+    if (response?.data?.heads && Array.isArray(response.data.heads)) {
+      return response.data.heads;
+    }
+    if (response?.data && Array.isArray(response.data)) {
+      return response.data;
+    }
+    if (response?.heads && Array.isArray(response.heads)) {
+      return response.heads;
+    }
+    return [];
+  }, [unitHeadsData]);
+
+  // Extract available teams from API response
+  const availableTeams = useMemo(() => {
+    if (!teamsData) return [];
+    const response = teamsData as any;
+    
+    // Handle API response structure: { success: true, data: [...], total: number, message: string }
+    if (response?.data && Array.isArray(response.data)) {
+      return response.data;
+    }
+    // Fallback for direct array
+    if (Array.isArray(response)) {
+      return response;
+    }
+    return [];
+  }, [teamsData]);
 
   if (!isOpen || !project) return null;
 
   const currentProject = (projectData && typeof projectData === 'object' && 'data' in projectData)
     ? (projectData.data as Project)
     : project;
+
+  // Handle assign unit head when selected from dropdown
+  const handleUnitHeadSelect = async (unitHeadId: number) => {
+    if (!currentProject) return;
+
+    try {
+      const result = await assignUnitHeadMutation.mutateAsync({
+        projectId: currentProject.id,
+        assignData: { unitHeadId }
+      });
+      
+      // Wait a bit for query invalidation to complete, then refetch
+      setTimeout(async () => {
+        const refetchedData = await refetchProject();
+        
+        // Extract the updated project from refetched data
+        let updatedProject: Project | null = null;
+        if (refetchedData?.data) {
+          const response = refetchedData.data as any;
+          if (response?.data) {
+            updatedProject = response.data as Project;
+          } else if (response && typeof response === 'object' && 'id' in response) {
+            updatedProject = response as Project;
+          }
+        }
+        
+        // Also try to extract from mutation result
+        if (!updatedProject && result) {
+          const resultData = result as any;
+          if (resultData?.data) {
+            updatedProject = resultData.data as Project;
+          }
+        }
+        
+        // Update parent component if callback is provided
+        if (updatedProject && onProjectUpdated) {
+          onProjectUpdated(updatedProject);
+        }
+      }, 500);
+      
+      notification.show({ message: 'Unit head assigned successfully', type: 'success' });
+      setShowAssignUnitHeadDropdown(false);
+    } catch (error: any) {
+      console.error('Error assigning unit head:', error);
+      notification.show({ 
+        message: error.message || 'Failed to assign unit head', 
+        type: 'error' 
+      });
+    }
+  };
+
+  // Handle assign team when selected from dropdown
+  const handleTeamSelect = async (teamId: number) => {
+    if (!currentProject) return;
+
+    try {
+      // Prepare update data - team assignment uses unified update endpoint
+      const updateData: UnifiedUpdateProjectDto = {
+        teamId
+      };
+
+      // If project doesn't have deadline or difficulty, both must be provided
+      if (!currentProject.deadline || !currentProject.difficultyLevel) {
+        // Set default deadline if missing (30 days from now)
+        if (!currentProject.deadline) {
+          const defaultDeadline = new Date();
+          defaultDeadline.setDate(defaultDeadline.getDate() + 30);
+          updateData.deadline = defaultDeadline.toISOString();
+        }
+
+        // Set default difficulty if missing
+        if (!currentProject.difficultyLevel) {
+          updateData.difficulty = 'medium';
+        }
+      }
+      
+      const result = await updateProjectMutation.mutateAsync({
+        projectId: currentProject.id,
+        updateData
+      });
+      
+      // Wait a bit for query invalidation to complete, then refetch
+      setTimeout(async () => {
+        const refetchedData = await refetchProject();
+        
+        // Extract the updated project from refetched data
+        let updatedProject: Project | null = null;
+        if (refetchedData?.data) {
+          const response = refetchedData.data as any;
+          if (response?.data) {
+            updatedProject = response.data as Project;
+          } else if (response && typeof response === 'object' && 'id' in response) {
+            updatedProject = response as Project;
+          }
+        }
+        
+        // Also try to extract from mutation result
+        if (!updatedProject && result) {
+          const resultData = result as any;
+          if (resultData?.data) {
+            updatedProject = resultData.data as Project;
+          }
+        }
+        
+        // Update parent component if callback is provided
+        if (updatedProject && onProjectUpdated) {
+          onProjectUpdated(updatedProject);
+        }
+      }, 500);
+      
+      notification.show({ message: 'Team assigned successfully', type: 'success' });
+      setShowAssignTeamDropdown(false);
+    } catch (error: any) {
+      console.error('Error assigning team:', error);
+      notification.show({ 
+        message: error.message || 'Failed to assign team', 
+        type: 'error' 
+      });
+    }
+  };
 
   if (!currentProject) {
     return null;
@@ -316,15 +511,70 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                             )}
                           </div>
                           {canAssignUnitHead && !currentProject.unitHead && (
-                            <button
-                              onClick={() => {
-                                // TODO: Open assign unit head modal
-                                console.log('Assign unit head clicked');
-                              }}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                              Assign
-                            </button>
+                            <div className="relative">
+                              <button
+                                onClick={() => setShowAssignUnitHeadDropdown(!showAssignUnitHeadDropdown)}
+                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                              >
+                                Assign
+                                <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                              
+                              {showAssignUnitHeadDropdown && (
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
+                                  <div className="p-4 max-h-96 overflow-y-auto">
+                                    {isLoadingUnitHeads ? (
+                                      <div className="flex items-center justify-center py-8">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        <span className="ml-3 text-gray-600">Loading available unit heads...</span>
+                                      </div>
+                                    ) : availableUnitHeads.length === 0 ? (
+                                      <div className="text-center py-8">
+                                        <div className="text-gray-400 mb-2">
+                                          <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                          </svg>
+                                        </div>
+                                        <p className="text-gray-500 text-sm">No available unit heads found</p>
+                                        <p className="text-gray-400 text-xs mt-1">All unit heads may already be assigned</p>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {availableUnitHeads.map((head: any) => (
+                                          <div
+                                            key={head.id}
+                                            onClick={() => !assignUnitHeadMutation.isPending && handleUnitHeadSelect(head.id)}
+                                            className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                                              assignUnitHeadMutation.isPending
+                                                ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
+                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className="flex items-center space-x-3">
+                                              <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center">
+                                                <span className="text-sm font-medium text-white">
+                                                  {head.firstName?.charAt(0) || 'U'}{head.lastName?.charAt(0) || 'H'}
+                                                </span>
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <h3 className="text-sm font-medium text-gray-900 truncate">
+                                                  {head.firstName} {head.lastName}
+                                                </h3>
+                                                {head.email && (
+                                                  <p className="text-sm text-gray-500 truncate">{head.email}</p>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
 
@@ -360,16 +610,78 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                               </>
                             )}
                           </div>
-                          {canAssignTeam && !currentProject.team && (
-                            <button
-                              onClick={() => {
-                                // TODO: Open assign team modal
-                                console.log('Assign team clicked');
-                              }}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                              Assign
-                            </button>
+                          {canAssignTeam && !currentProject.team && currentProject.unitHead && (
+                            <div className="relative team-dropdown">
+                              <button
+                                onClick={() => setShowAssignTeamDropdown(!showAssignTeamDropdown)}
+                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                              >
+                                Assign
+                                <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                              
+                              {showAssignTeamDropdown && (
+                                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
+                                  <div className="p-4 max-h-96 overflow-y-auto">
+                                    {isLoadingTeams ? (
+                                      <div className="flex items-center justify-center py-8">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        <span className="ml-3 text-gray-600">Loading available teams...</span>
+                                      </div>
+                                    ) : availableTeams.length === 0 ? (
+                                      <div className="text-center py-8">
+                                        <div className="text-gray-400 mb-2">
+                                          <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                          </svg>
+                                        </div>
+                                        <p className="text-gray-500 text-sm">No available teams found</p>
+                                        <p className="text-gray-400 text-xs mt-1">All teams may already be assigned</p>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {availableTeams.map((team: any) => (
+                                          <div
+                                            key={team.id}
+                                            onClick={() => !updateProjectMutation.isPending && handleTeamSelect(team.id)}
+                                            className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                                              updateProjectMutation.isPending
+                                                ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
+                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className="flex items-center space-x-3">
+                                              <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center">
+                                                <span className="text-sm font-medium text-white">
+                                                  {team.name?.charAt(0) || 'T'}
+                                                </span>
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <h3 className="text-sm font-medium text-gray-900 truncate">
+                                                  {team.name}
+                                                </h3>
+                                                {team.teamLead && (
+                                                  <p className="text-sm text-gray-500 truncate">
+                                                    Lead: {team.teamLead.firstName} {team.teamLead.lastName}
+                                                  </p>
+                                                )}
+                                                {team.employeeCount !== undefined && (
+                                                  <p className="text-xs text-gray-400 mt-1">
+                                                    {team.employeeCount} member{team.employeeCount !== 1 ? 's' : ''}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -490,6 +802,7 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
           </div>
         </div>
       </div>
+
     </div>
   );
 };

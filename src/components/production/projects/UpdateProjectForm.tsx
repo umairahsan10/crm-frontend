@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useUpdateProject } from '../../../hooks/queries/useProjectsQueries';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useUpdateProject, useAvailableTeamsForProject } from '../../../hooks/queries/useProjectsQueries';
 import { useAuth } from '../../../context/AuthContext';
 import type { Project, UnifiedUpdateProjectDto, DifficultyLevel, ProjectStatus } from '../../../types/production/projects';
 import { validateFieldPermissions } from '../../../utils/projectValidation';
@@ -17,6 +17,28 @@ const UpdateProjectForm: React.FC<UpdateProjectFormProps> = ({
 }) => {
   const { user } = useAuth();
   const updateProjectMutation = useUpdateProject();
+  
+  // Fetch available teams if user can update team
+  const canUpdateTeam = validateFieldPermissions(user?.role, 'teamId', project, user?.id ? parseInt(user.id, 10) : undefined).valid;
+  const { data: teamsData, isLoading: isLoadingTeams } = useAvailableTeamsForProject({
+    enabled: canUpdateTeam
+  });
+
+  // Extract available teams from API response
+  const availableTeams = useMemo(() => {
+    if (!teamsData) return [];
+    const response = teamsData as any;
+    
+    // Handle API response structure: { success: true, data: [...], total: number, message: string }
+    if (response?.data && Array.isArray(response.data)) {
+      return response.data;
+    }
+    // Fallback for direct array
+    if (Array.isArray(response)) {
+      return response;
+    }
+    return [];
+  }, [teamsData]);
   
   // Validate project has an ID
   if (!project?.id) {
@@ -38,7 +60,6 @@ const UpdateProjectForm: React.FC<UpdateProjectFormProps> = ({
   const canUpdateDifficulty = validateFieldPermissions(user?.role, 'difficultyLevel', project, userId).valid;
   const canUpdateStatus = validateFieldPermissions(user?.role, 'status', project, userId).valid;
   const canUpdateDeadline = validateFieldPermissions(user?.role, 'deadline', project, userId).valid;
-  const canUpdateTeam = validateFieldPermissions(user?.role, 'teamId', project, userId).valid;
 
   const [formData, setFormData] = useState<UnifiedUpdateProjectDto>({
     description: project.description || '',
@@ -51,6 +72,22 @@ const UpdateProjectForm: React.FC<UpdateProjectFormProps> = ({
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTeamDropdown, setShowTeamDropdown] = useState(false);
+
+  // Find selected team from available teams or project team
+  const selectedTeam = useMemo(() => {
+    if (formData.teamId) {
+      // First try to find in available teams
+      const team = availableTeams.find((t: any) => t.id === formData.teamId);
+      if (team) return team;
+      
+      // Fallback to project team if available
+      if (project.team && project.team.id === formData.teamId) {
+        return project.team;
+      }
+    }
+    return null;
+  }, [formData.teamId, availableTeams, project.team]);
 
   // Update form data when project changes
   useEffect(() => {
@@ -62,7 +99,26 @@ const UpdateProjectForm: React.FC<UpdateProjectFormProps> = ({
       teamId: project.teamId || undefined
       // Note: paymentStage and liveProgress are automatic - not included in form
     });
+    setShowTeamDropdown(false);
   }, [project]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showTeamDropdown) {
+        const target = event.target as HTMLElement;
+        const dropdown = target.closest('.team-dropdown-container');
+        if (!dropdown) {
+          setShowTeamDropdown(false);
+        }
+      }
+    };
+
+    if (showTeamDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showTeamDropdown]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -304,28 +360,122 @@ const UpdateProjectForm: React.FC<UpdateProjectFormProps> = ({
 
       {/* Note: Live Progress removed - it's automatic based on payment phases */}
 
-      {/* Team ID - Note: This would typically be handled through a team selection dropdown, but for now we'll show as number input */}
+      {/* Team Selection */}
       {canUpdateTeam && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Team ID
+            Team
           </label>
-          <input
-            type="number"
-            value={formData.teamId || ''}
-            onChange={(e) => handleInputChange('teamId', e.target.value ? parseInt(e.target.value) : undefined)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              errors.teamId ? 'border-red-300' : 'border-gray-300'
-            }`}
-            placeholder="Enter team ID"
-            disabled={isSubmitting}
-          />
+          <div className="relative team-dropdown-container">
+            {/* Selected Team Display / Dropdown Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowTeamDropdown(!showTeamDropdown);
+              }}
+              disabled={isSubmitting}
+              className={`w-full px-3 py-2 border rounded-md text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.teamId ? 'border-red-300' : 'border-gray-300'
+              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              {selectedTeam ? (
+                <div className="flex items-center space-x-2">
+                  <div className="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-medium text-white">
+                      {selectedTeam.name?.charAt(0) || 'T'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {selectedTeam.name}
+                    </p>
+                    {selectedTeam.teamLead && (
+                      <p className="text-xs text-gray-500 truncate">
+                        Lead: {selectedTeam.teamLead.firstName} {selectedTeam.teamLead.lastName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <span className="text-sm text-gray-500">Select a team</span>
+              )}
+              <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {showTeamDropdown && (
+              <div className="absolute z-50 mt-2 w-full bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto">
+                <div className="p-4">
+                  {isLoadingTeams ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="ml-3 text-gray-600">Loading available teams...</span>
+                    </div>
+                  ) : availableTeams.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="text-gray-400 mb-2">
+                        <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-500 text-sm">No available teams found</p>
+                      <p className="text-gray-400 text-xs mt-1">All teams may already be assigned</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Available Teams */}
+                      {availableTeams.map((team: any) => (
+                        <div
+                          key={team.id}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleInputChange('teamId', team.id);
+                            setShowTeamDropdown(false);
+                          }}
+                          className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                            formData.teamId === team.id
+                              ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                              : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center">
+                              <span className="text-sm font-medium text-white">
+                                {team.name?.charAt(0) || 'T'}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-medium text-gray-900 truncate">
+                                {team.name}
+                              </h3>
+                              {team.teamLead && (
+                                <p className="text-sm text-gray-500 truncate">
+                                  Lead: {team.teamLead.firstName} {team.teamLead.lastName}
+                                </p>
+                              )}
+                              {team.employeeCount !== undefined && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {team.employeeCount} member{team.employeeCount !== 1 ? 's' : ''}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           {errors.teamId && (
             <p className="mt-1 text-sm text-red-600">{errors.teamId}</p>
           )}
-          <p className="mt-1 text-xs text-gray-500">
-            Note: Team assignment should be done through the Assign Team action
-          </p>
         </div>
       )}
 
