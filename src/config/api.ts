@@ -1,19 +1,21 @@
 /**
  * API Configuration
- * Set your backend server URL here
+ * @deprecated Use constants from src/config/constants.ts instead
+ * This file is kept for backward compatibility
  */
 
+import { API_BASE_URL, API_TIMEOUT } from './constants';
+
 export const API_CONFIG = {
-  // Change this to your backend server URL
-  BASE_URL: 'http://localhost:3000', // Default backend port
-  TIMEOUT: 30000, // 30 seconds timeout
+  BASE_URL: API_BASE_URL,
+  TIMEOUT: API_TIMEOUT,
 };
 
-// You can also use environment variables
+// Keep these functions for backward compatibility
 export const getApiBaseUrl = () => {
-  return import.meta.env.VITE_API_BASE_URL || API_CONFIG.BASE_URL;
+  return API_BASE_URL;
 };
 
 export const getApiTimeout = () => {
-  return parseInt(import.meta.env.VITE_API_TIMEOUT || API_CONFIG.TIMEOUT.toString());
+  return API_TIMEOUT;
 };

@@ -4,10 +4,8 @@
  */
 
 import { getAuthData, isTokenExpired } from './cookieUtils';
-import { getApiBaseUrl, getApiTimeout } from '../config/api';
-
-// Base URL for API requests
-const API_BASE_URL = getApiBaseUrl();
+import { getApiTimeout } from '../config/api';
+import { API_BASE_URL } from '../config/constants';
 
 export interface ApiRequestOptions extends RequestInit {
   requireAuth?: boolean;
