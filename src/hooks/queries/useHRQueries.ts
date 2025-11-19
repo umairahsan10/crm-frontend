@@ -30,7 +30,9 @@ import {
 } from '../../apis/hr-employees';
 import {
   getAttendanceLogsApi,
-  type AttendanceLogDto
+  getMyAttendanceLogsApi,
+  type AttendanceLogDto,
+  type MyAttendanceLogDto
 } from '../../apis/attendance';
 
 // ============================================================================
@@ -69,6 +71,8 @@ export const hrQueryKeys = {
     all: ['hr', 'attendance'] as const,
     logs: () => [...hrQueryKeys.attendance.all, 'logs'] as const,
     log: (filters: any) => [...hrQueryKeys.attendance.logs(), filters] as const,
+    myLogs: () => [...hrQueryKeys.attendance.all, 'my-logs'] as const,
+    myLog: (filters: any) => [...hrQueryKeys.attendance.myLogs(), filters] as const,
     statistics: (date: string) => [...hrQueryKeys.attendance.all, 'statistics', date] as const,
   },
 };
@@ -395,6 +399,31 @@ export const useAttendanceLogs = (
       console.log('🔍 [ATTENDANCE] Fetching attendance logs with filters:', filters);
       const response = await getAttendanceLogsApi(filters);
       console.log('✅ [ATTENDANCE] Attendance logs fetched successfully:', response);
+      return response;
+    },
+    staleTime: 1 * 60 * 1000, // 1 minute - attendance changes frequently
+    gcTime: 3 * 60 * 1000, // 3 minutes
+    enabled: options?.enabled !== false,
+    ...options,
+  });
+};
+
+/**
+ * Hook to fetch current user's attendance logs (my-logs endpoint)
+ * Employee ID is automatically extracted from JWT token
+ * @param filters - Optional date range filters (start_date, end_date)
+ * @param options - React Query options
+ */
+export const useMyAttendanceLogs = (
+  filters?: MyAttendanceLogDto,
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: hrQueryKeys.attendance.myLog(filters || {}),
+    queryFn: async () => {
+      console.log('🔍 [MY ATTENDANCE] Fetching my attendance logs with filters:', filters);
+      const response = await getMyAttendanceLogsApi(filters);
+      console.log('✅ [MY ATTENDANCE] My attendance logs fetched successfully:', response);
       return response;
     },
     staleTime: 1 * 60 * 1000, // 1 minute - attendance changes frequently

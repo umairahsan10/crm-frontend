@@ -6,7 +6,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import AttendanceCalendar from '../../components/attendance/AttendanceCalendar';
-import { useAttendanceLogs } from '../../hooks/queries/useHRQueries';
+import { useMyAttendanceLogs } from '../../hooks/queries/useHRQueries';
 import DataStatistics from '../../components/common/Statistics/DataStatistics';
 
 interface AttendanceEvent {
@@ -27,9 +27,6 @@ const MyAttendancePage: React.FC = () => {
   });
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
 
-  // Get employee ID from user
-  const employeeId = user?.id ? parseInt(user.id) : null;
-
   // Calculate date range for the selected month
   const dateRange = useMemo(() => {
     const [year, month] = selectedMonth.split('-').map(Number);
@@ -39,17 +36,15 @@ const MyAttendancePage: React.FC = () => {
     return { startDate, endDate };
   }, [selectedMonth]);
 
-  // Fetch attendance logs for the current user
-  const attendanceQuery = useAttendanceLogs(
-    employeeId
-      ? {
-          employee_id: employeeId,
-          start_date: dateRange.startDate,
-          end_date: dateRange.endDate,
-        }
-      : {},
+  // Fetch attendance logs for the current user using my-logs endpoint
+  // Employee ID is automatically extracted from JWT token
+  const attendanceQuery = useMyAttendanceLogs(
     {
-      enabled: !!employeeId,
+      start_date: dateRange.startDate,
+      end_date: dateRange.endDate,
+    },
+    {
+      enabled: !!user?.id, // Only fetch if user is authenticated
     }
   );
 
@@ -147,7 +142,7 @@ const MyAttendancePage: React.FC = () => {
     },
   ];
 
-  if (!employeeId) {
+  if (!user?.id) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
@@ -165,9 +160,9 @@ const MyAttendancePage: React.FC = () => {
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
               />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Employee ID Not Found</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Authentication Required</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Unable to load attendance. Please contact your administrator.
+              Unable to load attendance. Please log in to view your attendance records.
             </p>
           </div>
         </div>
