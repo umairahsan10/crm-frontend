@@ -1,4 +1,5 @@
 import { apiGetJson, apiPostJson, apiPutJson, apiPatchJson, apiDeleteJson, ApiError } from '../utils/apiClient';
+import { API_BASE_URL } from '../config/constants';
 
 /**
  * HR Employee Management API
@@ -16,9 +17,6 @@ import { apiGetJson, apiPostJson, apiPutJson, apiPatchJson, apiDeleteJson, ApiEr
  * - DELETE /hr/employees/:id - Delete employee
  * - POST /hr/terminate - Terminate employee
  */
-
-// API Base URL - Update this to match your backend URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // HR Employee Management Types - Updated to match backend exactly
 export interface Employee {

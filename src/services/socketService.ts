@@ -1,6 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { SOCKET_URL } from '../config/constants';
 
 interface SocketMessage {
   chatId: number;
@@ -46,7 +45,7 @@ class SocketService {
       return this.socket;
     }
 
-    this.socket = io(`${API_BASE_URL}/chat`, {
+    this.socket = io(`${SOCKET_URL}/chat`, {
       auth: {
         token: token
       },
