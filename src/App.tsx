@@ -3,7 +3,9 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { NavbarProvider } from './context/NavbarContext';
 import Layout from './components/previous_components/Layout/Layout';
 import Login from './pages/Login/Login';
+import { PageErrorBoundary } from './components/common/ErrorBoundary';
 import './App.css';
+import './components/common/ErrorBoundary/ErrorBoundary.css';
 
 // Import existing page components
 import DashboardPage from './pages/Dashboard/DashboardPage';
@@ -74,24 +76,26 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Main App Component
 function App() {
   return (
-    <AuthProvider>
-      <NavbarProvider>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </Router>
-      </NavbarProvider>
-    </AuthProvider>
+    <PageErrorBoundary>
+      <AuthProvider>
+        <NavbarProvider>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/*"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </Router>
+        </NavbarProvider>
+      </AuthProvider>
+    </PageErrorBoundary>
   );
 }
 
@@ -105,13 +109,14 @@ function AppLayout() {
   };
 
   return (
-    <Layout
-      onNavigate={handleNavigation}
-      activePage="dashboard"
-      userRole={user?.role as any || 'employee'}
-      onLogout={logout}
-    >
-      <Routes>
+    <PageErrorBoundary resetKeys={[window.location.pathname]}>
+      <Layout
+        onNavigate={handleNavigation}
+        activePage="dashboard"
+        userRole={user?.role as any || 'employee'}
+        onLogout={logout}
+      >
+        <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route 
           path="/dashboard" 
@@ -287,6 +292,7 @@ function AppLayout() {
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Layout>
+    </PageErrorBoundary>
   );
 }
 
