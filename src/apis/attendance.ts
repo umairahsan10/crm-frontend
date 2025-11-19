@@ -87,6 +87,11 @@ export interface AttendanceLogDto {
   end_date?: string; // YYYY-MM-DD format
 }
 
+export interface MyAttendanceLogDto {
+  start_date?: string; // YYYY-MM-DD format
+  end_date?: string; // YYYY-MM-DD format
+}
+
 export interface AttendanceLogResponseDto {
   id: number;
   employee_id: number;
@@ -207,6 +212,38 @@ export const getAttendanceLogsApi = async (query: AttendanceLogDto): Promise<Att
       throw new Error(`Failed to fetch attendance logs: ${error.message}`);
     }
     throw new Error('Failed to fetch attendance logs');
+  }
+};
+
+/**
+ * Get my attendance logs (for current authenticated user)
+ * Employee ID is automatically extracted from JWT token
+ * @param query - Optional date range filters
+ * @returns Array of attendance log response DTOs
+ */
+export const getMyAttendanceLogsApi = async (query?: MyAttendanceLogDto): Promise<AttendanceLogResponseDto[]> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query?.start_date) queryParams.append('start_date', query.start_date);
+    if (query?.end_date) queryParams.append('end_date', query.end_date);
+    
+    // Endpoint: GET /hr/attendance/my-logs
+    // Employee ID is extracted from JWT token, no need to pass it
+    const url = `/hr/attendance/my-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    console.log('Fetching my attendance logs from:', url);
+    return await apiGetJson<AttendanceLogResponseDto[]>(url);
+  } catch (error: any) {
+    console.error('Get my attendance logs API error:', error);
+    if (error instanceof ApiError) {
+      // Log the actual response for debugging
+      console.error('API Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
+      throw new Error(`Failed to fetch my attendance logs: ${error.message}`);
+    }
+    throw new Error('Failed to fetch my attendance logs');
   }
 };
 
