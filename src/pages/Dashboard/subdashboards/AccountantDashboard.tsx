@@ -21,9 +21,9 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import type {
-  ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
+// ActivityItem removed - no longer using hardcoded activity functions
 
 // Register Chart.js components
 ChartJS.register(
@@ -83,7 +83,7 @@ const AccountantDashboard: React.FC = () => {
   const units = ['Accounts Payable', 'Accounts Receivable', 'Tax Department', 'Financial Reporting'];
 
   // Fetch metric grid data from API
-  const { data: metricGridData } = useMetricGrid();
+  const { data: metricGridData, isLoading: isLoadingMetrics, isError: isErrorMetrics, error: metricsError, refetch: refetchMetrics } = useMetricGrid();
 
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
@@ -135,64 +135,24 @@ const AccountantDashboard: React.FC = () => {
     return getMetricIcon(title);
   };
 
-
-  // Fallback dummy data for Accountant metric grid (used when API data is not available)
-  const accountantFallbackMetrics = [
-    {
-      title: 'Profit',
-      value: '$743.4K',
-      subtitle: 'All time',
-      change: '-$904.4K from last month',
-      changeType: 'negative' as const,
-      icon: <ProfitIcon />
-    },
-    {
-      title: 'Expense',
-      value: '$0',
-      subtitle: 'This month',
-      change: '-$7.0K from last month',
-      changeType: 'positive' as const,
-      icon: <ExpenseIcon />
-    },
-    {
-      title: 'Cash Flow',
-      value: '$0',
-      subtitle: 'This month',
-      change: '-$904.4K from last month',
-      changeType: 'negative' as const,
-      icon: <CashFlowIcon />
-    },
-    {
-      title: 'Revenue',
-      value: '$0',
-      subtitle: 'This month',
-      change: '-$911.3K from last month',
-      changeType: 'negative' as const,
-      icon: <RevenueIcon />
-    }
-  ];
-
-  // Get data based on role level
+  // Get data based on role level - Use only API data (no hardcoded fallbacks)
   const getDataForRole = () => {
-    // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+    // Use API data for overviewStats, show empty array if API fails (no hardcoded fallback)
     // Replace icons with SVG icons for financial metrics
     const overviewStats = metricGridData && metricGridData.length > 0
       ? metricGridData.map(metric => ({
           ...metric,
           icon: getFinancialMetricIcon(metric.title)
         }))
-      : accountantFallbackMetrics;
+      : []; // Empty array - will show error/empty state in UI
 
     // Get color themes for each metric
     const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
-    // Use API data for activities, fallback to local data if API is loading or fails
+    // Use API data for activities, show empty array if API fails (no hardcoded fallback)
     const activities = activityFeedData && activityFeedData.length > 0
       ? activityFeedData
-      : (roleLevel === 'department_manager' ? getDepartmentManagerActivities() :
-        roleLevel === 'unit_head' ? getUnitHeadActivities() :
-          roleLevel === 'team_lead' ? getTeamLeadActivities() :
-            getEmployeeActivities());
+      : []; // Empty array - will show error/empty state in UI
 
     switch (roleLevel) {
       case 'department_manager':
@@ -304,106 +264,8 @@ const AccountantDashboard: React.FC = () => {
     }
   ];
 
-  // Activities based on role
-  const getDepartmentManagerActivities = (): ActivityItem[] => [
-    {
-      id: '1',
-      title: 'Invoice #INV-2024-001 processed',
-      description: 'Payment of $15,000 received from ABC Corp',
-      time: '2 minutes ago',
-      type: 'success',
-      user: 'Payment System'
-    },
-    {
-      id: '2',
-      title: 'Expense report approved',
-      description: 'Marketing expenses for Q4 approved',
-      time: '1 hour ago',
-      type: 'info',
-      user: 'Finance Manager'
-    },
-    {
-      id: '3',
-      title: 'Tax filing completed',
-      description: 'Q4 tax returns submitted successfully',
-      time: '3 hours ago',
-      type: 'success',
-      user: 'Tax System'
-    },
-    {
-      id: '4',
-      title: 'Budget alert',
-      description: 'Marketing budget exceeded by 5%',
-      time: '5 hours ago',
-      type: 'warning',
-      user: 'Budget System'
-    }
-  ];
-
-  const getUnitHeadActivities = (): ActivityItem[] => [
-    {
-      id: '1',
-      title: 'Unit transaction processed',
-      description: 'New transaction assigned to Team A',
-      time: '2 hours ago',
-      type: 'info',
-      user: 'Finance Manager'
-    },
-    {
-      id: '2',
-      title: 'Team performance update',
-      description: 'Team B achieved 99.2% accuracy this week',
-      time: '4 hours ago',
-      type: 'success',
-      user: 'Team Lead'
-    },
-    {
-      id: '3',
-      title: 'Revenue milestone',
-      description: 'Unit reached $450K monthly revenue',
-      time: '6 hours ago',
-      type: 'success',
-      user: 'Finance System'
-    }
-  ];
-
-  const getTeamLeadActivities = (): ActivityItem[] => [
-    {
-      id: '1',
-      title: 'Team transaction completed',
-      description: 'Mike Johnson processed 5 transactions today',
-      time: '1 hour ago',
-      type: 'success',
-      user: 'Mike Johnson'
-    },
-    {
-      id: '2',
-      title: 'Invoice review reminder',
-      description: '2 team members have pending invoice reviews',
-      time: '3 hours ago',
-      type: 'warning',
-      user: 'Finance System'
-    }
-  ];
-
-  const getEmployeeActivities = (): ActivityItem[] => [
-    {
-      id: '1',
-      title: 'Transaction assigned',
-      description: 'New transaction assigned: Payment #123',
-      time: '2 hours ago',
-      type: 'info',
-      user: 'Team Lead'
-    },
-    {
-      id: '2',
-      title: 'Invoice review completed',
-      description: 'Invoice review for ABC Corp completed',
-      time: '4 hours ago',
-      type: 'success',
-      user: 'You'
-    }
-  ];
+  // REMOVED: Hardcoded activity functions - now using useActivityFeed() API hook
+  // All activity data comes from the API via useActivityFeed() hook
 
   // Fetch monthly trends data (revenue, expenses, liabilities) from API
   useEffect(() => {
@@ -469,14 +331,53 @@ const AccountantDashboard: React.FC = () => {
       {/* Overview Stats with Quick Access on Right */}
       <div className="flex items-stretch gap-4">
         <div className="flex-1">
-          <MetricGrid
-            metrics={currentData.overviewStats}
-            columns={4}
-            headerColor="from-emerald-50 to-transparent"
-            headerGradient="from-emerald-500 to-teal-600"
-            cardSize="md"
-            colorThemes={currentData.metricColorThemes}
-          />
+          {isLoadingMetrics ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : isErrorMetrics ? (
+            <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+              <div className="text-center py-8">
+                <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load metrics</h3>
+                <p className="mt-1 text-sm text-gray-500">{metricsError?.message || 'Unknown error occurred'}</p>
+                <button
+                  onClick={() => refetchMetrics()}
+                  className="mt-4 text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : currentData.overviewStats.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="text-center py-8">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No metrics available</h3>
+                <p className="mt-1 text-sm text-gray-500">No accountant metrics data found</p>
+              </div>
+            </div>
+          ) : (
+            <MetricGrid
+              metrics={currentData.overviewStats}
+              columns={4}
+              headerColor="from-emerald-50 to-transparent"
+              headerGradient="from-emerald-500 to-teal-600"
+              cardSize="md"
+              colorThemes={currentData.metricColorThemes}
+            />
+          )}
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">
           <DepartmentQuickAccess department="Accounts" />

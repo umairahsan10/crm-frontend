@@ -38,13 +38,36 @@ export const DepartmentDistributionChart: React.FC<DepartmentDistributionChartPr
   const [isVisible, setIsVisible] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
+  // Handle empty data
+  if (!data || data.length === 0) {
+    return (
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full" />
+            <h2 className="text-md font-bold text-gray-900">{title}</h2>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="text-center py-8">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No department data available</h3>
+            <p className="mt-1 text-sm text-gray-500">No department distribution data found</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Calculate total employees
   const totalEmployees = data.reduce((sum, dept) => sum + dept.value, 0);
 
   // Calculate percentages
   const dataWithPercentages = data.map(dept => ({
     ...dept,
-    percentage: ((dept.value / totalEmployees) * 100).toFixed(1)
+    percentage: totalEmployees > 0 ? ((dept.value / totalEmployees) * 100).toFixed(1) : '0'
   }));
 
   useEffect(() => {

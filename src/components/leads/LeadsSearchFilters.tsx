@@ -128,13 +128,8 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
   const [archivedFrom, setArchivedFrom] = useState('');
   const [archivedTo, setArchivedTo] = useState('');
   
-  // API data states
-  const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>(() => [
-    { id: 1, name: 'Sales Unit 1' },
-    { id: 2, name: 'Sales Unit 2' },
-    { id: 3, name: 'Enterprise Sales' },
-    { id: 4, name: 'SMB Sales' }
-  ]);
+  // API data states - no hardcoded initial data
+  const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>([]);
   const [employees, setEmployees] = useState<Array<{ 
     id?: string | number; 
     employeeId?: string | number;
@@ -146,12 +141,7 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
     lastName?: string;
     email?: string;
     [key: string]: any;
-  }>>(() => [
-    { id: '1', name: 'John Smith' },
-    { id: '2', name: 'Sarah Johnson' },
-    { id: '3', name: 'Mike Wilson' },
-    { id: '4', name: 'Emily Davis' }
-  ]);
+  }>>([]);
   const [industries, setIndustries] = useState<Array<{ id: number; name: string; description?: string }>>([]);
   
   const [isLoadingSalesUnits, setIsLoadingSalesUnits] = useState(false);
@@ -239,21 +229,14 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
           if (response.success && response.data && Array.isArray(response.data)) {
             setSalesUnits(response.data);
           } else {
-            setSalesUnits([
-              { id: 1, name: 'Sales Unit 1' },
-              { id: 2, name: 'Sales Unit 2' },
-              { id: 3, name: 'Enterprise Sales' },
-              { id: 4, name: 'SMB Sales' }
-            ]);
+            // No fallback - show empty state if API fails
+            setSalesUnits([]);
+            console.error('Sales units API failed:', response);
           }
         } catch (error) {
           console.error('Error fetching sales units:', error);
-          setSalesUnits([
-            { id: 1, name: 'Sales Unit 1' },
-            { id: 2, name: 'Sales Unit 2' },
-            { id: 3, name: 'Enterprise Sales' },
-            { id: 4, name: 'SMB Sales' }
-          ]);
+          // No fallback - show empty state on error
+          setSalesUnits([]);
         } finally {
           setIsLoadingSalesUnits(false);
         }
@@ -274,21 +257,14 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
           if (response.success && response.data && Array.isArray(response.data)) {
             setIndustries(response.data);
           } else {
-            setIndustries([
-              { id: 1, name: 'Technology' },
-              { id: 2, name: 'Healthcare' },
-              { id: 3, name: 'Finance' },
-              { id: 4, name: 'E-commerce' }
-            ]);
+            // No fallback - show empty state if API fails
+            setIndustries([]);
+            console.error('Industries API failed:', response);
           }
         } catch (error) {
           console.error('Error fetching industries:', error);
-          setIndustries([
-            { id: 1, name: 'Technology' },
-            { id: 2, name: 'Healthcare' },
-            { id: 3, name: 'Finance' },
-            { id: 4, name: 'E-commerce' }
-          ]);
+          // No fallback - show empty state on error
+          setIndustries([]);
         } finally {
           setIsLoadingIndustries(false);
         }
@@ -310,21 +286,14 @@ const LeadsSearchFilters: React.FC<LeadsSearchFiltersProps> = ({
           if (response.success && response.data && Array.isArray(response.data)) {
             setEmployees(response.data);
           } else {
-            setEmployees([
-              { id: '1', name: 'John Smith' },
-              { id: '2', name: 'Sarah Johnson' },
-              { id: '3', name: 'Mike Wilson' },
-              { id: '4', name: 'Emily Davis' }
-            ]);
+            // No fallback - show empty state if API fails
+            setEmployees([]);
+            console.error('Employees API failed:', response);
           }
         } catch (error) {
           console.error('Error fetching employees:', error);
-          setEmployees([
-            { id: '1', name: 'John Smith' },
-            { id: '2', name: 'Sarah Johnson' },
-            { id: '3', name: 'Mike Wilson' },
-            { id: '4', name: 'Emily Davis' }
-          ]);
+          // No fallback - show empty state on error
+          setEmployees([]);
         } finally {
           setIsLoadingEmployees(false);
         }

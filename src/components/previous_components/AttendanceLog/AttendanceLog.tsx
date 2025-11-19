@@ -60,53 +60,10 @@ const EmployeeAvatar: React.FC<EmployeeAvatarProps> = ({ src, alt, name }) => {
 };
 
 const AttendanceLog: React.FC = () => {
-  // Sample employee data with profile pictures - in a real app, this would come from an API
-  const employees = [
-    { 
-      id: '1', 
-      name: 'Sarah', 
-      lastname: 'Chen', 
-      role_id: 'Sales Representative',
-      profilePicture: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
-    },
-    { 
-      id: '2', 
-      name: 'Mike', 
-      lastname: 'Rodriguez', 
-      role_id: 'Software Engineer',
-      profilePicture: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-    },
-    { 
-      id: '3', 
-      name: 'Alex', 
-      lastname: 'Thompson', 
-      role_id: 'Senior Developer',
-      profilePicture: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
-    },
-    { 
-      id: '4', 
-      name: 'Emma', 
-      lastname: 'Wilson', 
-      role_id: 'Marketing Manager',
-      profilePicture: '' // No profile picture - will show fallback
-    },
-    { 
-      id: '5', 
-      name: 'David', 
-      lastname: 'Brown', 
-      role_id: 'Product Manager',
-      profilePicture: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-    },
-  ];
-  
-  // Sample attendance data - in a real app, this would come from an API
-  const attendanceData = [
-    { employeeId: '1', status: 'Present', checkIn: '09:15 AM', checkOut: '06:30 PM', totalHours: '8h 15m' },
-    { employeeId: '2', status: 'Late', checkIn: '09:45 AM', checkOut: '06:00 PM', totalHours: '7h 15m' },
-    { employeeId: '3', status: 'Remote', checkIn: '08:30 AM', checkOut: '05:45 PM', totalHours: '8h 15m' },
-    { employeeId: '4', status: 'Present', checkIn: '09:00 AM', checkOut: '06:00 PM', totalHours: '8h 0m' },
-    { employeeId: '5', status: 'Late', checkIn: '09:30 AM', checkOut: '06:15 PM', totalHours: '7h 45m' },
-  ];
+  // REMOVED: Sample data - this component should use API data
+  // TODO: Replace with API integration using useAttendanceLogs and useEmployees hooks
+  const [employees] = useState<any[]>([]);
+  const [attendanceData] = useState<any[]>([]);
 
   const getStatusBadgeClass = (status: string) => {
     switch (status.toLowerCase()) {

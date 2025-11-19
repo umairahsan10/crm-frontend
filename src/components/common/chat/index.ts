@@ -16,4 +16,5 @@ export * from './types';
 export { useChat } from '../../../hooks/useChat';
 
 // API
-export { chatApi, mockChatData } from '../../../apis/chat';
+export { chatApi } from '../../../apis/chat';
+// mockChatData removed - not used in production

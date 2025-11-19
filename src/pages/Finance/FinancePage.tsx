@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ExpensesPage from './ExpensesPage';
 import RevenuePage from './RevenuePage';
 import AssetsPage from './AssetsPage';
 import LiabilitiesPage from './LiabilitiesPage';
 import { useAuth } from '../../context/AuthContext';
-import { getAccountantAnalyticsApi, type AnalyticsDashboardResponse } from '../../apis/analytics';
+import { useFinanceOverview } from '../../hooks/queries/useFinanceQueries';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -48,40 +48,23 @@ const formatCurrency = (amount: number): string => {
 
 const FinancePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<FinanceTab>('overview');
-  const [analytics, setAnalytics] = useState<AnalyticsDashboardResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedTrendPeriod, setSelectedTrendPeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
   const { hasPermission } = useAuth();
   
   // Check permissions for each tab
   const canViewAssets = hasPermission('assets_permission');
 
-  // Fetch analytics data when on overview tab
-  useEffect(() => {
-    if (activeTab === 'overview') {
-      fetchAnalytics();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getAccountantAnalyticsApi();
-      if (response.success && response.data) {
-        setAnalytics(response.data);
-      } else {
-        setError('Failed to load analytics data');
-      }
-    } catch (err) {
-      console.error('Error fetching analytics:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load analytics data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // React Query hook for finance overview analytics
+  // Only fetch when on overview tab
+  const {
+    data: analytics,
+    isLoading: loading,
+    isError,
+    error,
+    refetch
+  } = useFinanceOverview(undefined, {
+    enabled: activeTab === 'overview'
+  });
 
   // Handle back navigation
   const handleBackToOverview = () => {
@@ -300,15 +283,24 @@ const FinancePage: React.FC = () => {
                 </p>
               </div>
 
-              {error && (
+              {/* Error State - Show when API fails */}
+              {isError && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">{error}</p>
-                  <button
-                    onClick={fetchAnalytics}
-                    className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
-                  >
-                    Retry
-                  </button>
+                  <div className="flex items-start">
+                    <svg className="h-5 w-5 text-red-400 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-red-800">Failed to load finance data</p>
+                      <p className="text-xs text-red-600 mt-1">{error?.message || 'Unknown error occurred'}</p>
+                      <button
+                        onClick={() => refetch()}
+                        className="mt-3 text-sm font-medium text-red-600 hover:text-red-700 underline"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -330,17 +322,21 @@ const FinancePage: React.FC = () => {
                       <div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
                       <div className="h-4 bg-gray-200 rounded w-32"></div>
                     </div>
-                  ) : (
+                  ) : isError ? (
+                    <div className="text-sm text-red-600">Error loading data</div>
+                  ) : analytics ? (
                     <>
                       <p className="text-2xl font-bold text-gray-900">
-                        {analytics ? formatCurrency(analytics.summary.totalRevenue) : '$0'}
+                        {formatCurrency(analytics.summary.totalRevenue)}
                       </p>
                       <p className="text-xs text-green-600 mt-2">
-                        {analytics?.revenues?.thisMonth?.amount 
+                        {analytics.revenues?.thisMonth?.amount 
                           ? `This month: ${formatCurrency(analytics.revenues.thisMonth.amount)}`
                           : 'No data available'}
                       </p>
                     </>
+                  ) : (
+                    <div className="text-sm text-gray-500">No data available</div>
                   )}
                 </div>
 
@@ -360,17 +356,21 @@ const FinancePage: React.FC = () => {
                       <div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
                       <div className="h-4 bg-gray-200 rounded w-32"></div>
                     </div>
-                  ) : (
+                  ) : isError ? (
+                    <div className="text-sm text-red-600">Error loading data</div>
+                  ) : analytics ? (
                     <>
                       <p className="text-2xl font-bold text-gray-900">
-                        {analytics ? formatCurrency(analytics.summary.totalExpenses) : '$0'}
+                        {formatCurrency(analytics.summary.totalExpenses)}
                       </p>
                       <p className="text-xs text-blue-600 mt-2">
-                        {analytics?.expenses?.thisMonth?.amount 
+                        {analytics.expenses?.thisMonth?.amount 
                           ? `This month: ${formatCurrency(analytics.expenses.thisMonth.amount)}`
                           : 'No data available'}
                       </p>
                     </>
+                  ) : (
+                    <div className="text-sm text-gray-500">No data available</div>
                   )}
                 </div>
 
@@ -390,13 +390,17 @@ const FinancePage: React.FC = () => {
                       <div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
                       <div className="h-4 bg-gray-200 rounded w-32"></div>
                     </div>
-                  ) : (
+                  ) : isError ? (
+                    <div className="text-sm text-red-600">Error loading data</div>
+                  ) : analytics ? (
                     <>
                       <p className="text-2xl font-bold text-gray-900">
-                        {analytics ? formatCurrency(analytics.summary.totalAssets) : '$0'}
+                        {formatCurrency(analytics.summary.totalAssets)}
                       </p>
                       <p className="text-xs text-indigo-600 mt-2">Current value tracked</p>
                     </>
+                  ) : (
+                    <div className="text-sm text-gray-500">No data available</div>
                   )}
                 </div>
 
@@ -416,17 +420,21 @@ const FinancePage: React.FC = () => {
                       <div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
                       <div className="h-4 bg-gray-200 rounded w-32"></div>
                     </div>
-                  ) : (
+                  ) : isError ? (
+                    <div className="text-sm text-red-600">Error loading data</div>
+                  ) : analytics ? (
                     <>
                       <p className="text-2xl font-bold text-gray-900">
-                        {analytics ? formatCurrency(analytics.summary.totalLiabilities) : '$0'}
+                        {formatCurrency(analytics.summary.totalLiabilities)}
                       </p>
                       <p className="text-xs text-red-600 mt-2">
-                        {analytics?.summary.unpaidLiabilities 
+                        {analytics.summary.unpaidLiabilities 
                           ? `${formatCurrency(analytics.summary.unpaidLiabilities)} unpaid` 
-                          : analytics?.summary.totalLiabilities ? 'All liabilities paid' : 'No liabilities'}
+                          : analytics.summary.totalLiabilities ? 'All liabilities paid' : 'No liabilities'}
                       </p>
                     </>
+                  ) : (
+                    <div className="text-sm text-gray-500">No data available</div>
                   )}
                 </div>
               </div>
@@ -469,10 +477,14 @@ const FinancePage: React.FC = () => {
                       <div className="animate-pulse">
                         <div className="h-10 bg-gray-200 rounded w-32 mx-auto mb-2"></div>
                       </div>
-                    ) : (
+                    ) : isError ? (
+                      <p className="text-sm text-red-600">Error</p>
+                    ) : analytics ? (
                       <p className="text-2xl font-bold text-green-600">
-                        {analytics ? formatCurrency(analytics.summary.netProfit) : '$0'}
+                        {formatCurrency(analytics.summary.netProfit)}
                       </p>
+                    ) : (
+                      <p className="text-sm text-gray-500">No data</p>
                     )}
                   </div>
                   <div className="text-center">
@@ -509,10 +521,14 @@ const FinancePage: React.FC = () => {
                       <div className="animate-pulse">
                         <div className="h-10 bg-gray-200 rounded w-32 mx-auto mb-2"></div>
                       </div>
-                    ) : (
+                    ) : isError ? (
+                      <p className="text-sm text-red-600">Error</p>
+                    ) : analytics ? (
                       <p className="text-2xl font-bold text-purple-600">
-                        {analytics ? `${analytics.summary.profitMargin.toFixed(2)}%` : '0%'}
+                        {`${analytics.summary.profitMargin.toFixed(2)}%`}
                       </p>
+                    ) : (
+                      <p className="text-sm text-gray-500">No data</p>
                     )}
                   </div>
                   <div className="text-center">
@@ -549,10 +565,14 @@ const FinancePage: React.FC = () => {
                       <div className="animate-pulse">
                         <div className="h-10 bg-gray-200 rounded w-32 mx-auto mb-2"></div>
                       </div>
-                    ) : (
+                    ) : isError ? (
+                      <p className="text-sm text-red-600">Error</p>
+                    ) : analytics ? (
                       <p className="text-2xl font-bold text-blue-600">
-                        {analytics ? formatCurrency(analytics.summary.availableCash) : '$0'}
+                        {formatCurrency(analytics.summary.availableCash)}
                       </p>
+                    ) : (
+                      <p className="text-sm text-gray-500">No data</p>
                     )}
                   </div>
                   <div className="text-center">
@@ -589,10 +609,14 @@ const FinancePage: React.FC = () => {
                       <div className="animate-pulse">
                         <div className="h-10 bg-gray-200 rounded w-32 mx-auto mb-2"></div>
                       </div>
+                    ) : isError ? (
+                      <p className="text-sm text-red-600">Error</p>
+                    ) : analytics ? (
+                      <p className={`text-2xl font-bold ${analytics.summary.netPosition >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(analytics.summary.netPosition)}
+                      </p>
                     ) : (
-                      <p className={`text-2xl font-bold ${analytics?.summary.netPosition && analytics.summary.netPosition >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {analytics ? formatCurrency(analytics.summary.netPosition) : '$0'}
-                        </p>
+                      <p className="text-sm text-gray-500">No data</p>
                     )}
                   </div>
                 </div>

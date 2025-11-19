@@ -25,10 +25,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import type { 
-  MetricData, 
-  ActivityItem  
-} from '../../../types/dashboard';
+// MetricData and ActivityItem removed - no longer using hardcoded data
 
 // Register Chart.js components
 ChartJS.register(
@@ -92,7 +89,7 @@ const AdminDashboard: React.FC = () => {
   const departments = ['Sales', 'Marketing', 'Production', 'HR', 'Accounting'];
 
   // Fetch metric grid data from API with department filter
-  const { data: metricGridData } = useMetricGrid(selectedDepartment);
+  const { data: metricGridData, isLoading: isLoadingMetrics, isError: isErrorMetrics, error: metricsError, refetch: refetchMetrics } = useMetricGrid(selectedDepartment);
   
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
@@ -117,102 +114,22 @@ const AdminDashboard: React.FC = () => {
     return <UsersIcon />; // Default fallback
   };
 
-  // Fallback dummy data for Admin metric grid (used when API data is not available)
-  const adminFallbackMetrics: MetricData[] = [
-    {
-      title: 'Total Users',
-      value: '120',
-      subtitle: 'Registered users',
-      change: '+8 this month',
-      changeType: 'positive',
-      icon: <UsersIcon />
-    },
-    {
-      title: 'Active Today',
-      value: '95',
-      subtitle: 'Currently online',
-      change: '79% active rate',
-      changeType: 'positive',
-      icon: <ActiveIcon />
-    },
-    {
-      title: 'Departments',
-      value: '5',
-      subtitle: 'Active departments',
-      change: 'All operational',
-      changeType: 'positive',
-      icon: <DepartmentsIcon />
-    },
-    {
-      title: 'System Health',
-      value: '99.9%',
-      subtitle: 'Server uptime',
-      change: '+0.1% uptime',
-      changeType: 'positive',
-      icon: <SystemHealthIcon />
-    }
-  ];
-
-  // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+  // Use API data for overviewStats, show empty array if API fails (no hardcoded fallback)
   // Replace icons with SVG icons for admin metrics
   const overviewStats = metricGridData && metricGridData.length > 0 
     ? metricGridData.map(metric => ({
         ...metric,
         icon: getAdminMetricIcon(metric.title)
       }))
-    : adminFallbackMetrics;
+    : []; // Empty array - will show error/empty state in UI
 
   // Get color themes for each metric
   const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
-  // Fallback dummy data for Admin activities (used when API data is not available)
-  const adminFallbackActivities: ActivityItem[] = [
-    {
-      id: '1',
-      title: 'New user registration',
-      description: 'John Smith joined as Sales Manager',
-      time: '2 hours ago',
-      type: 'success',
-      user: 'System'
-    },
-    {
-      id: '2',
-      title: 'System backup completed',
-      description: 'Daily backup completed successfully',
-      time: '4 hours ago',
-      type: 'info',
-      user: 'System'
-    },
-    {
-      id: '3',
-      title: 'Policy update',
-      description: 'Holiday policy updated by HR',
-      time: '6 hours ago',
-      type: 'info',
-      user: 'HR Admin'
-    },
-    {
-      id: '4',
-      title: 'Login issue resolved',
-      description: 'Fixed authentication problem for 3 users',
-      time: '8 hours ago',
-      type: 'success',
-      user: 'IT Support'
-    },
-    {
-      id: '5',
-      title: 'New department created',
-      description: 'R&D department added to system',
-      time: '1 day ago',
-      type: 'info',
-      user: 'Admin'
-    }
-  ];
-
-  // Use API data for activities, fallback to dummy data if API is loading or fails
+  // Use API data for activities, show empty array if API fails (no hardcoded fallback)
   const activities = activityFeedData && activityFeedData.length > 0
     ? activityFeedData
-    : adminFallbackActivities;
+    : []; // Empty array - will show error/empty state in UI
 
   // Fetch monthly trends data (revenue, expenses, liabilities) from API
   useEffect(() => {
@@ -288,14 +205,53 @@ const AdminDashboard: React.FC = () => {
         {/* Overview Stats with Quick Access on Right */}
         <div className="flex items-stretch gap-4">
           <div className="flex-1">
-            <MetricGrid
-              metrics={overviewStats}
-              columns={4}
-              headerColor="from-blue-50 to-transparent"
-              headerGradient="from-blue-500 to-indigo-600"
-              cardSize="md"
-              colorThemes={metricColorThemes}
-            />
+            {isLoadingMetrics ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : isErrorMetrics ? (
+              <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+                <div className="text-center py-8">
+                  <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load metrics</h3>
+                  <p className="mt-1 text-sm text-gray-500">{metricsError?.message || 'Unknown error occurred'}</p>
+                  <button
+                    onClick={() => refetchMetrics()}
+                    className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            ) : overviewStats.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="text-center py-8">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No metrics available</h3>
+                  <p className="mt-1 text-sm text-gray-500">No admin metrics data found</p>
+                </div>
+              </div>
+            ) : (
+              <MetricGrid
+                metrics={overviewStats}
+                columns={4}
+                headerColor="from-blue-50 to-transparent"
+                headerGradient="from-blue-500 to-indigo-600"
+                cardSize="md"
+                colorThemes={metricColorThemes}
+              />
+            )}
           </div>
           <div className="flex flex-col gap-4 flex-shrink-0 w-56">
             <DepartmentQuickAccess department="Admin" />

@@ -51,25 +51,14 @@ const CsvUploadComponent: React.FC<CsvUploadComponentProps> = ({
         if (response.success && response.data && Array.isArray(response.data)) {
           setSalesUnits(response.data);
         } else {
-          // Fallback to mock data if API fails
-          setSalesUnits([
-            { id: 1, name: 'Sales Unit 1' },
-            { id: 2, name: 'Sales Unit 2' },
-            { id: 3, name: 'Sales Unit 3' },
-            { id: 4, name: 'Enterprise Sales' },
-            { id: 5, name: 'SMB Sales' }
-          ]);
+          // No fallback - show empty state if API fails
+          console.error('Sales units API failed:', response);
+          setSalesUnits([]);
         }
       } catch (error) {
         console.error('Error fetching sales units:', error);
-        // Fallback to mock data on error
-        setSalesUnits([
-          { id: 1, name: 'Sales Unit 1' },
-          { id: 2, name: 'Sales Unit 2' },
-          { id: 3, name: 'Sales Unit 3' },
-          { id: 4, name: 'Enterprise Sales' },
-          { id: 5, name: 'SMB Sales' }
-        ]);
+        // No fallback - show empty state on error
+        setSalesUnits([]);
       } finally {
         // Sales units loading completed
       }

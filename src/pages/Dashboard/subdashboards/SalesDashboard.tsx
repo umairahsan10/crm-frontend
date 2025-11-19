@@ -12,10 +12,9 @@ import { useSalesTrends } from '../../../hooks/queries/useSalesTrends';
 import { useTopPerformersLeaderboard } from '../../../hooks/queries/useTopPerformers';
 import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
 import type {
-  ChartData,
-  ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
+// ActivityItem removed - no longer using hardcoded activity functions
 
 // SVG Icon Components
 const LeadsIcon = () => (
@@ -73,16 +72,16 @@ const SalesDashboard: React.FC = () => {
   const units = ['North Unit', 'South Unit', 'East Unit', 'West Unit'];
 
   // Fetch metric grid data from API
-  const { data: metricGridData } = useMetricGrid();
+  const { data: metricGridData, isLoading: isLoadingMetrics, isError: isErrorMetrics, error: metricsError, refetch: refetchMetrics } = useMetricGrid();
   
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
 
   // Fetch sales trends data from API
-  const { data: salesTrendApiData, isLoading: isLoadingSalesTrends } = useSalesTrends('monthly');
+  const { data: salesTrendApiData, isLoading: isLoadingSalesTrends, isError: isErrorSalesTrends, error: salesTrendsError, refetch: refetchSalesTrends } = useSalesTrends('monthly');
 
   // Fetch top performers data from API for leaderboard
-  const { data: topPerformersApiData, isLoading: isLoadingTopPerformers } = useTopPerformersLeaderboard(5, 'monthly', undefined, undefined, undefined, 'deals');
+  const { data: topPerformersApiData, isLoading: isLoadingTopPerformers, isError: isErrorTopPerformers, error: topPerformersError, refetch: refetchTopPerformers } = useTopPerformersLeaderboard(5, 'monthly', undefined, undefined, undefined, 'deals');
 
   // Helper function to get SVG icon for sales metrics
   const getSalesMetricIcon = (title: string): React.ReactNode => {
@@ -104,63 +103,25 @@ const SalesDashboard: React.FC = () => {
     return <LeadsIcon />; // Default fallback
   };
 
-  // Fallback dummy data for Sales metric grid (used when API data is not available)
-  const salesFallbackMetrics = [
-    {
-      title: 'Leads',
-      value: '81',
-      subtitle: 'Active: 32',
-      change: '+70 from last month',
-      changeType: 'positive' as const,
-      icon: <LeadsIcon />
-    },
-    {
-      title: 'Conversion Rate',
-      value: '12.35%',
-      subtitle: 'Cracked / Total',
-      change: '+12.345679012345679 this month',
-      changeType: 'neutral' as const,
-      icon: <ConversionRateIcon />
-    },
-    {
-      title: 'Revenue / Commission',
-      value: '$5.4M / $652',
-      subtitle: 'Total / Your share',
-      change: '+$5.4M this month',
-      changeType: 'neutral' as const,
-      icon: <RevenueIcon />
-    },
-    {
-      title: 'Won Deals',
-      value: '10',
-      subtitle: 'Cracked leads',
-      change: '+10 this month',
-      changeType: 'neutral' as const,
-      icon: <WonDealsIcon />
-    }
-  ];
 
   // Get data based on role level
   const getDataForRole = () => {
-    // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+    // Use API data for overviewStats, show error/empty state if API fails (no hardcoded fallback)
     // Replace icons with SVG icons for sales metrics
     const overviewStats = metricGridData && metricGridData.length > 0 
       ? metricGridData.map(metric => ({
           ...metric,
           icon: getSalesMetricIcon(metric.title)
         }))
-      : salesFallbackMetrics;
+      : []; // Empty array - will show error/empty state in UI
 
     // Get color themes for each metric
     const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
-    // Use API data for activities, fallback to local data if API is loading or fails
+    // Use API data for activities, show empty array if API fails (no hardcoded fallback)
     const activities = activityFeedData && activityFeedData.length > 0
       ? activityFeedData
-      : (roleLevel === 'department_manager' ? getDepartmentManagerActivities() :
-         roleLevel === 'unit_head' ? getUnitHeadActivities() :
-         roleLevel === 'team_lead' ? getTeamLeadActivities() :
-         getEmployeeActivities());
+      : []; // Empty array - will show error/empty state in UI
 
     switch (roleLevel) {
       case 'department_manager':
@@ -302,7 +263,8 @@ const SalesDashboard: React.FC = () => {
     }
   ];
 
-  // Activities based on role
+  // REMOVED: Hardcoded activity functions - now using useActivityFeed() API hook
+  /*
   const getDepartmentManagerActivities = (): ActivityItem[] => [
     {
       id: '1',
@@ -418,201 +380,17 @@ const SalesDashboard: React.FC = () => {
       user: 'You'
     }
   ];
+  */
 
-  // Fallback dummy data for sales trends (used when API data is not available)
-  const salesTrendFallbackData: ChartData[] = [
-    { name: 'Jan', value: 420000 },
-    { name: 'Feb', value: 480000 },
-    { name: 'Mar', value: 650000 },
-    { name: 'Apr', value: 520000 },
-    { name: 'May', value: 580000 },
-    { name: 'Jun', value: 610000 },
-    { name: 'Jul', value: 590000 },
-    { name: 'Aug', value: 630000 },
-    { name: 'Sep', value: 670000 },
-    { name: 'Oct', value: 640000 },
-    { name: 'Nov', value: 680000 },
-    { name: 'Dec', value: 720000 }
-  ];
-
-  // Use API data for sales trends, fallback to dummy data if API is loading or fails
+  // Use API data for sales trends, show empty array if API fails (no hardcoded fallback)
   const salesTrendData = salesTrendApiData && salesTrendApiData.length > 0
     ? salesTrendApiData
-    : salesTrendFallbackData;
+    : []; // Empty array - will show error/empty state in UI
 
-  // Fallback dummy data for top performers (used when API data is not available)
-  const topPerformersFallbackData = [
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      avatar: 'SJ',
-      department: 'Sales',
-      role: 'Senior Sales Rep',
-      metrics: [
-        {
-          label: 'Deals Closed',
-          currentValue: 18,
-          targetValue: 20,
-          progress: 90,
-          status: 'on-track' as const,
-          unit: 'deals'
-        },
-        {
-          label: 'Sales Amount',
-          currentValue: 450000,
-          targetValue: 500000,
-          progress: 90,
-          status: 'on-track' as const,
-          unit: '$'
-        },
-        {
-          label: 'Conversion Rate',
-          currentValue: 40,
-          targetValue: 30,
-          progress: 133,
-          status: 'exceeded' as const,
-          unit: '%'
-        }
-      ]
-    },
-    {
-      id: '2',
-      name: 'Mike Chen',
-      avatar: 'MC',
-      department: 'Sales',
-      role: 'Sales Rep',
-      metrics: [
-        {
-          label: 'Deals Closed',
-          currentValue: 15,
-          targetValue: 20,
-          progress: 75,
-          status: 'on-track' as const,
-          unit: 'deals'
-        },
-        {
-          label: 'Sales Amount',
-          currentValue: 380000,
-          targetValue: 400000,
-          progress: 95,
-          status: 'on-track' as const,
-          unit: '$'
-        },
-        {
-          label: 'Conversion Rate',
-          currentValue: 39.5,
-          targetValue: 30,
-          progress: 132,
-          status: 'exceeded' as const,
-          unit: '%'
-        }
-      ]
-    },
-    {
-      id: '3',
-      name: 'Lisa Wilson',
-      avatar: 'LW',
-      department: 'Sales',
-      role: 'Sales Rep',
-      metrics: [
-        {
-          label: 'Deals Closed',
-          currentValue: 12,
-          targetValue: 20,
-          progress: 60,
-          status: 'below-target' as const,
-          unit: 'deals'
-        },
-        {
-          label: 'Sales Amount',
-          currentValue: 300000,
-          targetValue: 400000,
-          progress: 75,
-          status: 'on-track' as const,
-          unit: '$'
-        },
-        {
-          label: 'Conversion Rate',
-          currentValue: 34.3,
-          targetValue: 30,
-          progress: 114,
-          status: 'exceeded' as const,
-          unit: '%'
-        }
-      ]
-    },
-    {
-      id: '4',
-      name: 'David Brown',
-      avatar: 'DB',
-      department: 'Sales',
-      role: 'Sales Rep',
-      metrics: [
-        {
-          label: 'Deals Closed',
-          currentValue: 10,
-          targetValue: 20,
-          progress: 50,
-          status: 'below-target' as const,
-          unit: 'deals'
-        },
-        {
-          label: 'Sales Amount',
-          currentValue: 250000,
-          targetValue: 400000,
-          progress: 62.5,
-          status: 'below-target' as const,
-          unit: '$'
-        },
-        {
-          label: 'Conversion Rate',
-          currentValue: 31.3,
-          targetValue: 30,
-          progress: 104,
-          status: 'exceeded' as const,
-          unit: '%'
-        }
-      ]
-    },
-    {
-      id: '5',
-      name: 'Emma Davis',
-      avatar: 'ED',
-      department: 'Sales',
-      role: 'Sales Rep',
-      metrics: [
-        {
-          label: 'Deals Closed',
-          currentValue: 8,
-          targetValue: 20,
-          progress: 40,
-          status: 'below-target' as const,
-          unit: 'deals'
-        },
-        {
-          label: 'Sales Amount',
-          currentValue: 200000,
-          targetValue: 400000,
-          progress: 50,
-          status: 'below-target' as const,
-          unit: '$'
-        },
-        {
-          label: 'Conversion Rate',
-          currentValue: 28.6,
-          targetValue: 30,
-          progress: 95,
-          status: 'on-track' as const,
-          unit: '%'
-        }
-      ]
-    }
-  ];
-
-  // Use API data for top performers, fallback to dummy data if API is loading or fails
+  // Use API data for top performers, show empty array if API fails (no hardcoded fallback)
   const topPerformersData = topPerformersApiData && topPerformersApiData.length > 0
     ? topPerformersApiData
-    : topPerformersFallbackData;
+    : []; // Empty array - will show error/empty state in UI
 
   const currentData = getDataForRole();
 
@@ -621,14 +399,53 @@ const SalesDashboard: React.FC = () => {
       {/* Overview Stats with Quick Access on Right */}
       <div className="flex items-stretch gap-4">
         <div className="flex-1">
-          <MetricGrid
-            metrics={currentData.overviewStats}
-            columns={4}
-            headerColor="from-blue-50 to-transparent"
-            headerGradient="from-blue-500 to-indigo-600"
-            cardSize="md"
-            colorThemes={currentData.metricColorThemes}
-          />
+          {isLoadingMetrics ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : isErrorMetrics ? (
+            <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+              <div className="text-center py-8">
+                <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load metrics</h3>
+                <p className="mt-1 text-sm text-gray-500">{metricsError?.message || 'Unknown error occurred'}</p>
+                <button
+                  onClick={() => refetchMetrics()}
+                  className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : currentData.overviewStats.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="text-center py-8">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No metrics available</h3>
+                <p className="mt-1 text-sm text-gray-500">No sales metrics data found</p>
+              </div>
+            </div>
+          ) : (
+            <MetricGrid
+              metrics={currentData.overviewStats}
+              columns={4}
+              headerColor="from-blue-50 to-transparent"
+              headerGradient="from-blue-500 to-indigo-600"
+              cardSize="md"
+              colorThemes={currentData.metricColorThemes}
+            />
+          )}
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">
           <DepartmentQuickAccess department="Sales" />
@@ -655,12 +472,30 @@ const SalesDashboard: React.FC = () => {
         </div>
         {/* Right Column - One component with matching height - 2/3 width */}
         <div className="xl:col-span-2">
-          <ChartWidget
-            title="Monthly Sales Trend"
-            data={salesTrendData}
-            type="line"
-            loading={isLoadingSalesTrends}
-          />
+          {isErrorSalesTrends ? (
+            <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6 h-full flex items-center justify-center">
+              <div className="text-center">
+                <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load sales trends</h3>
+                <p className="mt-1 text-sm text-gray-500">{salesTrendsError?.message || 'Unknown error occurred'}</p>
+                <button
+                  onClick={() => refetchSalesTrends()}
+                  className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : (
+            <ChartWidget
+              title="Monthly Sales Trend"
+              data={salesTrendData}
+              type="line"
+              loading={isLoadingSalesTrends}
+            />
+          )}
         </div>
       </div>
 
@@ -680,6 +515,28 @@ const SalesDashboard: React.FC = () => {
             {isLoadingTopPerformers ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            ) : isErrorTopPerformers ? (
+              <div className="flex flex-col items-center justify-center h-64">
+                <svg className="h-12 w-12 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-sm font-medium text-gray-900 mb-1">Failed to load top performers</h3>
+                <p className="text-xs text-gray-500 mb-4">{topPerformersError?.message || 'Unknown error occurred'}</p>
+                <button
+                  onClick={() => refetchTopPerformers()}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : topPerformersData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64">
+                <svg className="h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <h3 className="text-sm font-medium text-gray-900 mb-1">No top performers data</h3>
+                <p className="text-xs text-gray-500">No performance data available yet</p>
               </div>
             ) : (
               <PerformanceLeaderboard 
