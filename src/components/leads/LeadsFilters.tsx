@@ -29,13 +29,8 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
   const [endDate, setEndDate] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   
-  // API-driven data with fallback initialization
-  const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>(() => [
-    { id: 1, name: 'Sales Unit 1' },
-    { id: 2, name: 'Sales Unit 2' },
-    { id: 3, name: 'Enterprise Sales' },
-    { id: 4, name: 'SMB Sales' }
-  ]);
+  // API-driven data - no hardcoded initial data
+  const [salesUnits, setSalesUnits] = useState<Array<{ id: number; name: string }>>([]);
   const [employees, setEmployees] = useState<Array<{ 
     id?: string | number; 
     employeeId?: string | number;
@@ -47,12 +42,7 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
     lastName?: string;
     email?: string;
     [key: string]: any;
-  }>>(() => [
-    { id: '1', name: 'John Smith' },
-    { id: '2', name: 'Sarah Johnson' },
-    { id: '3', name: 'Mike Wilson' },
-    { id: '4', name: 'Emily Davis' }
-  ]);
+  }>>([]);
   const [isLoadingSalesUnits, setIsLoadingSalesUnits] = useState(false);
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
 
@@ -90,23 +80,13 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
           console.log('LeadsFilters: Sales units set:', response.data);
         } else {
           console.error('Sales units API failed:', response);
-          // Fallback to mock data if API fails
-          setSalesUnits([
-            { id: 1, name: 'Sales Unit 1' },
-            { id: 2, name: 'Sales Unit 2' },
-            { id: 3, name: 'Enterprise Sales' },
-            { id: 4, name: 'SMB Sales' }
-          ]);
+          // No fallback - show empty state if API fails
+          setSalesUnits([]);
         }
       } catch (error) {
         console.error('Error fetching sales units:', error);
-        // Fallback to mock data on error
-        setSalesUnits([
-          { id: 1, name: 'Sales Unit 1' },
-          { id: 2, name: 'Sales Unit 2' },
-          { id: 3, name: 'Enterprise Sales' },
-          { id: 4, name: 'SMB Sales' }
-        ]);
+        // No fallback - show empty state on error
+        setSalesUnits([]);
       } finally {
         setIsLoadingSalesUnits(false);
       }
@@ -130,23 +110,13 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({
           console.log('Employees loaded successfully:', response.data.length);
         } else {
           console.error('Employees API failed:', response);
-          // Fallback to mock data if API fails
-          setEmployees([
-            { id: '1', name: 'John Smith' },
-            { id: '2', name: 'Sarah Johnson' },
-            { id: '3', name: 'Mike Wilson' },
-            { id: '4', name: 'Emily Davis' }
-          ]);
+          // No fallback - show empty state if API fails
+          setEmployees([]);
         }
       } catch (error) {
         console.error('Error fetching employees:', error);
-        // Fallback to mock data on error
-        setEmployees([
-          { id: '1', name: 'John Smith' },
-          { id: '2', name: 'Sarah Johnson' },
-          { id: '3', name: 'Mike Wilson' },
-          { id: '4', name: 'Emily Davis' }
-        ]);
+        // No fallback - show empty state on error
+        setEmployees([]);
       } finally {
         setIsLoadingEmployees(false);
       }

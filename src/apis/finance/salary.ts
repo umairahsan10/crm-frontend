@@ -392,7 +392,9 @@ export const getMonthOptions = (): { value: string; label: string }[] => {
   return options;
 };
 
-// Mock data for development/testing
+// REMOVED: Mock data function - not used in production
+// If needed for testing, use actual API endpoints instead
+/*
 export const getMockSalaryData = (month?: string, recalculated?: boolean): SalaryDisplayAll => {
   const selectedMonth = month || getCurrentMonth();
   
@@ -589,8 +591,11 @@ export const getMockSalaryData = (month?: string, recalculated?: boolean): Salar
     employees: calculatedEmployees
   };
 };
+*/
 
-// Mock sales employees bonus data
+// REMOVED: Mock data function - not used in production
+// If needed for testing, use actual API endpoints instead
+/*
 export const getMockSalesBonusData = (): SalesEmployeeBonus[] => [
   {
     id: 1,
@@ -611,3 +616,4 @@ export const getMockSalesBonusData = (): SalesEmployeeBonus[] => [
     bonusAmount: 800
   }
 ];
+*/

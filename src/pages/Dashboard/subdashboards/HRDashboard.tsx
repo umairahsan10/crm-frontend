@@ -22,10 +22,9 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import type {
-  ChartData,
-  ActivityItem,
   QuickActionItem
 } from '../../../types/dashboard';
+// ActivityItem removed - no longer using hardcoded activity functions
 
 // Register Chart.js components
 ChartJS.register(
@@ -95,7 +94,7 @@ const HRDashboard: React.FC = () => {
   const departments = ['Sales', 'Marketing', 'Production', 'HR', 'Accounting'];
 
   // Fetch metric grid data from API
-  const { data: metricGridData } = useMetricGrid();
+  const { data: metricGridData, isLoading: isLoadingMetrics, isError: isErrorMetrics, error: metricsError, refetch: refetchMetrics } = useMetricGrid();
   
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
@@ -127,63 +126,25 @@ const HRDashboard: React.FC = () => {
     return <EmployeesIcon />; // Default fallback
   };
 
-  // Fallback dummy data for HR metric grid (used when API data is not available)
-  const hrFallbackMetrics = [
-    {
-      title: 'Employees',
-      value: '999',
-      subtitle: 'Active employees',
-      change: '+9 from last month',
-      changeType: 'positive' as const,
-      icon: <EmployeesIcon />
-    },
-    {
-      title: 'Attendance Rate',
-      value: '100%',
-      subtitle: 'This month',
-      change: '100% from last month',
-      changeType: 'negative' as const,
-      icon: <AttendanceIcon />
-    },
-    {
-      title: 'Request Pending',
-      value: '100',
-      subtitle: 'All pending',
-      change: 'Same as last month',
-      changeType: 'neutral' as const,
-      icon: <RequestIcon />
-    },
-    {
-      title: 'On Leave Today',
-      value: '0',
-      subtitle: 'Currently on leave',
-      change: 'Same as last month',
-      changeType: 'neutral' as const,
-      icon: <LeaveIcon />
-    }
-  ];
 
-  // Get data based on role level
+  // Get data based on role level - Use only API data (no hardcoded fallbacks)
   const getDataForRole = () => {
-    // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+    // Use API data for overviewStats, show empty array if API fails (no hardcoded fallback)
     // Replace icons with SVG icons for HR metrics
     const overviewStats = metricGridData && metricGridData.length > 0 
       ? metricGridData.map(metric => ({
           ...metric,
           icon: getHRMetricIcon(metric.title)
         }))
-      : hrFallbackMetrics;
+      : []; // Empty array - will show error/empty state in UI
 
     // Get color themes for each metric
     const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
-    // Use API data for activities, fallback to local data if API is loading or fails
+    // Use API data for activities, show empty array if API fails (no hardcoded fallback)
     const activities = activityFeedData && activityFeedData.length > 0
       ? activityFeedData
-      : (roleLevel === 'department_manager' ? getDepartmentManagerActivities() :
-         roleLevel === 'unit_head' ? getUnitHeadActivities() :
-         roleLevel === 'team_lead' ? getTeamLeadActivities() :
-         getEmployeeActivities());
+      : []; // Empty array - will show error/empty state in UI
 
     switch (roleLevel) {
       case 'department_manager':
@@ -318,7 +279,9 @@ const HRDashboard: React.FC = () => {
     }
   ];
 
-  // Activities based on role
+  // REMOVED: Hardcoded activity functions - now using useActivityFeed() API hook
+  // All activity data comes from the API via useActivityFeed() hook
+  /*
   const getDepartmentManagerActivities = (): ActivityItem[] => [
     {
       id: '1',
@@ -498,56 +461,21 @@ const HRDashboard: React.FC = () => {
       user: 'HR System'
     }
   ];
+  */
 
-  // Fallback dummy data for daily attendance trend (used when API data is not available)
-  const dailyAttendanceFallbackData: ChartData[] = [
-    { name: 'Mon', value: 95 },
-    { name: 'Tue', value: 92 },
-    { name: 'Wed', value: 88 },
-    { name: 'Thu', value: 94 },
-    { name: 'Fri', value: 90 },
-    { name: 'Sat', value: 45 },
-    { name: 'Sun', value: 30 }
-  ];
-
-  // Fallback dummy data for monthly attendance trend (used when API data is not available)
-  const monthlyAttendanceFallbackData: ChartData[] = [
-    { name: 'Jan', value: 92 },
-    { name: 'Feb', value: 88 },
-    { name: 'Mar', value: 90 },
-    { name: 'Apr', value: 94 },
-    { name: 'May', value: 91 },
-    { name: 'Jun', value: 89 },
-    { name: 'Jul', value: 93 },
-    { name: 'Aug', value: 87 },
-    { name: 'Sep', value: 95 },
-    { name: 'Oct', value: 92 },
-    { name: 'Nov', value: 90 },
-    { name: 'Dec', value: 94 }
-  ];
-
-  // Use API data for attendance trends, fallback to dummy data if API is loading or fails
+  // Use API data for attendance trends, show empty array if API fails (no hardcoded fallback)
   const dailyAttendanceTrendData = dailyTrendApiData && dailyTrendApiData.length > 0
     ? dailyTrendApiData
-    : dailyAttendanceFallbackData;
+    : []; // Empty array - will show error/empty state in UI
 
   const monthlyAttendanceTrendData = monthlyTrendApiData && monthlyTrendApiData.length > 0
     ? monthlyTrendApiData
-    : monthlyAttendanceFallbackData;
+    : []; // Empty array - will show error/empty state in UI
 
-  // Fallback dummy data for department distribution (used when API data is not available)
-  const departmentDistributionFallbackData: ChartData[] = [
-    { name: 'Sales', value: 28 },
-    { name: 'Marketing', value: 18 },
-    { name: 'Production', value: 35 },
-    { name: 'HR', value: 12 },
-    { name: 'Accounting', value: 15 }
-  ];
-
-  // Use API data for department distribution, fallback to dummy data if API is loading or fails
+  // Use API data for department distribution, show empty array if API fails (no hardcoded fallback)
   const departmentDistributionData = departmentDistributionApiData && departmentDistributionApiData.length > 0
     ? departmentDistributionApiData
-    : departmentDistributionFallbackData;
+    : []; // Empty array - will show error/empty state in UI
 
   const currentData = getDataForRole();
 
@@ -556,14 +484,53 @@ const HRDashboard: React.FC = () => {
       {/* Overview Stats with Quick Access on Right */}
       <div className="flex items-stretch gap-4">
         <div className="flex-1">
-          <MetricGrid
-            metrics={currentData.overviewStats}
-            columns={4}
-            headerColor="from-blue-50 to-transparent"
-            headerGradient="from-blue-500 to-indigo-600"
-            cardSize="md"
-            colorThemes={currentData.metricColorThemes}
-          />
+          {isLoadingMetrics ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : isErrorMetrics ? (
+            <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+              <div className="text-center py-8">
+                <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load metrics</h3>
+                <p className="mt-1 text-sm text-gray-500">{metricsError?.message || 'Unknown error occurred'}</p>
+                <button
+                  onClick={() => refetchMetrics()}
+                  className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : currentData.overviewStats.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="text-center py-8">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No metrics available</h3>
+                <p className="mt-1 text-sm text-gray-500">No HR metrics data found</p>
+              </div>
+            </div>
+          ) : (
+            <MetricGrid
+              metrics={currentData.overviewStats}
+              columns={4}
+              headerColor="from-blue-50 to-transparent"
+              headerGradient="from-blue-500 to-indigo-600"
+              cardSize="md"
+              colorThemes={currentData.metricColorThemes}
+            />
+          )}
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">
           <DepartmentQuickAccess department="HR" />

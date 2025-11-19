@@ -28,6 +28,10 @@ import {
   getPayrollStatisticsApi,
   type GetPayrollDto
 } from '../../apis/payroll';
+import {
+  getAccountantAnalyticsApi,
+  type AnalyticsDashboardResponse
+} from '../../apis/analytics';
 
 // Query Keys - Centralized for consistency
 export const financeQueryKeys = {
@@ -48,6 +52,8 @@ export const financeQueryKeys = {
   payroll: () => [...financeQueryKeys.all, 'payroll'] as const,
   payrollList: (filters: any) => [...financeQueryKeys.payroll(), 'list', filters] as const,
   payrollStats: () => [...financeQueryKeys.payroll(), 'statistics'] as const,
+  analytics: () => [...financeQueryKeys.all, 'analytics'] as const,
+  analyticsDashboard: (params?: any) => [...financeQueryKeys.analytics(), 'dashboard', params] as const,
 };
 
 /**
@@ -236,5 +242,30 @@ export const usePayrollStatistics = (options: any = {}) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     enabled: options.enabled !== false,
+  });
+};
+
+/**
+ * Hook to fetch finance overview analytics dashboard
+ * Replaces manual useEffect/useState with React Query for consistency
+ */
+export const useFinanceOverview = (params?: {
+  fromDate?: string;
+  toDate?: string;
+  period?: 'monthly' | 'quarterly' | 'yearly';
+}, options: any = {}) => {
+  return useQuery<AnalyticsDashboardResponse, Error>({
+    queryKey: financeQueryKeys.analyticsDashboard(params),
+    queryFn: async () => {
+      const response = await getAccountantAnalyticsApi(params);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      throw new Error(response.message || 'Failed to fetch finance analytics');
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes - analytics change frequently
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options.enabled !== false,
+    retry: 2, // Retry twice on failure
   });
 };

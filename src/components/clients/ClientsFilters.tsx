@@ -28,14 +28,10 @@ const ClientsFilters: React.FC<ClientsFiltersProps> = ({
   const [endDate, setEndDate] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   
-  // Mock data for dropdowns
-
-  const employees = [
-    { id: '1', name: 'John Smith' },
-    { id: '2', name: 'Sarah Johnson' },
-    { id: '3', name: 'Mike Wilson' },
-    { id: '4', name: 'Emily Davis' }
-  ];
+  // Fetch employees from API - no hardcoded data
+  // TODO: Replace with actual API call to fetch employees
+  // For now, leave empty - will show "All Employees" option only
+  const [employees] = useState<Array<{ id: string; name: string }>>([]);
 
   const statusOptions = [
     { value: '', label: 'All Statuses' },

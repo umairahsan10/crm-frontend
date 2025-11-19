@@ -27,6 +27,7 @@ export interface ApiError {
 
 export const loginApi = async (credentials: LoginRequest): Promise<LoginResponse> => {
   try {
+    // DEVELOPMENT ONLY: Mock credentials for testing (remove in production)
     // Check for dummy credentials first
     if (credentials.email === 'admin@gmail.com' && credentials.password === 'admin') {
       // Return mock response for dummy credentials
@@ -65,6 +66,7 @@ export const loginApi = async (credentials: LoginRequest): Promise<LoginResponse
       return mockResponse;
     }
 
+    // DEVELOPMENT ONLY: Mock credentials for testing (remove in production)
     // Check for sales department test user
     if (credentials.email === 'sales@test.com' && credentials.password === 'sales') {
       const mockResponse: LoginResponse = {

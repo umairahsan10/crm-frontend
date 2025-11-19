@@ -121,7 +121,9 @@ export const chatApi = {
   }
 };
 
-// Mock data for development/testing
+// REMOVED: Mock data - not used in production
+// If needed for testing, use actual API endpoints instead
+/*
 export const mockChatData = {
   users: [
     {
@@ -240,3 +242,4 @@ export const mockChatData = {
     }
   ] as ProjectChat[]
 };
+*/

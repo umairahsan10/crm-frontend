@@ -7,10 +7,10 @@ import { useAuth } from '../../../context/AuthContext';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
 import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
-import type { 
-  ActivityItem,
+import type {
   QuickActionItem
 } from '../../../types/dashboard';
+// ActivityItem removed - no longer using hardcoded activity functions
 
 // SVG Icon Components
 const ProjectsIcon = () => (
@@ -68,7 +68,7 @@ const ProductionDashboard: React.FC = () => {
   const units = ['Frontend Team', 'Backend Team', 'Mobile Team', 'DevOps Team'];
 
   // Fetch metric grid data from API
-  const { data: metricGridData } = useMetricGrid();
+  const { data: metricGridData, isLoading: isLoadingMetrics, isError: isErrorMetrics, error: metricsError, refetch: refetchMetrics } = useMetricGrid();
   
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
@@ -93,63 +93,24 @@ const ProductionDashboard: React.FC = () => {
     return <ProjectsIcon />; // Default fallback
   };
 
-  // Fallback dummy data for Production metric grid (used when API data is not available)
-  const productionFallbackMetrics = [
-    {
-      title: 'Total Projects',
-      value: '2',
-      subtitle: 'All projects',
-      change: '+2 this month',
-      changeType: 'neutral' as const,
-      icon: <ProjectsIcon />
-    },
-    {
-      title: 'Production Units',
-      value: '1',
-      subtitle: 'Total units',
-      change: 'Same as last month',
-      changeType: 'neutral' as const,
-      icon: <UnitsIcon />
-    },
-    {
-      title: 'Active Projects',
-      value: '2',
-      subtitle: 'In progress',
-      change: '+2 this month',
-      changeType: 'neutral' as const,
-      icon: <ActiveProjectsIcon />
-    },
-    {
-      title: 'Most Completed',
-      value: '23',
-      subtitle: 'Production Lead2',
-      change: 'Top performer',
-      changeType: 'neutral' as const,
-      icon: <CompletedIcon />
-    }
-  ];
-
-  // Get data based on role level
+  // Get data based on role level - Use only API data (no hardcoded fallbacks)
   const getDataForRole = () => {
-    // Use API data for overviewStats, fallback to dummy data if API is loading or fails
+    // Use API data for overviewStats, show empty array if API fails (no hardcoded fallback)
     // Replace icons with SVG icons for production metrics
     const overviewStats = metricGridData && metricGridData.length > 0 
       ? metricGridData.map(metric => ({
           ...metric,
           icon: getProductionMetricIcon(metric.title)
         }))
-      : productionFallbackMetrics;
+      : []; // Empty array - will show error/empty state in UI
 
     // Get color themes for each metric
     const metricColorThemes = getColorThemesForMetrics(overviewStats);
 
-    // Use API data for activities, fallback to local data if API is loading or fails
+    // Use API data for activities, show empty array if API fails (no hardcoded fallback)
     const activities = activityFeedData && activityFeedData.length > 0
       ? activityFeedData
-      : (roleLevel === 'department_manager' ? getDepartmentManagerActivities() :
-         roleLevel === 'unit_head' ? getUnitHeadActivities() :
-         roleLevel === 'team_lead' ? getTeamLeadActivities() :
-         getEmployeeActivities());
+      : []; // Empty array - will show error/empty state in UI
 
     switch (roleLevel) {
       case 'department_manager':
@@ -291,7 +252,8 @@ const ProductionDashboard: React.FC = () => {
     }
   ];
 
-  // Activities based on role
+  // REMOVED: Hardcoded activity functions - now using useActivityFeed() API hook
+  /*
   const getDepartmentManagerActivities = (): ActivityItem[] => [
     {
       id: '1',
@@ -391,6 +353,7 @@ const ProductionDashboard: React.FC = () => {
       user: 'You'
     }
   ];
+  */
 
   const currentData = getDataForRole();
 
@@ -399,14 +362,53 @@ const ProductionDashboard: React.FC = () => {
       {/* Overview Stats with Quick Access on Right */}
       <div className="flex items-stretch gap-4">
         <div className="flex-1">
-          <MetricGrid
-            metrics={currentData.overviewStats}
-            columns={4}
-            headerColor="from-purple-50 to-transparent"
-            headerGradient="from-purple-500 to-indigo-600"
-            cardSize="md"
-            colorThemes={currentData.metricColorThemes}
-          />
+          {isLoadingMetrics ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-32 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : isErrorMetrics ? (
+            <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+              <div className="text-center py-8">
+                <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load metrics</h3>
+                <p className="mt-1 text-sm text-gray-500">{metricsError?.message || 'Unknown error occurred'}</p>
+                <button
+                  onClick={() => refetchMetrics()}
+                  className="mt-4 text-sm font-medium text-purple-600 hover:text-purple-700"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : currentData.overviewStats.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="text-center py-8">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No metrics available</h3>
+                <p className="mt-1 text-sm text-gray-500">No production metrics data found</p>
+              </div>
+            </div>
+          ) : (
+            <MetricGrid
+              metrics={currentData.overviewStats}
+              columns={4}
+              headerColor="from-purple-50 to-transparent"
+              headerGradient="from-purple-500 to-indigo-600"
+              cardSize="md"
+              colorThemes={currentData.metricColorThemes}
+            />
+          )}
         </div>
         <div className="flex flex-col gap-4 flex-shrink-0 w-56">
           <DepartmentQuickAccess department="Production" />

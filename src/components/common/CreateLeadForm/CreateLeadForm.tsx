@@ -52,25 +52,13 @@ const CreateLeadForm: React.FC<CreateLeadFormProps> = ({
           console.log('CreateLeadForm: Sales units set for create form:', response.data);
         } else {
           console.error('Sales units API failed for create form:', response);
-          // Fallback to mock data if API fails
-          setSalesUnits([
-            { id: 1, name: 'Sales Unit 1' },
-            { id: 2, name: 'Sales Unit 2' },
-            { id: 3, name: 'Sales Unit 3' },
-            { id: 4, name: 'Enterprise Sales' },
-            { id: 5, name: 'SMB Sales' }
-          ]);
+          // No fallback - show empty state if API fails
+          setSalesUnits([]);
         }
       } catch (error) {
         console.error('Error fetching sales units for create form:', error);
-        // Fallback to mock data on error
-        setSalesUnits([
-          { id: 1, name: 'Sales Unit 1' },
-          { id: 2, name: 'Sales Unit 2' },
-          { id: 3, name: 'Sales Unit 3' },
-          { id: 4, name: 'Enterprise Sales' },
-          { id: 5, name: 'SMB Sales' }
-        ]);
+        // No fallback - show empty state on error
+        setSalesUnits([]);
       } finally {
         setIsLoadingSalesUnits(false);
       }
