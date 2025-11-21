@@ -217,7 +217,7 @@ const AdminHRRequestDetailsDrawer: React.FC<AdminHRRequestDetailsDrawerProps> = 
                         <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
                         <p className="text-lg text-gray-900 font-medium">
                           {displayRequest.hr.employee.role?.name
-                            ? displayRequest.hr.employee.role.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                            ? displayRequest.hr.employee.role.name.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
                             : 'N/A'}
                         </p>
                       </div>
