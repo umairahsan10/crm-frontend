@@ -12,7 +12,7 @@ export interface AdminRequestResponseDto {
   description: string;
   type: string;
   hrLogId?: number;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'declined';
   createdAt: string;
   updatedAt: string;
   hr: {
@@ -67,9 +67,31 @@ export const createHRAdminRequestApi = async (
   return response.json();
 };
 
+// List item interface (limited fields from list endpoint)
+export interface AdminRequestListItemDto {
+  id: number;
+  description: string;
+  type: string;
+  status: 'pending' | 'approved' | 'declined';
+  hrId: number | null;
+  hrFirstName: string | null;
+  hrLastName: string | null;
+  hrLogId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface HRAdminRequestsResponse {
-  adminRequests: AdminRequestResponseDto[];
+  adminRequests: AdminRequestListItemDto[];
   total: number;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export const getHRAdminRequestsApi = async (): Promise<HRAdminRequestsResponse> => {
@@ -122,17 +144,17 @@ export const getHRAdminRequestStatsApi = async (): Promise<HRAdminRequestStats> 
 
 export const updateHRAdminRequestApi = async (
   requestId: number,
-  status: 'approved' | 'rejected',
+  status: 'approved' | 'declined',
   notes?: string
 ): Promise<AdminRequestResponseDto> => {
   console.log('API: Updating HR admin request', { requestId, status, notes });
 
-  const response = await apiRequest(`/hr/admin-requests/${requestId}`, {
+  const response = await apiRequest(`/hr/admin-requests/${requestId}/status`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ status, notes }),
+    body: JSON.stringify({ status }),
   });
 
   if (!response.ok) {
@@ -147,4 +169,13 @@ export const updateHRAdminRequestApi = async (
     throw new Error(errorMessage);
   }
   return response.json();
+};
+
+// Get single admin request by ID (full details with hr and hrLog objects)
+export const getHRAdminRequestByIdApi = async (
+  requestId: number
+): Promise<AdminRequestResponseDto> => {
+  const url = `/hr/admin-requests/${requestId}`;
+  console.log('API: Fetching HR admin request by ID from', url);
+  return apiGetJson<AdminRequestResponseDto>(url);
 };

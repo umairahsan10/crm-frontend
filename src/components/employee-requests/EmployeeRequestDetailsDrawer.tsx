@@ -12,7 +12,6 @@ interface EmployeeRequestDetailsDrawerProps {
   onResolve: (requestId: number, notes: string) => void;
   onReject: (requestId: number, notes: string) => void;
   onUpdate: (requestId: number, notes: string, priority: string) => void;
-  onHold: (requestId: number, notes: string) => void;
   isHROrAdmin?: boolean;
 }
 
@@ -23,12 +22,11 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
   onResolve,
   onReject,
   onUpdate,
-  onHold,
   isHROrAdmin = true
 }) => {
   const { isNavbarOpen } = useNavbar();
   const [isMobile, setIsMobile] = useState(false);
-  const [actionType, setActionType] = useState<'approve' | 'reject' | 'update' | 'hold'>('approve');
+  const [actionType, setActionType] = useState<'approve' | 'reject' | 'update'>('approve');
   const [actionNotes, setActionNotes] = useState('');
   const [actionPriority, setActionPriority] = useState<string>('');
   const [showActionModal, setShowActionModal] = useState(false);
@@ -61,7 +59,7 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
     }
   }, [isOpen]);
 
-  const handleActionClick = (action: 'approve' | 'reject' | 'update' | 'hold') => {
+  const handleActionClick = (action: 'approve' | 'reject' | 'update') => {
     setActionType(action);
     setShowActionModal(true);
   };
@@ -78,9 +76,6 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
         break;
       case 'update':
         onUpdate(request.id, actionNotes, actionPriority);
-        break;
-      case 'hold':
-        onHold(request.id, actionNotes);
         break;
     }
 
@@ -135,33 +130,100 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
           {/* Content */}
           <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
             <div className="space-y-6">
-              {/* Status and Priority */}
-              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Status Information
-                </h3>
-                <div className="flex flex-wrap gap-3">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                    request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                    request.status === 'In_Progress' ? 'bg-blue-100 text-blue-800' :
-                    request.status === 'Resolved' ? 'bg-green-100 text-green-800' :
-                    request.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {request.status === 'In_Progress' ? 'In Progress' : request.status}
-                  </span>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                    request.priority === 'Critical' ? 'bg-red-100 text-red-800' :
-                    request.priority === 'High' ? 'bg-orange-100 text-orange-800' :
-                    request.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {request.priority} Priority
-                  </span>
+              {/* Status Information and Actions - Side by Side */}
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'} gap-4`}>
+                {/* Status and Priority */}
+                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg className="h-4 w-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Status Information
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      request.status === 'In_Progress' ? 'bg-blue-100 text-blue-800' :
+                      request.status === 'Resolved' ? 'bg-green-100 text-green-800' :
+                      request.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {request.status === 'In_Progress' ? 'In Progress' : request.status}
+                    </span>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      request.priority === 'Critical' ? 'bg-red-100 text-red-800' :
+                      request.priority === 'High' ? 'bg-orange-100 text-orange-800' :
+                      request.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {request.priority} Priority
+                    </span>
+                  </div>
                 </div>
+
+                {/* Action Buttons or Resolved Message (HR/Admin only) */}
+                {isHROrAdmin && (
+                  <>
+                    {request.status !== 'Resolved' ? (
+                      <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                          <svg className="h-4 w-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Actions
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => handleActionClick('approve')}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm transition-colors"
+                          >
+                            <svg className="h-3.5 w-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Resolve
+                          </button>
+                          <button
+                            onClick={() => handleActionClick('reject')}
+                            disabled={request.status === 'Rejected'}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <svg className="h-3.5 w-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Reject
+                          </button>
+                          <button
+                            onClick={() => handleActionClick('update')}
+                            className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-colors"
+                          >
+                            <svg className="h-3.5 w-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Update
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`bg-white border border-green-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'} bg-green-50`}>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                          <svg className="h-4 w-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Status
+                        </h3>
+                        <div className="flex items-center">
+                          <svg className="h-8 w-8 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div>
+                            <p className="text-base font-semibold text-green-700">Request Resolved</p>
+                            <p className="text-xs text-green-600 mt-1">This request has been successfully resolved.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Employee Information */}
@@ -257,70 +319,6 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
                 </div>
               </div>
 
-              {/* Action Buttons - Only visible to HR/Admin and if request is not resolved */}
-              {isHROrAdmin && request.status === 'Resolved' && (
-                <div className={`bg-white border border-green-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'} bg-green-50`}>
-                  <div className="flex items-center justify-center py-6">
-                    <svg className="h-12 w-12 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <h3 className="text-2xl font-bold text-green-700">Request Resolved</h3>
-                      <p className="text-sm text-green-600 mt-1">This request has been successfully resolved.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {isHROrAdmin && request.status !== 'Resolved' && (
-                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    <svg className="h-5 w-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Actions
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <button
-                      onClick={() => handleActionClick('approve')}
-                      className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm"
-                    >
-                      <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Resolve Request
-                    </button>
-                    <button
-                      onClick={() => handleActionClick('reject')}
-                      disabled={request.status === 'Rejected'}
-                      className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Reject Request
-                    </button>
-                    <button
-                      onClick={() => handleActionClick('update')}
-                      className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm md:col-span-2"
-                    >
-                      <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Update Request
-                    </button>
-                    <button
-                      onClick={() => handleActionClick('hold')}
-                      className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 shadow-sm md:col-span-2"
-                    >
-                      <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Put On Hold
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -334,7 +332,6 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 {actionType === 'approve' ? 'Resolve' : 
                  actionType === 'reject' ? 'Reject' : 
-                 actionType === 'hold' ? 'Put On Hold' : 
                  'Update'} Request
               </h3>
               
@@ -392,14 +389,12 @@ const EmployeeRequestDetailsDrawer: React.FC<EmployeeRequestDetailsDrawerProps> 
                   className={`px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 ${
                     actionType === 'approve' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
                     actionType === 'reject' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' :
-                    actionType === 'hold' ? 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500' :
                     'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
                   }`}
                 >
                   {actionType === 'approve' ? 'Resolve' : 
                    actionType === 'reject' ? 'Reject' : 
-                   actionType === 'hold' ? 'Put On Hold' : 
-                  'Update'}
+                   'Update'}
                 </button>
               </div>
             </div>

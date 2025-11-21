@@ -79,8 +79,14 @@ const HRRequestAdminPage: React.FC = () => {
       hrLogId: request.hrLogId,
       created_at: request.createdAt || new Date().toISOString(),
       updated_at: request.updatedAt || new Date().toISOString(),
-      hr_employee_name: `HR Employee ${request.hr?.employeeId || request.hrId || 'N/A'}`,
-      hr_employee_email: 'N/A'
+      // Store firstName and lastName separately for custom render
+      hrFirstName: request.hrFirstName || null,
+      hrLastName: request.hrLastName || null,
+      hr_employee_name: request.hrFirstName && request.hrLastName
+        ? `${request.hrFirstName} ${request.hrLastName}`
+        : request.hrFirstName || request.hrLastName || 'N/A',
+      // Email will come from backend - placeholder for now
+      hr_employee_email: request.hrEmail || 'N/A'
     }));
 
     // Apply ALL filters client-side
@@ -143,8 +149,14 @@ const HRRequestAdminPage: React.FC = () => {
       hrLogId: request.hrLogId,
       created_at: request.createdAt || new Date().toISOString(),
       updated_at: request.updatedAt || new Date().toISOString(),
-      hr_employee_name: `HR Employee ${request.hr?.employeeId || request.hrId || 'N/A'}`,
-      hr_employee_email: 'N/A'
+      // Store firstName and lastName separately for custom render
+      hrFirstName: request.hrFirstName || null,
+      hrLastName: request.hrLastName || null,
+      hr_employee_name: request.hrFirstName && request.hrLastName
+        ? `${request.hrFirstName} ${request.hrLastName}`
+        : request.hrFirstName || request.hrLastName || 'N/A',
+      // Email will come from backend - placeholder for now
+      hr_employee_email: request.hrEmail || 'N/A'
     }));
   }, [adminRequestsRaw]);
 
@@ -154,7 +166,7 @@ const HRRequestAdminPage: React.FC = () => {
       total_requests: allRequests.length,
       pending_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.status === 'pending').length,
       approved_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.status === 'approved').length,
-      rejected_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.status === 'rejected').length,
+      rejected_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.status === 'declined').length,
       salary_increase_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.type === 'salary_increase').length,
       late_approval_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.type === 'late_approval').length,
       others_requests: allRequests.filter((r: HRAdminRequestTableRow) => r.type === 'others').length

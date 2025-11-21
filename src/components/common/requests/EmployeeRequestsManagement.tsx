@@ -321,22 +321,6 @@ const EmployeeRequestsManagement: React.FC = () => {
     }
   };
 
-  const handleHold = async (requestId: number, notes: string) => {
-    try {
-      const action: EmployeeRequestAction = {
-        status: 'Pending',
-        responseNotes: notes
-      };
-      await takeActionMutation.mutateAsync({ requestId, action });
-      await requestsQuery.refetch();
-      notification.show({ message: 'Request put on hold successfully', type: 'success' });
-      setDrawerOpen(false);
-      setSelectedRequest(null);
-    } catch (error) {
-      console.error('Error putting request on hold:', error);
-      notification.show({ message: 'Failed to put request on hold', type: 'error' });
-    }
-  };
 
   // Handle bulk actions
   const handleExportRequests = async () => {
@@ -541,7 +525,6 @@ const EmployeeRequestsManagement: React.FC = () => {
             onResolve={handleResolve}
             onReject={handleReject}
             onUpdate={handleUpdate}
-            onHold={handleHold}
             isHROrAdmin={isHROrAdmin}
           />
         )}

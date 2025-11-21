@@ -77,8 +77,14 @@ const AdminHRRequestsPage: React.FC = () => {
       hrLogId: request.hrLogId,
       created_at: request.createdAt || new Date().toISOString(),
       updated_at: request.updatedAt || new Date().toISOString(),
-      hr_employee_name: `HR Employee ${request.hr?.employeeId || request.hrId || 'N/A'}`,
-      hr_employee_email: 'N/A',
+      // Store firstName and lastName separately for custom render
+      hrFirstName: request.hrFirstName || null,
+      hrLastName: request.hrLastName || null,
+      hr_employee_name: request.hrFirstName && request.hrLastName
+        ? `${request.hrFirstName} ${request.hrLastName}`
+        : request.hrFirstName || request.hrLastName || 'N/A',
+      // Email will come from backend - placeholder for now
+      hr_employee_email: request.hrEmail || 'N/A',
       hr_department: 'HR'
     }));
 
@@ -106,7 +112,7 @@ const AdminHRRequestsPage: React.FC = () => {
       total_requests: adminRequests.length,
       pending_requests: adminRequests.filter(r => r.status === 'pending').length,
       approved_requests: adminRequests.filter(r => r.status === 'approved').length,
-      rejected_requests: adminRequests.filter(r => r.status === 'rejected').length,
+      rejected_requests: adminRequests.filter(r => r.status === 'declined').length,
       salary_increase_requests: adminRequests.filter(r => r.type === 'salary_increase').length,
       late_approval_requests: adminRequests.filter(r => r.type === 'late_approval').length,
       others_requests: adminRequests.filter(r => r.type === 'others').length

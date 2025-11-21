@@ -9,7 +9,8 @@ import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@ta
 import { 
   getHRAdminRequestsApi,
   getMyHRAdminRequestsApi,
-  updateHRAdminRequestApi
+  updateHRAdminRequestApi,
+  getHRAdminRequestByIdApi
 } from '../../apis/hr-admin-requests';
 
 // Query Keys - Centralized for consistency
@@ -81,7 +82,7 @@ export const useUpdateHRAdminRequest = () => {
 
   return useMutation({
     mutationFn: async ({ requestId, action, notes }: { requestId: number; action: 'approve' | 'reject'; notes?: string }) => {
-      const status = action === 'approve' ? 'approved' : 'rejected';
+      const status = action === 'approve' ? 'approved' : 'declined';
       const response = await updateHRAdminRequestApi(requestId, status, notes);
       return response;
     },
@@ -90,6 +91,27 @@ export const useUpdateHRAdminRequest = () => {
       queryClient.invalidateQueries({ queryKey: hrAdminRequestsQueryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: hrAdminRequestsQueryKeys.all });
     },
+  });
+};
+
+/**
+ * Hook to fetch a single HR admin request by ID (full details)
+ */
+export const useHRAdminRequestById = (
+  requestId: number | null,
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: [...hrAdminRequestsQueryKeys.all, 'detail', requestId],
+    queryFn: async () => {
+      if (!requestId) return null;
+      const response = await getHRAdminRequestByIdApi(requestId);
+      return response;
+    },
+    enabled: !!requestId && (options?.enabled !== false),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
   });
 };
 

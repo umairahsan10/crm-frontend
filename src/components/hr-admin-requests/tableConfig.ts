@@ -3,20 +3,59 @@
  * Following the exact pattern of leads/tableConfigs.ts
  */
 
+import React from 'react';
 import { type ColumnConfig } from '../common/DynamicTable/DynamicTable';
+
+// Helper function to format date as MM/DD/YYYY
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return 'N/A';
+  try {
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  } catch {
+    return 'N/A';
+  }
+};
+
+// Helper function to get initials from name
+const getInitials = (firstName: string | null, lastName: string | null): string => {
+  const first = firstName?.charAt(0).toUpperCase() || '';
+  const last = lastName?.charAt(0).toUpperCase() || '';
+  return first + last || 'N/A';
+};
 
 export const adminHRRequestsTableConfig: ColumnConfig[] = [
   {
-    key: 'request_id',
-    label: 'ID',
-    type: 'text',
+    key: 'hr_employee_name',
+    label: 'NAME',
+    type: 'custom',
     sortable: true,
-    width: '80px',
-    render: (value) => `#${value}`
+    render: (_value: any, row: any) => {
+      const firstName = row.hrFirstName || '';
+      const lastName = row.hrLastName || '';
+      const name = firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || 'N/A';
+      const email = row.hr_employee_email || 'N/A';
+      const initials = getInitials(firstName, lastName);
+
+      return React.createElement('div', { className: 'flex items-center' },
+        React.createElement('div', { className: 'flex-shrink-0 h-10 w-10' },
+          React.createElement('div', { className: 'h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center' },
+            React.createElement('span', { className: 'text-sm font-medium text-gray-700' }, initials)
+          )
+        ),
+        React.createElement('div', { className: 'ml-4' },
+          React.createElement('div', { className: 'text-sm font-medium text-gray-900' }, name),
+          React.createElement('div', { className: 'text-sm text-gray-500' }, email)
+        )
+      );
+    }
   },
   {
     key: 'type',
-    label: 'Request Type',
+    label: 'Type',
     type: 'badge',
     sortable: true,
     badgeConfig: {
@@ -55,30 +94,19 @@ export const adminHRRequestsTableConfig: ColumnConfig[] = [
         className: 'bg-green-100 text-green-800',
         text: 'APPROVED'
       },
-      rejected: {
+      declined: {
         className: 'bg-red-100 text-red-800',
-        text: 'REJECTED'
+        text: 'DECLINED'
       }
     }
   },
   {
-    key: 'hr_employee_name',
-    label: 'HR Employee',
-    type: 'text',
-    sortable: true,
-    className: 'font-medium text-gray-900'
-  },
-  {
     key: 'created_at',
-    label: 'Created',
-    type: 'date',
-    sortable: true
-  },
-  {
-    key: 'updated_at',
-    label: 'Updated',
-    type: 'date',
-    sortable: true
+    label: 'Date',
+    type: 'custom',
+    sortable: true,
+    render: (value: string) => 
+      React.createElement('span', { className: 'text-sm text-gray-900' }, formatDate(value))
   }
 ];
 
