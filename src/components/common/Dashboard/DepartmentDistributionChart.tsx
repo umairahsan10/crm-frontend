@@ -38,6 +38,24 @@ export const DepartmentDistributionChart: React.FC<DepartmentDistributionChartPr
   const [isVisible, setIsVisible] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (chartRef.current) {
+      observer.observe(chartRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   // Handle empty data
   if (!data || data.length === 0) {
     return (
@@ -69,24 +87,6 @@ export const DepartmentDistributionChart: React.FC<DepartmentDistributionChartPr
     ...dept,
     percentage: totalEmployees > 0 ? ((dept.value / totalEmployees) * 100).toFixed(1) : '0'
   }));
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (chartRef.current) {
-      observer.observe(chartRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
 
   // Prepare chart data with department-specific colors
   const chartData = {

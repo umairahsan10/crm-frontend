@@ -74,6 +74,29 @@ export interface Employee {
   };
 }
 
+// Minimal employee data for table display (returned by GET /hr/employees)
+export interface EmployeeSummary {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: string;
+  startDate: string;
+  department: {
+    id: number;
+    name: string;
+  };
+  role: {
+    id: number;
+    name: string;
+  };
+  manager?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+  };
+}
+
 export interface CreateEmployeeDto {
   firstName: string;
   lastName: string;
@@ -213,7 +236,7 @@ export interface EmployeeResponseDto {
 }
 
 export interface EmployeesListResponseDto {
-  employees: Employee[];
+  employees: EmployeeSummary[]; // Minimal data for table display
   total: number;
   page: number;
   limit: number;

@@ -19,7 +19,9 @@ import {
 } from '../../../hooks/queries/useHRQueries';
 import {
   type Employee,
-  type EmployeeStatistics
+  type EmployeeSummary,
+  type EmployeeStatistics,
+  getEmployeeByIdApi
 } from '../../../apis/hr-employees';
 import './EmployeeManagement.css';
 
@@ -41,6 +43,7 @@ const EmployeeManagement: React.FC = () => {
   });
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isLoadingEmployeeDetails, setIsLoadingEmployeeDetails] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive' | 'terminated'>('active');
 
   // Pagination state
@@ -151,7 +154,7 @@ const EmployeeManagement: React.FC = () => {
     const allInactiveEmployees = inactiveEmployeesQuery.data?.employees || [];
     const allTerminatedEmployees = terminatedEmployeesQuery.data?.employees || [];
     
-    let allEmployees: Employee[] = [];
+    let allEmployees: EmployeeSummary[] = [];
     
     // Get the appropriate employee list based on active tab
     switch (activeTab) {
@@ -168,8 +171,8 @@ const EmployeeManagement: React.FC = () => {
         allEmployees = allActiveEmployees;
     }
 
-    // Apply ALL filters client-side
-    return allEmployees.filter((employee: Employee) => {
+    // Apply filters client-side (only for fields available in EmployeeSummary)
+    return allEmployees.filter((employee: EmployeeSummary) => {
       // Search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -183,29 +186,17 @@ const EmployeeManagement: React.FC = () => {
       }
 
       // Department filter
-      if (filters.departmentId && employee.departmentId !== parseInt(filters.departmentId)) {
+      if (filters.departmentId && employee.department.id !== parseInt(filters.departmentId)) {
         return false;
       }
 
       // Role filter
-      if (filters.roleId && employee.roleId !== parseInt(filters.roleId)) {
+      if (filters.roleId && employee.role.id !== parseInt(filters.roleId)) {
         return false;
       }
 
-      // Gender filter
-      if (filters.gender && employee.gender !== filters.gender) {
-        return false;
-      }
-
-      // Employment type filter
-      if (filters.employmentType && employee.employmentType !== filters.employmentType) {
-        return false;
-      }
-
-      // Mode of work filter
-      if (filters.modeOfWork && employee.modeOfWork !== filters.modeOfWork) {
-        return false;
-      }
+      // Note: Gender, employmentType, and modeOfWork filters are not available in EmployeeSummary
+      // These should be handled by backend filtering if needed
 
       return true;
     });
@@ -371,9 +362,28 @@ const EmployeeManagement: React.FC = () => {
     setPagination(prev => ({ ...prev, currentPage: page }));
   };
 
-  const handleEmployeeClick = (employee: Employee) => {
-    setSelectedEmployee(employee);
+  const handleEmployeeClick = async (employee: EmployeeSummary) => {
     setDrawerOpen(true);
+    setIsLoadingEmployeeDetails(true);
+    setSelectedEmployee(null); // Clear previous data while loading
+    
+    try {
+      // Call the detail API to get full employee data
+      console.log('🔍 Fetching full employee details for ID:', employee.id);
+      const response = await getEmployeeByIdApi(employee.id);
+      console.log('✅ Employee details fetched:', response);
+      
+      // EmployeeResponseDto is the employee object itself
+      setSelectedEmployee(response as Employee);
+    } catch (error) {
+      console.error('❌ Error fetching employee details:', error);
+      setNotification({
+        type: 'error',
+        message: 'Failed to load employee details. Please try again.'
+      });
+    } finally {
+      setIsLoadingEmployeeDetails(false);
+    }
   };
 
   const handleEditEmployee = (employee: Employee) => {
@@ -746,6 +756,7 @@ const EmployeeManagement: React.FC = () => {
           onClose={handleDrawerClose}
           onEdit={handleEditEmployee}
           onEmployeeUpdated={handleEmployeeUpdated}
+          isLoading={isLoadingEmployeeDetails}
           onSwitchToTerminatedTab={() => {
             setActiveTab('terminated');
             setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1
