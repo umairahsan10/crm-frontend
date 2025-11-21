@@ -46,13 +46,55 @@ const formatCurrency = (amount: number): string => {
 };
 
 
+// Color palettes for charts - distinct colors for better visibility
+const REVENUE_COLORS = [
+  'rgba(34, 197, 94, 0.9)',   // green
+  'rgba(59, 130, 246, 0.9)',  // blue
+  'rgba(168, 85, 247, 0.9)',  // purple
+  'rgba(245, 158, 11, 0.9)',  // orange
+  'rgba(6, 182, 212, 0.9)',   // cyan
+  'rgba(132, 204, 22, 0.9)',  // lime
+  'rgba(236, 72, 153, 0.9)',  // pink
+];
+
+const EXPENSE_COLORS = [
+  'rgba(239, 68, 68, 0.9)',   // red
+  'rgba(245, 158, 11, 0.9)',  // orange
+  'rgba(168, 85, 247, 0.9)',  // purple
+  'rgba(59, 130, 246, 0.9)',  // blue
+  'rgba(236, 72, 153, 0.9)',  // pink
+  'rgba(6, 182, 212, 0.9)',   // cyan
+  'rgba(251, 146, 60, 0.9)',  // amber
+];
+
+// Helper to calculate text color based on background brightness
+const getTextColor = (rgba: string): string => {
+  const rgb = rgba.match(/\d+/g);
+  if (!rgb) return '#1f2937';
+  const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+  return brightness > 128 ? '#1f2937' : '#ffffff';
+};
+
 const FinancePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<FinanceTab>('overview');
   const [selectedTrendPeriod, setSelectedTrendPeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
-  const { hasPermission } = useAuth();
+  const [visibleDatasets, setVisibleDatasets] = useState({
+    revenue: true,
+    expenses: true,
+    netProfit: true,
+  });
+  const [visibleRevenueCategories, setVisibleRevenueCategories] = useState<Set<string>>(new Set());
+  const [visibleExpenseCategories, setVisibleExpenseCategories] = useState<Set<string>>(new Set());
+  const { hasPermission, user } = useAuth();
   
-  // Check permissions for each tab
-  const canViewAssets = hasPermission('assets_permission');
+  // Check if user is admin (admin bypasses all permission checks)
+  const isAdmin = user?.type === 'admin' || user?.role === 'admin';
+  
+  // Check permissions for each tab (admin bypasses all checks)
+  const canViewAssets = isAdmin || hasPermission('assets_permission');
+  const canViewLiabilities = isAdmin || hasPermission('liabilities_permission');
+  const canViewExpenses = isAdmin || hasPermission('expenses_permission');
+  const canViewRevenue = isAdmin || hasPermission('revenues_permission');
 
   // React Query hook for finance overview analytics
   // Only fetch when on overview tab
@@ -75,21 +117,63 @@ const FinancePage: React.FC = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'revenue':
-      return <RevenuePage onBack={handleBackToOverview} />;
-    
-      case 'expenses':
-      return <ExpensesPage onBack={handleBackToOverview} />;
-    
-      case 'assets':
-      if (!canViewAssets) {
-        return (
+        if (!canViewRevenue) {
+          return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
               <div className="text-center py-12 px-4">
-            <div className="text-gray-400 mb-4">
+                <div className="text-gray-400 mb-4">
                   <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Access Denied</h3>
+                <p className="text-sm text-gray-500 mb-6">You don't have permission to access Revenue Management.</p>
+                <button
+                  onClick={handleBackToOverview}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Back to Overview
+                </button>
+              </div>
             </div>
+          );
+        }
+        return <RevenuePage onBack={handleBackToOverview} />;
+    
+      case 'expenses':
+        if (!canViewExpenses) {
+          return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <div className="text-center py-12 px-4">
+                <div className="text-gray-400 mb-4">
+                  <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Access Denied</h3>
+                <p className="text-sm text-gray-500 mb-6">You don't have permission to access Expenses Management.</p>
+                <button
+                  onClick={handleBackToOverview}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Back to Overview
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return <ExpensesPage onBack={handleBackToOverview} />;
+    
+      case 'assets':
+        if (!canViewAssets) {
+          return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <div className="text-center py-12 px-4">
+                <div className="text-gray-400 mb-4">
+                  <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
                 <h3 className="text-xl font-medium text-gray-900 mb-2">Access Denied</h3>
                 <p className="text-sm text-gray-500 mb-6">You don't have permission to access Assets Management.</p>
                 <button
@@ -99,13 +183,34 @@ const FinancePage: React.FC = () => {
                   Back to Overview
                 </button>
               </div>
-          </div>
-        );
-      }
-      return <AssetsPage onBack={handleBackToOverview} />;
+            </div>
+          );
+        }
+        return <AssetsPage onBack={handleBackToOverview} />;
     
       case 'liabilities':
-      return <LiabilitiesPage onBack={handleBackToOverview} />;
+        if (!canViewLiabilities) {
+          return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <div className="text-center py-12 px-4">
+                <div className="text-gray-400 mb-4">
+                  <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Access Denied</h3>
+                <p className="text-sm text-gray-500 mb-6">You don't have permission to access Liabilities Management.</p>
+                <button
+                  onClick={handleBackToOverview}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Back to Overview
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return <LiabilitiesPage onBack={handleBackToOverview} />;
 
       case 'overview':
       default:
@@ -117,7 +222,7 @@ const FinancePage: React.FC = () => {
 
         const trendData = getTrendData();
 
-        // Prepare trend chart data
+        // Prepare trend chart data with visibility control
         const trendChartData = trendData ? {
           labels: trendData.map(item => {
             if (selectedTrendPeriod === 'daily') {
@@ -135,6 +240,7 @@ const FinancePage: React.FC = () => {
               borderColor: 'rgb(34, 197, 94)',
               backgroundColor: 'rgba(34, 197, 94, 0.1)',
               tension: 0.4,
+              hidden: !visibleDatasets.revenue,
             },
             {
               label: 'Expenses',
@@ -142,6 +248,7 @@ const FinancePage: React.FC = () => {
               borderColor: 'rgb(239, 68, 68)',
               backgroundColor: 'rgba(239, 68, 68, 0.1)',
               tension: 0.4,
+              hidden: !visibleDatasets.expenses,
             },
             {
               label: 'Net Profit',
@@ -149,6 +256,7 @@ const FinancePage: React.FC = () => {
               borderColor: 'rgb(59, 130, 246)',
               backgroundColor: 'rgba(59, 130, 246, 0.1)',
               tension: 0.4,
+              hidden: !visibleDatasets.netProfit,
             },
           ],
         } : null;
@@ -158,7 +266,7 @@ const FinancePage: React.FC = () => {
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              position: 'top' as const,
+              display: false, // Hide default legend, we'll use custom buttons
             },
             tooltip: {
               mode: 'index' as const,
@@ -180,6 +288,14 @@ const FinancePage: React.FC = () => {
               },
             },
           },
+        };
+
+        // Toggle dataset visibility
+        const toggleDataset = (dataset: 'revenue' | 'expenses' | 'netProfit') => {
+          setVisibleDatasets(prev => ({
+            ...prev,
+            [dataset]: !prev[dataset],
+          }));
         };
 
         // Revenue breakdown chart - try widgets first, then fallback to topCategories or topSources
@@ -209,23 +325,37 @@ const FinancePage: React.FC = () => {
         };
 
         const revenueBreakdown = getRevenueBreakdownData();
-        const revenueBreakdownData = revenueBreakdown ? {
-          labels: revenueBreakdown.labels,
-          datasets: [
-            {
-              data: revenueBreakdown.data,
-              backgroundColor: [
-                'rgba(34, 197, 94, 0.8)',
-                'rgba(59, 130, 246, 0.8)',
-                'rgba(168, 85, 247, 0.8)',
-                'rgba(245, 158, 11, 0.8)',
-                'rgba(236, 72, 153, 0.8)',
-                'rgba(6, 182, 212, 0.8)',
-                'rgba(132, 204, 22, 0.8)',
-              ].slice(0, revenueBreakdown.labels.length),
-            },
-          ],
-        } : null;
+        
+        // Initialize visible revenue categories if empty
+        if (revenueBreakdown && revenueBreakdown.labels.length > 0 && visibleRevenueCategories.size === 0) {
+          setVisibleRevenueCategories(new Set(revenueBreakdown.labels));
+        }
+        
+        // Filter revenue breakdown based on visible categories
+        const revenueBreakdownData = revenueBreakdown ? (() => {
+          const visible = visibleRevenueCategories.size === 0 
+            ? revenueBreakdown.labels 
+            : revenueBreakdown.labels.filter(label => visibleRevenueCategories.has(label));
+          
+          const visibleIndices = visible.map(label => revenueBreakdown.labels.indexOf(label));
+          
+          return {
+            labels: visible,
+            datasets: [{
+              data: visibleIndices.map(i => revenueBreakdown.data[i]),
+              backgroundColor: visibleIndices.map(i => REVENUE_COLORS[i % REVENUE_COLORS.length]),
+            }],
+          };
+        })() : null;
+        
+        // Toggle revenue category
+        const toggleRevenueCategory = (category: string) => {
+          setVisibleRevenueCategories(prev => {
+            const newSet = new Set(prev);
+            newSet.has(category) ? newSet.delete(category) : newSet.add(category);
+            return newSet;
+          });
+        };
 
         // Expense breakdown chart - try widgets first, then fallback to topCategories or topPaymentMethods
         const getExpenseBreakdownData = () => {
@@ -254,23 +384,37 @@ const FinancePage: React.FC = () => {
         };
 
         const expenseBreakdown = getExpenseBreakdownData();
-        const expenseBreakdownData = expenseBreakdown ? {
-          labels: expenseBreakdown.labels,
-          datasets: [
-            {
-              data: expenseBreakdown.data,
-              backgroundColor: [
-                'rgba(239, 68, 68, 0.8)',
-                'rgba(245, 158, 11, 0.8)',
-                'rgba(168, 85, 247, 0.8)',
-                'rgba(59, 130, 246, 0.8)',
-                'rgba(236, 72, 153, 0.8)',
-                'rgba(6, 182, 212, 0.8)',
-                'rgba(132, 204, 22, 0.8)',
-              ].slice(0, expenseBreakdown.labels.length),
-            },
-          ],
-        } : null;
+        
+        // Initialize visible expense categories if empty
+        if (expenseBreakdown && expenseBreakdown.labels.length > 0 && visibleExpenseCategories.size === 0) {
+          setVisibleExpenseCategories(new Set(expenseBreakdown.labels));
+        }
+        
+        // Filter expense breakdown based on visible categories
+        const expenseBreakdownData = expenseBreakdown ? (() => {
+          const visible = visibleExpenseCategories.size === 0 
+            ? expenseBreakdown.labels 
+            : expenseBreakdown.labels.filter(label => visibleExpenseCategories.has(label));
+          
+          const visibleIndices = visible.map(label => expenseBreakdown.labels.indexOf(label));
+          
+          return {
+            labels: visible,
+            datasets: [{
+              data: visibleIndices.map(i => expenseBreakdown.data[i]),
+              backgroundColor: visibleIndices.map(i => EXPENSE_COLORS[i % EXPENSE_COLORS.length]),
+            }],
+          };
+        })() : null;
+        
+        // Toggle expense category
+        const toggleExpenseCategory = (category: string) => {
+          setVisibleExpenseCategories(prev => {
+            const newSet = new Set(prev);
+            newSet.has(category) ? newSet.delete(category) : newSet.add(category);
+            return newSet;
+          });
+        };
 
         return (
           <div className="min-h-screen bg-gray-50 py-8">
@@ -304,10 +448,11 @@ const FinancePage: React.FC = () => {
                 </div>
               )}
 
-              {/* Quick Stats Cards */}
+              {/* Quick Stats Cards - Only show cards user has permission for */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {/* Revenue Card */}
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('revenue')}>
+                {/* Revenue Card - Only show if user has permission */}
+                {canViewRevenue && (
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('revenue')}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-green-200 rounded-lg group-hover:bg-green-500 transition-colors">
                         <svg className="h-8 w-8 text-green-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -338,10 +483,12 @@ const FinancePage: React.FC = () => {
                   ) : (
                     <div className="text-sm text-gray-500">No data available</div>
                   )}
-                </div>
+                  </div>
+                )}
 
-                {/* Expenses Card */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('expenses')}>
+                {/* Expenses Card - Only show if user has permission */}
+                {canViewExpenses && (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('expenses')}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-blue-200 rounded-lg group-hover:bg-blue-500 transition-colors">
                         <svg className="h-8 w-8 text-blue-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -372,10 +519,12 @@ const FinancePage: React.FC = () => {
                   ) : (
                     <div className="text-sm text-gray-500">No data available</div>
                   )}
-                </div>
+                  </div>
+                )}
 
-                {/* Assets Card */}
-                <div className={`bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-sm border border-indigo-200 p-6 hover:shadow-md transition-shadow ${canViewAssets ? 'cursor-pointer group' : 'opacity-50'}`} onClick={() => canViewAssets && setActiveTab('assets')}>
+                {/* Assets Card - Only show if user has permission */}
+                {canViewAssets && (
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-sm border border-indigo-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('assets')}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-indigo-200 rounded-lg group-hover:bg-indigo-500 transition-colors">
                       <svg className="h-8 w-8 text-indigo-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -402,10 +551,12 @@ const FinancePage: React.FC = () => {
                   ) : (
                     <div className="text-sm text-gray-500">No data available</div>
                   )}
-                </div>
+                  </div>
+                )}
 
-                {/* Liabilities Card */}
-                <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl shadow-sm border border-red-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('liabilities')}>
+                {/* Liabilities Card - Only show if user has permission */}
+                {canViewLiabilities && (
+                  <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl shadow-sm border border-red-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('liabilities')}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-red-200 rounded-lg group-hover:bg-red-500 transition-colors">
                       <svg className="h-8 w-8 text-red-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -436,8 +587,22 @@ const FinancePage: React.FC = () => {
                   ) : (
                     <div className="text-sm text-gray-500">No data available</div>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
+
+              {/* Show message if user has no access to any finance module */}
+              {!canViewRevenue && !canViewExpenses && !canViewAssets && !canViewLiabilities && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center mb-8">
+                  <div className="text-gray-400 mb-4">
+                    <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">No Access</h3>
+                  <p className="text-sm text-gray-500">You don't have permission to access any finance modules. Please contact your administrator.</p>
+                </div>
+              )}
                   
               {/* Financial Summary */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
@@ -625,17 +790,56 @@ const FinancePage: React.FC = () => {
               {/* Trends Chart */}
               {trendChartData && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
                     <h2 className="text-xl font-bold text-gray-900">Financial Trends</h2>
-                    <div className="flex gap-2">
+                    
+                    {/* Dataset Toggle Buttons - Centered and Small */}
+                    <div className="flex justify-center gap-1.5 flex-1">
+                      <button
+                        onClick={() => toggleDataset('revenue')}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                          visibleDatasets.revenue
+                            ? 'bg-green-50 text-green-700 border border-green-200 shadow-sm'
+                            : 'bg-gray-50 text-gray-400 border border-gray-200'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${visibleDatasets.revenue ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                        <span>Revenue</span>
+                      </button>
+                      <button
+                        onClick={() => toggleDataset('expenses')}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                          visibleDatasets.expenses
+                            ? 'bg-red-50 text-red-700 border border-red-200 shadow-sm'
+                            : 'bg-gray-50 text-gray-400 border border-gray-200'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${visibleDatasets.expenses ? 'bg-red-500' : 'bg-gray-300'}`}></div>
+                        <span>Expenses</span>
+                      </button>
+                      <button
+                        onClick={() => toggleDataset('netProfit')}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                          visibleDatasets.netProfit
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                            : 'bg-gray-50 text-gray-400 border border-gray-200'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${visibleDatasets.netProfit ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+                        <span>Net Profit</span>
+                      </button>
+                    </div>
+                    
+                    {/* Period Selector */}
+                    <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
                       {(['daily', 'weekly', 'monthly'] as const).map((period) => (
                         <button
                           key={period}
                           onClick={() => setSelectedTrendPeriod(period)}
-                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
                             selectedTrendPeriod === period
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'text-gray-700 hover:text-gray-900'
                           }`}
                         >
                           {period.charAt(0).toUpperCase() + period.slice(1)}
@@ -643,6 +847,7 @@ const FinancePage: React.FC = () => {
                       ))}
                     </div>
                   </div>
+                  
                   <div style={{ height: '400px' }}>
                     <Line data={trendChartData} options={trendChartOptions} />
                   </div>
@@ -653,38 +858,124 @@ const FinancePage: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Revenue Breakdown */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Revenue Breakdown</h2>
-                  {revenueBreakdownData ? (
-                    <div style={{ height: '300px' }}>
-                      <Pie data={revenueBreakdownData} options={{ responsive: true, maintainAspectRatio: false }} />
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Revenue Breakdown</h2>
+                  
+                  <div className="flex gap-4">
+                    {/* Revenue Category Toggle Buttons - Left Side */}
+                    {revenueBreakdown && revenueBreakdown.labels.length > 0 && (
+                      <div className="flex flex-col gap-1.5 min-w-[120px]">
+                        {revenueBreakdown.labels.map((category, index) => {
+                          const isVisible = visibleRevenueCategories.has(category);
+                          const color = REVENUE_COLORS[index % REVENUE_COLORS.length];
+                          return (
+                            <button
+                              key={category}
+                              onClick={() => toggleRevenueCategory(category)}
+                              className={`px-1.5 py-0.5 text-xs font-medium rounded transition-all text-left ${
+                                isVisible ? 'shadow-sm' : 'opacity-50'
+                              }`}
+                              style={{
+                                backgroundColor: isVisible ? color : '#e5e7eb',
+                                color: isVisible ? getTextColor(color) : '#9ca3af',
+                                border: 'none',
+                              }}
+                            >
+                              {category}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Chart - Right Side */}
+                    <div className="flex-1">
+                      {revenueBreakdownData && revenueBreakdownData.labels.length > 0 ? (
+                        <div style={{ height: '300px' }}>
+                          <Pie 
+                            data={revenueBreakdownData} 
+                            options={{ 
+                              responsive: true, 
+                              maintainAspectRatio: false,
+                              plugins: {
+                                legend: {
+                                  display: false, // Hide default legend, we use custom buttons
+                                },
+                              },
+                            }} 
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                          <svg className="h-16 w-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          <p className="text-sm font-medium text-gray-500 mb-1">No breakdown data available</p>
+                          <p className="text-xs text-gray-400">Add revenue records with categories to see breakdown</p>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                      <svg className="h-16 w-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                      <p className="text-sm font-medium text-gray-500 mb-1">No breakdown data available</p>
-                      <p className="text-xs text-gray-400">Add revenue records with categories to see breakdown</p>
-                    </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Expense Breakdown */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Expense Breakdown</h2>
-                  {expenseBreakdownData ? (
-                    <div style={{ height: '300px' }}>
-                      <Pie data={expenseBreakdownData} options={{ responsive: true, maintainAspectRatio: false }} />
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Expense Breakdown</h2>
+                  
+                  <div className="flex gap-4">
+                    {/* Expense Category Toggle Buttons - Left Side */}
+                    {expenseBreakdown && expenseBreakdown.labels.length > 0 && (
+                      <div className="flex flex-col gap-1.5 min-w-[120px]">
+                        {expenseBreakdown.labels.map((category, index) => {
+                          const isVisible = visibleExpenseCategories.has(category);
+                          const color = EXPENSE_COLORS[index % EXPENSE_COLORS.length];
+                          return (
+                            <button
+                              key={category}
+                              onClick={() => toggleExpenseCategory(category)}
+                              className={`px-1.5 py-0.5 text-xs font-medium rounded transition-all text-left ${
+                                isVisible ? 'shadow-sm' : 'opacity-50'
+                              }`}
+                              style={{
+                                backgroundColor: isVisible ? color : '#e5e7eb',
+                                color: isVisible ? getTextColor(color) : '#9ca3af',
+                                border: 'none',
+                              }}
+                            >
+                              {category}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Chart - Right Side */}
+                    <div className="flex-1">
+                      {expenseBreakdownData && expenseBreakdownData.labels.length > 0 ? (
+                        <div style={{ height: '300px' }}>
+                          <Pie 
+                            data={expenseBreakdownData} 
+                            options={{ 
+                              responsive: true, 
+                              maintainAspectRatio: false,
+                              plugins: {
+                                legend: {
+                                  display: false, // Hide default legend, we use custom buttons
+                                },
+                              },
+                            }} 
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                          <svg className="h-16 w-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          <p className="text-sm font-medium text-gray-500 mb-1">No breakdown data available</p>
+                          <p className="text-xs text-gray-400">Add expense records with categories to see breakdown</p>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                      <svg className="h-16 w-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                      <p className="text-sm font-medium text-gray-500 mb-1">No breakdown data available</p>
-                      <p className="text-xs text-gray-400">Add expense records with categories to see breakdown</p>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>

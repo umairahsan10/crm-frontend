@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavbar } from '../../context/NavbarContext';
+import { useHRAdminRequestById } from '../../hooks/queries/useHRAdminRequestsQueries';
 
 interface AdminHRRequestDetailsDrawerProps {
   request: any;
@@ -25,6 +26,15 @@ const AdminHRRequestDetailsDrawer: React.FC<AdminHRRequestDetailsDrawerProps> = 
   const [isMobile, setIsMobile] = useState(false);
   const [actionNotes, setActionNotes] = useState('');
 
+  // Fetch full details when drawer opens
+  const { data: fullRequest, isLoading: isLoadingDetails } = useHRAdminRequestById(
+    request?.request_id || null,
+    { enabled: isOpen && !!request?.request_id }
+  );
+
+  // Use full request data if available, otherwise fall back to limited request
+  const displayRequest = fullRequest || request;
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -40,7 +50,7 @@ const AdminHRRequestDetailsDrawer: React.FC<AdminHRRequestDetailsDrawerProps> = 
     const statusClasses = {
       pending: 'bg-yellow-100 text-yellow-800',
       approved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800'
+      declined: 'bg-red-100 text-red-800'
     };
     
     return (
@@ -127,87 +137,158 @@ const AdminHRRequestDetailsDrawer: React.FC<AdminHRRequestDetailsDrawerProps> = 
 
           {/* Content */}
           <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
-            <div className="space-y-6">
-              {/* Request Information */}
-              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Request Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Request ID</label>
-                    <p className="text-lg text-gray-900 font-medium">#{request.request_id}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Request Type</label>
-                    <div className="mt-1">
-                      {getTypeBadge(request.type)}
+            {isLoadingDetails ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-gray-500">Loading details...</div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Request Information */}
+                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Request Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Request ID</label>
+                      <p className="text-lg text-gray-900 font-medium">#{displayRequest?.id || request?.request_id}</p>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <div className="mt-1">
-                      {getStatusBadge(request.status)}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Request Type</label>
+                      <div className="mt-1">
+                        {getTypeBadge(displayRequest?.type || request?.type)}
+                      </div>
                     </div>
-                  </div>
-                  <div className="md:col-span-2 lg:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <p className="text-sm text-gray-700">{request.description || 'N/A'}</p>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                      <div className="mt-1">
+                        {getStatusBadge(displayRequest?.status || request?.status)}
+                      </div>
+                    </div>
+                    <div className="md:col-span-2 lg:col-span-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <p className="text-sm text-gray-700">{displayRequest?.description || request?.description || 'N/A'}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* HR Employee Information */}
-              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <svg className="h-5 w-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  HR Employee Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Employee Name</label>
-                    <p className="text-lg text-gray-900 font-medium">{request.hr_employee_name}</p>
+                {/* HR Employee Information */}
+                {displayRequest?.hr?.employee && (
+                  <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      HR Employee Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Employee Name</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {displayRequest.hr.employee.firstName && displayRequest.hr.employee.lastName
+                            ? `${displayRequest.hr.employee.firstName} ${displayRequest.hr.employee.lastName}`
+                            : displayRequest.hr.employee.firstName || displayRequest.hr.employee.lastName || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {displayRequest.hr.employee.email || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {displayRequest.hr.employee.phone || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {displayRequest.hr.employee.department?.name || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {displayRequest.hr.employee.role?.name
+                            ? displayRequest.hr.employee.role.name.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+                            : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                    <p className="text-lg text-gray-900 font-medium">{request.hr_department}</p>
+                )}
+
+                {/* HR Log Information - Only show if available from full request */}
+                {displayRequest?.hrLog && (
+                  <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      HR Log Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Log ID</label>
+                        <p className="text-lg text-gray-900 font-medium">{displayRequest.hrLog.id}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Action Type</label>
+                        <p className="text-lg text-gray-900 font-medium">{displayRequest.hrLog.actionType}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Affected Employee ID</label>
+                        <p className="text-lg text-gray-900 font-medium">{displayRequest.hrLog.affectedEmployeeId}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Log Description</label>
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <p className="text-sm text-gray-700">{displayRequest.hrLog.description || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Log Created At</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {new Date(displayRequest.hrLog.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Dates */}
+                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg className="h-5 w-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Timeline
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Created At</label>
+                      <p className="text-lg text-gray-900 font-medium">
+                        {new Date(displayRequest?.createdAt || request?.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
+                      <p className="text-lg text-gray-900 font-medium">
+                        {new Date(displayRequest?.updatedAt || request?.updated_at).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Dates */}
-              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <svg className="h-5 w-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  Timeline
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Created At</label>
-                    <p className="text-lg text-gray-900 font-medium">
-                      {new Date(request.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label>
-                    <p className="text-lg text-gray-900 font-medium">
-                      {new Date(request.updated_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions (for pending requests only) */}
-              {request.status === 'pending' && (onApprove || onReject) && (
+                {/* Actions (for pending requests only) */}
+                {(displayRequest?.status || request?.status) === 'pending' && (onApprove || onReject) && (
                 <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
                   <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                     <svg className="h-5 w-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,8 +335,9 @@ const AdminHRRequestDetailsDrawer: React.FC<AdminHRRequestDetailsDrawerProps> = 
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -253,6 +253,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
     
+    // Admin bypass - admins have access to everything
+    if (user.type === 'admin' || user.role === 'admin') {
+      console.log('hasPermission: Admin user, bypassing permission check');
+      return true;
+    }
+    
     console.log('hasPermission check:', {
       permission,
       userRole: user.role,
