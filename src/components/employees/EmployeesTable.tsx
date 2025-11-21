@@ -1,17 +1,17 @@
 import React from 'react';
 import DynamicTable from '../common/DynamicTable/DynamicTable';
 import { employeesTableConfig } from './tableConfig';
-import { type Employee } from '../../apis/hr-employees';
+import { type EmployeeSummary } from '../../apis/hr-employees';
 
 interface EmployeesTableProps {
-  employees: Employee[];
+  employees: EmployeeSummary[];
   isLoading: boolean;
   currentPage: number;
   totalPages: number;
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
-  onEmployeeClick: (employee: Employee) => void;
+  onEmployeeClick: (employee: EmployeeSummary) => void;
   onBulkSelect: (employeeIds: string[]) => void;
   selectedEmployees: string[];
 }
