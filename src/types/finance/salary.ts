@@ -24,13 +24,39 @@ export interface SalaryCalculation {
   finalSalary: number;
 }
 
+export interface AbsentDetail {
+  day: number;
+  deduction: number;
+  reason: string;
+}
+
+export interface LateDetail {
+  day: number;
+  deduction: number;
+  reason: string;
+}
+
+export interface HalfDayDetail {
+  day: number;
+  deduction: number;
+  reason: string;
+}
+
 export interface DeductionBreakdown {
+  totalAbsent?: number;
+  totalLateDays?: number;
+  totalHalfDays?: number;
+  monthlyLatesDays?: number;
   absentDeduction: number;
   lateDeduction: number;
   halfDayDeduction: number;
   chargebackDeduction: number;
   refundDeduction: number;
   totalDeduction: number;
+  perDaySalary?: number;
+  absentDetails?: AbsentDetail[];
+  lateDetails?: LateDetail[];
+  halfDayDetails?: HalfDayDetail[];
 }
 
 export interface CalculationPeriod {
