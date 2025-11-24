@@ -178,6 +178,71 @@ export const getTimeAgo = (date: string | Date): string => {
   return `${Math.floor(diffInSeconds / 31536000)}y ago`;
 };
 
+/**
+ * Convert UTC time string to Pakistan Time (PKT, UTC+5)
+ * @param utcTimeString - ISO 8601 UTC time string (e.g., "2025-11-24T20:44:28.000Z")
+ * @param format - Time format: 'HH:mm:ss' for full time, 'HH:mm' for hours:minutes
+ * @returns Formatted time string in PKT
+ */
+export const formatTimeToPKT = (utcTimeString: string | null, format: 'HH:mm:ss' | 'HH:mm' = 'HH:mm'): string => {
+  if (!utcTimeString) return 'N/A';
+  
+  try {
+    // Parse the UTC time string
+    const utcDate = new Date(utcTimeString);
+    
+    // Check if date is valid
+    if (isNaN(utcDate.getTime())) {
+      return 'Invalid Time';
+    }
+    
+    // Convert to PKT using toLocaleString with Asia/Karachi timezone
+    // This properly handles timezone conversion
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: 'Asia/Karachi',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    
+    if (format === 'HH:mm:ss') {
+      options.second = '2-digit';
+    }
+    
+    const pktTimeString = utcDate.toLocaleString('en-US', options);
+    
+    // Extract time part and ensure proper formatting
+    // toLocaleString returns format like "01:44:28" or "1:44:28" depending on locale
+    const timeMatch = pktTimeString.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (timeMatch) {
+      const hours = timeMatch[1].padStart(2, '0');
+      const minutes = timeMatch[2];
+      if (format === 'HH:mm:ss') {
+        const seconds = timeMatch[3] || '00';
+        return `${hours}:${minutes}:${seconds}`;
+      }
+      return `${hours}:${minutes}`;
+    }
+    
+    // Fallback: if regex doesn't match, try splitting
+    const parts = pktTimeString.split(' ')[0].split(':');
+    if (parts.length >= 2) {
+      const hours = parts[0].padStart(2, '0');
+      const minutes = parts[1];
+      if (format === 'HH:mm:ss') {
+        const seconds = parts[2] || '00';
+        return `${hours}:${minutes}:${seconds}`;
+      }
+      return `${hours}:${minutes}`;
+    }
+    
+    return 'Invalid Time';
+  } catch (error) {
+    console.error('Error formatting time to PKT:', error);
+    return 'Invalid Time';
+  }
+};
+
 export const isToday = (date: string | Date): boolean => {
   const today = new Date();
   const checkDate = typeof date === 'string' ? new Date(date) : date;
