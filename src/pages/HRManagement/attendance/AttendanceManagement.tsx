@@ -28,6 +28,7 @@ import {
   type BulkCheckoutDto,
   type UpdateAttendanceLogStatusDto
 } from '../../../apis/attendance';
+import { formatTimeToPKT } from '../../../utils/helpers';
 import './AttendanceManagement.css';
 
 interface AttendanceRecord {
@@ -599,10 +600,9 @@ const AttendanceManagement: React.FC = () => {
       type: 'custom',
       render: (value) => {
         if (!value) return <span className="text-sm text-gray-900">N/A</span>;
-        // Extract time part from ISO string (e.g., "2025-10-30T01:56:24.000Z" -> "01:56:24")
-        const timeMatch = value.match(/T(\d{2}:\d{2}:\d{2})/);
-        const timeString = timeMatch ? timeMatch[1] : value;
-        return <span className="text-sm text-gray-900">{timeString}</span>;
+        // Convert UTC time to PKT (Pakistan Time, UTC+5)
+        const pktTime = formatTimeToPKT(value, 'HH:mm');
+        return <span className="text-sm text-gray-900">{pktTime}</span>;
       }
     },
     {
@@ -611,10 +611,9 @@ const AttendanceManagement: React.FC = () => {
       type: 'custom',
       render: (value) => {
         if (!value) return <span className="text-sm text-gray-900">N/A</span>;
-        // Extract time part from ISO string (e.g., "2025-10-30T01:56:24.000Z" -> "01:56:24")
-        const timeMatch = value.match(/T(\d{2}:\d{2}:\d{2})/);
-        const timeString = timeMatch ? timeMatch[1] : value;
-        return <span className="text-sm text-gray-900">{timeString}</span>;
+        // Convert UTC time to PKT (Pakistan Time, UTC+5)
+        const pktTime = formatTimeToPKT(value, 'HH:mm');
+        return <span className="text-sm text-gray-900">{pktTime}</span>;
       }
     },
     {
