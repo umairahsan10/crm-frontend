@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AssetsTable from '../../components/assets/AssetsTable';
 import GenericAssetFilters from '../../components/assets/GenericAssetFilters';
 import AssetDetailsDrawer from '../../components/assets/AssetDetailsDrawer';
@@ -7,10 +8,6 @@ import { useAssets, useAssetsStatistics, useVendors } from '../../hooks/queries/
 import { createAssetApi } from '../../apis/assets';
 import { createVendorApi, type CreateVendorRequest } from '../../apis/vendors';
 import type { Asset } from '../../types';
-
-interface AssetsPageProps {
-  onBack?: () => void;
-}
 
 interface CreateAssetForm {
   title: string;
@@ -21,7 +18,8 @@ interface CreateAssetForm {
   vendorId: string;
 }
 
-const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
+const AssetsPage: React.FC = () => {
+  const navigate = useNavigate();
   
   // State management
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -230,17 +228,15 @@ const AssetsPage: React.FC<AssetsPageProps> = ({ onBack }) => {
           <div className="flex items-center justify-between">
             <div className="flex-1">
               {/* Back Button */}
-              {onBack && (
-                <button
-                  onClick={onBack}
-                  className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-                >
-                  <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Back to Finance Overview
-                </button>
-              )}
+              <button
+                onClick={() => navigate('/finance')}
+                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+              >
+                <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Finance Overview
+              </button>
               <h1 className="text-3xl font-bold text-gray-900">Assets Management</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Track and manage company assets with depreciation monitoring and vendor management

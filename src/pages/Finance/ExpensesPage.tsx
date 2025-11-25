@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ExpensesTable from '../../components/expenses/ExpensesTable';
 import GenericExpenseFilters from '../../components/expenses/GenericExpenseFilters';
 import ExpenseDetailsDrawer from '../../components/expenses/ExpenseDetailsDrawer';
@@ -7,11 +8,8 @@ import ExpensesStatistics from '../../components/expenses/ExpensesStatistics';
 import { useExpenses, useExpensesStatistics } from '../../hooks/queries/useFinanceQueries';
 import type { Expense } from '../../types';
 
-interface ExpensesPageProps {
-  onBack?: () => void;
-}
-
-const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
+const ExpensesPage: React.FC = () => {
+  const navigate = useNavigate();
   
   // State management
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
@@ -126,17 +124,15 @@ const ExpensesPage: React.FC<ExpensesPageProps> = ({ onBack }) => {
           <div className="flex items-center justify-between">
             <div className="flex-1">
               {/* Back Button */}
-              {onBack && (
-                <button
-                  onClick={onBack}
-                  className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-                >
-                  <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Back to Finance Overview
-                </button>
-              )}
+              <button
+                onClick={() => navigate('/finance')}
+                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+              >
+                <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Finance Overview
+              </button>
               <h1 className="text-3xl font-bold text-gray-900">Expenses Management</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Manage and track expenses with advanced filtering and approval workflows

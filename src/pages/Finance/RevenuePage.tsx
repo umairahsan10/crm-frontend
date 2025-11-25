@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import RevenueTable from '../../components/revenue/RevenueTable';
 import RevenueDetailsDrawer from '../../components/revenue/RevenueDetailsDrawer';
 import AddRevenueDrawer from '../../components/revenue/AddRevenueDrawer';
@@ -7,11 +8,8 @@ import RevenueStatistics from '../../components/revenue/RevenueStatistics';
 import { useRevenue, useRevenueStatistics } from '../../hooks/queries/useFinanceQueries';
 import type { Revenue } from '../../types';
 
-interface RevenuePageProps {
-  onBack?: () => void;
-}
-
-const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
+const RevenuePage: React.FC = () => {
+  const navigate = useNavigate();
   
   // State management
   const [selectedRevenue, setSelectedRevenue] = useState<Revenue | null>(null);
@@ -130,17 +128,15 @@ const RevenuePage: React.FC<RevenuePageProps> = ({ onBack }) => {
           <div className="flex items-center justify-between">
             <div className="flex-1">
               {/* Back Button */}
-              {onBack && (
-                <button
-                  onClick={onBack}
-                  className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-                >
-                  <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Back to Finance Overview
-                </button>
-              )}
+              <button
+                onClick={() => navigate('/finance')}
+                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+              >
+                <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Finance Overview
+              </button>
               <h1 className="text-3xl font-bold text-gray-900">Revenue Management</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Track and manage revenue streams with comprehensive reporting and analytics

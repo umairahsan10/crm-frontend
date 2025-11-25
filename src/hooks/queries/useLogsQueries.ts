@@ -36,7 +36,7 @@ import {
   getHalfDayLogsApi,
   getHalfDayLogsStatsApi,
   type GetHalfDayLogsDto
-} from '../../apis/halfday-logs';
+} from '../../apis/half-day-logs';
 import {
   getSalaryLogsApi,
   getSalaryLogsStatsApi,
@@ -47,6 +47,11 @@ import {
   getHrLogsStatsApi,
   type GetHrLogsDto
 } from '../../apis/hr-logs';
+import {
+  getProjectLogsApi,
+  getProjectLogsStatsApi,
+  type GetProjectLogsDto
+} from '../../apis/project-logs';
 
 // ============================================================================
 // QUERY KEYS - Centralized key management for cache invalidation
@@ -95,6 +100,13 @@ export const logsQueryKeys = {
     lists: () => [...logsQueryKeys.hrLogs.all, 'list'] as const,
     list: (filters: any) => [...logsQueryKeys.hrLogs.lists(), filters] as const,
     stats: () => [...logsQueryKeys.hrLogs.all, 'stats'] as const,
+  },
+
+  projectLogs: {
+    all: ['logs', 'project'] as const,
+    lists: () => [...logsQueryKeys.projectLogs.all, 'list'] as const,
+    list: (filters: any) => [...logsQueryKeys.projectLogs.lists(), filters] as const,
+    stats: () => [...logsQueryKeys.projectLogs.all, 'stats'] as const,
   },
 };
 
@@ -246,16 +258,23 @@ export const useLeaveLogsStatistics = (
 // ============================================================================
 
 export const useHalfDayLogs = (
-  filters: Partial<GetHalfDayLogsDto> = {},
+  filters: Partial<GetHalfDayLogsDto & { employeeId?: number; startDate?: string; endDate?: string }> = {},
   options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
 ) => {
   return useQuery({
     queryKey: logsQueryKeys.halfDayLogs.list(filters),
     queryFn: async () => {
       console.log('🔍 [LOGS] Fetching half day logs with filters:', filters);
-      const response = await getHalfDayLogsApi(filters);
+      // Transform filters to match API expectations
+      const apiFilters: GetHalfDayLogsDto = {
+        employee_id: (filters as any).employeeId || filters.employee_id,
+        start_date: (filters as any).startDate || filters.start_date,
+        end_date: (filters as any).endDate || filters.end_date,
+      };
+      const response = await getHalfDayLogsApi(apiFilters);
       console.log('✅ [LOGS] Half day logs fetched successfully:', response);
-      return response;
+      // API returns array directly, transform to match page expectations
+      return { logs: Array.isArray(response) ? response : [] };
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
@@ -273,7 +292,17 @@ export const useHalfDayLogsStatistics = (
       console.log('📊 [LOGS] Fetching half day logs statistics...');
       const response = await getHalfDayLogsStatsApi();
       console.log('✅ [LOGS] Statistics received:', response);
-      return response;
+      // Transform response to match page expectations
+      return {
+        summary: {
+          totalLogs: response.total_half_day_logs || 0,
+          pendingLogs: response.pending_half_day_logs || 0,
+          approvedLogs: response.completed_half_day_logs || 0,
+          rejectedLogs: 0, // Not available in new API
+          morningHalfDays: 0, // Not available in new API
+          afternoonHalfDays: 0, // Not available in new API
+        }
+      };
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -356,6 +385,63 @@ export const useHRLogsStatistics = (
       const response = await getHrLogsStatsApi();
       console.log('✅ [LOGS] Statistics received:', response);
       return response;
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled: options?.enabled !== false,
+    ...options,
+  });
+};
+
+// ============================================================================
+// PROJECT LOGS QUERIES
+// ============================================================================
+
+export const useProjectLogs = (
+  filters: Partial<GetProjectLogsDto & { projectId?: number; employeeId?: number; startDate?: string; endDate?: string }> = {},
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: logsQueryKeys.projectLogs.list(filters),
+    queryFn: async () => {
+      console.log('🔍 [LOGS] Fetching project logs with filters:', filters);
+      // Transform filters to match API expectations
+      const apiFilters: GetProjectLogsDto = {
+        project_id: (filters as any).projectId || filters.project_id,
+        employee_id: (filters as any).employeeId || filters.employee_id,
+        start_date: (filters as any).startDate || filters.start_date,
+        end_date: (filters as any).endDate || filters.end_date,
+      };
+      const response = await getProjectLogsApi(apiFilters);
+      console.log('✅ [LOGS] Project logs fetched successfully:', response);
+      // API returns array directly, transform to match page expectations
+      return { logs: Array.isArray(response) ? response : [] };
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    enabled: options?.enabled !== false,
+    ...options,
+  });
+};
+
+export const useProjectLogsStatistics = (
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: logsQueryKeys.projectLogs.stats(),
+    queryFn: async () => {
+      console.log('📊 [LOGS] Fetching project logs statistics...');
+      const response = await getProjectLogsStatsApi();
+      console.log('✅ [LOGS] Statistics received:', response);
+      // Transform response to match page expectations
+      return {
+        summary: {
+          totalLogs: response.total_project_logs || 0,
+          todayLogs: response.today_logs || 0,
+          thisWeekLogs: response.this_week_logs || 0,
+          thisMonthLogs: response.this_month_logs || 0,
+        }
+      };
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
