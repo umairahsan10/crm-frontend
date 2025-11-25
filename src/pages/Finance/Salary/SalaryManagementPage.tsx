@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import SalaryTable from '../../../components/finance/salary/SalaryTable';
 import SalaryDetailsDrawer from '../../../components/finance/salary/SalaryDetailsDrawer';
-import GenericSalaryFilters from '../../../components/finance/salary/GenericSalaryFilters';
+import GenericSalaryFilters, { type SalaryFilterValues } from '../../../components/finance/salary/GenericSalaryFilters';
 import { 
-  getAllSalariesDisplay,
-  getSalaryBreakdown,
-  markSalaryAsPaidApi,
-  bulkMarkSalaryAsPaidApi,
-  type BulkMarkPaidDto,
+  getAllSalaries,
+  getSalaryDetails,
+  markSalaryRecordsApi,
   type SalaryFiltersParams,
   getCurrentMonth
 } from '../../../apis/finance/salary';
@@ -50,12 +48,10 @@ const SalaryManagementPage: React.FC = () => {
   });
 
   // Filter state
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<SalaryFilterValues>({
     search: '',
     department: '',
     status: '',
-    fromDate: '',
-    toDate: '',
     minSalary: '',
     maxSalary: '',
     sortBy: 'employeeName',
@@ -64,49 +60,8 @@ const SalaryManagementPage: React.FC = () => {
 
 
   // Handlers
-  const handlePageChange = async (page: number) => {
+  const handlePageChange = (page: number) => {
     setPagination(prev => ({ ...prev, currentPage: page }));
-    // Fetch data for the new page with filters
-    setIsLoading(true);
-    try {
-      const filtersParams: SalaryFiltersParams = {
-        search: filters.search || undefined,
-        department: filters.department || undefined,
-        status: filters.status || undefined,
-        fromDate: filters.fromDate || undefined,
-        toDate: filters.toDate || undefined,
-        minSalary: filters.minSalary || undefined,
-        maxSalary: filters.maxSalary || undefined,
-        sortBy: filters.sortBy || undefined,
-        sortOrder: filters.sortOrder || undefined
-      };
-      
-      const data = await getAllSalariesDisplay(
-        selectedMonth,
-        page,
-        pagination.itemsPerPage,
-        filtersParams
-      );
-      setSalaryData(data);
-      // Update pagination from API response if available
-      if (data.pagination) {
-        setPagination(prev => ({
-          ...prev,
-          currentPage: data.pagination!.page,
-          totalPages: data.pagination!.totalPages,
-          totalItems: data.pagination!.total,
-          itemsPerPage: data.pagination!.limit
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching salary data:', error);
-      setNotification({ 
-        type: 'error', 
-        message: 'Failed to load salary data. Please try again.' 
-      });
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleEmployeeClick = async (employee: SalaryDisplay) => {
@@ -116,7 +71,7 @@ const SalaryManagementPage: React.FC = () => {
     
     try {
       // Fetch detailed breakdown from API to get commission breakdown and detailed deduction breakdown
-      const breakdown = await getSalaryBreakdown(employee.employeeId, employee.month);
+      const breakdown = await getSalaryDetails(employee.employeeId, employee.month);
       setSalaryBreakdown(breakdown);
     } catch (error) {
       console.error('Error fetching salary breakdown:', error);
@@ -176,7 +131,10 @@ const SalaryManagementPage: React.FC = () => {
     
     try {
       setIsMarkingPaid(true);
-      await markSalaryAsPaidApi(employee.employeeId, employee.month);
+      await markSalaryRecordsApi({
+        employeeId: employee.employeeId,
+        month: employee.month
+      });
       
       // Refresh data
       await fetchSalaryData();
@@ -218,12 +176,10 @@ const SalaryManagementPage: React.FC = () => {
         return;
       }
       
-      const bulkData: BulkMarkPaidDto = {
+      const response = await markSalaryRecordsApi({
         employeeIds: unpaidEmployeeIds,
         month: selectedMonth
-      };
-      
-      const response = await bulkMarkSalaryAsPaidApi(bulkData);
+      });
       
       // Refresh data
       await fetchSalaryData();
@@ -247,8 +203,8 @@ const SalaryManagementPage: React.FC = () => {
   };
 
   // Filter handlers
-  const handleFiltersChange = useCallback((newFilters: any) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+  const handleFiltersChange = useCallback((newFilters: SalaryFilterValues) => {
+    setFilters(newFilters);
     // Reset to first page when filters change
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
@@ -258,8 +214,6 @@ const SalaryManagementPage: React.FC = () => {
       search: '',
       department: '',
       status: '',
-      fromDate: '',
-      toDate: '',
       minSalary: '',
       maxSalary: '',
       sortBy: 'employeeName',
@@ -320,15 +274,13 @@ const SalaryManagementPage: React.FC = () => {
         search: filters.search || undefined,
         department: filters.department || undefined,
         status: filters.status || undefined,
-        fromDate: filters.fromDate || undefined,
-        toDate: filters.toDate || undefined,
         minSalary: filters.minSalary || undefined,
         maxSalary: filters.maxSalary || undefined,
         sortBy: filters.sortBy || undefined,
         sortOrder: filters.sortOrder || undefined
       };
       
-      const data = await getAllSalariesDisplay(
+      const data = await getAllSalaries(
         selectedMonth,
         pagination.currentPage,
         pagination.itemsPerPage,
@@ -373,42 +325,6 @@ const SalaryManagementPage: React.FC = () => {
     setSelectedMonth(month);
     // Reset to first page when month changes
     setPagination(prev => ({ ...prev, currentPage: 1 }));
-    // Fetch data for the new month with filters
-    setIsLoading(true);
-    
-    const filtersParams: SalaryFiltersParams = {
-      search: filters.search || undefined,
-      department: filters.department || undefined,
-      status: filters.status || undefined,
-      fromDate: filters.fromDate || undefined,
-      toDate: filters.toDate || undefined,
-      minSalary: filters.minSalary || undefined,
-      maxSalary: filters.maxSalary || undefined,
-      sortBy: filters.sortBy || undefined,
-      sortOrder: filters.sortOrder || undefined
-    };
-    
-    getAllSalariesDisplay(month, 1, pagination.itemsPerPage, filtersParams).then(data => {
-      setSalaryData(data);
-      // Update pagination from API response if available
-      if (data.pagination) {
-        setPagination(prev => ({
-          ...prev,
-          currentPage: data.pagination!.page || 1,
-          totalPages: data.pagination!.totalPages || prev.totalPages,
-          totalItems: data.pagination!.total || prev.totalItems,
-          itemsPerPage: data.pagination!.limit || prev.itemsPerPage
-        }));
-      }
-    }).catch(error => {
-      console.error('Error fetching salary data:', error);
-      setNotification({ 
-        type: 'error', 
-        message: 'Failed to load salary data. Please try again.' 
-      });
-    }).finally(() => {
-      setIsLoading(false);
-    });
   };
 
 
