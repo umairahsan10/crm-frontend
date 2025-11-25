@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { type Employee } from '../../apis/hr-employees';
 import { useNavbar } from '../../context/NavbarContext';
+import { useAuth } from '../../context/AuthContext';
 import { terminateEmployeeApi } from '../../apis/hr-employees';
 
 interface EmployeeDetailsDrawerProps {
@@ -25,6 +26,7 @@ const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
   isLoading = false
 }) => {
   const { isNavbarOpen } = useNavbar();
+  const { user } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
   const [showTerminateModal, setShowTerminateModal] = useState(false);
   const [terminationData, setTerminationData] = useState({
@@ -148,14 +150,16 @@ const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
           {/* Content Skeleton */}
           <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
             <div className="space-y-6">
-              {/* Actions Section Skeleton */}
-              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                <div className="h-6 w-24 bg-gray-300 rounded animate-pulse mb-4"></div>
-                <div className="flex flex-wrap gap-3">
-                  <div className="h-11 w-40 bg-gray-200 rounded-md animate-pulse"></div>
-                  <div className="h-11 w-48 bg-gray-200 rounded-md animate-pulse"></div>
+              {/* Actions Section Skeleton - Hide for admin users */}
+              {user && user.type !== 'admin' && user.role !== 'admin' && (
+                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                  <div className="h-6 w-24 bg-gray-300 rounded animate-pulse mb-4"></div>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="h-11 w-40 bg-gray-200 rounded-md animate-pulse"></div>
+                    <div className="h-11 w-48 bg-gray-200 rounded-md animate-pulse"></div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Personal Information Section Skeleton */}
               <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
@@ -261,47 +265,49 @@ const EmployeeDetailsDrawer: React.FC<EmployeeDetailsDrawerProps> = ({
           {/* Content */}
           <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
             <div className="space-y-6">
-              {/* Action Buttons - Moved to Top */}
-              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <svg className="h-5 w-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Actions
-                </h3>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={handleEditClick}
-                    disabled={isDeleting || employee.status === 'terminated'}
-                    className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {/* Action Buttons - Moved to Top - Hide entire section for admin users */}
+              {user && user.type !== 'admin' && user.role !== 'admin' && (
+                <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg className="h-5 w-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Edit Employee
-                  </button>
-                  {employee.status !== 'terminated' && (
+                    Actions
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
                     <button
-                      onClick={handleTerminateClick}
-                      disabled={isDeleting}
-                      className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={handleEditClick}
+                      disabled={isDeleting || employee.status === 'terminated'}
+                      className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
-                      Terminate Employee
+                      Edit Employee
                     </button>
-                  )}
-                  {employee.status === 'terminated' && (
-                    <div className="inline-flex items-center px-6 py-3 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50">
-                      <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Employee Terminated
-                    </div>
-                  )}
+                    {employee.status !== 'terminated' && (
+                      <button
+                        onClick={handleTerminateClick}
+                        disabled={isDeleting}
+                        className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Terminate Employee
+                      </button>
+                    )}
+                    {employee.status === 'terminated' && (
+                      <div className="inline-flex items-center px-6 py-3 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50">
+                        <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Employee Terminated
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Personal Information */}
               <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>

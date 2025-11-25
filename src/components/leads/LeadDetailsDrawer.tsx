@@ -175,7 +175,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
     }
   };
 
-  // Populate forms when lead changes
+  // Populate forms when lead changes and load timeline/comments from API
   useEffect(() => {
     if (lead && isOpen) {
       console.log('🔍 LeadDetailsDrawer received lead:', lead);
@@ -190,31 +190,19 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
         comment: ''
       });
       
-      // Optimize: Use existing data from lead prop for ALL tabs (All Leads, Cracked Leads, Archive Leads)
-      // Skip ALL API calls when clicking rows - use data from the list or empty arrays
-      // This provides instant drawer opening without network delays
-      const leadComments = (lead as any)?.comments || [];
-      const history = (lead as any)?.outcomeHistory || [];
-      const hasComments = Array.isArray(leadComments) && leadComments.length > 0;
-      const hasOutcomeHistory = Array.isArray(history) && history.length > 0;
-      
-      // Use existing data if available, otherwise use empty arrays
-      // No API calls - all data comes from the list we already have
-      if (hasComments || hasOutcomeHistory) {
-        // We have data in the prop - use it directly
-        setComments(leadComments);
-        setOutcomeHistory(history);
-        console.log('✅ Using existing data from lead prop - skipping API call');
-      } else {
-        // No data in prop - use empty arrays, no API call needed
-        // Comments and timeline can be loaded on-demand if user navigates to those tabs
-        setComments([]);
-        setOutcomeHistory([]);
-        console.log('✅ Using empty arrays - skipping API call for instant drawer opening');
-      }
+      // Load timeline and comments from API initially if they exist
+      // This ensures we always have the latest data from the server
+      fetchLeadDetails(lead.id.toString());
     }
   }, [lead, isOpen, viewMode]);
 
+
+  // Reset active tab if admin tries to access Update tab
+  useEffect(() => {
+    if (user && (user.type === 'admin' || user.role === 'admin') && activeTab === 'update') {
+      setActiveTab('details');
+    }
+  }, [user, activeTab]);
 
   // Check if device is mobile
   useEffect(() => {
@@ -765,13 +753,19 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                   Details
                 </button>
               ) : (
-                // For regular leads - show all tabs
+                // For regular leads - show all tabs (except Update tab for admin)
                 [
                 { id: 'details', name: 'Details' },
                 { id: 'timeline', name: 'Timeline' },
                 { id: 'comments', name: 'Comments' },
                 { id: 'update', name: 'Update' }
-              ].map((tab) => (
+              ].filter((tab) => {
+                // Hide Update tab for admin users
+                if (tab.id === 'update' && user && (user.type === 'admin' || user.role === 'admin')) {
+                  return false;
+                }
+                return true;
+              }).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => {
@@ -818,7 +812,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Lead Source</label>
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        {lead.source || 'N/A'}
+                        {lead.source || (lead as any).lead?.source || 'N/A'}
                       </span>
                     </div>
                     <div>

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import CreateLeadForm from '../../components/common/CreateLeadForm/CreateLeadForm';
 import { CsvUploadComponent } from '../../components/leads';
 
 const LeadsCreationPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [creationMode, setCreationMode] = useState<'manual' | 'csv'>('manual');
 
   // Check if user is a sales manager, marketing manager, or has appropriate permissions
@@ -31,7 +33,11 @@ const LeadsCreationPage: React.FC = () => {
 
   const handleManualSuccess = (lead: any) => {
     console.log('Lead created successfully:', lead);
-    // You can add success notification here
+    // Redirect to leads management page after successful creation
+    // Small delay to allow user to see the success notification
+    setTimeout(() => {
+      navigate('/leads');
+    }, 1500);
   };
 
   const handleManualError = (error: string) => {
