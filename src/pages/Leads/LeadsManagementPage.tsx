@@ -15,7 +15,8 @@ import {
 import { 
   useLeads, 
   useCrackedLeadsAll, 
-  useArchivedLeads, 
+  useArchivedLeads,
+  useCompletedLeads,
   useLeadsStatistics,
   useSalesUnits,
   useFilterEmployees,
@@ -35,7 +36,7 @@ const LeadsManagementPage: React.FC = () => {
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [showStatistics, setShowStatistics] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'leads' | 'crack' | 'archive'>('leads');
+  const [activeTab, setActiveTab] = useState<'leads' | 'crack' | 'archive' | 'completed'>('leads');
   const [showRequestLeadModal, setShowRequestLeadModal] = useState(false);
 
   // Pagination state for each tab
@@ -54,6 +55,13 @@ const LeadsManagementPage: React.FC = () => {
   });
   
   const [archivedPagination, setArchivedPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
+
+  const [completedPagination, setCompletedPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
@@ -91,7 +99,7 @@ const LeadsManagementPage: React.FC = () => {
     closedBy: '',
     currentPhase: '',
     totalPhases: '',
-    sortBy: 'crackedAt',
+    sortBy: 'updatedAt', // Sort by updatedAt to show recently updated payments first
     sortOrder: 'desc' as 'asc' | 'desc'
   });
 
@@ -105,6 +113,16 @@ const LeadsManagementPage: React.FC = () => {
     archivedFrom: '',
     archivedTo: '',
     sortBy: 'archivedOn',  // Correct field name from backend
+    sortOrder: 'desc' as 'asc' | 'desc'
+  });
+
+  const [completedFilters, setCompletedFilters] = useState({
+    search: '',
+    salesUnitId: '',
+    industryId: '',
+    minAmount: '',
+    maxAmount: '',
+    sortBy: 'closedAt',
     sortOrder: 'desc' as 'asc' | 'desc'
   });
 
@@ -127,15 +145,23 @@ const LeadsManagementPage: React.FC = () => {
     archivedFilters,
     { enabled: activeTab === 'archive' }
   );
+  const completedLeadsQuery = useCompletedLeads(
+    user?.id ? Number(user.id) : 0,
+    completedPagination.currentPage,
+    completedPagination.itemsPerPage,
+    completedFilters,
+    { enabled: activeTab === 'completed' && !!user?.id }
+  );
   const statisticsQuery = useLeadsStatistics({ enabled: activeTab === 'leads' });
   const salesUnitsQuery = useSalesUnits();
   const employeesQuery = useFilterEmployees();
-  const industriesQuery = useIndustries({ enabled: activeTab === 'crack' });
+  const industriesQuery = useIndustries({ enabled: activeTab === 'crack' || activeTab === 'completed' });
 
   // Extract data and loading states from queries
   const regularLeads = (leadsQuery.data as any)?.data || [];
   const allCrackedLeads = (crackedLeadsQuery.data as any)?.data || [];
   const archivedLeads = (archivedLeadsQuery.data as any)?.data || [];
+  const completedLeads = (completedLeadsQuery.data as any)?.data || [];
 
   // Client-side filtering and pagination for cracked leads
   const filteredCrackedLeads = React.useMemo(() => {
@@ -205,6 +231,11 @@ const LeadsManagementPage: React.FC = () => {
             aValue = new Date(a.crackedAt || 0).getTime();
             bValue = new Date(b.crackedAt || 0).getTime();
             break;
+          case 'updatedAt':
+            // Sort by updatedAt if available (for payment updates), fallback to crackedAt
+            aValue = new Date(a.updatedAt || a.crackedAt || 0).getTime();
+            bValue = new Date(b.updatedAt || b.crackedAt || 0).getTime();
+            break;
           case 'amount':
             aValue = parseFloat(a.amount || 0);
             bValue = parseFloat(b.amount || 0);
@@ -252,6 +283,7 @@ const LeadsManagementPage: React.FC = () => {
   const isLoadingRegular = leadsQuery.isLoading;
   const isLoadingCracked = crackedLeadsQuery.isLoading;
   const isLoadingArchived = archivedLeadsQuery.isLoading;
+  const isLoadingCompleted = completedLeadsQuery.isLoading;
 
   // Update pagination when React Query data changes
   React.useEffect(() => {
@@ -289,6 +321,17 @@ const LeadsManagementPage: React.FC = () => {
     }
   }, [(archivedLeadsQuery.data as any)?.pagination]);
 
+  React.useEffect(() => {
+    if ((completedLeadsQuery.data as any)?.pagination) {
+      setCompletedPagination(prev => ({
+        ...prev,
+        currentPage: (completedLeadsQuery.data as any).pagination.page,
+        totalPages: (completedLeadsQuery.data as any).pagination.totalPages,
+        totalItems: (completedLeadsQuery.data as any).pagination.total,
+      }));
+    }
+  }, [(completedLeadsQuery.data as any)?.pagination]);
+
   // Handle tab switching - React Query handles data fetching automatically
   React.useEffect(() => {
     if (activeTab === 'archive' && !canAccessArchiveLeads()) {
@@ -303,7 +346,8 @@ const LeadsManagementPage: React.FC = () => {
     const currentTabLoaded = 
       (activeTab === 'leads' && leadsQuery.data) ||
       (activeTab === 'crack' && crackedLeadsQuery.data) ||
-      (activeTab === 'archive' && archivedLeadsQuery.data);
+      (activeTab === 'archive' && archivedLeadsQuery.data) ||
+      (activeTab === 'completed' && completedLeadsQuery.data);
     
     if (!currentTabLoaded) return; // Wait for current tab to load first
     
@@ -352,6 +396,23 @@ const LeadsManagementPage: React.FC = () => {
           staleTime: 5 * 60 * 1000,
         });
       }
+
+      // Prefetch completed leads if not already loaded
+      if (activeTab !== 'completed' && !completedLeadsQuery.data && user?.id) {
+        queryClient.prefetchQuery({
+          queryKey: leadsQueryKeys.completedList({ 
+            employeeId: Number(user.id),
+            page: completedPagination.currentPage, 
+            limit: completedPagination.itemsPerPage, 
+            ...completedFilters 
+          }),
+          queryFn: async () => {
+            const { getCompletedLeadsApi } = await import('../../apis/leads');
+            return getCompletedLeadsApi(Number(user.id), completedPagination.currentPage, completedPagination.itemsPerPage, completedFilters);
+          },
+          staleTime: 5 * 60 * 1000,
+        });
+      }
     }, 500); // Small delay to not block initial render
 
     return () => clearTimeout(prefetchTimer);
@@ -360,11 +421,15 @@ const LeadsManagementPage: React.FC = () => {
     queryClient, 
     leadsQuery.data, 
     crackedLeadsQuery.data, 
-    archivedLeadsQuery.data, 
+    archivedLeadsQuery.data,
+    completedLeadsQuery.data,
+    user?.id,
     crackedFilters, 
-    archivedFilters, 
+    archivedFilters,
+    completedFilters,
     regularFilters,
     archivedPagination,
+    completedPagination,
     regularPagination
   ]);
 
@@ -376,6 +441,8 @@ const LeadsManagementPage: React.FC = () => {
       setCrackedPagination(prev => ({ ...prev, currentPage: page }));
     } else if (activeTab === 'archive') {
       setArchivedPagination(prev => ({ ...prev, currentPage: page }));
+    } else if (activeTab === 'completed') {
+      setCompletedPagination(prev => ({ ...prev, currentPage: page }));
     }
   };
 
@@ -451,6 +518,31 @@ const LeadsManagementPage: React.FC = () => {
       sortBy: 'archivedOn',
       sortOrder: 'desc'
     });
+  }, []);
+
+  const handleCompletedFiltersChange = useCallback((newFilters: any) => {
+    // Map GenericLeadsFilters field names to completedFilters field names
+    const mappedFilters = {
+      ...newFilters,
+      industryId: newFilters.industry || '', // Map 'industry' to 'industryId'
+      salesUnitId: newFilters.salesUnit || '', // Map 'salesUnit' to 'salesUnitId'
+    };
+    setCompletedFilters(prev => ({ ...prev, ...mappedFilters }));
+    // Reset to page 1 when filters change
+    setCompletedPagination(prev => ({ ...prev, currentPage: 1 }));
+  }, []);
+
+  const handleCompletedClearFilters = useCallback(() => {
+    setCompletedFilters({
+      search: '',
+      salesUnitId: '',
+      industryId: '',
+      minAmount: '',
+      maxAmount: '',
+      sortBy: 'closedAt',
+      sortOrder: 'desc'
+    });
+    setCompletedPagination(prev => ({ ...prev, currentPage: 1 }));
   }, []);
 
   const handleBulkAssign = async (leadIds: string[], assignedTo: string) => {
@@ -618,6 +710,21 @@ const LeadsManagementPage: React.FC = () => {
                   </div>
                 </button>
               )}
+              <button
+                onClick={() => setActiveTab('completed')}
+                className={`flex-1 py-3 px-4 border-b-2 font-medium text-sm transition-colors text-center ${
+                  activeTab === 'completed'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Completed</span>
+                </div>
+              </button>
             </nav>
           </div>
         </div>
@@ -696,6 +803,28 @@ const LeadsManagementPage: React.FC = () => {
           />
         )}
 
+        {activeTab === 'completed' && (
+          <GenericLeadsFilters
+            showFilters={{
+              salesUnit: true,
+              industry: true,
+              amountRange: true
+            }}
+            onFiltersChange={handleCompletedFiltersChange}
+            onClearFilters={handleCompletedClearFilters}
+            salesUnits={salesUnits}
+            industries={industries}
+            searchPlaceholder="Search completed leads..."
+            theme={{
+              primary: 'bg-blue-600',
+              secondary: 'hover:bg-blue-700',
+              ring: 'ring-blue-500',
+              bg: 'bg-blue-100',
+              text: 'text-blue-800'
+            }}
+          />
+        )}
+
         {/* Bulk Actions */}
         <BulkActions
           selectedLeads={selectedLeads}
@@ -752,6 +881,21 @@ const LeadsManagementPage: React.FC = () => {
           />
         )}
 
+        {activeTab === 'completed' && (
+          <CrackLeadsTable
+            leads={completedLeads}
+            isLoading={isLoadingCompleted}
+            currentPage={completedPagination.currentPage}
+            totalPages={completedPagination.totalPages}
+            totalItems={completedPagination.totalItems}
+            itemsPerPage={completedPagination.itemsPerPage}
+            onPageChange={handlePageChange}
+            onLeadClick={handleLeadClick}
+            onBulkSelect={handleBulkSelect}
+            selectedLeads={selectedLeads}
+          />
+        )}
+
         {/* Lead Details Drawer */}
         <LeadDetailsDrawer
           lead={selectedLead}
@@ -759,8 +903,19 @@ const LeadsManagementPage: React.FC = () => {
           onClose={() => setSelectedLead(null)}
           viewMode={activeTab === 'leads' ? 'full' : 'details-only'}
           onLeadUpdated={(updatedLead) => {
-            // React Query will automatically refetch the data
-            // No manual state updates needed!
+            // Invalidate cracked leads query to refetch updated data
+            // This ensures the table shows the latest payment updates
+            queryClient.invalidateQueries({ 
+              queryKey: leadsQueryKeys.crackedAll(crackedFilters) 
+            });
+            queryClient.invalidateQueries({ 
+              queryKey: leadsQueryKeys.crackedList({ page: 1, limit: 1000, ...crackedFilters }) 
+            });
+            
+            // Also invalidate regular leads query in case the lead status changed
+            queryClient.invalidateQueries({ 
+              queryKey: leadsQueryKeys.list(regularFilters) 
+            });
             
             setSelectedLead(updatedLead);
             setNotification({

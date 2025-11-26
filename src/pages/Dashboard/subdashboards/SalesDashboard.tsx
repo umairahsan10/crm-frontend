@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import { ActivityFeed } from '../../../components/common/Dashboard/ActivityFeed';
 import { ChartWidget } from '../../../components/common/Dashboard/ChartWidget';
-import { DepartmentQuickAccess } from '../../../components/common/Dashboard';
+import { ProjectStatus, DepartmentQuickAccess } from '../../../components/common/Dashboard';
 import { PerformanceLeaderboard } from '../../../components/common/Leaderboard';
 import { DepartmentFilter } from '../../../components/common/DepartmentFilter';
 import { useAuth } from '../../../context/AuthContext';
@@ -70,6 +70,13 @@ const SalesDashboard: React.FC = () => {
 
   const roleLevel = getUserRoleLevel();
   const units = ['North Unit', 'South Unit', 'East Unit', 'West Unit'];
+
+  // Check if user should have restricted access (junior or sales employee - not manager/unit head/team lead)
+  // Junior and regular sales employees cannot see Monthly Sales Trend and Top Performers
+  // Only managers, unit heads, and team leads can see these sections
+  const hasRestrictedAccess = !user || 
+                              user.role === 'junior' || 
+                              (user.department === 'Sales' && roleLevel === 'employee');
 
   // Fetch metric grid data from API
   const { data: metricGridData, isLoading: isLoadingMetrics, isError: isErrorMetrics, error: metricsError, refetch: refetchMetrics } = useMetricGrid();
@@ -470,73 +477,75 @@ const SalesDashboard: React.FC = () => {
             className="flex-1"
           />
         </div>
-        {/* Right Column - One component with matching height - 2/3 width */}
-        <div className="xl:col-span-2">
-          {isErrorSalesTrends ? (
-            <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6 h-full flex items-center justify-center">
-              <div className="text-center">
-                <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load sales trends</h3>
-                <p className="mt-1 text-sm text-gray-500">{salesTrendsError?.message || 'Unknown error occurred'}</p>
-                <button
-                  onClick={() => refetchSalesTrends()}
-                  className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  Retry
-                </button>
-              </div>
-            </div>
-          ) : (
-            <ChartWidget
-              title="Monthly Sales Trend"
-              data={salesTrendData}
-              type="line"
-              loading={isLoadingSalesTrends}
-            />
-          )}
+        {/* Active Projects - 2/3 width */}
+        <div className="xl:col-span-2 flex">
+          <ProjectStatus className="h-full w-full" />
         </div>
       </div>
 
-      {/* Additional Content - Moves to next line */}
-      <div className="space-y-6">
-        {/* Top Performers Leaderboard */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Sales Department Top Performers
-            </h3>
-            <p className="text-sm text-gray-600">
-              Track and compare performance across the sales team
-            </p>
+      {/* Bottom Section - Sales Trend and Top Performers split 50/50 */}
+      {/* Only show for non-restricted users (managers, unit heads, team leads) */}
+      {!hasRestrictedAccess && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          {/* Monthly Sales Trend Chart - 50% width */}
+          <div className="flex">
+            {isErrorSalesTrends ? (
+              <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6 h-full flex items-center justify-center w-full">
+                <div className="text-center">
+                  <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load sales trends</h3>
+                  <p className="mt-1 text-sm text-gray-500">{salesTrendsError?.message || 'Unknown error occurred'}</p>
+                  <button
+                    onClick={() => refetchSalesTrends()}
+                    className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <ChartWidget
+                title="Monthly Sales Trend"
+                data={salesTrendData}
+                type="line"
+                loading={isLoadingSalesTrends}
+                className="flex-1"
+              />
+            )}
           </div>
-          <div className="p-6">
+          {/* Top Performers Leaderboard - 50% width */}
+          <div className="flex">
             {isLoadingTopPerformers ? (
-              <div className="flex items-center justify-center h-64">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full flex items-center justify-center w-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
             ) : isErrorTopPerformers ? (
-              <div className="flex flex-col items-center justify-center h-64">
-                <svg className="h-12 w-12 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="text-sm font-medium text-gray-900 mb-1">Failed to load top performers</h3>
-                <p className="text-xs text-gray-500 mb-4">{topPerformersError?.message || 'Unknown error occurred'}</p>
-                <button
-                  onClick={() => refetchTopPerformers()}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  Retry
-                </button>
+              <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6 h-full flex items-center justify-center w-full">
+                <div className="text-center">
+                  <svg className="mx-auto h-12 w-12 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="text-sm font-medium text-gray-900 mb-1">Failed to load top performers</h3>
+                  <p className="text-xs text-gray-500 mb-4">{topPerformersError?.message || 'Unknown error occurred'}</p>
+                  <button
+                    onClick={() => refetchTopPerformers()}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    Retry
+                  </button>
+                </div>
               </div>
             ) : topPerformersData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64">
-                <svg className="h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <h3 className="text-sm font-medium text-gray-900 mb-1">No top performers data</h3>
-                <p className="text-xs text-gray-500">No performance data available yet</p>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full flex items-center justify-center w-full">
+                <div className="text-center">
+                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <h3 className="text-sm font-medium text-gray-900 mb-1">No top performers data</h3>
+                  <p className="text-xs text-gray-500">No performance data available yet</p>
+                </div>
               </div>
             ) : (
               <PerformanceLeaderboard 
@@ -544,11 +553,12 @@ const SalesDashboard: React.FC = () => {
                 members={topPerformersData}
                 showDepartment={false}
                 showRole={false}
+                className="flex-1"
               />
             )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

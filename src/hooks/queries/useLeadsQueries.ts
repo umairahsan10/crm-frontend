@@ -10,6 +10,7 @@ import {
   getLeadsApi, 
   getCrackedLeadsApi, 
   getArchivedLeadsApi, 
+  getCompletedLeadsApi,
   getLeadsStatisticsApi,
   getSalesUnitsApi,
   getFilterEmployeesApi,
@@ -34,6 +35,8 @@ export const leadsQueryKeys = {
   crackedDetail: (id: number) => [...leadsQueryKeys.cracked(), 'detail', id] as const,
   archived: () => [...leadsQueryKeys.all, 'archived'] as const,
   archivedList: (filters: any) => [...leadsQueryKeys.archived(), 'list', filters] as const,
+  completed: () => [...leadsQueryKeys.all, 'completed'] as const,
+  completedList: (filters: any) => [...leadsQueryKeys.completed(), 'list', filters] as const,
 };
 
 /**
@@ -115,6 +118,22 @@ export const useArchivedLeads = (page: number = 1, limit: number = 20, filters: 
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
     refetchOnMount: false, // Don't refetch when component mounts if data exists
     enabled: options.enabled !== false,
+  });
+};
+
+/**
+ * Hook to fetch completed leads with pagination and filters
+ * Requires employeeId for role-based filtering
+ */
+export const useCompletedLeads = (employeeId: number, page: number = 1, limit: number = 20, filters: any = {}, options: any = {}) => {
+  return useQuery({
+    queryKey: leadsQueryKeys.completedList({ employeeId, page, limit, ...filters }),
+    queryFn: () => getCompletedLeadsApi(employeeId, page, limit, filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes - completed data rarely changes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Don't refetch when component mounts if data exists
+    enabled: !!employeeId && options.enabled !== false,
   });
 };
 

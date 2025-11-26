@@ -101,7 +101,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showGeneratePaymentLinkModal, setShowGeneratePaymentLinkModal] = useState(false);
   const [selectedCrackedLead, setSelectedCrackedLead] = useState<any>(null);
-  const [paymentAmount, setPaymentAmount] = useState<'full' | 'half'>('full');
+  // Payment amount is now stored in paymentDetails.amount from Generate Payment Link modal
   const [transactionId, setTransactionId] = useState<string>('');
   const [isCompletingPayment, setIsCompletingPayment] = useState(false);
   const [isGeneratingTransaction, setIsGeneratingTransaction] = useState(false);
@@ -193,6 +193,49 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
       // Load timeline and comments from API initially if they exist
       // This ensures we always have the latest data from the server
       fetchLeadDetails(lead.id.toString());
+      
+      // If payment link is generated, load payment details and open payment modal
+      if (lead.status === 'payment_link_generated' && (lead as any).crackedLeads?.length > 0) {
+        const crackedLead = (lead as any).crackedLeads[0];
+        setSelectedCrackedLead(crackedLead);
+        
+        // Try to find transaction ID from lead data or fetch it
+        // The transaction might be in the lead data structure
+        const loadPaymentData = async () => {
+          try {
+            // Check multiple possible locations for transaction info in the lead data
+            let transactionInfo = (lead as any).transaction || 
+                                  ((lead as any).transactions && Array.isArray((lead as any).transactions) && (lead as any).transactions[0]) ||
+                                  (crackedLead as any).transaction ||
+                                  ((crackedLead as any).transactions && Array.isArray((crackedLead as any).transactions) && (crackedLead as any).transactions[0]);
+            
+            if (transactionInfo?.id) {
+              const txId = transactionInfo.id;
+              setTransactionId(txId.toString());
+              const paymentDetailsResponse = await getPaymentDetailsApi(txId);
+              if (paymentDetailsResponse.success && paymentDetailsResponse.data) {
+                setPaymentDetails(paymentDetailsResponse.data);
+                // Only open payment modal if payment is not completed
+                if (paymentDetailsResponse.data.status !== 'completed') {
+                  setShowPaymentModal(true);
+                }
+              }
+            } else {
+              // If transaction ID not found, still lock the drawer
+              // User will need to complete payment but we don't have transaction ID yet
+              // This might happen if the lead data doesn't include transaction info
+              console.warn('Payment link generated but transaction ID not found in lead data. Drawer will be locked.');
+              // Still try to open payment modal - user might be able to enter transaction ID manually
+              // Or we can show a message that payment needs to be completed
+            }
+          } catch (error) {
+            console.error('Error loading payment data:', error);
+            // Even if loading fails, drawer should still be locked
+          }
+        };
+        
+        loadPaymentData();
+      }
     }
   }, [lead, isOpen, viewMode]);
 
@@ -425,37 +468,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
     }
   };
 
-  // Handle payment amount change and update transaction if already generated
-  const handlePaymentAmountChange = async (newAmount: 'full' | 'half') => {
-    setPaymentAmount(newAmount);
-    
-    // If transaction is already generated, update it
-    if (transactionId && selectedCrackedLead && paymentDetails) {
-      try {
-        const remainingAmount = parseFloat(selectedCrackedLead.remainingAmount || 0);
-        const newPaymentAmountValue = newAmount === 'full' ? remainingAmount : remainingAmount / 2;
-        const currentTransactionAmount = parseFloat(paymentDetails.amount || 0);
-
-        if (Math.abs(currentTransactionAmount - newPaymentAmountValue) > 0.01) {
-          console.log('Updating transaction amount due to payment selection change');
-          const updateResponse = await updatePaymentLinkApi(parseInt(transactionId), {
-            amount: newPaymentAmountValue
-          });
-
-          if (updateResponse.success) {
-            // Refresh payment details after update
-            const updatedDetailsResponse = await getPaymentDetailsApi(parseInt(transactionId));
-            if (updatedDetailsResponse.success && updatedDetailsResponse.data) {
-              setPaymentDetails(updatedDetailsResponse.data);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error updating transaction amount:', error);
-        // Don't show error notification here, just log it
-      }
-    }
-  };
+  // Payment amount is now read-only from paymentDetails.amount (set in Generate Payment Link modal)
 
   // Handle payment completion
   const handleCompletePayment = async () => {
@@ -468,11 +481,44 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
       return;
     }
 
-    const remainingAmount = parseFloat(selectedCrackedLead.remainingAmount || 0);
+      const remainingAmount = parseFloat(selectedCrackedLead.remainingAmount || 0);
     if (remainingAmount <= 0) {
       setNotification({ type: 'error', message: 'No remaining amount to pay' });
       setTimeout(() => setNotification(null), 5000);
       return;
+    }
+
+    // Get payment amount from paymentDetails (set in Generate Payment Link modal)
+    if (!paymentDetails || !paymentDetails.amount) {
+      setNotification({ type: 'error', message: 'Payment amount is required. Please generate payment link first.' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    const paymentAmountValue = parseFloat(paymentDetails.amount || 0);
+
+    // Validation: Amount can't be negative
+    if (paymentAmountValue < 0) {
+      setNotification({ type: 'error', message: 'Payment amount cannot be negative' });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+
+    // Check if this is the last phase
+    const currentPhase = selectedCrackedLead.currentPhase || 1;
+    const totalPhases = selectedCrackedLead.totalPhases || 1;
+    const isLastPhase = currentPhase === totalPhases;
+
+    // Validation: For last phase, payment must equal remaining amount exactly
+    if (isLastPhase) {
+      if (Math.abs(paymentAmountValue - remainingAmount) > 0.01) {
+        setNotification({ 
+          type: 'error', 
+          message: `For the last phase, payment amount must equal the remaining amount exactly ($${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})` 
+        });
+        setTimeout(() => setNotification(null), 5000);
+        return;
+      }
     }
 
     try {
@@ -483,9 +529,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
       if (isNaN(transactionIdNum)) {
         throw new Error('Invalid transaction ID');
       }
-
-      // Calculate the payment amount based on user selection
-      const paymentAmountValue = paymentAmount === 'full' ? remainingAmount : remainingAmount / 2;
 
       // Step 1: Update transaction amount if it differs from desired amount
       if (paymentDetails) {
@@ -534,7 +577,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
       setSelectedCrackedLead(null);
       setPaymentDetails(null);
       setTransactionId('');
-      setPaymentAmount('full');
 
       setNotification({ 
         type: 'success', 
@@ -699,11 +741,63 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
     );
   };
 
+  // Check if drawer should be locked (payment link generated but payment not completed)
+  const shouldLockDrawer = () => {
+    if (!lead) return false;
+    
+    // Check if lead status is payment_link_generated
+    const isPaymentLinkGenerated = lead.status === 'payment_link_generated';
+    
+    if (!isPaymentLinkGenerated) return false;
+    
+    // If payment link is generated, check if payment is completed
+    // Check if there's an active transaction (payment link generated but not completed)
+    const hasActiveTransaction = transactionId && paymentDetails && 
+                                 paymentDetails.status !== 'completed';
+    
+    // Check if there's remaining amount to be paid
+    const hasRemainingAmount = selectedCrackedLead && 
+                               parseFloat(selectedCrackedLead.remainingAmount || 0) > 0;
+    
+    // Also check if payment modal is open (user is in the process of completing payment)
+    const isPaymentInProgress = showPaymentModal && transactionId;
+    
+    // If we have a transaction ID but no payment details yet, still lock (loading state)
+    const isLoadingPayment = transactionId && !paymentDetails;
+    
+    // Lock drawer if payment link is generated and:
+    // 1. There's an active transaction that's not completed, OR
+    // 2. There's remaining amount to be paid, OR
+    // 3. Payment modal is currently open (payment in progress), OR
+    // 4. We're loading payment details (transaction ID exists but details not loaded yet)
+    // If we don't have transaction ID or cracked lead data yet, still lock to prevent premature closing
+    return hasActiveTransaction || hasRemainingAmount || isPaymentInProgress || isLoadingPayment || 
+           ((lead as any).crackedLeads?.length > 0 && !transactionId);
+  };
+
+  const isDrawerLocked = shouldLockDrawer();
+
+  // Handle close with lock check
+  const handleClose = () => {
+    if (isDrawerLocked) {
+      setNotification({
+        type: 'error',
+        message: 'Please complete the payment before closing. Payment link has been generated and must be completed.'
+      });
+      setTimeout(() => setNotification(null), 5000);
+      return;
+    }
+    onClose();
+  };
+
   if (!isOpen || !lead) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      <div className="absolute inset-0 bg-gray-600 bg-opacity-50" onClick={onClose}></div>
+      <div 
+        className="absolute inset-0 bg-gray-600 bg-opacity-50" 
+        onClick={handleClose}
+      ></div>
       
       <div 
         className="relative mx-auto h-full bg-white shadow-2xl rounded-lg border border-gray-200 transform transition-all duration-300 ease-out"
@@ -732,8 +826,14 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                 </h2>
               </div>
               <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100"
+                onClick={handleClose}
+                className={`p-1 rounded-md ${
+                  isDrawerLocked 
+                    ? 'text-gray-300 cursor-not-allowed' 
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                }`}
+                disabled={isDrawerLocked}
+                title={isDrawerLocked ? 'Please complete payment before closing' : 'Close'}
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1640,6 +1740,11 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
               email: lead.email || (lead as any).lead?.email || '',
               phone: lead.phone || (lead as any).lead?.phone || ''
             }}
+            crackedLeadInfo={{
+              currentPhase: selectedCrackedLead.currentPhase,
+              totalPhases: selectedCrackedLead.totalPhases,
+              remainingAmount: parseFloat(selectedCrackedLead.remainingAmount || 0)
+            }}
           />
         )}
 
@@ -1652,7 +1757,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                 setSelectedCrackedLead(null);
                 setPaymentDetails(null);
                 setTransactionId('');
-                setPaymentAmount('full');
               }}></div>
               
               <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
@@ -1671,7 +1775,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                         setSelectedCrackedLead(null);
                         setPaymentDetails(null);
                         setTransactionId('');
-                        setPaymentAmount('full');
                       }} 
                       className="text-gray-400 hover:text-gray-600"
                     >
@@ -1683,12 +1786,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                 </div>
 
                 <div className="px-6 py-4 space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                    <p className="text-sm text-blue-700">
-                      Complete payment for this cracked lead. You can pay the remaining amount in full or half of it.
-                    </p>
-                  </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Remaining Amount
@@ -1724,58 +1821,44 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                     </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Amount <span className="text-red-500">*</span>
-                    </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
-                        <input
-                          type="radio"
-                          name="paymentAmount"
-                          value="full"
-                          checked={paymentAmount === 'full'}
-                          onChange={(e) => handlePaymentAmountChange(e.target.value as 'full' | 'half')}
-                          disabled={isGeneratingTransaction}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 disabled:opacity-50"
-                        />
-                        <div className="ml-3 flex-1">
-                          <div className="text-sm font-medium text-gray-900">
-                            Pay Full Remaining Amount
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            ${parseFloat(selectedCrackedLead.remainingAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                          </div>
-                        </div>
+                  {paymentDetails && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Amount <span className="text-red-500">*</span>
                       </label>
-                      <label className="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
-                        <input
-                          type="radio"
-                          name="paymentAmount"
-                          value="half"
-                          checked={paymentAmount === 'half'}
-                          onChange={(e) => handlePaymentAmountChange(e.target.value as 'full' | 'half')}
-                          disabled={isGeneratingTransaction}
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 disabled:opacity-50"
-                        />
-                        <div className="ml-3 flex-1">
-                          <div className="text-sm font-medium text-gray-900">
-                            Pay Half of Remaining Amount
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            ${(parseFloat(selectedCrackedLead.remainingAmount || 0) / 2).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                          </div>
-                        </div>
-                      </label>
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                        <p className="text-lg font-semibold text-gray-900">
+                          ${parseFloat(paymentDetails.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Amount set from Generate Payment Link
+                        </p>
+                      </div>
+                      {(() => {
+                        const currentPhase = selectedCrackedLead.currentPhase || 1;
+                        const totalPhases = selectedCrackedLead.totalPhases || 1;
+                        const isLastPhase = currentPhase === totalPhases;
+                        const remainingAmount = parseFloat(selectedCrackedLead.remainingAmount || 0);
+                        const paymentAmount = parseFloat(paymentDetails.amount || 0);
+                        
+                        if (isLastPhase) {
+                          return (
+                            <p className="text-xs text-orange-600 mt-1">
+                              Last phase: Payment must equal remaining amount (${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
-                  </div>
+                  )}
 
                   {paymentDetails && (
                     <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
                       <p className="text-sm font-medium text-gray-700 mb-2">Payment Details:</p>
                       <div className="text-sm text-gray-600 space-y-1">
                         <p>Transaction ID: {paymentDetails.id}</p>
-                        <p>Current Amount: ${paymentDetails.amount?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                        <p>Current Amount: ${parseFloat(paymentDetails.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                         <p>Status: {paymentDetails.status}</p>
                       </div>
                     </div>
@@ -1790,7 +1873,6 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                       setSelectedCrackedLead(null);
                       setPaymentDetails(null);
                       setTransactionId('');
-                      setPaymentAmount('full');
                     }}
                     className="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                   >

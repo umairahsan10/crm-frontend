@@ -57,6 +57,7 @@ const CrackLeadsTable: React.FC<CrackLeadsTableProps> = ({
       commissionRate: crackedLead.commissionRate,
       currentPhase: crackedLead.currentPhase,
       totalPhases: crackedLead.totalPhases,
+      remainingAmount: crackedLead.remainingAmount,
       status: 'cracked' // All cracked leads have cracked status
     };
   });

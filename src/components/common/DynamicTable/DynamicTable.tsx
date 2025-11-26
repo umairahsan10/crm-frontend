@@ -211,11 +211,11 @@ const DynamicTable: React.FC<DynamicTableProps> = ({
       case 'phase':
         return (
           <div className="space-y-1 text-center">
-            <div className="text-lg font-bold text-green-600">
-              ${parseFloat(value || 0).toLocaleString()}
+            <div className="text-lg font-bold text-orange-600">
+              ${parseFloat(row.remainingAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
             </div>
             <div className="text-sm text-gray-600">
-              Phase {row.currentPhase}/{row.totalPhases}
+              Phase {row.currentPhase || 1}/{row.totalPhases || 1}
             </div>
           </div>
         );
