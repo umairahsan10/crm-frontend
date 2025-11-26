@@ -28,14 +28,8 @@ const LiabilitiesTable: React.FC<LiabilitiesTableProps> = ({
   onBulkSelect,
   selectedLiabilities
 }) => {
-  // Transform liabilities data for the table
-  const transformedLiabilities = liabilities.map(liability => ({
-    ...liability,
-    // Transform vendor for assignment type
-    vendor: liability.vendor?.name || 'N/A',
-    // Transform isPaid for custom rendering
-    isPaid: liability.isPaid
-  }));
+  // No transformation needed - vendor data is accessed via custom render in table config
+  const transformedLiabilities = liabilities;
     
   return (
     <DynamicTable

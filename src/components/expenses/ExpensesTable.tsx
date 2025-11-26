@@ -28,12 +28,8 @@ const ExpensesTable: React.FC<ExpensesTableProps> = ({
   onBulkSelect,
   selectedExpenses
 }) => {
-  // Transform expenses data for the table
-  const transformedExpenses = expenses.map(expense => ({
-    ...expense,
-    // Transform vendor for assignment type
-    vendor: expense.vendor?.name || 'N/A'
-  }));
+  // No transformation needed - vendor data is accessed via custom render in table config
+  const transformedExpenses = expenses;
     
   return (
     <DynamicTable

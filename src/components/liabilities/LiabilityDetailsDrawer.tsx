@@ -580,14 +580,160 @@ const LiabilityDetailsDrawer: React.FC<LiabilityDetailsDrawerProps> = ({
                       </p>
                     </div>
                     )}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
-                      <p className="text-lg text-gray-900 font-medium">
-                        {displayLiability.vendor?.name || 'N/A'}
-                      </p>
-                    </div>
                   </div>
                 </div>
+
+                {/* Transaction Information */}
+                {displayLiability.transaction && (
+                  <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Transaction Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          displayLiability.transaction.transactionType === 'expense' 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {displayLiability.transaction.transactionType?.toUpperCase() || 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          displayLiability.transaction.status === 'completed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : displayLiability.transaction.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {displayLiability.transaction.status?.toUpperCase() || 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Amount</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          ${displayLiability.transaction.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || 'N/A'}
+                        </p>
+                      </div>
+                      {displayLiability.transaction.paymentMethod && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                            displayLiability.transaction.paymentMethod === 'bank' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : displayLiability.transaction.paymentMethod === 'cash'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-indigo-100 text-indigo-800'
+                          }`}>
+                            {displayLiability.transaction.paymentMethod.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      {displayLiability.transaction.transactionDate && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Date</label>
+                          <p className="text-lg text-gray-900 font-medium">
+                            {new Date(displayLiability.transaction.transactionDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                      {displayLiability.transaction.notes && (
+                        <div className="md:col-span-2 lg:col-span-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <p className="text-sm text-gray-700">{displayLiability.transaction.notes}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Vendor Information */}
+                {displayLiability.vendor && (
+                  <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      Vendor Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Vendor Name</label>
+                        <p className="text-lg text-gray-900 font-medium">{displayLiability.vendor.name || 'N/A'}</p>
+                      </div>
+                      {displayLiability.vendor.contact_person && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Contact Person</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayLiability.vendor.contact_person}</p>
+                        </div>
+                      )}
+                      {displayLiability.vendor.email && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayLiability.vendor.email}</p>
+                        </div>
+                      )}
+                      {displayLiability.vendor.phone && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayLiability.vendor.phone}</p>
+                        </div>
+                      )}
+                      {displayLiability.vendor.address && (
+                        <div className="md:col-span-2 lg:col-span-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayLiability.vendor.address}</p>
+                        </div>
+                      )}
+                      {displayLiability.vendor.city && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayLiability.vendor.city}</p>
+                        </div>
+                      )}
+                      {displayLiability.vendor.country && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayLiability.vendor.country}</p>
+                        </div>
+                      )}
+                      {displayLiability.vendor.status && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                            displayLiability.vendor.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {displayLiability.vendor.status.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      {displayLiability.vendor.bank_account && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Bank Account</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayLiability.vendor.bank_account}</p>
+                        </div>
+                      )}
+                      {displayLiability.vendor.notes && (
+                        <div className="md:col-span-2 lg:col-span-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <p className="text-sm text-gray-700">{displayLiability.vendor.notes}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Additional Information */}
                 <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
@@ -615,11 +761,19 @@ const LiabilityDetailsDrawer: React.FC<LiabilityDetailsDrawerProps> = ({
                         <label className="block text-sm font-medium text-gray-700 mb-2">Created By</label>
                         <p className="text-lg text-gray-900 font-medium">
                           {displayLiability.employee 
-                            ? `${displayLiability.employee.firstName} ${displayLiability.employee.lastName}`
+                            ? `${displayLiability.employee.firstName || ''} ${displayLiability.employee.lastName || ''}`.trim() || displayLiability.employee.email || 'N/A'
                             : 'N/A'
                           }
                         </p>
                       </div>
+                      {displayLiability.employee?.email && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Employee Email</label>
+                          <p className="text-lg text-gray-900 font-medium">
+                            {displayLiability.employee.email}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
