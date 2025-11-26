@@ -56,28 +56,40 @@ const ProjectLogDetailsDrawer: React.FC<ProjectLogDetailsDrawerProps> = ({ log, 
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div><label className="block text-sm font-medium text-gray-700 mb-2">Project Name</label><p className="text-lg text-gray-900 font-medium">{log.project_name || 'N/A'}</p></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Project ID</label><p className="text-lg text-gray-900 font-medium">#{log.project_id || 'N/A'}</p></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Log ID</label><p className="text-lg text-gray-900 font-medium">#{log.project_log_id || log.id || 'N/A'}</p></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Deadline</label><p className="text-lg text-gray-900 font-medium">{log.project_deadline ? new Date(log.project_deadline).toLocaleDateString() : <span className="text-gray-400 italic">Not set</span>}</p></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    {log.project_status ? (
+                      (() => {
+                        const statusColors: Record<string, { bg: string; text: string }> = {
+                          'pending': { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+                          'in_progress': { bg: 'bg-blue-100', text: 'text-blue-800' },
+                          'completed': { bg: 'bg-green-100', text: 'text-green-800' },
+                          'on_hold': { bg: 'bg-gray-100', text: 'text-gray-800' },
+                          'cancelled': { bg: 'bg-red-100', text: 'text-red-800' },
+                        };
+                        const colors = statusColors[log.project_status.toLowerCase()] || { bg: 'bg-gray-100', text: 'text-gray-800' };
+                        return (
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${colors.bg} ${colors.text}`}>
+                            {log.project_status.replace('_', ' ').toUpperCase()}
+                          </span>
+                        );
+                      })()
+                    ) : (
+                      <span className="text-gray-400 italic">N/A</span>
+                    )}
+                  </div>
+                  <div className="md:col-span-2 lg:col-span-3"><label className="block text-sm font-medium text-gray-700 mb-2">Project Description</label><div className="bg-gray-50 rounded-lg p-3 border border-gray-200"><p className="text-sm text-gray-700 whitespace-pre-wrap">{log.project_description || 'N/A'}</p></div></div>
                 </div>
               </div>
               <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                   <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                  Employee Information
+                  Developer Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Employee Name</label><p className="text-lg text-gray-900 font-medium">{log.employee_name || 'N/A'}</p></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Employee ID</label><p className="text-lg text-gray-900 font-medium">#{log.employee_id || 'N/A'}</p></div>
-                </div>
-              </div>
-              <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <svg className="h-5 w-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                  Log Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Action Type</label><span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800`}>{log.action_type ? log.action_type.toUpperCase() : 'N/A'}</span></div>
-                  <div className="md:col-span-2 lg:col-span-3"><label className="block text-sm font-medium text-gray-700 mb-2">Description</label><div className="bg-gray-50 rounded-lg p-3 border border-gray-200"><p className="text-sm text-gray-700">{log.description || 'N/A'}</p></div></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Developer Name</label><p className="text-lg text-gray-900 font-medium">{log.developer_name || (log.developer_first_name && log.developer_last_name ? `${log.developer_first_name} ${log.developer_last_name}` : 'N/A')}</p></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Developer Email</label><p className="text-lg text-gray-900 font-medium">{log.developer_email || 'N/A'}</p></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Log ID</label><p className="text-lg text-gray-900 font-medium">#{log.project_log_id || log.id || 'N/A'}</p></div>
                 </div>
               </div>
               <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
@@ -86,6 +98,8 @@ const ProjectLogDetailsDrawer: React.FC<ProjectLogDetailsDrawerProps> = ({ log, 
                   Additional Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Project ID</label><p className="text-lg text-gray-900 font-medium">#{log.project_id || 'N/A'}</p></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Developer ID</label><p className="text-lg text-gray-900 font-medium">#{log.developer_id || 'N/A'}</p></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-2">Created At</label><p className="text-lg text-gray-900 font-medium">{log.created_at ? new Date(log.created_at).toLocaleString() : 'N/A'}</p></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-2">Last Updated</label><p className="text-lg text-gray-900 font-medium">{log.updated_at ? new Date(log.updated_at).toLocaleString() : 'N/A'}</p></div>
                 </div>
