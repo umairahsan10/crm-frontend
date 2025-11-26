@@ -1,15 +1,19 @@
 import { apiGetJson, apiRequest, ApiError } from '../utils/apiClient';
 import { getApiBaseUrl } from '../config/api';
 
-// Types for Project Logs - Following same structure as half-day-logs
+// Types for Project Logs - Updated to match actual API response
 export interface ProjectLog {
   project_log_id: number;
   project_id: number;
+  developer_id: number;
+  developer_first_name: string;
+  developer_last_name: string;
+  developer_name: string;
+  developer_email: string;
   project_name: string;
-  employee_id: number;
-  employee_name: string;
-  action_type: string;
-  description: string;
+  project_description: string;
+  project_deadline: string;
+  project_status: string;
   created_at: string;
   updated_at: string;
 }
@@ -54,7 +58,8 @@ export type ExportFormat = typeof ExportFormat[keyof typeof ExportFormat];
 // Export query parameters
 export interface ExportProjectLogsDto {
   project_id?: number;
-  employee_id?: number;
+  employee_id?: number; // Backend accepts employee_id as filter parameter
+  developer_id?: number; // Alternative parameter name
   start_date?: string;
   end_date?: string;
   format: ExportFormat;

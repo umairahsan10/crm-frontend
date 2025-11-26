@@ -2,7 +2,7 @@
  * Project Logs Page - Following same structure as HalfDayLogsPage
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import DataTable from '../../../components/common/DataTable/DataTable';
 import DataStatistics from '../../../components/common/Statistics/DataStatistics';
@@ -33,9 +33,23 @@ const ProjectLogsPage: React.FC<ProjectLogsPageProps> = ({ onBack }) => {
 
   const statisticsQuery = useProjectLogsStatistics();
 
-  const projectLogs = logsQuery.data?.logs || [];
+  const allProjectLogs = logsQuery.data?.logs || [];
   const statistics = statisticsQuery.data?.summary || { totalLogs: 0, todayLogs: 0, thisWeekLogs: 0, thisMonthLogs: 0 };
   const isLoading = logsQuery.isLoading;
+
+  // Client-side search filtering
+  const projectLogs = useMemo(() => {
+    if (!filters.search) return allProjectLogs;
+    const searchLower = filters.search.toLowerCase();
+    return allProjectLogs.filter((log: any) => {
+      const projectName = (log.project_name || '').toLowerCase();
+      const developerName = (log.developer_name || '').toLowerCase();
+      const developerEmail = (log.developer_email || '').toLowerCase();
+      return projectName.includes(searchLower) || 
+             developerName.includes(searchLower) || 
+             developerEmail.includes(searchLower);
+    });
+  }, [allProjectLogs, filters.search]);
 
   const statisticsCards = [
     { title: 'Total Logs', value: statistics.totalLogs, color: 'blue' as const, icon: (<svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z" clipRule="evenodd" /></svg>) },
@@ -46,10 +60,30 @@ const ProjectLogsPage: React.FC<ProjectLogsPageProps> = ({ onBack }) => {
 
   const columns = [
     { header: 'Log ID', accessor: 'id', sortable: true, render: (value: number) => <span className="font-mono text-sm">#{value || 'N/A'}</span> },
-    { header: 'Project', accessor: 'project_name', sortable: false, render: (_: any, row: any) => (<div className="max-w-xs"><div className="text-sm font-medium text-gray-900">{row.project_name || 'N/A'}</div><div className="text-sm text-gray-500">ID: {row.project_id || 'N/A'}</div></div>) },
-    { header: 'Employee', accessor: 'employee_name', sortable: false, render: (_: any, row: any) => (<div className="max-w-xs"><div className="text-sm font-medium text-gray-900">{row.employee_name || 'N/A'}</div><div className="text-sm text-gray-500">ID: {row.employee_id || 'N/A'}</div></div>) },
-    { header: 'Action Type', accessor: 'action_type', sortable: true, render: (value: string) => (<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800`}>{value ? value.toUpperCase() : 'N/A'}</span>) },
-    { header: 'Description', accessor: 'description', sortable: false, render: (value: string) => <span className="text-sm text-gray-900">{value || 'N/A'}</span> },
+    { header: 'Project', accessor: 'project_name', sortable: true, render: (value: string) => <span className="text-sm font-medium text-gray-900">{value || 'N/A'}</span> },
+    { header: 'Employee', accessor: 'developer_name', sortable: false, render: (_: any, row: any) => (
+      <div className="max-w-xs">
+        <div className="text-sm font-medium text-gray-900">{row.developer_name || 'N/A'}</div>
+        <div className="text-sm text-gray-500">{row.developer_email || 'N/A'}</div>
+      </div>
+    ) },
+    { header: 'Deadline', accessor: 'project_deadline', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : <span className="text-sm text-gray-400 italic">Not set</span> },
+    { header: 'Status', accessor: 'project_status', sortable: true, render: (value: string) => {
+      if (!value) return <span className="text-sm text-gray-400">N/A</span>;
+      const statusColors: Record<string, { bg: string; text: string }> = {
+        'pending': { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+        'in_progress': { bg: 'bg-blue-100', text: 'text-blue-800' },
+        'completed': { bg: 'bg-green-100', text: 'text-green-800' },
+        'on_hold': { bg: 'bg-gray-100', text: 'text-gray-800' },
+        'cancelled': { bg: 'bg-red-100', text: 'text-red-800' },
+      };
+      const colors = statusColors[value.toLowerCase()] || { bg: 'bg-gray-100', text: 'text-gray-800' };
+      return (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}>
+          {value.replace('_', ' ').toUpperCase()}
+        </span>
+      );
+    } },
     { header: 'Created At', accessor: 'created_at', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : 'N/A' }
   ];
 

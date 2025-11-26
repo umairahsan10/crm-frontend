@@ -184,10 +184,10 @@ export interface Revenue {
   source: string;
   category: string;
   amount: number;
-  receivedFrom: number;
+  receivedFrom: number | null;
   receivedOn: string;
   paymentMethod: string;
-  relatedInvoiceId: number;
+  relatedInvoiceId: number | null;
   createdBy: number;
   transactionId: number;
   createdAt: string;
@@ -196,17 +196,34 @@ export interface Revenue {
     id: number;
     amount: number;
     transactionType: string;
+    paymentMethod: string;
+    transactionDate: string;
     status: string;
+    notes: string | null;
+    employeeId: number | null;
+    vendorId: number | null;
+    clientId: number | null;
+    invoiceId: number | null;
+    createdAt: string;
+    updatedAt: string;
+    client?: {
+      id: number;
+      companyName: string;
+      clientName: string;
+      email: string;
+      phone: string;
+      accountStatus: string;
+    };
   };
   lead?: {
     id: number;
     companyName: string;
-  };
+  } | null;
   invoice?: {
     id: number;
     amount: number;
     notes: string;
-  };
+  } | null;
   employee?: {
     id: number;
     firstName?: string;

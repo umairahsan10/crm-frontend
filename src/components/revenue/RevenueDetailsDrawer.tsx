@@ -399,13 +399,121 @@ const RevenueDetailsDrawer: React.FC<RevenueDetailsDrawerProps> = ({
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Lead</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Received From</label>
                       <p className="text-lg text-gray-900 font-medium">
-                        {displayRevenue.lead?.companyName || 'N/A'}
+                        {displayRevenue.receivedFrom ? `Lead ID: ${displayRevenue.receivedFrom}` : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Related Invoice ID</label>
+                      <p className="text-lg text-gray-900 font-medium">
+                        {displayRevenue.relatedInvoiceId ? `#${displayRevenue.relatedInvoiceId}` : 'N/A'}
                       </p>
                     </div>
                   </div>
                 </div>
+
+                {/* Transaction Information */}
+                {displayRevenue.transaction && (
+                  <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Transaction Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction ID</label>
+                        <p className="text-lg text-gray-900 font-medium">#{displayRevenue.transaction.id}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          displayRevenue.transaction.transactionType === 'payment' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {displayRevenue.transaction.transactionType?.toUpperCase() || 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          displayRevenue.transaction.status === 'completed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : displayRevenue.transaction.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {displayRevenue.transaction.status?.toUpperCase() || 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Date</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          {displayRevenue.transaction.transactionDate 
+                            ? new Date(displayRevenue.transaction.transactionDate).toLocaleDateString()
+                            : 'N/A'}
+                        </p>
+                      </div>
+                      {displayRevenue.transaction.notes && (
+                        <div className="md:col-span-2 lg:col-span-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <p className="text-sm text-gray-700">{displayRevenue.transaction.notes}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Client Information */}
+                {displayRevenue.transaction?.client && (
+                  <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      Client Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                        <p className="text-lg text-gray-900 font-medium">{displayRevenue.transaction.client.companyName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Client Name</label>
+                        <p className="text-lg text-gray-900 font-medium">{displayRevenue.transaction.client.clientName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <p className="text-lg text-gray-900 font-medium">{displayRevenue.transaction.client.email || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <p className="text-lg text-gray-900 font-medium">{displayRevenue.transaction.client.phone || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Account Status</label>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          displayRevenue.transaction.client.accountStatus === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : displayRevenue.transaction.client.accountStatus === 'prospect'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {displayRevenue.transaction.client.accountStatus?.toUpperCase() || 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Client ID</label>
+                        <p className="text-lg text-gray-900 font-medium">#{displayRevenue.transaction.client.id}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Additional Information */}
                 <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
@@ -430,20 +538,33 @@ const RevenueDetailsDrawer: React.FC<RevenueDetailsDrawerProps> = ({
                         </p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Created By</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Created By (Employee ID)</label>
                         <p className="text-lg text-gray-900 font-medium">
-                          {displayRevenue.employee 
-                            ? `${displayRevenue.employee.firstName} ${displayRevenue.employee.lastName}`
-                            : 'N/A'
-                          }
+                          {displayRevenue.employee?.id ? `#${displayRevenue.employee.id}` : displayRevenue.createdBy ? `#${displayRevenue.createdBy}` : 'N/A'}
                         </p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Invoice</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction ID</label>
                         <p className="text-lg text-gray-900 font-medium">
-                          {displayRevenue.invoice ? `#${displayRevenue.invoice.id}` : 'N/A'}
+                          {displayRevenue.transactionId ? `#${displayRevenue.transactionId}` : 'N/A'}
                         </p>
                       </div>
+                      {displayRevenue.lead && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Lead</label>
+                          <p className="text-lg text-gray-900 font-medium">
+                            {displayRevenue.lead.companyName || `Lead ID: ${displayRevenue.lead.id}`}
+                          </p>
+                        </div>
+                      )}
+                      {displayRevenue.invoice && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Invoice</label>
+                          <p className="text-lg text-gray-900 font-medium">
+                            {displayRevenue.invoice.id ? `#${displayRevenue.invoice.id}` : 'N/A'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
