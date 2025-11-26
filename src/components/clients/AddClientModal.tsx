@@ -134,11 +134,24 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
     
     try {
       // Use the mutation to create the client
-      const result = await createClientMutation.mutateAsync({
+      // Convert industryId from string to number if it exists
+      const payload: any = {
         passwordHash: 'TempPassword123!', // Required field - should be handled by form
         ...formData,
         accountStatus: formData.accountStatus as 'active' | 'inactive' | 'suspended' | 'prospect'
-      });
+      };
+      
+      // Convert industryId to number if it's a string
+      if (payload.industryId && typeof payload.industryId === 'string') {
+        payload.industryId = parseInt(payload.industryId, 10);
+      }
+      
+      // Remove industryId if it's empty or invalid
+      if (!payload.industryId || isNaN(payload.industryId)) {
+        delete payload.industryId;
+      }
+      
+      const result = await createClientMutation.mutateAsync(payload);
 
       if (result.success && result.data) {
         onClientCreated(result.data);
@@ -414,7 +427,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                   <select
                     id="industryId"
                     name="industryId"
-                    value={formData.industryId || ''}
+                    value={formData.industryId?.toString() || ''}
                     onChange={handleInputChange}
                         className="block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >

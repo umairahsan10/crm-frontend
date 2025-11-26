@@ -8,11 +8,13 @@ import { useFilters } from '../../hooks/useFilters';
 interface GenericClientsFiltersProps {
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;
+  hideAccountStatus?: boolean; // Hide accountStatus filter when using tabs
 }
 
 const GenericClientsFilters: React.FC<GenericClientsFiltersProps> = ({
   onFiltersChange,
-  onClearFilters
+  onClearFilters,
+  hideAccountStatus = false
 }) => {
   const { 
     filters, 
@@ -139,7 +141,7 @@ const GenericClientsFilters: React.FC<GenericClientsFiltersProps> = ({
       {showAdvanced && (
         <div className="px-6 py-4 bg-gray-50">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {renderSelect('accountStatus', 'Account Status', statusOptions)}
+            {!hideAccountStatus && renderSelect('accountStatus', 'Account Status', statusOptions)}
             {renderSelect('clientType', 'Client Type', typeOptions)}
             {renderInput('phone', 'Phone', 'text')}
             {renderSelect('industryId', 'Industry', industryOptions)}

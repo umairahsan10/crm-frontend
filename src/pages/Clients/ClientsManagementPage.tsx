@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   ClientsTable, 
   ClientDetailsDrawer, 
@@ -16,17 +17,21 @@ import {
   useClients, 
   useClientsStatistics,
   useBulkUpdateClients,
-  useBulkDeleteClients
+  useBulkDeleteClients,
+  clientsQueryKeys
 } from '../../hooks/queries/useClientsQueries';
 import type { Client } from '../../types';
 
 const ClientsManagementPage: React.FC = () => {
+  const queryClient = useQueryClient();
+  
   // State management
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'prospect' | 'active' | 'inactive' | 'suspended'>('all');
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -39,7 +44,7 @@ const ClientsManagementPage: React.FC = () => {
   // Filter state - Updated to match API parameters
   const [filters, setFilters] = useState({
     search: '',
-    accountStatus: '',
+    accountStatus: '', // Will be set based on activeTab
     clientType: '',
     phone: '',
     industryId: '',
@@ -49,6 +54,23 @@ const ClientsManagementPage: React.FC = () => {
     sortBy: 'createdAt',
     sortOrder: 'desc' as 'asc' | 'desc'
   });
+
+  // Update accountStatus filter when tab changes
+  React.useEffect(() => {
+    const statusMap: Record<string, string> = {
+      'all': '',
+      'prospect': 'prospect',
+      'active': 'active',
+      'inactive': 'inactive',
+      'suspended': 'suspended'
+    };
+    
+    setFilters(prev => ({
+      ...prev,
+      accountStatus: statusMap[activeTab] || ''
+    }));
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on tab change
+  }, [activeTab]);
 
   // React Query hooks - Data fetching with automatic caching
   const clientsQuery = useClients(
@@ -101,14 +123,37 @@ const ClientsManagementPage: React.FC = () => {
   };
 
   const handleFiltersChange = useCallback((newFilters: any) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    // Preserve accountStatus based on active tab when filters change
+    const statusMap: Record<string, string> = {
+      'all': '',
+      'prospect': 'prospect',
+      'active': 'active',
+      'inactive': 'inactive',
+      'suspended': 'suspended'
+    };
+    
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters,
+      // Override accountStatus with tab-based value if on specific tab
+      accountStatus: activeTab !== 'all' ? (statusMap[activeTab] || prev.accountStatus) : (newFilters.accountStatus !== undefined ? newFilters.accountStatus : prev.accountStatus)
+    }));
     setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to page 1 on filter change
-  }, []);
+  }, [activeTab]);
 
   const handleClearFilters = useCallback(() => {
+    // Preserve accountStatus based on active tab when clearing filters
+    const statusMap: Record<string, string> = {
+      'all': '',
+      'prospect': 'prospect',
+      'active': 'active',
+      'inactive': 'inactive',
+      'suspended': 'suspended'
+    };
+    
     setFilters({
       search: '',
-      accountStatus: '',
+      accountStatus: statusMap[activeTab] || '',
       clientType: '',
       phone: '',
       industryId: '',
@@ -119,7 +164,7 @@ const ClientsManagementPage: React.FC = () => {
       sortOrder: 'desc'
     });
     setPagination(prev => ({ ...prev, currentPage: 1 }));
-  }, []);
+  }, [activeTab]);
 
   const handleBulkAssign = async (clientIds: string[], assignedTo: string) => {
     try {
@@ -225,12 +270,116 @@ const ClientsManagementPage: React.FC = () => {
           </div>
         )}
 
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex" aria-label="Tabs">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`flex-1 py-3 px-4 border-b-2 font-medium text-sm transition-colors text-center ${
+                  activeTab === 'all'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span>All Clients</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('prospect')}
+                className={`flex-1 py-3 px-4 border-b-2 font-medium text-sm transition-colors text-center ${
+                  activeTab === 'prospect'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Prospect</span>
+                  {statistics.prospect > 0 && (
+                    <span className="ml-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                      {statistics.prospect}
+                    </span>
+                  )}
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('active')}
+                className={`flex-1 py-3 px-4 border-b-2 font-medium text-sm transition-colors text-center ${
+                  activeTab === 'active'
+                    ? 'border-green-500 text-green-600 bg-green-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Active</span>
+                  {statistics.active > 0 && (
+                    <span className="ml-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                      {statistics.active}
+                    </span>
+                  )}
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('inactive')}
+                className={`flex-1 py-3 px-4 border-b-2 font-medium text-sm transition-colors text-center ${
+                  activeTab === 'inactive'
+                    ? 'border-gray-500 text-gray-600 bg-gray-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                  <span>Inactive</span>
+                  {statistics.inactive > 0 && (
+                    <span className="ml-1 px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                      {statistics.inactive}
+                    </span>
+                  )}
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('suspended')}
+                className={`flex-1 py-3 px-4 border-b-2 font-medium text-sm transition-colors text-center ${
+                  activeTab === 'suspended'
+                    ? 'border-yellow-500 text-yellow-600 bg-yellow-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Suspended</span>
+                  {statistics.suspended > 0 && (
+                    <span className="ml-1 px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                      {statistics.suspended}
+                    </span>
+                  )}
+                </div>
+              </button>
+            </nav>
+          </div>
+        </div>
+
         {/* Filters */}
         <div className="mb-6">
           <GenericClientsFilters
             onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
-        />
+            onClearFilters={handleClearFilters}
+            hideAccountStatus={activeTab !== 'all'} // Hide accountStatus filter when on specific status tab
+          />
         </div>
 
         {/* Bulk Actions */}
@@ -283,7 +432,10 @@ const ClientsManagementPage: React.FC = () => {
             });
             setTimeout(() => setNotification(null), 3000);
             setShowAddClientModal(false);
-            // React Query will automatically refetch
+            
+            // Explicitly invalidate queries to ensure table refreshes
+            queryClient.invalidateQueries({ queryKey: clientsQueryKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: clientsQueryKeys.statistics() });
           }}
         />
 
