@@ -435,10 +435,17 @@ export interface CurrentProjectsApiResponse {
  * Fetch current projects data from API
  * Backend automatically determines department and role from JWT token
  * Returns up to 5 projects (running projects first, then completed)
+ * @param employeeId - Optional employee ID to filter projects. If provided, only returns projects for that employee.
+ *                     Should only be used for non-managers/unit heads. Managers and unit heads should pass undefined to see all projects.
  */
-export const getCurrentProjectsApi = async (): Promise<CurrentProjectsApiResponse> => {
+export const getCurrentProjectsApi = async (employeeId?: number): Promise<CurrentProjectsApiResponse> => {
   try {
-    const data = await apiGetJson<CurrentProjectsApiResponse>('/dashboard/current-projects');
+    const queryParams = new URLSearchParams();
+    if (employeeId !== undefined) {
+      queryParams.append('employeeId', employeeId.toString());
+    }
+    const url = `/dashboard/current-projects${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const data = await apiGetJson<CurrentProjectsApiResponse>(url);
     return data;
   } catch (error) {
     console.error('Error fetching current projects:', error);

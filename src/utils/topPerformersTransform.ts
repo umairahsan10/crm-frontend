@@ -66,98 +66,88 @@ export const transformTopPerformersToLeaderboard = (
       .toUpperCase()
       .slice(0, 2);
 
-    // Calculate metrics based on available data
+    // Calculate metrics - always show all 5 fields for consistency, even if values are 0
     const metrics = [];
 
-    // Primary metric (deals, revenue, etc.)
+    // Get all metric values (use 0 if not available)
     const safeValue = safeNumber(performer.value);
-    if (performer.metric === 'deals' && safeValue > 0) {
-      const targetDeals = Math.ceil(safeValue * 1.2); // Set target 20% higher
-      const progress = safeCalculateProgress(safeValue, targetDeals, 150);
-      metrics.push({
-        label: 'Deals Closed',
-        currentValue: safeValue,
-        targetValue: targetDeals,
-        progress: progress,
-        status: safeValue >= targetDeals ? 'exceeded' as const : 
-                safeValue >= targetDeals * 0.8 ? 'on-track' as const : 'below-target' as const,
-        unit: 'deals'
-      });
-    } else if (performer.metric === 'revenue' && safeValue > 0) {
-      const targetRevenue = Math.ceil(safeValue * 1.2);
-      const progress = safeCalculateProgress(safeValue, targetRevenue, 150);
-      metrics.push({
-        label: 'Revenue Generated',
-        currentValue: safeValue,
-        targetValue: targetRevenue,
-        progress: progress,
-        status: safeValue >= targetRevenue ? 'exceeded' as const : 
-                safeValue >= targetRevenue * 0.8 ? 'on-track' as const : 'below-target' as const,
-        unit: '$'
-      });
-    }
-
-    // Additional metrics from additionalMetrics
     const safeRevenue = safeNumber(performer.additionalMetrics.revenue);
-    if (safeRevenue > 0) {
-      const targetRevenue = Math.ceil(safeRevenue * 1.2);
-      const progress = safeCalculateProgress(safeRevenue, targetRevenue, 150);
-      metrics.push({
-        label: 'Sales Amount',
-        currentValue: safeRevenue,
-        targetValue: targetRevenue,
-        progress: progress,
-        status: safeRevenue >= targetRevenue ? 'exceeded' as const : 
-                safeRevenue >= targetRevenue * 0.8 ? 'on-track' as const : 'below-target' as const,
-        unit: '$'
-      });
-    }
-
     const safeLeads = safeNumber(performer.additionalMetrics.leads);
-    if (safeLeads > 0) {
-      const targetLeads = Math.ceil(safeLeads * 1.2);
-      const progress = safeCalculateProgress(safeLeads, targetLeads, 150);
-      metrics.push({
-        label: 'Leads Handled',
-        currentValue: safeLeads,
-        targetValue: targetLeads,
-        progress: progress,
-        status: safeLeads >= targetLeads ? 'exceeded' as const : 
-                safeLeads >= targetLeads * 0.8 ? 'on-track' as const : 'below-target' as const,
-        unit: 'leads'
-      });
-    }
-
     const safeConversionRate = safeNumber(performer.additionalMetrics.conversionRate);
-    if (safeConversionRate > 0) {
-      const targetConversion = 30; // 30% conversion rate target
-      const progress = safeCalculateProgress(safeConversionRate, targetConversion, 150);
-      metrics.push({
-        label: 'Conversion Rate',
-        currentValue: safeConversionRate,
-        targetValue: targetConversion,
-        progress: progress,
-        status: safeConversionRate >= targetConversion ? 'exceeded' as const : 
-                safeConversionRate >= targetConversion * 0.8 ? 'on-track' as const : 'below-target' as const,
-        unit: '%'
-      });
-    }
+    const safeAverageDealSize = safeNumber(performer.additionalMetrics.averageDealSize);
 
-    // If no metrics were created, add a default one
-    if (metrics.length === 0) {
-      const safeDefaultValue = safeNumber(performer.value);
-      const defaultTarget = safeDefaultValue > 0 ? Math.ceil(safeDefaultValue * 1.2) : 1;
-      const defaultProgress = safeCalculateProgress(safeDefaultValue, defaultTarget, 150);
-      metrics.push({
-        label: 'Performance Score',
-        currentValue: safeDefaultValue,
-        targetValue: defaultTarget,
-        progress: defaultProgress,
-        status: safeDefaultValue >= defaultTarget ? 'exceeded' as const : 
-                safeDefaultValue >= defaultTarget * 0.8 ? 'on-track' as const : 'below-target' as const,
-        unit: ''
-      });
-    }
+    // 1. Deals Closed - always show
+    // If primary metric is deals, use that value; otherwise use 0
+    const dealsValue = performer.metric === 'deals' ? safeValue : 0;
+    const targetDeals = dealsValue > 0 ? Math.ceil(dealsValue * 1.2) : 20; // Default target of 20 if value is 0
+    const dealsProgress = safeCalculateProgress(dealsValue, targetDeals, 150);
+    metrics.push({
+      label: 'Deals Closed',
+      currentValue: dealsValue,
+      targetValue: targetDeals,
+      progress: dealsProgress,
+      status: dealsValue >= targetDeals ? 'exceeded' as const : 
+              dealsValue >= targetDeals * 0.8 ? 'on-track' as const : 'below-target' as const,
+      unit: 'deals'
+    });
+
+    // 2. Sales Amount (Revenue) - always show
+    // If primary metric is revenue, use that value; otherwise use additionalMetrics.revenue
+    const revenueValue = performer.metric === 'revenue' ? safeValue : safeRevenue;
+    const targetRevenue = revenueValue > 0 ? Math.ceil(revenueValue * 1.2) : 100000; // Default target of 100k if value is 0
+    const revenueProgress = safeCalculateProgress(revenueValue, targetRevenue, 150);
+    metrics.push({
+      label: 'Sales Amount',
+      currentValue: revenueValue,
+      targetValue: targetRevenue,
+      progress: revenueProgress,
+      status: revenueValue >= targetRevenue ? 'exceeded' as const : 
+              revenueValue >= targetRevenue * 0.8 ? 'on-track' as const : 'below-target' as const,
+      unit: '$'
+    });
+
+    // 3. Leads Handled - always show
+    // If primary metric is leads, use that value; otherwise use additionalMetrics.leads
+    const leadsValue = performer.metric === 'leads' ? safeValue : safeLeads;
+    const targetLeads = leadsValue > 0 ? Math.ceil(leadsValue * 1.2) : 50; // Default target of 50 if value is 0
+    const leadsProgress = safeCalculateProgress(leadsValue, targetLeads, 150);
+    metrics.push({
+      label: 'Leads Handled',
+      currentValue: leadsValue,
+      targetValue: targetLeads,
+      progress: leadsProgress,
+      status: leadsValue >= targetLeads ? 'exceeded' as const : 
+              leadsValue >= targetLeads * 0.8 ? 'on-track' as const : 'below-target' as const,
+      unit: 'leads'
+    });
+
+    // 4. Conversion Rate - always show
+    // If primary metric is conversion_rate, use that value; otherwise use additionalMetrics.conversionRate
+    const conversionRateValue = performer.metric === 'conversion_rate' ? safeValue : safeConversionRate;
+    const targetConversion = 30; // 30% conversion rate target
+    const conversionProgress = safeCalculateProgress(conversionRateValue, targetConversion, 150);
+    metrics.push({
+      label: 'Conversion Rate',
+      currentValue: conversionRateValue,
+      targetValue: targetConversion,
+      progress: conversionProgress,
+      status: conversionRateValue >= targetConversion ? 'exceeded' as const : 
+              conversionRateValue >= targetConversion * 0.8 ? 'on-track' as const : 'below-target' as const,
+      unit: '%'
+    });
+
+    // 5. Average Deal Size - always show
+    const targetAverageDealSize = safeAverageDealSize > 0 ? Math.ceil(safeAverageDealSize * 1.2) : 5000; // Default target of 5k if value is 0
+    const averageDealSizeProgress = safeCalculateProgress(safeAverageDealSize, targetAverageDealSize, 150);
+    metrics.push({
+      label: 'Average Deal Size',
+      currentValue: safeAverageDealSize,
+      targetValue: targetAverageDealSize,
+      progress: averageDealSizeProgress,
+      status: safeAverageDealSize >= targetAverageDealSize ? 'exceeded' as const : 
+              safeAverageDealSize >= targetAverageDealSize * 0.8 ? 'on-track' as const : 'below-target' as const,
+      unit: '$'
+    });
 
     return {
       id: performer.employeeId.toString(),
@@ -167,6 +157,27 @@ export const transformTopPerformersToLeaderboard = (
       role: 'Sales Rep', // Could be enhanced to get actual role from API
       metrics: metrics
     };
+  })
+  // Sort by overall performance (descending) - calculate average of all metric progress values
+  .sort((a, b) => {
+    // Calculate overall performance for member a
+    const totalProgressA = a.metrics.reduce((acc, m) => {
+      const progress = isNaN(m.progress) ? 0 : m.progress;
+      return acc + progress;
+    }, 0);
+    const metricsCountA = a.metrics.length || 1;
+    const overallPerformanceA = isNaN(totalProgressA / metricsCountA) ? 0 : totalProgressA / metricsCountA;
+
+    // Calculate overall performance for member b
+    const totalProgressB = b.metrics.reduce((acc, m) => {
+      const progress = isNaN(m.progress) ? 0 : m.progress;
+      return acc + progress;
+    }, 0);
+    const metricsCountB = b.metrics.length || 1;
+    const overallPerformanceB = isNaN(totalProgressB / metricsCountB) ? 0 : totalProgressB / metricsCountB;
+
+    // Sort descending by overall performance
+    return overallPerformanceB - overallPerformanceA;
   });
 };
 

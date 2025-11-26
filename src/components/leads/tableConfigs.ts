@@ -86,7 +86,7 @@ export const crackedLeadsTableConfig: ColumnConfig[] = [
   },
   {
     key: 'phase',
-    label: 'Phase Progress',
+    label: 'Remaining Amount',
     type: 'phase',
     width: '20%'
   },

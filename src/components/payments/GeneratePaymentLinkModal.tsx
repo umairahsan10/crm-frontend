@@ -20,6 +20,12 @@ interface GeneratePaymentLinkModalProps {
     email?: string;
     phone?: string;
   };
+  // Cracked lead information for phase validation
+  crackedLeadInfo?: {
+    currentPhase?: number;
+    totalPhases?: number;
+    remainingAmount?: number;
+  };
 }
 
 type TransactionType = 'payment' | 'refund' | 'adjustment';
@@ -31,7 +37,8 @@ const GeneratePaymentLinkModal: React.FC<GeneratePaymentLinkModalProps> = ({
   leadId,
   defaultAmount = 0,
   onSuccess,
-  initialLeadData
+  initialLeadData,
+  crackedLeadInfo
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -265,6 +272,22 @@ const GeneratePaymentLinkModal: React.FC<GeneratePaymentLinkModalProps> = ({
     }
     if (formData.amount < 0) {
       newErrors.amount = 'Amount cannot be negative';
+    }
+
+    // Validation for last phase: amount must equal remaining amount exactly
+    if (crackedLeadInfo) {
+      const currentPhase = crackedLeadInfo.currentPhase || 1;
+      const totalPhases = crackedLeadInfo.totalPhases || 1;
+      const remainingAmount = parseFloat(crackedLeadInfo.remainingAmount?.toString() || '0');
+      const isLastPhase = currentPhase === totalPhases;
+
+      if (isLastPhase && formData.amount > 0 && remainingAmount > 0) {
+        if (formData.amount < remainingAmount) {
+          newErrors.amount = `For the last phase, payment amount cannot be less than the remaining amount ($${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})`;
+        } else if (formData.amount > remainingAmount) {
+          newErrors.amount = `For the last phase, payment amount cannot be more than the remaining amount ($${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})`;
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -570,6 +593,32 @@ const GeneratePaymentLinkModal: React.FC<GeneratePaymentLinkModalProps> = ({
                           setErrors(prev => ({ ...prev, amount: 'Amount cannot be negative' }));
                           return;
                         }
+
+                        // Validation for last phase: amount cannot be less than remaining amount
+                        if (crackedLeadInfo) {
+                          const currentPhase = crackedLeadInfo.currentPhase || 1;
+                          const totalPhases = crackedLeadInfo.totalPhases || 1;
+                          const remainingAmount = parseFloat(crackedLeadInfo.remainingAmount?.toString() || '0');
+                          const isLastPhase = currentPhase === totalPhases;
+
+                          if (isLastPhase && value > 0 && remainingAmount > 0) {
+                            if (value < remainingAmount) {
+                              setErrors(prev => ({ 
+                                ...prev, 
+                                amount: `For the last phase, payment amount cannot be less than the remaining amount ($${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})` 
+                              }));
+                              return;
+                            }
+                            if (value > remainingAmount) {
+                              setErrors(prev => ({ 
+                                ...prev, 
+                                amount: `For the last phase, payment amount cannot be more than the remaining amount ($${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})` 
+                              }));
+                              return;
+                            }
+                          }
+                        }
+
                         // Clear error if value is valid
                         if (value > 0 && errors.amount) {
                           setErrors(prev => {
@@ -585,6 +634,32 @@ const GeneratePaymentLinkModal: React.FC<GeneratePaymentLinkModalProps> = ({
                         if (value < 0) {
                           setErrors(prev => ({ ...prev, amount: 'Amount cannot be negative' }));
                           handleInputChange('amount', 0);
+                          return;
+                        }
+
+                        // Validation for last phase on blur
+                        if (crackedLeadInfo) {
+                          const currentPhase = crackedLeadInfo.currentPhase || 1;
+                          const totalPhases = crackedLeadInfo.totalPhases || 1;
+                          const remainingAmount = parseFloat(crackedLeadInfo.remainingAmount?.toString() || '0');
+                          const isLastPhase = currentPhase === totalPhases;
+
+                          if (isLastPhase && value > 0 && remainingAmount > 0) {
+                            if (value < remainingAmount) {
+                              setErrors(prev => ({ 
+                                ...prev, 
+                                amount: `For the last phase, payment amount cannot be less than the remaining amount ($${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})` 
+                              }));
+                              return;
+                            }
+                            if (value > remainingAmount) {
+                              setErrors(prev => ({ 
+                                ...prev, 
+                                amount: `For the last phase, payment amount cannot be more than the remaining amount ($${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})` 
+                              }));
+                              return;
+                            }
+                          }
                         }
                       }}
                       className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
@@ -595,6 +670,21 @@ const GeneratePaymentLinkModal: React.FC<GeneratePaymentLinkModalProps> = ({
                     {errors.amount && (
                       <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
                     )}
+                    {!errors.amount && crackedLeadInfo && (() => {
+                      const currentPhase = crackedLeadInfo.currentPhase || 1;
+                      const totalPhases = crackedLeadInfo.totalPhases || 1;
+                      const remainingAmount = parseFloat(crackedLeadInfo.remainingAmount?.toString() || '0');
+                      const isLastPhase = currentPhase === totalPhases;
+                      
+                      if (isLastPhase && remainingAmount > 0) {
+                        return (
+                          <p className="mt-1 text-xs text-orange-600">
+                            Last phase: Payment amount must equal remaining amount (${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   {/* Type */}

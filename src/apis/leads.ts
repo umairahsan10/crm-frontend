@@ -666,6 +666,56 @@ export const getArchivedLeadsApi = async (
   }
 };
 
+// Get completed leads
+export const getCompletedLeadsApi = async (
+  employeeId: number,
+  page: number = 1, 
+  limit: number = 20, 
+  filters: {
+    search?: string;
+    salesUnitId?: string;
+    industryId?: string;
+    minAmount?: string;
+    maxAmount?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}
+): Promise<ApiResponse<any[]>> => {
+  try {
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      employeeId: employeeId.toString(),
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(filters.search && { search: filters.search }),
+      ...(filters.salesUnitId && { salesUnitId: filters.salesUnitId }),
+      ...(filters.industryId && { industryId: filters.industryId }),
+      ...(filters.minAmount && { minAmount: filters.minAmount }),
+      ...(filters.maxAmount && { maxAmount: filters.maxAmount }),
+      ...(filters.sortBy && { sortBy: filters.sortBy }),
+      ...(filters.sortOrder && { sortOrder: filters.sortOrder })
+    });
+
+    console.log('Fetching completed leads with filters:', { employeeId, ...filters });
+
+    const data = await apiGetJson<any>(`/leads/completed?${queryParams.toString()}`);
+    console.log('Completed leads response:', data);
+    
+    return {
+      success: true,
+      data: data.completedLeads || data.data || data,
+      message: 'Completed leads fetched successfully',
+      pagination: data.pagination
+    };
+  } catch (error) {
+    console.error('Completed leads API error:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('An unexpected error occurred while fetching completed leads');
+  }
+};
+
 // Get single cracked lead details
 export const getCrackedLeadApi = async (crackedLeadId: number): Promise<ApiResponse<any>> => {
   try {
