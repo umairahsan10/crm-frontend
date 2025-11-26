@@ -311,52 +311,6 @@ const EmployeeManagement: React.FC = () => {
     }
   ];
 
-  // Bulk actions configuration (tab-aware)
-  const bulkActions: BulkAction[] = activeTab === 'active' ? [
-    {
-      id: 'deactivate',
-      label: 'Deactivate',
-      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>,
-      variant: 'warning',
-      onClick: (selectedIds) => handleBulkDeactivate(selectedIds),
-      confirmMessage: `Are you sure you want to deactivate the selected employee(s)?`
-    },
-    {
-      id: 'terminate',
-      label: 'Terminate Selected',
-      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" clipRule="evenodd" /></svg>,
-      variant: 'danger',
-      onClick: (selectedIds) => handleBulkTerminate(selectedIds),
-      confirmMessage: `Are you sure you want to terminate the selected employee(s)? This will process their final salary and mark them as terminated.`
-    }
-  ] : activeTab === 'inactive' ? [
-    {
-      id: 'reactivate',
-      label: 'Reactivate',
-      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
-      variant: 'primary',
-      onClick: (selectedIds) => handleBulkActivate(selectedIds),
-      confirmMessage: `Are you sure you want to reactivate the selected employee(s)?`
-    },
-    {
-      id: 'terminate',
-      label: 'Terminate Selected',
-      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" clipRule="evenodd" /></svg>,
-      variant: 'danger',
-      onClick: (selectedIds) => handleBulkTerminate(selectedIds),
-      confirmMessage: `Are you sure you want to terminate the selected employee(s)? This will process their final salary and mark them as terminated.`
-    }
-  ] : [
-    {
-      id: 'reactivate',
-      label: 'Reactivate',
-      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
-      variant: 'primary',
-      onClick: (selectedIds) => handleBulkActivate(selectedIds),
-      confirmMessage: `Are you sure you want to reactivate the selected employee(s)?`
-    }
-  ];
-
   // Handlers
   const handlePageChange = (page: number) => {
     setPagination(prev => ({ ...prev, currentPage: page }));
@@ -597,6 +551,55 @@ const EmployeeManagement: React.FC = () => {
   // Fallback for HR department users (temporary until permissions are properly set)
   const { user } = useAuth();
   const isHRUser = user?.department === 'HR' || user?.role === 'admin';
+  const isAdmin = user && (user.type === 'admin' || user.role === 'admin');
+  
+  // Bulk actions configuration (tab-aware) - defined after user is declared
+  const bulkActions: BulkAction[] = activeTab === 'active' ? [
+    {
+      id: 'deactivate',
+      label: 'Deactivate',
+      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>,
+      variant: 'warning',
+      onClick: (selectedIds) => handleBulkDeactivate(selectedIds),
+      confirmMessage: `Are you sure you want to deactivate the selected employee(s)?`
+    },
+    // Hide terminate action for admin users
+    ...(isAdmin ? [] : [{
+      id: 'terminate',
+      label: 'Terminate Selected',
+      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" clipRule="evenodd" /></svg>,
+      variant: 'danger' as const,
+      onClick: (selectedIds: string[]) => handleBulkTerminate(selectedIds),
+      confirmMessage: `Are you sure you want to terminate the selected employee(s)? This will process their final salary and mark them as terminated.`
+    }])
+  ] : activeTab === 'inactive' ? [
+    {
+      id: 'reactivate',
+      label: 'Reactivate',
+      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
+      variant: 'primary',
+      onClick: (selectedIds) => handleBulkActivate(selectedIds),
+      confirmMessage: `Are you sure you want to reactivate the selected employee(s)?`
+    },
+    // Hide terminate action for admin users
+    ...(isAdmin ? [] : [{
+      id: 'terminate',
+      label: 'Terminate Selected',
+      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" clipRule="evenodd" /></svg>,
+      variant: 'danger' as const,
+      onClick: (selectedIds: string[]) => handleBulkTerminate(selectedIds),
+      confirmMessage: `Are you sure you want to terminate the selected employee(s)? This will process their final salary and mark them as terminated.`
+    }])
+  ] : [
+    {
+      id: 'reactivate',
+      label: 'Reactivate',
+      icon: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
+      variant: 'primary',
+      onClick: (selectedIds) => handleBulkActivate(selectedIds),
+      confirmMessage: `Are you sure you want to reactivate the selected employee(s)?`
+    }
+  ];
   
   // Debug permissions
   console.log('Permissions Debug:', {
@@ -631,7 +634,7 @@ const EmployeeManagement: React.FC = () => {
                 </svg>
                 {showStatistics ? 'Hide Statistics' : 'Show Statistics'}
               </button>
-              {(canCreateEmployee || isHRUser) && (
+              {(canCreateEmployee || isHRUser) && user && user.type !== 'admin' && user.role !== 'admin' && (
                  <button
                    onClick={() => setShowCreateDrawer(true)}
                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

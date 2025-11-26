@@ -41,6 +41,10 @@ import AccountantDashboard from './pages/Dashboard/subdashboards/AccountantDashb
 // Import admin-specific pages
 import ProjectsPage from './pages/Projects/ProjectsPage';
 import FinancePage from './pages/Finance/FinancePage';
+import AssetsPage from './pages/Finance/AssetsPage';
+import LiabilitiesPage from './pages/Finance/LiabilitiesPage';
+import ExpensesPage from './pages/Finance/ExpensesPage';
+import RevenuePage from './pages/Finance/RevenuePage';
 import SalaryManagementPage from './pages/Finance/Salary/SalaryManagementPage';
 import SalaryCalculatorPage from './pages/Finance/Salary/SalaryCalculatorPage';
 import BonusManagementPage from './pages/Finance/Salary/BonusManagementPage';
@@ -247,6 +251,22 @@ function AppLayout() {
         <Route 
           path="/finance" 
           element={canAccessPage('finance') ? <FinancePage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/finance/assets" 
+          element={canAccessPage('finance') ? <AssetsPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/finance/liabilities" 
+          element={canAccessPage('finance') ? <LiabilitiesPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/finance/expenses" 
+          element={canAccessPage('finance') ? <ExpensesPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/finance/revenue" 
+          element={canAccessPage('finance') ? <RevenuePage /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/finance/salary" 

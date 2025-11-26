@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import ExpensesPage from './ExpensesPage';
-import RevenuePage from './RevenuePage';
-import AssetsPage from './AssetsPage';
-import LiabilitiesPage from './LiabilitiesPage';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useFinanceOverview } from '../../hooks/queries/useFinanceQueries';
 import {
@@ -33,7 +30,6 @@ ChartJS.register(
   Legend
 );
 
-type FinanceTab = 'overview' | 'revenue' | 'expenses' | 'assets' | 'liabilities';
 
 // Format currency helper
 const formatCurrency = (amount: number): string => {
@@ -76,7 +72,6 @@ const getTextColor = (rgba: string): string => {
 };
 
 const FinancePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<FinanceTab>('overview');
   const [selectedTrendPeriod, setSelectedTrendPeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
   const [visibleDatasets, setVisibleDatasets] = useState({
     revenue: true,
@@ -97,133 +92,24 @@ const FinancePage: React.FC = () => {
   const canViewRevenue = isAdmin || hasPermission('revenues_permission');
 
   // React Query hook for finance overview analytics
-  // Only fetch when on overview tab
   const {
     data: analytics,
     isLoading: loading,
     isError,
     error,
     refetch
-  } = useFinanceOverview(undefined, {
-    enabled: activeTab === 'overview'
-  });
+  } = useFinanceOverview();
 
-  // Handle back navigation
-  const handleBackToOverview = () => {
-    setActiveTab('overview');
+  // Get trend data based on selected period
+  const getTrendData = () => {
+    if (!analytics?.trends) return null;
+    return analytics.trends[selectedTrendPeriod];
   };
 
-  // Render content based on active tab
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'revenue':
-        if (!canViewRevenue) {
-          return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-              <div className="text-center py-12 px-4">
-                <div className="text-gray-400 mb-4">
-                  <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Access Denied</h3>
-                <p className="text-sm text-gray-500 mb-6">You don't have permission to access Revenue Management.</p>
-                <button
-                  onClick={handleBackToOverview}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Back to Overview
-                </button>
-              </div>
-            </div>
-          );
-        }
-        return <RevenuePage onBack={handleBackToOverview} />;
-    
-      case 'expenses':
-        if (!canViewExpenses) {
-          return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-              <div className="text-center py-12 px-4">
-                <div className="text-gray-400 mb-4">
-                  <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Access Denied</h3>
-                <p className="text-sm text-gray-500 mb-6">You don't have permission to access Expenses Management.</p>
-                <button
-                  onClick={handleBackToOverview}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Back to Overview
-                </button>
-              </div>
-            </div>
-          );
-        }
-        return <ExpensesPage onBack={handleBackToOverview} />;
-    
-      case 'assets':
-        if (!canViewAssets) {
-          return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-              <div className="text-center py-12 px-4">
-                <div className="text-gray-400 mb-4">
-                  <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Access Denied</h3>
-                <p className="text-sm text-gray-500 mb-6">You don't have permission to access Assets Management.</p>
-                <button
-                  onClick={handleBackToOverview}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Back to Overview
-                </button>
-              </div>
-            </div>
-          );
-        }
-        return <AssetsPage onBack={handleBackToOverview} />;
-    
-      case 'liabilities':
-        if (!canViewLiabilities) {
-          return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-              <div className="text-center py-12 px-4">
-                <div className="text-gray-400 mb-4">
-                  <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Access Denied</h3>
-                <p className="text-sm text-gray-500 mb-6">You don't have permission to access Liabilities Management.</p>
-                <button
-                  onClick={handleBackToOverview}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Back to Overview
-                </button>
-              </div>
-            </div>
-          );
-        }
-        return <LiabilitiesPage onBack={handleBackToOverview} />;
+  const trendData = getTrendData();
 
-      case 'overview':
-      default:
-        // Get trend data based on selected period
-        const getTrendData = () => {
-          if (!analytics?.trends) return null;
-          return analytics.trends[selectedTrendPeriod];
-        };
-
-        const trendData = getTrendData();
-
-        // Prepare trend chart data with visibility control
-        const trendChartData = trendData ? {
+  // Prepare trend chart data with visibility control
+  const trendChartData = trendData ? {
           labels: trendData.map(item => {
             if (selectedTrendPeriod === 'daily') {
               return new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -259,9 +145,9 @@ const FinancePage: React.FC = () => {
               hidden: !visibleDatasets.netProfit,
             },
           ],
-        } : null;
+  } : null;
 
-        const trendChartOptions = {
+  const trendChartOptions = {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
@@ -288,51 +174,53 @@ const FinancePage: React.FC = () => {
               },
             },
           },
-        };
+  };
 
-        // Toggle dataset visibility
-        const toggleDataset = (dataset: 'revenue' | 'expenses' | 'netProfit') => {
-          setVisibleDatasets(prev => ({
-            ...prev,
-            [dataset]: !prev[dataset],
-          }));
-        };
+  // Toggle dataset visibility
+  const toggleDataset = (dataset: 'revenue' | 'expenses' | 'netProfit') => {
+    setVisibleDatasets(prev => ({
+      ...prev,
+      [dataset]: !prev[dataset],
+    }));
+  };
 
-        // Revenue breakdown chart - try widgets first, then fallback to topCategories or topSources
-        const getRevenueBreakdownData = () => {
-          // Try widgets.revenueBreakdown first
-          if (analytics?.widgets?.revenueBreakdown && analytics.widgets.revenueBreakdown.length > 0) {
-            return {
-              labels: analytics.widgets.revenueBreakdown.map(item => item.name),
-              data: analytics.widgets.revenueBreakdown.map(item => item.amount),
-            };
-          }
-          // Fallback to revenues.topCategories
-          if (analytics?.revenues?.topCategories && analytics.revenues.topCategories.length > 0) {
-            return {
-              labels: analytics.revenues.topCategories.map(item => item.name),
-              data: analytics.revenues.topCategories.map(item => item.amount),
-            };
-          }
-          // Fallback to revenues.topSources
-          if (analytics?.revenues?.topSources && analytics.revenues.topSources.length > 0) {
-            return {
-              labels: analytics.revenues.topSources.map(item => item.name),
-              data: analytics.revenues.topSources.map(item => item.amount),
-            };
-          }
-          return null;
-        };
+  // Revenue breakdown chart - try widgets first, then fallback to topCategories or topSources
+  const getRevenueBreakdownData = () => {
+    // Try widgets.revenueBreakdown first
+    if (analytics?.widgets?.revenueBreakdown && analytics.widgets.revenueBreakdown.length > 0) {
+      return {
+        labels: analytics.widgets.revenueBreakdown.map(item => item.name),
+        data: analytics.widgets.revenueBreakdown.map(item => item.amount),
+      };
+    }
+    // Fallback to revenues.topCategories
+    if (analytics?.revenues?.topCategories && analytics.revenues.topCategories.length > 0) {
+      return {
+        labels: analytics.revenues.topCategories.map(item => item.name),
+        data: analytics.revenues.topCategories.map(item => item.amount),
+      };
+    }
+    // Fallback to revenues.topSources
+    if (analytics?.revenues?.topSources && analytics.revenues.topSources.length > 0) {
+      return {
+        labels: analytics.revenues.topSources.map(item => item.name),
+        data: analytics.revenues.topSources.map(item => item.amount),
+      };
+    }
+    return null;
+  };
 
-        const revenueBreakdown = getRevenueBreakdownData();
-        
-        // Initialize visible revenue categories if empty
-        if (revenueBreakdown && revenueBreakdown.labels.length > 0 && visibleRevenueCategories.size === 0) {
-          setVisibleRevenueCategories(new Set(revenueBreakdown.labels));
-        }
-        
-        // Filter revenue breakdown based on visible categories
-        const revenueBreakdownData = revenueBreakdown ? (() => {
+  const revenueBreakdown = getRevenueBreakdownData();
+  
+  // Initialize visible revenue categories if empty
+  React.useEffect(() => {
+    if (revenueBreakdown && revenueBreakdown.labels.length > 0 && visibleRevenueCategories.size === 0) {
+      setVisibleRevenueCategories(new Set(revenueBreakdown.labels));
+    }
+  }, [revenueBreakdown]);
+  
+  // Filter revenue breakdown based on visible categories
+  const revenueBreakdownData = revenueBreakdown ? (() => {
           const visible = visibleRevenueCategories.size === 0 
             ? revenueBreakdown.labels 
             : revenueBreakdown.labels.filter(label => visibleRevenueCategories.has(label));
@@ -344,54 +232,56 @@ const FinancePage: React.FC = () => {
             datasets: [{
               data: visibleIndices.map(i => revenueBreakdown.data[i]),
               backgroundColor: visibleIndices.map(i => REVENUE_COLORS[i % REVENUE_COLORS.length]),
-            }],
-          };
-        })() : null;
-        
-        // Toggle revenue category
-        const toggleRevenueCategory = (category: string) => {
+      }],
+    };
+  })() : null;
+  
+  // Toggle revenue category
+  const toggleRevenueCategory = (category: string) => {
           setVisibleRevenueCategories(prev => {
             const newSet = new Set(prev);
             newSet.has(category) ? newSet.delete(category) : newSet.add(category);
-            return newSet;
-          });
-        };
+      return newSet;
+    });
+  };
 
-        // Expense breakdown chart - try widgets first, then fallback to topCategories or topPaymentMethods
-        const getExpenseBreakdownData = () => {
-          // Try widgets.expenseBreakdown first
-          if (analytics?.widgets?.expenseBreakdown && analytics.widgets.expenseBreakdown.length > 0) {
-            return {
-              labels: analytics.widgets.expenseBreakdown.map(item => item.name),
-              data: analytics.widgets.expenseBreakdown.map(item => item.amount),
-            };
-          }
-          // Fallback to expenses.topCategories
-          if (analytics?.expenses?.topCategories && analytics.expenses.topCategories.length > 0) {
-            return {
-              labels: analytics.expenses.topCategories.map(item => item.name),
-              data: analytics.expenses.topCategories.map(item => item.amount),
-            };
-          }
-          // Fallback to expenses.topPaymentMethods
-          if (analytics?.expenses?.topPaymentMethods && analytics.expenses.topPaymentMethods.length > 0) {
-            return {
-              labels: analytics.expenses.topPaymentMethods.map(item => item.name),
-              data: analytics.expenses.topPaymentMethods.map(item => item.amount),
-            };
-          }
-          return null;
-        };
+  // Expense breakdown chart - try widgets first, then fallback to topCategories or topPaymentMethods
+  const getExpenseBreakdownData = () => {
+    // Try widgets.expenseBreakdown first
+    if (analytics?.widgets?.expenseBreakdown && analytics.widgets.expenseBreakdown.length > 0) {
+      return {
+        labels: analytics.widgets.expenseBreakdown.map(item => item.name),
+        data: analytics.widgets.expenseBreakdown.map(item => item.amount),
+      };
+    }
+    // Fallback to expenses.topCategories
+    if (analytics?.expenses?.topCategories && analytics.expenses.topCategories.length > 0) {
+      return {
+        labels: analytics.expenses.topCategories.map(item => item.name),
+        data: analytics.expenses.topCategories.map(item => item.amount),
+      };
+    }
+    // Fallback to expenses.topPaymentMethods
+    if (analytics?.expenses?.topPaymentMethods && analytics.expenses.topPaymentMethods.length > 0) {
+      return {
+        labels: analytics.expenses.topPaymentMethods.map(item => item.name),
+        data: analytics.expenses.topPaymentMethods.map(item => item.amount),
+      };
+    }
+    return null;
+  };
 
-        const expenseBreakdown = getExpenseBreakdownData();
-        
-        // Initialize visible expense categories if empty
-        if (expenseBreakdown && expenseBreakdown.labels.length > 0 && visibleExpenseCategories.size === 0) {
-          setVisibleExpenseCategories(new Set(expenseBreakdown.labels));
-        }
-        
-        // Filter expense breakdown based on visible categories
-        const expenseBreakdownData = expenseBreakdown ? (() => {
+  const expenseBreakdown = getExpenseBreakdownData();
+  
+  // Initialize visible expense categories if empty
+  React.useEffect(() => {
+    if (expenseBreakdown && expenseBreakdown.labels.length > 0 && visibleExpenseCategories.size === 0) {
+      setVisibleExpenseCategories(new Set(expenseBreakdown.labels));
+    }
+  }, [expenseBreakdown]);
+  
+  // Filter expense breakdown based on visible categories
+  const expenseBreakdownData = expenseBreakdown ? (() => {
           const visible = visibleExpenseCategories.size === 0 
             ? expenseBreakdown.labels 
             : expenseBreakdown.labels.filter(label => visibleExpenseCategories.has(label));
@@ -403,20 +293,20 @@ const FinancePage: React.FC = () => {
             datasets: [{
               data: visibleIndices.map(i => expenseBreakdown.data[i]),
               backgroundColor: visibleIndices.map(i => EXPENSE_COLORS[i % EXPENSE_COLORS.length]),
-            }],
-          };
-        })() : null;
-        
-        // Toggle expense category
-        const toggleExpenseCategory = (category: string) => {
+      }],
+    };
+  })() : null;
+  
+  // Toggle expense category
+  const toggleExpenseCategory = (category: string) => {
           setVisibleExpenseCategories(prev => {
             const newSet = new Set(prev);
             newSet.has(category) ? newSet.delete(category) : newSet.add(category);
-            return newSet;
-          });
-        };
+      return newSet;
+    });
+  };
 
-        return (
+  return (
           <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               {/* Page Header */}
@@ -452,7 +342,7 @@ const FinancePage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {/* Revenue Card - Only show if user has permission */}
                 {canViewRevenue && (
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('revenue')}>
+                  <Link to="/finance/revenue" className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6 hover:shadow-md transition-shadow cursor-pointer group block">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-green-200 rounded-lg group-hover:bg-green-500 transition-colors">
                         <svg className="h-8 w-8 text-green-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -483,12 +373,12 @@ const FinancePage: React.FC = () => {
                   ) : (
                     <div className="text-sm text-gray-500">No data available</div>
                   )}
-                  </div>
+                  </Link>
                 )}
 
                 {/* Expenses Card - Only show if user has permission */}
                 {canViewExpenses && (
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('expenses')}>
+                  <Link to="/finance/expenses" className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200 p-6 hover:shadow-md transition-shadow cursor-pointer group block">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-blue-200 rounded-lg group-hover:bg-blue-500 transition-colors">
                         <svg className="h-8 w-8 text-blue-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -519,12 +409,12 @@ const FinancePage: React.FC = () => {
                   ) : (
                     <div className="text-sm text-gray-500">No data available</div>
                   )}
-                  </div>
+                  </Link>
                 )}
 
                 {/* Assets Card - Only show if user has permission */}
                 {canViewAssets && (
-                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-sm border border-indigo-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('assets')}>
+                  <Link to="/finance/assets" className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-sm border border-indigo-200 p-6 hover:shadow-md transition-shadow cursor-pointer group block">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-indigo-200 rounded-lg group-hover:bg-indigo-500 transition-colors">
                       <svg className="h-8 w-8 text-indigo-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -551,12 +441,12 @@ const FinancePage: React.FC = () => {
                   ) : (
                     <div className="text-sm text-gray-500">No data available</div>
                   )}
-                  </div>
+                  </Link>
                 )}
 
                 {/* Liabilities Card - Only show if user has permission */}
                 {canViewLiabilities && (
-                  <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl shadow-sm border border-red-200 p-6 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActiveTab('liabilities')}>
+                  <Link to="/finance/liabilities" className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl shadow-sm border border-red-200 p-6 hover:shadow-md transition-shadow cursor-pointer group block">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-3 bg-red-200 rounded-lg group-hover:bg-red-500 transition-colors">
                       <svg className="h-8 w-8 text-red-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -587,7 +477,7 @@ const FinancePage: React.FC = () => {
                   ) : (
                     <div className="text-sm text-gray-500">No data available</div>
                   )}
-                  </div>
+                  </Link>
                 )}
               </div>
 
@@ -980,14 +870,6 @@ const FinancePage: React.FC = () => {
               </div>
             </div>
           </div>
-        );
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {renderTabContent()}
-    </div>
   );
 };
 

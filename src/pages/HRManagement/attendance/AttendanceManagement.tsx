@@ -28,7 +28,7 @@ import {
   type BulkCheckoutDto,
   type UpdateAttendanceLogStatusDto
 } from '../../../apis/attendance';
-import { formatTimeToPKT } from '../../../utils/helpers';
+import { formatTimeToPKT, getCurrentPKTAsUTC } from '../../../utils/helpers';
 import './AttendanceManagement.css';
 
 interface AttendanceRecord {
@@ -252,16 +252,17 @@ const AttendanceManagement: React.FC = () => {
     try {
       setIsMarkingAttendance(true);
       
-      const currentTime = new Date().toISOString();
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const offset_minutes = -new Date().getTimezoneOffset();
+      // Get current PKT time and convert to UTC for API
+      const currentTimeUTC = getCurrentPKTAsUTC();
+      const timezone = 'Asia/Karachi'; // PKT timezone
+      const offset_minutes = 300; // PKT is UTC+5, so +300 minutes
       
       // Always use current date based on local time for marking attendance (not the selected date which might be for viewing)
       const currentDateForMarking = getShiftDate();
       const checkinData: CheckinDto = {
         employee_id: employeeId,
         date: currentDateForMarking,
-        checkin: currentTime,
+        checkin: currentTimeUTC, // UTC time converted from PKT
         mode: 'onsite',
         timezone,
         offset_minutes
@@ -398,8 +399,9 @@ const AttendanceManagement: React.FC = () => {
         return;
       }
       
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const offset_minutes = -new Date().getTimezoneOffset();
+      // Set timezone info for bulk checkout (backend will use current PKT time)
+      const timezone = 'Asia/Karachi'; // PKT timezone
+      const offset_minutes = 300; // PKT is UTC+5, so +300 minutes
       
       // Use bulk-checkout endpoint
       // Always use current date based on local time for bulk operations (not the selected date which might be for viewing)
@@ -555,6 +557,9 @@ const AttendanceManagement: React.FC = () => {
   ];
 
   // Dynamic table columns
+  // Check if user is admin
+  const isAdmin = user && (user.type === 'admin' || user.role === 'admin');
+  
   const columns: ColumnConfig[] = [
     {
       key: 'employeeName',
@@ -616,11 +621,12 @@ const AttendanceManagement: React.FC = () => {
         return <span className="text-sm text-gray-900">{pktTime}</span>;
       }
     },
-    {
+    // Hide Actions column for admin users
+    ...(isAdmin ? [] : [{
       key: 'employeeId',
       label: 'Actions',
-      type: 'custom',
-      render: (_value, row) => (
+      type: 'custom' as const,
+      render: (_value: any, row: any) => (
         <div className="flex items-center space-x-2">
           {row.status === 'not_marked' && (
             <button
@@ -631,17 +637,17 @@ const AttendanceManagement: React.FC = () => {
             </button>
           )}
           {row.status !== 'not_marked' && (
-              <button
+            <button
               onClick={(e) => { e.stopPropagation(); openStatusModal(row.employeeId, row.employeeName, row.status || 'not_marked', row.logId); }}
               className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
-                title="Change Status"
-              >
-                ✏️
-                </button>
+              title="Change Status"
+            >
+              ✏️
+            </button>
           )}
         </div>
       )
-    }
+    }])
   ];
 
   // Access control
@@ -786,26 +792,29 @@ const AttendanceManagement: React.FC = () => {
                   Clear selection
                 </button>
               </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setShowBulkCheckoutModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                  </svg>
-                  Bulk Checkout
-                </button>
-                <button
-                  onClick={() => setShowBulkMarkModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Mark Selected Attendance
-                </button>
-              </div>
+              {/* Hide bulk actions for admin users */}
+              {user && user.type !== 'admin' && user.role !== 'admin' && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setShowBulkCheckoutModal(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                    </svg>
+                    Bulk Checkout
+                  </button>
+                  <button
+                    onClick={() => setShowBulkMarkModal(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Mark Selected Attendance
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -833,7 +842,7 @@ const AttendanceManagement: React.FC = () => {
           onBulkSelect={handleBulkSelect}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
-          selectable={true}
+          selectable={user && user.type !== 'admin' && user.role !== 'admin'}
           emptyMessage="No employees found"
           theme={{ primary: 'blue', secondary: 'gray', accent: 'blue' }}
         />

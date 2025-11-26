@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import LiabilitiesTable from '../../components/liabilities/LiabilitiesTable';
 import LiabilitiesStatistics from '../../components/liabilities/LiabilitiesStatistics';
 import LiabilityDetailsDrawer from '../../components/liabilities/LiabilityDetailsDrawer';
@@ -6,10 +7,6 @@ import AddLiabilityDrawer from '../../components/liabilities/AddLiabilityDrawer'
 import GenericLiabilityFilters from '../../components/liabilities/GenericLiabilityFilters';
 import { useLiabilities, useLiabilitiesStatistics } from '../../hooks/queries/useFinanceQueries';
 import type { Liability } from '../../types';
-
-interface LiabilitiesPageProps {
-  onBack?: () => void;
-}
 
 interface LiabilitiesFilters {
   search: string;
@@ -23,7 +20,8 @@ interface LiabilitiesFilters {
   sortOrder: 'asc' | 'desc';
 }
 
-const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
+const LiabilitiesPage: React.FC = () => {
+  const navigate = useNavigate();
   // State management
   const [selectedLiability, setSelectedLiability] = useState<Liability | null>(null);
   const [selectedLiabilities, setSelectedLiabilities] = useState<string[]>([]);
@@ -136,17 +134,15 @@ const LiabilitiesPage: React.FC<LiabilitiesPageProps> = ({ onBack }) => {
           <div className="flex items-center justify-between">
             <div className="flex-1">
               {/* Back Button */}
-              {onBack && (
-                <button
-                  onClick={onBack}
-                  className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-                >
-                  <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Back to Finance Overview
-                </button>
-              )}
+              <button
+                onClick={() => navigate('/finance')}
+                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+              >
+                <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Finance Overview
+              </button>
               <h1 className="text-3xl font-bold text-gray-900">Liabilities Management</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Track and manage company liabilities, debts, and payment obligations

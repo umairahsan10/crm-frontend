@@ -544,15 +544,18 @@ const LeadsManagementPage: React.FC = () => {
                 </svg>
                 {showStatistics ? 'Hide Stats' : 'Show Stats'}
               </button>
-              <button
-                onClick={handleRequestLead}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-              >
-                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Request Lead
-              </button>
+              {/* Hide Request Lead button for admin users */}
+              {user && user.type !== 'admin' && user.role !== 'admin' && (
+                <button
+                  onClick={handleRequestLead}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Request Lead
+                </button>
+              )}
             </div>
           </div>
         </div>

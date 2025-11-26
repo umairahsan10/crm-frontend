@@ -243,6 +243,104 @@ export const formatTimeToPKT = (utcTimeString: string | null, format: 'HH:mm:ss'
   }
 };
 
+/**
+ * Get current time in PKT and convert to UTC ISO string for API
+ * Use this when sending current time to backend (checkin/checkout)
+ * @returns ISO 8601 UTC string
+ */
+export const getCurrentPKTAsUTC = (): string => {
+  const now = new Date();
+  
+  // Get current time in PKT timezone
+  const pktFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Karachi',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  const parts = pktFormatter.formatToParts(now);
+  const pktParts: Record<string, string> = {};
+  parts.forEach(part => {
+    pktParts[part.type] = part.value;
+  });
+  
+  // Create UTC date with PKT time components
+  const utcDate = new Date(Date.UTC(
+    parseInt(pktParts.year),
+    parseInt(pktParts.month) - 1,
+    parseInt(pktParts.day),
+    parseInt(pktParts.hour),
+    parseInt(pktParts.minute),
+    parseInt(pktParts.second)
+  ));
+  
+  // Subtract 5 hours (PKT is UTC+5) to convert PKT to UTC
+  utcDate.setUTCHours(utcDate.getUTCHours() - 5);
+  
+  return utcDate.toISOString();
+};
+
+/**
+ * Convert PKT time string to UTC ISO string
+ * Use this when user inputs time in PKT format and you need to send UTC to API
+ * @param pktTime - Time in PKT format (HH:mm or HH:mm:ss)
+ * @param date - Date string (YYYY-MM-DD), defaults to today in PKT
+ * @returns ISO 8601 UTC string
+ */
+export const convertPKTTimeToUTC = (pktTime: string, date?: string): string => {
+  try {
+    // Parse time string (HH:mm or HH:mm:ss)
+    const timeMatch = pktTime.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (!timeMatch) {
+      throw new Error('Invalid time format. Expected HH:mm or HH:mm:ss');
+    }
+    
+    const hours = parseInt(timeMatch[1], 10);
+    const minutes = parseInt(timeMatch[2], 10);
+    const seconds = timeMatch[3] ? parseInt(timeMatch[3], 10) : 0;
+    
+    // Validate time values
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
+      throw new Error('Invalid time values');
+    }
+    
+    // Get date string (default to today in PKT)
+    let dateString = date;
+    if (!dateString) {
+      const now = new Date();
+      const pktDateFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Karachi',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const dateParts = pktDateFormatter.formatToParts(now);
+      const datePartsMap: Record<string, string> = {};
+      dateParts.forEach(part => {
+        datePartsMap[part.type] = part.value;
+      });
+      dateString = `${datePartsMap.year}-${datePartsMap.month}-${datePartsMap.day}`;
+    }
+    
+    // Parse date string (YYYY-MM-DD)
+    const [year, month, day] = dateString.split('-').map(Number);
+    
+    // Create UTC date with PKT time components, then subtract 5 hours
+    const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+    utcDate.setUTCHours(utcDate.getUTCHours() - 5);
+    
+    return utcDate.toISOString();
+  } catch (error) {
+    console.error('Error converting PKT time to UTC:', error);
+    throw new Error(`Failed to convert PKT to UTC: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
 export const isToday = (date: string | Date): boolean => {
   const today = new Date();
   const checkDate = typeof date === 'string' ? new Date(date) : date;

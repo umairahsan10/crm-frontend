@@ -5,50 +5,65 @@ export const departmentsTableConfig: ColumnConfig[] = [
   {
     key: 'name',
     label: 'Name',
-    type: 'text',
+    type: 'custom',
     sortable: true,
+    render: (value: string) => (
+      <div className="flex items-center">
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+          {value}
+        </span>
+      </div>
+    ),
   },
   {
     key: 'description',
     label: 'Description',
-    type: 'text',
+    type: 'custom',
     sortable: true,
+    render: (value: string) => (
+      <span className="text-sm text-gray-600">
+        {value || 'No description'}
+      </span>
+    ),
   },
   {
     key: 'manager',
     label: 'Manager',
     type: 'custom',
-    render: (value: any) => (
-      <span className="text-sm text-gray-900">
-        {value ? `${value.firstName} ${value.lastName}` : 'Not assigned'}
-      </span>
-    ),
+    render: (value: any) => {
+      if (!value) {
+        return (
+          <span className="text-sm text-gray-400 italic">Not assigned</span>
+        );
+      }
+      return (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10">
+            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+              <span className="text-sm font-medium text-gray-700">
+                {value?.firstName?.charAt(0) || ''}{value?.lastName?.charAt(0) || ''}
+              </span>
+            </div>
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">
+              {value ? `${value.firstName} ${value.lastName}` : 'N/A'}
+            </div>
+            <div className="text-sm text-gray-500">{value?.email || 'N/A'}</div>
+          </div>
+        </div>
+      );
+    },
   },
   {
     key: 'employeeCount',
     label: 'Employees',
-    type: 'text',
+    type: 'custom',
     sortable: true,
     render: (value: any) => (
-      <span className="text-sm text-gray-900">{value || 0}</span>
-    ),
-  },
-  {
-    key: 'actions',
-    label: 'Actions',
-    type: 'custom',
-    render: (_value: any, row: any) => (
-      <div className="flex gap-2">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (row.onDelete) row.onDelete(row);
-          }}
-          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium"
-        >
-          Delete
-        </button>
-      </div>
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        {value || 0} {value === 1 ? 'employee' : 'employees'}
+      </span>
     ),
   },
 ];
@@ -69,43 +84,34 @@ export const rolesTableConfig: ColumnConfig[] = [
         'unit_head': 'Unit Head',
       };
       return (
-        <span className="text-sm font-medium text-gray-900">
-          {roleMap[value] || value}
-        </span>
+        <div className="flex items-center">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+            {roleMap[value] || value}
+          </span>
+        </div>
       );
     },
   },
   {
     key: 'description',
     label: 'Description',
-    type: 'text',
+    type: 'custom',
     sortable: true,
+    render: (value: string) => (
+      <span className="text-sm text-gray-600">
+        {value || 'No description'}
+      </span>
+    ),
   },
   {
     key: 'employeeCount',
     label: 'Employees',
-    type: 'text',
+    type: 'custom',
     sortable: true,
     render: (value: any) => (
-      <span className="text-sm text-gray-900">{value || 0}</span>
-    ),
-  },
-  {
-    key: 'actions',
-    label: 'Actions',
-    type: 'custom',
-    render: (_value: any, row: any) => (
-      <div className="flex gap-2">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (row.onDelete) row.onDelete(row);
-          }}
-          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium"
-        >
-          Delete
-        </button>
-      </div>
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        {value || 0} {value === 1 ? 'employee' : 'employees'}
+      </span>
     ),
   },
 ];

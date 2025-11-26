@@ -7,6 +7,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { getAccountantAnalyticsApi } from '../../../apis/analytics';
 import { useMetricGrid } from '../../../hooks/queries/useMetricGrid';
 import { useActivityFeed } from '../../../hooks/queries/useActivityFeed';
+import { useTopPerformersLeaderboard } from '../../../hooks/queries/useTopPerformers';
+import { PerformanceLeaderboard } from '../../../components/common/Leaderboard';
 import { getMetricIcon } from '../../../utils/metricIcons';
 import { getColorThemesForMetrics } from '../../../utils/metricColorThemes';
 import {
@@ -87,6 +89,9 @@ const AccountantDashboard: React.FC = () => {
 
   // Fetch activity feed data from API
   const { data: activityFeedData } = useActivityFeed({ limit: 3 });
+
+  // Fetch top performers data from API for leaderboard
+  const { data: topPerformersApiData = [], isLoading: isLoadingTopPerformers, isError: isErrorTopPerformers, error: topPerformersError, refetch: refetchTopPerformers } = useTopPerformersLeaderboard(5, 'monthly', undefined, undefined, undefined, 'deals');
 
   // SVG Icons for financial metrics
   const ProfitIcon = () => (
@@ -530,6 +535,57 @@ const AccountantDashboard: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Content - Top Performers */}
+      <div className="space-y-6">
+        {/* Top Performers Leaderboard */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Finance Department Top Performers
+            </h3>
+            <p className="text-sm text-gray-600">
+              Track and compare performance across the finance team
+            </p>
+          </div>
+          <div className="p-6">
+            {isLoadingTopPerformers ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+              </div>
+            ) : isErrorTopPerformers ? (
+              <div className="flex flex-col items-center justify-center h-64">
+                <svg className="h-12 w-12 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-sm font-medium text-gray-900 mb-1">Failed to load top performers</h3>
+                <p className="text-xs text-gray-500 mb-4">{topPerformersError?.message || 'Unknown error occurred'}</p>
+                <button
+                  onClick={() => refetchTopPerformers()}
+                  className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : topPerformersApiData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64">
+                <svg className="h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <h3 className="text-sm font-medium text-gray-900 mb-1">No top performers data</h3>
+                <p className="text-xs text-gray-500">No performance data available yet</p>
+              </div>
+            ) : (
+              <PerformanceLeaderboard 
+                title="Top 5 Performing Team Members"
+                members={topPerformersApiData}
+                showDepartment={false}
+                showRole={false}
+              />
+            )}
           </div>
         </div>
       </div>

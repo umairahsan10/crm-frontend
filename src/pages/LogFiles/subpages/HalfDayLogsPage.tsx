@@ -9,7 +9,7 @@ import DataStatistics from '../../../components/common/Statistics/DataStatistics
 import GenericHalfDayLogsFilters from '../../../components/common/wlogs/GenericHalfDayLogsFilters';
 import HalfDayLogDetailsDrawer from '../../../components/common/wlogs/HalfDayLogDetailsDrawer';
 import { useHalfDayLogs, useHalfDayLogsStatistics } from '../../../hooks/queries/useLogsQueries';
-import { exportHalfDayLogsApi } from '../../../apis/halfday-logs';
+import { exportHalfDayLogsApi } from '../../../apis/half-day-logs';
 
 interface HalfDayLogsPageProps {
   onBack?: () => void;
@@ -26,8 +26,6 @@ const HalfDayLogsPage: React.FC<HalfDayLogsPageProps> = ({ onBack }) => {
 
   const logsQuery = useHalfDayLogs({
     employeeId: filters.employeeId ? parseInt(filters.employeeId) : undefined,
-    halfDayType: filters.halfDayType as any || undefined,
-    status: filters.status as any || undefined,
     startDate: filters.startDate || undefined,
     endDate: filters.endDate || undefined,
   });
@@ -47,15 +45,18 @@ const HalfDayLogsPage: React.FC<HalfDayLogsPageProps> = ({ onBack }) => {
   ];
 
   const columns = [
-    { header: 'Log ID', accessor: 'id', sortable: true, render: (value: number) => <span className="font-mono text-sm">#{value}</span> },
-    { header: 'Employee', accessor: 'employee', sortable: false, render: (_: any, row: any) => (<div className="max-w-xs"><div className="text-sm font-medium text-gray-900">{row.employee ? `${row.employee.firstName} ${row.employee.lastName}` : 'N/A'}</div><div className="text-sm text-gray-500">ID: {row.employeeId}</div></div>) },
-    { header: 'Date', accessor: 'date', sortable: true, render: (value: string) => new Date(value).toLocaleDateString() },
-    { header: 'Half Day Type', accessor: 'halfDayType', sortable: true, render: (value: string) => (<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${value === 'morning' ? 'bg-yellow-100 text-yellow-800' : 'bg-orange-100 text-orange-800'}`}>{value ? value.toUpperCase() : 'N/A'}</span>) },
-    { header: 'Status', accessor: 'status', sortable: true, render: (value: string) => (<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${value === 'approved' ? 'bg-green-100 text-green-800' : value === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>{value ? value.toUpperCase() : 'PENDING'}</span>) },
-    { header: 'Created At', accessor: 'createdAt', sortable: true, render: (value: string) => new Date(value).toLocaleDateString() }
+    { header: 'Log ID', accessor: 'id', sortable: true, render: (value: number) => <span className="font-mono text-sm">#{value || 'N/A'}</span> },
+    { header: 'Employee', accessor: 'employee_name', sortable: false, render: (_: any, row: any) => (<div className="max-w-xs"><div className="text-sm font-medium text-gray-900">{row.employee_name || 'N/A'}</div><div className="text-sm text-gray-500">ID: {row.emp_id || 'N/A'}</div></div>) },
+    { header: 'Date', accessor: 'date', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : 'N/A' },
+    { header: 'Half Day Type', accessor: 'half_day_type', sortable: true, render: (value: string) => (<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${value === 'morning' ? 'bg-yellow-100 text-yellow-800' : 'bg-orange-100 text-orange-800'}`}>{value ? value.toUpperCase() : 'N/A'}</span>) },
+    { header: 'Status', accessor: 'action_taken', sortable: true, render: (value: string) => (<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${value === 'approved' ? 'bg-green-100 text-green-800' : value === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>{value ? value.toUpperCase() : 'PENDING'}</span>) },
+    { header: 'Created At', accessor: 'created_at', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : 'N/A' }
   ];
 
-  const tableData = halfDayLogs.map((log: any) => ({ ...log, id: log.id.toString() }));
+  const tableData = halfDayLogs.map((log: any) => ({ 
+    ...log, 
+    id: log.half_day_log_id ? log.half_day_log_id.toString() : 'N/A'
+  }));
 
   const handleLogClick = (log: any) => setSelectedLog(log);
   const handleFiltersChange = useCallback((newFilters: any) => setFilters(prev => ({ ...prev, ...newFilters })), []);
@@ -63,7 +64,12 @@ const HalfDayLogsPage: React.FC<HalfDayLogsPageProps> = ({ onBack }) => {
 
   const handleExport = async () => {
     try {
-      const blob = await exportHalfDayLogsApi({ employeeId: filters.employeeId ? parseInt(filters.employeeId) : undefined, halfDayType: filters.halfDayType as any, status: filters.status as any, startDate: filters.startDate || undefined, endDate: filters.endDate || undefined }, 'csv');
+      const blob = await exportHalfDayLogsApi({ 
+        format: 'csv',
+        employee_id: filters.employeeId ? parseInt(filters.employeeId) : undefined,
+        start_date: filters.startDate || undefined,
+        end_date: filters.endDate || undefined
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
