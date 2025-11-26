@@ -505,14 +505,130 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
                         {new Date(displayExpense.paidOn).toLocaleDateString()}
                       </p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
-                      <p className="text-lg text-gray-900 font-medium">
-                        {displayExpense.vendor?.name || 'N/A'}
-                      </p>
-                    </div>
                   </div>
                 </div>
+
+                {/* Transaction Information */}
+                {displayExpense.transaction && (
+                  <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Transaction Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          displayExpense.transaction.transactionType === 'expense' 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {displayExpense.transaction.transactionType?.toUpperCase() || 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          displayExpense.transaction.status === 'completed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : displayExpense.transaction.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {displayExpense.transaction.status?.toUpperCase() || 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Amount</label>
+                        <p className="text-lg text-gray-900 font-medium">
+                          ${displayExpense.transaction.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vendor Information */}
+                {displayExpense.vendor && (
+                  <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      Vendor Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Vendor Name</label>
+                        <p className="text-lg text-gray-900 font-medium">{displayExpense.vendor.name || 'N/A'}</p>
+                      </div>
+                      {displayExpense.vendor.contact_person && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Contact Person</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayExpense.vendor.contact_person}</p>
+                        </div>
+                      )}
+                      {displayExpense.vendor.email && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayExpense.vendor.email}</p>
+                        </div>
+                      )}
+                      {displayExpense.vendor.phone && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayExpense.vendor.phone}</p>
+                        </div>
+                      )}
+                      {displayExpense.vendor.address && (
+                        <div className="md:col-span-2 lg:col-span-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayExpense.vendor.address}</p>
+                        </div>
+                      )}
+                      {displayExpense.vendor.city && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayExpense.vendor.city}</p>
+                        </div>
+                      )}
+                      {displayExpense.vendor.country && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayExpense.vendor.country}</p>
+                        </div>
+                      )}
+                      {displayExpense.vendor.status && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                            displayExpense.vendor.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {displayExpense.vendor.status.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      {displayExpense.vendor.bank_account && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Bank Account</label>
+                          <p className="text-lg text-gray-900 font-medium">{displayExpense.vendor.bank_account}</p>
+                        </div>
+                      )}
+                      {displayExpense.vendor.notes && (
+                        <div className="md:col-span-2 lg:col-span-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <p className="text-sm text-gray-700">{displayExpense.vendor.notes}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Additional Information */}
                 <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? 'p-4' : 'p-5'}`}>
@@ -540,18 +656,20 @@ const ExpenseDetailsDrawer: React.FC<ExpenseDetailsDrawerProps> = ({
                         <label className="block text-sm font-medium text-gray-700 mb-2">Created By</label>
                         <p className="text-lg text-gray-900 font-medium">
                           {displayExpense.employee 
-                            ? `${displayExpense.employee.firstName} ${displayExpense.employee.lastName}`
+                            ? `${displayExpense.employee.firstName || ''} ${displayExpense.employee.lastName || ''}`.trim() || displayExpense.employee.email || 'N/A'
                             : 'N/A'
                           }
                         </p>
-                          </div>
-                                <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
-                        <p className="text-lg text-gray-900 font-medium">
-                          {displayExpense.vendor?.name || 'N/A'}
-                                    </p>
-                                  </div>
-                                  </div>
+                      </div>
+                      {displayExpense.employee?.email && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Employee Email</label>
+                          <p className="text-lg text-gray-900 font-medium">
+                            {displayExpense.employee.email}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

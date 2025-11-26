@@ -398,18 +398,6 @@ const RevenueDetailsDrawer: React.FC<RevenueDetailsDrawerProps> = ({
                         {new Date(displayRevenue.receivedOn).toLocaleDateString()}
                       </p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Received From</label>
-                      <p className="text-lg text-gray-900 font-medium">
-                        {displayRevenue.receivedFrom ? `Lead ID: ${displayRevenue.receivedFrom}` : 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Related Invoice ID</label>
-                      <p className="text-lg text-gray-900 font-medium">
-                        {displayRevenue.relatedInvoiceId ? `#${displayRevenue.relatedInvoiceId}` : 'N/A'}
-                      </p>
-                    </div>
                   </div>
                 </div>
 
@@ -423,10 +411,6 @@ const RevenueDetailsDrawer: React.FC<RevenueDetailsDrawerProps> = ({
                       Transaction Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction ID</label>
-                        <p className="text-lg text-gray-900 font-medium">#{displayRevenue.transaction.id}</p>
-                      </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
@@ -507,10 +491,6 @@ const RevenueDetailsDrawer: React.FC<RevenueDetailsDrawerProps> = ({
                           {displayRevenue.transaction.client.accountStatus?.toUpperCase() || 'N/A'}
                         </span>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Client ID</label>
-                        <p className="text-lg text-gray-900 font-medium">#{displayRevenue.transaction.client.id}</p>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -537,31 +517,11 @@ const RevenueDetailsDrawer: React.FC<RevenueDetailsDrawerProps> = ({
                           {new Date(displayRevenue.updatedAt).toLocaleString()}
                         </p>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Created By (Employee ID)</label>
-                        <p className="text-lg text-gray-900 font-medium">
-                          {displayRevenue.employee?.id ? `#${displayRevenue.employee.id}` : displayRevenue.createdBy ? `#${displayRevenue.createdBy}` : 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Transaction ID</label>
-                        <p className="text-lg text-gray-900 font-medium">
-                          {displayRevenue.transactionId ? `#${displayRevenue.transactionId}` : 'N/A'}
-                        </p>
-                      </div>
-                      {displayRevenue.lead && (
+                      {displayRevenue.lead && displayRevenue.lead.companyName && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Lead</label>
                           <p className="text-lg text-gray-900 font-medium">
-                            {displayRevenue.lead.companyName || `Lead ID: ${displayRevenue.lead.id}`}
-                          </p>
-                        </div>
-                      )}
-                      {displayRevenue.invoice && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Invoice</label>
-                          <p className="text-lg text-gray-900 font-medium">
-                            {displayRevenue.invoice.id ? `#${displayRevenue.invoice.id}` : 'N/A'}
+                            {displayRevenue.lead.companyName}
                           </p>
                         </div>
                       )}

@@ -57,8 +57,37 @@ export const regularExpensesTableConfig: ColumnConfig[] = [
   {
     key: 'vendor',
     label: 'Vendor',
-    type: 'assignment',
-    width: '15%'
+    type: 'custom',
+    width: '15%',
+    render: (_value: any, row: any) => {
+      const vendor = row.vendor;
+      if (!vendor) {
+        return (
+          <div className="text-sm text-gray-400 italic">No vendor</div>
+        );
+      }
+      return (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-8 w-8">
+            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+              <span className="text-xs font-medium text-gray-500">
+                {vendor.name?.charAt(0).toUpperCase() || 'V'}
+              </span>
+            </div>
+          </div>
+          <div className="ml-3 min-w-0">
+            <div className="text-sm font-medium text-gray-900 truncate">
+              {vendor.name || 'N/A'}
+            </div>
+            {vendor.email && (
+              <div className="text-xs text-gray-500 truncate">
+                {vendor.email}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
   }
 ];
 

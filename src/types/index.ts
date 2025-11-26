@@ -156,6 +156,17 @@ export interface Expense {
   vendor?: {
     id: number;
     name: string;
+    contact_person?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+    bank_account?: string;
+    status?: string;
+    notes?: string;
+    created_at?: string;
+    updated_at?: string;
   };
   employee?: {
     id: number;
@@ -278,17 +289,17 @@ export interface Asset {
   vendor?: {
     id: number;
     name: string;
-    contactPerson?: string;
+    contact_person?: string;
     email?: string;
     phone?: string;
     address?: string;
     city?: string;
     country?: string;
-    bankAccount?: string;
+    bank_account?: string;
     status?: string;
     notes?: string;
-    createdAt?: string;
-    updatedAt?: string;
+    created_at?: string;
+    updated_at?: string;
   };
   employee?: {
     id: number;
@@ -327,11 +338,32 @@ export interface Liability {
   transaction?: {
     id: number;
     amount: number;
+    transactionType: string;
+    paymentMethod: string;
+    transactionDate: string;
     status: string;
+    notes: string | null;
+    employeeId: number | null;
+    vendorId: number | null;
+    clientId: number | null;
+    invoiceId: number | null;
+    createdAt: string;
+    updatedAt: string;
   };
   vendor?: {
     id: number;
     name: string;
+    contact_person?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+    bank_account?: string;
+    status?: string;
+    notes?: string;
+    created_at?: string;
+    updated_at?: string;
   };
   employee?: {
     id: number;

@@ -28,12 +28,8 @@ const RevenueTable: React.FC<RevenueTableProps> = ({
   onBulkSelect,
   selectedRevenues
 }) => {
-  // Transform revenues data for the table
-  const transformedRevenues = revenues.map(revenue => ({
-    ...revenue,
-    // Transform lead for assignment type
-    lead: revenue.lead?.companyName || 'N/A'
-  }));
+  // No transformation needed - client data is accessed via custom render in table config
+  const transformedRevenues = revenues;
     
   return (
     <DynamicTable

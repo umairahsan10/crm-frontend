@@ -151,8 +151,11 @@ const AddExpenseDrawer: React.FC<AddExpenseDrawerProps> = ({
       const response = await createVendorApi(vendorData);
 
       if (response.success && response.data) {
-        // Add new vendor to list
+        // Add new vendor to list immediately for instant UI update
         setVendors(prev => [...prev, response.data!]);
+        
+        // Also refresh vendors list from server to ensure we have the latest complete data
+        await loadVendors();
         
         // Auto-select the new vendor
         setExpenseForm(prev => ({ ...prev, vendorId: response.data!.id.toString() }));

@@ -28,12 +28,8 @@ const AssetsTable: React.FC<AssetsTableProps> = ({
   onBulkSelect,
   selectedAssets
 }) => {
-  // Transform assets data for the table
-  const transformedAssets = assets.map(asset => ({
-    ...asset,
-    // Transform vendor for assignment type
-    vendor: asset.vendor?.name || 'N/A'
-  }));
+  // No transformation needed - vendor data is accessed via custom render in table config
+  const transformedAssets = assets;
     
   return (
     <DynamicTable
