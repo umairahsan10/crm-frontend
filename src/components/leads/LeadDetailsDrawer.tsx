@@ -1839,7 +1839,7 @@ const LeadDetailsDrawer: React.FC<LeadDetailsDrawerProps> = ({
                         const totalPhases = selectedCrackedLead.totalPhases || 1;
                         const isLastPhase = currentPhase === totalPhases;
                         const remainingAmount = parseFloat(selectedCrackedLead.remainingAmount || 0);
-                        const paymentAmount = parseFloat(paymentDetails.amount || 0);
+                        // const paymentAmount = parseFloat(paymentDetails.amount || 0);
                         
                         if (isLastPhase) {
                           return (
