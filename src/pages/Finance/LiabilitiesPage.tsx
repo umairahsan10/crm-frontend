@@ -1,12 +1,11 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import LiabilitiesTable from '../../components/liabilities/LiabilitiesTable';
 import LiabilitiesStatistics from '../../components/liabilities/LiabilitiesStatistics';
 import LiabilityDetailsDrawer from '../../components/liabilities/LiabilityDetailsDrawer';
 import AddLiabilityDrawer from '../../components/liabilities/AddLiabilityDrawer';
 import GenericLiabilityFilters from '../../components/liabilities/GenericLiabilityFilters';
-import { useLiabilities, useLiabilitiesStatistics, financeQueryKeys } from '../../hooks/queries/useFinanceQueries';
+import { useLiabilities, useLiabilitiesStatistics } from '../../hooks/queries/useFinanceQueries';
 import type { Liability } from '../../types';
 
 interface LiabilitiesFilters {
@@ -23,7 +22,6 @@ interface LiabilitiesFilters {
 
 const LiabilitiesPage: React.FC = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   // Track if an update was made in the current drawer session
   const hasUpdateBeenMade = useRef(false);
   // State management
