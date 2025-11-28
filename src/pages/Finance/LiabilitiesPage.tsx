@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LiabilitiesTable from '../../components/liabilities/LiabilitiesTable';
 import LiabilitiesStatistics from '../../components/liabilities/LiabilitiesStatistics';
@@ -22,6 +22,8 @@ interface LiabilitiesFilters {
 
 const LiabilitiesPage: React.FC = () => {
   const navigate = useNavigate();
+  // Track if an update was made in the current drawer session
+  const hasUpdateBeenMade = useRef(false);
   // State management
   const [selectedLiability, setSelectedLiability] = useState<Liability | null>(null);
   const [selectedLiabilities, setSelectedLiabilities] = useState<string[]>([]);
@@ -96,6 +98,7 @@ const LiabilitiesPage: React.FC = () => {
   };
 
   const handleLiabilityClick = (liability: Liability) => {
+    hasUpdateBeenMade.current = false; // Reset when opening drawer
     setSelectedLiability(liability);
   };
 
@@ -125,6 +128,30 @@ const LiabilitiesPage: React.FC = () => {
   const handleCloseNotification = () => {
     setNotification(null);
   };
+
+  // Handle drawer close - refetch data if update was made
+  const handleDrawerClose = useCallback(() => {
+    setSelectedLiability(null);
+    // Only refetch if an update was made
+    if (hasUpdateBeenMade.current) {
+      // Explicitly refetch liabilities data (GET API call)
+      liabilitiesQuery.refetch();
+      statisticsQuery.refetch();
+      hasUpdateBeenMade.current = false; // Reset the flag
+    }
+  }, [liabilitiesQuery, statisticsQuery]);
+
+  // Handle liability update - mark that update was made
+  const handleLiabilityUpdated = useCallback((updatedLiability: Liability) => {
+    setSelectedLiability(updatedLiability);
+    // Mark that an update was made (table will refresh when drawer closes)
+    hasUpdateBeenMade.current = true;
+    setNotification({
+      type: 'success',
+      message: 'Liability updated successfully!'
+    });
+    setTimeout(() => setNotification(null), 3000);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -222,17 +249,9 @@ const LiabilitiesPage: React.FC = () => {
         <LiabilityDetailsDrawer
           liability={selectedLiability}
           isOpen={!!selectedLiability}
-          onClose={() => setSelectedLiability(null)}
+          onClose={handleDrawerClose}
           viewMode="full"
-          onLiabilityUpdated={(updatedLiability) => {
-            // React Query will automatically refetch and update the UI
-            setSelectedLiability(updatedLiability);
-            setNotification({
-              type: 'success',
-              message: 'Liability updated successfully!'
-            });
-            setTimeout(() => setNotification(null), 3000);
-          }}
+          onLiabilityUpdated={handleLiabilityUpdated}
         />
 
         {/* Notification */}
