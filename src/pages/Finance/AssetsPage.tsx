@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AssetsTable from '../../components/assets/AssetsTable';
 import GenericAssetFilters from '../../components/assets/GenericAssetFilters';
@@ -20,6 +20,8 @@ interface AssetFormState {
 
 const AssetsPage: React.FC = () => {
   const navigate = useNavigate();
+  // Track if an update was made in the current drawer session
+  const hasUpdateBeenMade = useRef(false);
   
   // State management
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -173,6 +175,7 @@ const AssetsPage: React.FC = () => {
   };
 
   const handleAssetClick = (asset: Asset) => {
+    hasUpdateBeenMade.current = false; // Reset when opening drawer
     setSelectedAsset(asset);
   };
 
@@ -433,10 +436,19 @@ const AssetsPage: React.FC = () => {
         <AssetDetailsDrawer
           asset={selectedAsset}
           isOpen={!!selectedAsset}
-          onClose={() => setSelectedAsset(null)}
+          onClose={() => {
+            setSelectedAsset(null);
+            // Only refetch if an update was made
+            if (hasUpdateBeenMade.current) {
+              assetsQuery.refetch();
+              statisticsQuery.refetch();
+              hasUpdateBeenMade.current = false; // Reset the flag
+            }
+          }}
           viewMode="full"
           onAssetUpdated={(updatedAsset) => {
-            // React Query will automatically refetch and update the UI
+            // Mark that an update was made (table will refresh when drawer closes)
+            hasUpdateBeenMade.current = true;
             setSelectedAsset(updatedAsset);
             setNotification({
               type: 'success',

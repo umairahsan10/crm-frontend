@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ExpensesTable from '../../components/expenses/ExpensesTable';
 import GenericExpenseFilters from '../../components/expenses/GenericExpenseFilters';
@@ -10,6 +10,8 @@ import type { Expense } from '../../types';
 
 const ExpensesPage: React.FC = () => {
   const navigate = useNavigate();
+  // Track if an update was made in the current drawer session
+  const hasUpdateBeenMade = useRef(false);
   
   // State management
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
@@ -84,6 +86,7 @@ const ExpensesPage: React.FC = () => {
   };
 
   const handleExpenseClick = (expense: Expense) => {
+    hasUpdateBeenMade.current = false; // Reset when opening drawer
     setSelectedExpense(expense);
   };
 
@@ -206,10 +209,19 @@ const ExpensesPage: React.FC = () => {
         <ExpenseDetailsDrawer
           expense={selectedExpense}
           isOpen={!!selectedExpense}
-          onClose={() => setSelectedExpense(null)}
+          onClose={() => {
+            setSelectedExpense(null);
+            // Only refetch if an update was made
+            if (hasUpdateBeenMade.current) {
+              expensesQuery.refetch();
+              statisticsQuery.refetch();
+              hasUpdateBeenMade.current = false; // Reset the flag
+            }
+          }}
           viewMode="full"
           onExpenseUpdated={(updatedExpense) => {
-            // React Query will automatically refetch and update the UI
+            // Mark that an update was made (table will refresh when drawer closes)
+            hasUpdateBeenMade.current = true;
             setSelectedExpense(updatedExpense);
             setNotification({
               type: 'success',

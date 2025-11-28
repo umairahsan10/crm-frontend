@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RevenueTable from '../../components/revenue/RevenueTable';
 import RevenueDetailsDrawer from '../../components/revenue/RevenueDetailsDrawer';
@@ -10,6 +10,8 @@ import type { Revenue } from '../../types';
 
 const RevenuePage: React.FC = () => {
   const navigate = useNavigate();
+  // Track if an update was made in the current drawer session
+  const hasUpdateBeenMade = useRef(false);
   
   // State management
   const [selectedRevenue, setSelectedRevenue] = useState<Revenue | null>(null);
@@ -86,6 +88,7 @@ const RevenuePage: React.FC = () => {
   };
 
   const handleRevenueClick = (revenue: Revenue) => {
+    hasUpdateBeenMade.current = false; // Reset when opening drawer
     setSelectedRevenue(revenue);
   };
 
@@ -216,10 +219,19 @@ const RevenuePage: React.FC = () => {
         <RevenueDetailsDrawer
           revenue={selectedRevenue}
           isOpen={!!selectedRevenue}
-          onClose={() => setSelectedRevenue(null)}
+          onClose={() => {
+            setSelectedRevenue(null);
+            // Only refetch if an update was made
+            if (hasUpdateBeenMade.current) {
+              revenueQuery.refetch();
+              statisticsQuery.refetch();
+              hasUpdateBeenMade.current = false; // Reset the flag
+            }
+          }}
           viewMode="full"
           onRevenueUpdated={(updatedRevenue) => {
-            // React Query will automatically refetch and update the UI
+            // Mark that an update was made (table will refresh when drawer closes)
+            hasUpdateBeenMade.current = true;
             setSelectedRevenue(updatedRevenue);
             setNotification({
               type: 'success',
