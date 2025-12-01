@@ -1,17 +1,13 @@
 import React from 'react';
+import { type Unit } from '../../../../apis/hr-employees';
 
 interface MarketingFormProps {
   data: any;
   updateData: (data: any) => void;
   errors: Record<string, string>;
+  units?: Unit[];
+  loadingUnits?: boolean;
 }
-
-// Mock marketing units - In production, fetch from API
-const marketingUnits = [
-  { id: 1, name: 'Marketing Unit 1' },
-  { id: 2, name: 'Marketing Unit 2' },
-  { id: 3, name: 'Marketing Unit 3' }
-];
 
 const platformOptions = [
   'Social Media',
@@ -23,7 +19,7 @@ const platformOptions = [
   'Other'
 ];
 
-const MarketingForm: React.FC<MarketingFormProps> = ({ data, updateData, errors }) => {
+const MarketingForm: React.FC<MarketingFormProps> = ({ data, updateData, errors, units = [], loadingUnits = false }) => {
   const marketingData = data.departmentData.marketing || {
     marketingUnitId: '',
     platformFocus: '',
@@ -69,9 +65,12 @@ const MarketingForm: React.FC<MarketingFormProps> = ({ data, updateData, errors 
             className="form-select"
             value={marketingData.marketingUnitId}
             onChange={(e) => updateMarketingData('marketingUnitId', e.target.value ? parseInt(e.target.value) : '')}
+            disabled={loadingUnits || !data.departmentId}
           >
-            <option value="">Select marketing unit</option>
-            {marketingUnits.map((unit) => (
+            <option value="">
+              {loadingUnits ? 'Loading units...' : 'Select marketing unit'}
+            </option>
+            {units.map((unit) => (
               <option key={unit.id} value={unit.id}>
                 {unit.name}
               </option>

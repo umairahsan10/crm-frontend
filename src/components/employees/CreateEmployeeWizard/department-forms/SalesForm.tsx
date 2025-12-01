@@ -1,19 +1,15 @@
 import React from 'react';
+import { type Unit } from '../../../../apis/hr-employees';
 
 interface SalesFormProps {
   data: any;
   updateData: (data: any) => void;
   errors: Record<string, string>;
+  units?: Unit[];
+  loadingUnits?: boolean;
 }
 
-// Mock sales units - In production, fetch from API
-const salesUnits = [
-  { id: 1, name: 'Sales Unit 1' },
-  { id: 2, name: 'Sales Unit 2' },
-  { id: 3, name: 'Sales Unit 3' }
-];
-
-const SalesForm: React.FC<SalesFormProps> = ({ data, updateData, errors }) => {
+const SalesForm: React.FC<SalesFormProps> = ({ data, updateData, errors, units = [], loadingUnits = false }) => {
   const salesData = data.departmentData.sales || {
     salesUnitId: '',
     commissionRate: 0,
@@ -63,9 +59,12 @@ const SalesForm: React.FC<SalesFormProps> = ({ data, updateData, errors }) => {
             className="form-select"
             value={salesData.salesUnitId}
             onChange={(e) => updateSalesData('salesUnitId', e.target.value ? parseInt(e.target.value) : '')}
+            disabled={loadingUnits || !data.departmentId}
           >
-            <option value="">Select sales unit</option>
-            {salesUnits.map((unit) => (
+            <option value="">
+              {loadingUnits ? 'Loading units...' : 'Select sales unit'}
+            </option>
+            {units.map((unit) => (
               <option key={unit.id} value={unit.id}>
                 {unit.name}
               </option>

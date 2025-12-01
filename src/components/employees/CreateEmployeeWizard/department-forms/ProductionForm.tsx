@@ -1,17 +1,13 @@
 import React from 'react';
+import { type Unit } from '../../../../apis/hr-employees';
 
 interface ProductionFormProps {
   data: any;
   updateData: (data: any) => void;
   errors: Record<string, string>;
+  units?: Unit[];
+  loadingUnits?: boolean;
 }
-
-// Mock production units - In production, fetch from API
-const productionUnits = [
-  { id: 1, name: 'Production Unit 1' },
-  { id: 2, name: 'Production Unit 2' },
-  { id: 3, name: 'Production Unit 3' }
-];
 
 const specializationOptions = [
   'Full Stack Developer',
@@ -26,7 +22,7 @@ const specializationOptions = [
   'Other'
 ];
 
-const ProductionForm: React.FC<ProductionFormProps> = ({ data, updateData, errors }) => {
+const ProductionForm: React.FC<ProductionFormProps> = ({ data, updateData, errors, units = [], loadingUnits = false }) => {
   const productionData = data.departmentData.production || {
     specialization: '',
     productionUnitId: '',
@@ -90,9 +86,12 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ data, updateData, error
             className="form-select"
             value={productionData.productionUnitId}
             onChange={(e) => updateProductionData('productionUnitId', e.target.value ? parseInt(e.target.value) : '')}
+            disabled={loadingUnits || !data.departmentId}
           >
-            <option value="">Select production unit</option>
-            {productionUnits.map((unit) => (
+            <option value="">
+              {loadingUnits ? 'Loading units...' : 'Select production unit'}
+            </option>
+            {units.map((unit) => (
               <option key={unit.id} value={unit.id}>
                 {unit.name}
               </option>

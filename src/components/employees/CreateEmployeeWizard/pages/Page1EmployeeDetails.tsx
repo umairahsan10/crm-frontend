@@ -35,13 +35,18 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
       return { canHaveManager: false, canHaveTeamLead: false };
     }
     
+    // Manager: Can have both manager and team lead
+    if (roleName === 'manager' || roleName.includes('manager')) {
+      return { canHaveManager: true, canHaveTeamLead: true };
+    }
+    
     // Unit Head: Can have manager (dep_manager), can't have team lead
     if (roleName.includes('unit head') || roleName.includes('unit_head')) {
       return { canHaveManager: true, canHaveTeamLead: false };
     }
     
-    // Team Lead: Can have manager (unit_head), can't have team lead
-    if (roleName.includes('team lead') || roleName.includes('team_lead')) {
+    // Team Lead: Can have manager, can't have team lead
+    if (roleName.includes('team lead') || roleName.includes('team_lead') || roleName === 'teamlead') {
       return { canHaveManager: true, canHaveTeamLead: false };
     }
     
@@ -58,46 +63,30 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
     let filteredManagers = managers;
     let filteredTeamLeads = teamLeads;
     
-    // Filter based on role hierarchy
+    // Filter managers to only show employees with role 'dept_manager'
+    filteredManagers = managers.filter(emp => {
+      const empRoleName = emp.role?.name?.toLowerCase() || '';
+      return empRoleName === 'dept_manager' || 
+             empRoleName.includes('department manager') || 
+             empRoleName.includes('department_manager') ||
+             empRoleName.includes('dep_manager');
+    });
+    
+    // Filter team leads to only show employees with role 'teamlead' or 'team_lead'
+    filteredTeamLeads = teamLeads.filter(emp => {
+      const empRoleName = emp.role?.name?.toLowerCase() || '';
+      return empRoleName === 'team_lead' || 
+             empRoleName === 'teamlead' || 
+             empRoleName === 'team_leads' ||
+             empRoleName.includes('team lead');
+    });
+    
+    // Filter based on role hierarchy constraints
     if (!constraints.canHaveManager) {
       filteredManagers = [];
     }
     if (!constraints.canHaveTeamLead) {
       filteredTeamLeads = [];
-    }
-    
-    // Additional filtering based on role hierarchy
-    const role = roles.find(r => r.id === formData.roleId);
-    if (role) {
-      const roleName = role.name.toLowerCase();
-      
-      // Unit Head can only report to Department Manager (dep_manager)
-      if (roleName.includes('unit head') || roleName.includes('unit_head')) {
-        filteredManagers = managers.filter(emp => 
-          ['dep_manager'].includes(emp.role.name.toLowerCase())
-        );
-      }
-      
-      // Team Lead can report to Unit Head or Department Manager
-      if (roleName.includes('team lead') || roleName.includes('team_lead')) {
-        filteredManagers = managers.filter(emp => 
-          ['dep_manager', 'unit_head'].includes(emp.role.name.toLowerCase())
-        );
-      }
-      
-      // Senior can report to Team Lead, Unit Head, or Department Manager
-      if (roleName.includes('senior')) {
-        filteredManagers = managers.filter(emp => 
-          ['dep_manager', 'unit_head', 'team_lead'].includes(emp.role.name.toLowerCase())
-        );
-      }
-      
-      // Junior can report to Team Lead, Unit Head, or Department Manager
-      if (roleName.includes('junior')) {
-        filteredManagers = managers.filter(emp => 
-          ['dep_manager', 'unit_head', 'team_lead'].includes(emp.role.name.toLowerCase())
-        );
-      }
     }
     
     return { managers: filteredManagers, teamLeads: filteredTeamLeads };
@@ -116,12 +105,23 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
           limit: 100
         });
 
-        const managerList = response.employees.filter(emp => 
-          ['dep_manager', 'unit_head', 'team_lead'].includes(emp.role.name.toLowerCase())
-        );
-        const teamLeadList = response.employees.filter(emp => 
-          ['team lead', 'team_lead'].includes(emp.role.name.toLowerCase())
-        );
+        // Only load employees with role 'dept_manager' for managers
+        const managerList = response.employees.filter(emp => {
+          const roleName = emp.role?.name?.toLowerCase() || '';
+          return roleName === 'dept_manager' || 
+                 roleName.includes('department manager') || 
+                 roleName.includes('department_manager') ||
+                 roleName.includes('dep_manager');
+        });
+        
+        // Only load employees with role 'teamlead' or 'team_lead' for team leads
+        const teamLeadList = response.employees.filter(emp => {
+          const roleName = emp.role?.name?.toLowerCase() || '';
+          return roleName === 'team_lead' || 
+                 roleName === 'teamlead' || 
+                 roleName === 'team_leads' ||
+                 roleName.includes('team lead');
+        });
 
         setManagers(managerList);
         setTeamLeads(teamLeadList);

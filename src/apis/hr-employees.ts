@@ -557,3 +557,30 @@ export const getRoleByIdApi = async (id: number): Promise<RoleResponseDto> => {
     throw new Error('Failed to fetch role');
   }
 };
+
+// Unit Types
+export interface Unit {
+  id: number;
+  name: string;
+  headId?: number;
+  departmentId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Get units by department ID
+// API returns an array of units directly
+export const getUnitsByDepartmentApi = async (departmentId: number): Promise<Unit[]> => {
+  try {
+    console.log('Fetching units for department:', departmentId);
+    const response = await apiGetJson<Unit[]>(`${API_BASE_URL}/hr/employees/${departmentId}/department`);
+    console.log('Units by department API response:', response);
+    return Array.isArray(response) ? response : [];
+  } catch (error) {
+    console.error('Units by department API Error:', error);
+    if (error instanceof ApiError) {
+      throw new Error(`Failed to fetch units: ${error.message}`);
+    }
+    throw new Error('Failed to fetch units');
+  }
+};

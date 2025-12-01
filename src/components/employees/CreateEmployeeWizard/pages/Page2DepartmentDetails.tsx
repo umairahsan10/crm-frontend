@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { type Department } from '../../../../apis/hr-employees';
+import React, { useState, useEffect } from 'react';
+import { type Department, getUnitsByDepartmentApi, type Unit } from '../../../../apis/hr-employees';
 import HRForm from '../department-forms/HRForm';
 import SalesForm from '../department-forms/SalesForm';
 import MarketingForm from '../department-forms/MarketingForm';
@@ -22,9 +22,34 @@ const Page2DepartmentDetails: React.FC<Page2Props> = ({
   onBack
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
 
   const selectedDepartment = departments.find(d => d.id === formData.departmentId);
   const departmentName = selectedDepartment?.name.toLowerCase() || '';
+
+  // Fetch units when department changes
+  useEffect(() => {
+    const fetchUnits = async () => {
+      if (!formData.departmentId) {
+        setUnits([]);
+        return;
+      }
+
+      setLoadingUnits(true);
+      try {
+        const response = await getUnitsByDepartmentApi(formData.departmentId);
+        setUnits(response || []);
+      } catch (error) {
+        console.error('Error fetching units:', error);
+        setUnits([]);
+      } finally {
+        setLoadingUnits(false);
+      }
+    };
+
+    fetchUnits();
+  }, [formData.departmentId]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -79,11 +104,11 @@ const Page2DepartmentDetails: React.FC<Page2Props> = ({
       case 'hr':
         return <HRForm data={formData} updateData={updateFormData} errors={errors} />;
       case 'sales':
-        return <SalesForm data={formData} updateData={updateFormData} errors={errors} />;
+        return <SalesForm data={formData} updateData={updateFormData} errors={errors} units={units} loadingUnits={loadingUnits} />;
       case 'marketing':
-        return <MarketingForm data={formData} updateData={updateFormData} errors={errors} />;
+        return <MarketingForm data={formData} updateData={updateFormData} errors={errors} units={units} loadingUnits={loadingUnits} />;
       case 'production':
-        return <ProductionForm data={formData} updateData={updateFormData} errors={errors} />;
+        return <ProductionForm data={formData} updateData={updateFormData} errors={errors} units={units} loadingUnits={loadingUnits} />;
       case 'accounts':
       case 'accountant':
         return <AccountantForm data={formData} updateData={updateFormData} errors={errors} />;
