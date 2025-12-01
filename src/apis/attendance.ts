@@ -14,6 +14,8 @@ export interface CheckoutDto {
   employee_id: number;
   date: string; // YYYY-MM-DD format
   checkout: string; // ISO string with time
+  timezone?: string; // IANA timezone name, e.g., "Asia/Karachi"
+  offset_minutes?: number; // Offset from UTC in minutes at event time
 }
 
 export interface BulkMarkPresentDto {
