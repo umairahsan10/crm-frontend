@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Project, UnifiedUpdateProjectDto } from '../../../types/production/projects';
-import { useProject, useAssignUnitHead, useUpdateProject, useAvailableTeamsForProject } from '../../../hooks/queries/useProjectsQueries';
+import { useProject, useUpdateProject, useAvailableTeamsForProject } from '../../../hooks/queries/useProjectsQueries';
 import { useAvailableUnitHeads } from '../../../hooks/queries/useProductionUnitsQueries';
 import { useNavbar } from '../../../context/NavbarContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useNotification } from '../../../hooks/useNotification';
+import { apiPutJson } from '../../../utils/apiClient';
 import PhaseProgressBar from './PhaseProgressBar';
 import PhaseProgressEditor from './PhaseProgressEditor';
 import UpdateProjectForm from './UpdateProjectForm';
@@ -35,6 +36,7 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
   const [isMobile, setIsMobile] = useState(false);
   const [showAssignUnitHeadDropdown, setShowAssignUnitHeadDropdown] = useState(false);
   const [showAssignTeamDropdown, setShowAssignTeamDropdown] = useState(false);
+  const [isAssigningUnitHead, setIsAssigningUnitHead] = useState(false);
 
   // Fetch available unit heads when dropdown should be shown
   const { data: unitHeadsData, isLoading: isLoadingUnitHeads } = useAvailableUnitHeads(undefined, {
@@ -45,9 +47,6 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
   const { data: teamsData, isLoading: isLoadingTeams } = useAvailableTeamsForProject({
     enabled: showAssignTeamDropdown && canAssignTeam
   });
-
-  // Assign unit head mutation
-  const assignUnitHeadMutation = useAssignUnitHead();
 
   // Update project mutation (used for team assignment)
   const updateProjectMutation = useUpdateProject();
@@ -138,51 +137,47 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
 
   // Handle assign unit head when selected from dropdown
   const handleUnitHeadSelect = async (unitHeadId: number) => {
-    if (!currentProject) return;
+    if (!currentProject || isAssigningUnitHead) return;
 
+    setIsAssigningUnitHead(true);
     try {
-      const result = await assignUnitHeadMutation.mutateAsync({
-        projectId: currentProject.id,
-        assignData: { unitHeadId }
+      // Call the API directly
+      await apiPutJson(`/projects/${currentProject.id}/assign-unit-head`, {
+        unitHeadId
       });
       
-      // Wait a bit for query invalidation to complete, then refetch
-      setTimeout(async () => {
-        const refetchedData = await refetchProject();
-        
-        // Extract the updated project from refetched data
-        let updatedProject: Project | null = null;
-        if (refetchedData?.data) {
-          const response = refetchedData.data as any;
-          if (response?.data) {
-            updatedProject = response.data as Project;
-          } else if (response && typeof response === 'object' && 'id' in response) {
-            updatedProject = response as Project;
-          }
-        }
-        
-        // Also try to extract from mutation result
-        if (!updatedProject && result) {
-          const resultData = result as any;
-          if (resultData?.data) {
-            updatedProject = resultData.data as Project;
-          }
-        }
-        
-        // Update parent component if callback is provided
-        if (updatedProject && onProjectUpdated) {
-          onProjectUpdated(updatedProject);
-        }
-      }, 500);
-      
+      // Show success notification
       notification.show({ message: 'Unit head assigned successfully', type: 'success' });
+      
+      // Close dropdown
       setShowAssignUnitHeadDropdown(false);
+      
+      // Refetch project data to refresh the drawer
+      const refetchedData = await refetchProject();
+      
+      // Extract the updated project from refetched data
+      let updatedProject: Project | null = null;
+      if (refetchedData?.data) {
+        const response = refetchedData.data as any;
+        if (response?.data) {
+          updatedProject = response.data as Project;
+        } else if (response && typeof response === 'object' && 'id' in response) {
+          updatedProject = response as Project;
+        }
+      }
+      
+      // Update parent component if callback is provided
+      if (updatedProject && onProjectUpdated) {
+        onProjectUpdated(updatedProject);
+      }
     } catch (error: any) {
       console.error('Error assigning unit head:', error);
       notification.show({ 
         message: error.message || 'Failed to assign unit head', 
         type: 'error' 
       });
+    } finally {
+      setIsAssigningUnitHead(false);
     }
   };
 
@@ -511,7 +506,7 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                             )}
                           </div>
                           {canAssignUnitHead && !currentProject.unitHead && (
-                            <div className="relative">
+                            <div className="relative unit-head-dropdown">
                               <button
                                 onClick={() => setShowAssignUnitHeadDropdown(!showAssignUnitHeadDropdown)}
                                 className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
@@ -545,9 +540,9 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                                         {availableUnitHeads.map((head: any) => (
                                           <div
                                             key={head.id}
-                                            onClick={() => !assignUnitHeadMutation.isPending && handleUnitHeadSelect(head.id)}
+                                            onClick={() => !isAssigningUnitHead && handleUnitHeadSelect(head.id)}
                                             className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
-                                              assignUnitHeadMutation.isPending
+                                              isAssigningUnitHead
                                                 ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
                                                 : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                                             }`}
