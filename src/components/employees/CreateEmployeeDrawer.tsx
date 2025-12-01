@@ -7,6 +7,7 @@ import {
   type Role
 } from '../../apis/hr-employees';
 import { createCompleteEmployeeApi, type CreateCompleteEmployeeDto } from '../../apis/hr-employees-complete';
+import { convertPKTTimeToUTCTimeString } from '../../utils/helpers';
 import Page1EmployeeDetails from './CreateEmployeeWizard/pages/Page1EmployeeDetails';
 import Page2DepartmentDetails from './CreateEmployeeWizard/pages/Page2DepartmentDetails';
 import Page3BankAccount from './CreateEmployeeWizard/pages/Page3BankAccount';
@@ -137,6 +138,10 @@ const CreateEmployeeDrawer: React.FC<CreateEmployeeDrawerProps> = ({
     setIsCreating(true);
 
     try {
+      // Convert PKT times to UTC for API
+      const shiftStartUTC = convertPKTTimeToUTCTimeString(formData.shiftStart);
+      const shiftEndUTC = convertPKTTimeToUTCTimeString(formData.shiftEnd);
+
       // Prepare the complete employee data
       const completeEmployeeData: CreateCompleteEmployeeDto = {
         employee: {
@@ -161,8 +166,8 @@ const CreateEmployeeDrawer: React.FC<CreateEmployeeDrawerProps> = ({
           employmentType: formData.employmentType,
           periodType: formData.periodType,
           dateOfConfirmation: formData.dateOfConfirmation,
-          shiftStart: formData.shiftStart,
-          shiftEnd: formData.shiftEnd,
+          shiftStart: shiftStartUTC,
+          shiftEnd: shiftEndUTC,
           bonus: formData.bonus,
           passwordHash: formData.passwordHash,
         },
