@@ -199,10 +199,6 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
     if (!formData.periodType) newErrors.periodType = 'Required';
     if (!formData.dateOfConfirmation) newErrors.dateOfConfirmation = 'Required';
     if (!formData.shiftStart) newErrors.shiftStart = 'Required';
-    if (!formData.shiftEnd) newErrors.shiftEnd = 'Required';
-    if (formData.shiftStart && formData.shiftEnd && formData.shiftStart >= formData.shiftEnd) {
-      newErrors.shiftEnd = 'Must be after start time';
-    }
     if (formData.bonus === undefined || formData.bonus === '') newErrors.bonus = 'Required';
     if (!formData.passwordHash?.trim()) newErrors.passwordHash = 'Required';
 
@@ -531,7 +527,27 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
               type="time"
               className="form-input"
               value={formData.shiftStart || ''}
-              onChange={(e) => updateFormData({ shiftStart: e.target.value })}
+              onChange={(e) => {
+                const startTime = e.target.value;
+                if (startTime) {
+                  // Calculate end time as 8 hours after start time
+                  const [hours, minutes] = startTime.split(':').map(Number);
+                  const startDate = new Date();
+                  startDate.setHours(hours, minutes, 0, 0);
+                  
+                  // Add 8 hours
+                  const endDate = new Date(startDate.getTime() + 8 * 60 * 60 * 1000);
+                  
+                  // Format as HH:mm
+                  const endHours = endDate.getHours().toString().padStart(2, '0');
+                  const endMinutes = endDate.getMinutes().toString().padStart(2, '0');
+                  const endTime = `${endHours}:${endMinutes}`;
+                  
+                  updateFormData({ shiftStart: startTime, shiftEnd: endTime });
+                } else {
+                  updateFormData({ shiftStart: '', shiftEnd: '' });
+                }
+              }}
             />
             {errors.shiftStart && <span className="form-error">{errors.shiftStart}</span>}
           </div>
@@ -544,9 +560,11 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
               type="time"
               className="form-input"
               value={formData.shiftEnd || ''}
-              onChange={(e) => updateFormData({ shiftEnd: e.target.value })}
+              disabled
+              readOnly
+              style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
             />
-            {errors.shiftEnd && <span className="form-error">{errors.shiftEnd}</span>}
+            <span className="text-sm text-gray-500 mt-1 block">Automatically set to 8 hours after shift start</span>
           </div>
 
           <div className="form-group">
