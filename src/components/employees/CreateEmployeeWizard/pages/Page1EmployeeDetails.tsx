@@ -524,7 +524,9 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label form-label-required">Shift Start</label>
+            <label className="form-label form-label-required">
+              Shift Start <span className="text-sm text-gray-500 font-normal">(PKT)</span>
+            </label>
             <input
               type="time"
               className="form-input"
@@ -535,7 +537,9 @@ const Page1EmployeeDetails: React.FC<Page1Props> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label form-label-required">Shift End</label>
+            <label className="form-label form-label-required">
+              Shift End <span className="text-sm text-gray-500 font-normal">(PKT)</span>
+            </label>
             <input
               type="time"
               className="form-input"

@@ -341,6 +341,65 @@ export const convertPKTTimeToUTC = (pktTime: string, date?: string): string => {
   }
 };
 
+/**
+ * Convert PKT time string (HH:mm) to UTC time string (HH:mm)
+ * Use this when you need to convert shift times from PKT to UTC format for API
+ * @param pktTime - Time in PKT format (HH:mm), e.g., "21:00" for 9:00 PM PKT
+ * @returns UTC time string in HH:mm format, e.g., "16:00" for 9:00 PM PKT (which is 4:00 PM UTC)
+ */
+export const convertPKTTimeToUTCTimeString = (pktTime: string): string => {
+  try {
+    // Parse time string (HH:mm)
+    const timeMatch = pktTime.match(/^(\d{1,2}):(\d{2})$/);
+    if (!timeMatch) {
+      throw new Error('Invalid time format. Expected HH:mm');
+    }
+    
+    const hours = parseInt(timeMatch[1], 10);
+    const minutes = parseInt(timeMatch[2], 10);
+    
+    // Validate time values
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      throw new Error('Invalid time values');
+    }
+    
+    // Use a reference date (today) to handle timezone conversion properly
+    const now = new Date();
+    const pktDateFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Karachi',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const dateParts = pktDateFormatter.formatToParts(now);
+    const datePartsMap: Record<string, string> = {};
+    dateParts.forEach(part => {
+      datePartsMap[part.type] = part.value;
+    });
+    const dateString = `${datePartsMap.year}-${datePartsMap.month}-${datePartsMap.day}`;
+    
+    // Parse date string (YYYY-MM-DD)
+    const [year, month, day] = dateString.split('-').map(Number);
+    
+    // Create a date object representing the PKT time
+    // We'll use UTC methods but treat the time as PKT
+    const pktDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, 0));
+    
+    // Convert PKT to UTC by subtracting 5 hours (PKT is UTC+5)
+    pktDate.setUTCHours(pktDate.getUTCHours() - 5);
+    
+    // Extract UTC hours and minutes
+    const utcHours = pktDate.getUTCHours();
+    const utcMinutes = pktDate.getUTCMinutes();
+    
+    // Format as HH:mm
+    return `${utcHours.toString().padStart(2, '0')}:${utcMinutes.toString().padStart(2, '0')}`;
+  } catch (error) {
+    console.error('Error converting PKT time to UTC time string:', error);
+    throw new Error(`Failed to convert PKT to UTC: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
 export const isToday = (date: string | Date): boolean => {
   const today = new Date();
   const checkDate = typeof date === 'string' ? new Date(date) : date;
