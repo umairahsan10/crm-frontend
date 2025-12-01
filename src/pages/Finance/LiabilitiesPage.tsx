@@ -24,6 +24,8 @@ const LiabilitiesPage: React.FC = () => {
   const navigate = useNavigate();
   // Track if an update was made in the current drawer session
   const hasUpdateBeenMade = useRef(false);
+  // Track previous liability state to detect mark-as-paid actions
+  const previousLiabilityRef = useRef<Liability | null>(null);
   // State management
   const [selectedLiability, setSelectedLiability] = useState<Liability | null>(null);
   const [selectedLiabilities, setSelectedLiabilities] = useState<string[]>([]);
@@ -99,6 +101,7 @@ const LiabilitiesPage: React.FC = () => {
 
   const handleLiabilityClick = (liability: Liability) => {
     hasUpdateBeenMade.current = false; // Reset when opening drawer
+    previousLiabilityRef.current = liability; // Store previous state
     setSelectedLiability(liability);
   };
 
@@ -143,14 +146,27 @@ const LiabilitiesPage: React.FC = () => {
 
   // Handle liability update - mark that update was made
   const handleLiabilityUpdated = useCallback((updatedLiability: Liability) => {
+    // Check if this was a mark-as-paid action (liability changed from unpaid to paid)
+    const wasJustMarkedAsPaid = updatedLiability.isPaid && 
+      previousLiabilityRef.current && 
+      !previousLiabilityRef.current.isPaid;
+    
+    // Update the previous state reference
+    previousLiabilityRef.current = updatedLiability;
     setSelectedLiability(updatedLiability);
+    
     // Mark that an update was made (table will refresh when drawer closes)
     hasUpdateBeenMade.current = true;
-    setNotification({
-      type: 'success',
-      message: 'Liability updated successfully!'
-    });
-    setTimeout(() => setNotification(null), 3000);
+    
+    // Only show generic notification if it's not a mark-as-paid action
+    // (mark-as-paid shows its own specific notification in the drawer)
+    if (!wasJustMarkedAsPaid) {
+      setNotification({
+        type: 'success',
+        message: 'Liability updated successfully!'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
   }, []);
 
   return (

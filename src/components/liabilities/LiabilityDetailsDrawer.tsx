@@ -58,6 +58,9 @@ const LiabilityDetailsDrawer: React.FC<LiabilityDetailsDrawerProps> = ({
 
   // Notification state
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  
+  // Confirmation modal state for mark as paid
+  const [showMarkAsPaidConfirm, setShowMarkAsPaidConfirm] = useState(false);
 
   // Fetch complete liability details when drawer opens
   const fetchLiabilityDetails = async (liabilityId: string) => {
@@ -325,43 +328,48 @@ const LiabilityDetailsDrawer: React.FC<LiabilityDetailsDrawerProps> = ({
     }
   };
 
+  // Handle mark as paid confirmation
+  const handleMarkAsPaidClick = () => {
+    setShowMarkAsPaidConfirm(true);
+  };
+
   // Handle mark as paid
   const handleMarkAsPaid = async () => {
     if (!liability) return;
 
-    if (window.confirm('Are you sure you want to mark this liability as paid? This will:\n\n1. Mark the liability as paid\n2. Update transaction to completed\n3. Automatically create an expense record\n\nThis action cannot be undone.')) {
-      try {
-        setIsMarkingPaid(true);
-        
-        const response = await markLiabilityAsPaidApi(liability.id, liability.transactionId);
-        console.log('✅ Mark as paid response:', response);
-        
-        if (response.success && response.data) {
-          setNotification({ 
-            type: 'success', 
-            message: 'Liability marked as paid! Expense record created automatically.' 
-          });
-          
-          // Update parent component with the updated liability
-          if (onLiabilityUpdated && response.data.liability) {
-            onLiabilityUpdated(response.data.liability);
-          }
-          
-          // Refetch to get updated data
-          await fetchLiabilityDetails(liability.id.toString());
-          
-          setTimeout(() => setNotification(null), 5000);
-        }
-      } catch (error) {
-        console.error('Error marking as paid:', error);
+    setShowMarkAsPaidConfirm(false);
+    
+    try {
+      setIsMarkingPaid(true);
+      
+      const response = await markLiabilityAsPaidApi(liability.id, liability.transactionId);
+      console.log('✅ Mark as paid response:', response);
+      
+      if (response.success && response.data) {
         setNotification({ 
-          type: 'error', 
-          message: error instanceof Error ? error.message : 'Failed to mark as paid' 
+          type: 'success', 
+          message: 'Liability marked as paid! Expense record created automatically.' 
         });
+        
+        // Update parent component with the updated liability (but don't trigger parent notification)
+        if (onLiabilityUpdated && response.data.liability) {
+          onLiabilityUpdated(response.data.liability);
+        }
+        
+        // Refetch to get updated data
+        await fetchLiabilityDetails(liability.id.toString());
+        
         setTimeout(() => setNotification(null), 5000);
-      } finally {
-        setIsMarkingPaid(false);
       }
+    } catch (error) {
+      console.error('Error marking as paid:', error);
+      setNotification({ 
+        type: 'error', 
+        message: error instanceof Error ? error.message : 'Failed to mark as paid' 
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsMarkingPaid(false);
     }
   };
 
@@ -510,7 +518,7 @@ const LiabilityDetailsDrawer: React.FC<LiabilityDetailsDrawerProps> = ({
                         </p>
                       </div>
                       <button
-                        onClick={handleMarkAsPaid}
+                        onClick={handleMarkAsPaidClick}
                         disabled={isMarkingPaid}
                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ml-4"
                       >
@@ -1202,6 +1210,81 @@ const LiabilityDetailsDrawer: React.FC<LiabilityDetailsDrawerProps> = ({
                       </>
                     ) : (
                       'Create Vendor'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mark as Paid Confirmation Modal */}
+        {showMarkAsPaidConfirm && (
+          <div className="fixed inset-0 z-[1300] overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-gray-900 bg-opacity-75" onClick={() => setShowMarkAsPaidConfirm(false)}></div>
+              
+              <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <svg className="h-6 w-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Mark Liability as Paid
+                    </h3>
+                    <button 
+                      onClick={() => setShowMarkAsPaidConfirm(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4">
+                  <p className="text-sm text-gray-700 mb-4">
+                    Are you sure you want to mark this liability as paid? This action will:
+                  </p>
+                  <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 mb-4 ml-2">
+                    <li>Mark the liability as paid</li>
+                    <li>Update transaction to completed</li>
+                    <li>Automatically create an expense record</li>
+                  </ul>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Note:</strong> This action cannot be undone.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowMarkAsPaidConfirm(false)}
+                    disabled={isMarkingPaid}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMarkAsPaid}
+                    disabled={isMarkingPaid}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isMarkingPaid ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      'Confirm & Mark as Paid'
                     )}
                   </button>
                 </div>

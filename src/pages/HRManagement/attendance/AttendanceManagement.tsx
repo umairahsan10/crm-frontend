@@ -19,11 +19,13 @@ import EmployeeAttendanceDrawer from '../../../components/attendance/EmployeeAtt
 import Loading from '../../../components/common/Loading/Loading';
 import { useEmployees, useAttendanceLogs, useAttendanceMutation } from '../../../hooks/queries/useHRQueries';
 import { 
-  checkinApi, 
+  checkinApi,
+  checkoutApi,
   bulkMarkPresentApi,
   bulkCheckoutApi,
   updateAttendanceLogStatusApi,
-  type CheckinDto, 
+  type CheckinDto,
+  type CheckoutDto,
   type BulkMarkPresentDto,
   type BulkCheckoutDto,
   type UpdateAttendanceLogStatusDto
@@ -112,6 +114,7 @@ const AttendanceManagement: React.FC = () => {
 
   // Loading states for mark attendance actions
   const [isMarkingAttendance, setIsMarkingAttendance] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isBulkMarkingAttendance, setIsBulkMarkingAttendance] = useState(false);
   const [isBulkCheckingOut, setIsBulkCheckingOut] = useState(false);
 
@@ -286,6 +289,47 @@ const AttendanceManagement: React.FC = () => {
       setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsMarkingAttendance(false);
+    }
+  };
+
+  const handleCheckout = async (employeeId: number, employeeName: string) => {
+    try {
+      setIsCheckingOut(true);
+      
+      // Get current PKT time and convert to UTC for API
+      const currentTimeUTC = getCurrentPKTAsUTC();
+      const timezone = 'Asia/Karachi'; // PKT timezone
+      const offset_minutes = 300; // PKT is UTC+5, so +300 minutes
+      
+      // Use current date based on local time for checkout (not the selected date which might be for viewing)
+      const currentDateForCheckout = getShiftDate();
+      
+      const checkoutData: CheckoutDto = {
+        employee_id: employeeId,
+        date: currentDateForCheckout,
+        checkout: currentTimeUTC, // UTC time converted from PKT
+        timezone,
+        offset_minutes
+      };
+
+      await checkoutApi(checkoutData);
+      
+      // Invalidate and refetch attendance data - use the date we actually sent to the API
+      invalidateAttendance({ start_date: currentDateForCheckout, end_date: currentDateForCheckout });
+
+      setNotification({
+        type: 'success',
+        message: `${employeeName} checked out successfully`
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to checkout'
+      });
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -614,11 +658,29 @@ const AttendanceManagement: React.FC = () => {
       key: 'checkout',
       label: 'Check Out',
       type: 'custom',
-      render: (value) => {
-        if (!value) return <span className="text-sm text-gray-900">N/A</span>;
-        // Convert UTC time to PKT (Pakistan Time, UTC+5)
-        const pktTime = formatTimeToPKT(value, 'HH:mm');
-        return <span className="text-sm text-gray-900">{pktTime}</span>;
+      render: (value, row) => {
+        // If already checked out, show the time in PKT
+        if (value) {
+          const pktTime = formatTimeToPKT(value, 'HH:mm');
+          return <span className="text-sm text-gray-900">{pktTime}</span>;
+        }
+        // If not checked out but has checkin, show checkout button
+        if (row.checkin) {
+          return (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCheckout(row.employeeId, row.employeeName);
+              }}
+              disabled={isCheckingOut}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isCheckingOut ? 'Checking out...' : 'Checkout'}
+            </button>
+          );
+        }
+        // If no checkin, show N/A
+        return <span className="text-sm text-gray-900">N/A</span>;
       }
     },
     // Hide Actions column for admin users
@@ -1010,13 +1072,14 @@ const AttendanceManagement: React.FC = () => {
 
         {/* Overlay during mark attendance actions */}
         <Loading
-          isLoading={isMarkingAttendance || isBulkMarkingAttendance || isBulkCheckingOut}
+          isLoading={isMarkingAttendance || isCheckingOut || isBulkMarkingAttendance || isBulkCheckingOut}
           position="overlay"
           size="lg"
           theme="primary"
           backdropBlur
           message={
             isMarkingAttendance ? "Marking attendance..." : 
+            isCheckingOut ? "Checking out..." :
             isBulkMarkingAttendance ? "Bulk marking attendance..." : 
             "Bulk checking out..."
           }
