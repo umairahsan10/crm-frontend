@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Project, UnifiedUpdateProjectDto } from '../../../types/production/projects';
-import { useProject, useUpdateProject, useAvailableTeamsForProject } from '../../../hooks/queries/useProjectsQueries';
+import type { Project } from '../../../types/production/projects';
+import { useProject, useAvailableTeamsForProject } from '../../../hooks/queries/useProjectsQueries';
 import { useAvailableUnitHeads } from '../../../hooks/queries/useProductionUnitsQueries';
 import { useNavbar } from '../../../context/NavbarContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -37,6 +37,7 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
   const [showAssignUnitHeadDropdown, setShowAssignUnitHeadDropdown] = useState(false);
   const [showAssignTeamDropdown, setShowAssignTeamDropdown] = useState(false);
   const [isAssigningUnitHead, setIsAssigningUnitHead] = useState(false);
+  const [isAssigningTeam, setIsAssigningTeam] = useState(false);
 
   // Fetch available unit heads when dropdown should be shown
   const { data: unitHeadsData, isLoading: isLoadingUnitHeads } = useAvailableUnitHeads(undefined, {
@@ -47,9 +48,6 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
   const { data: teamsData, isLoading: isLoadingTeams } = useAvailableTeamsForProject({
     enabled: showAssignTeamDropdown && canAssignTeam
   });
-
-  // Update project mutation (used for team assignment)
-  const updateProjectMutation = useUpdateProject();
 
   // Fetch detailed project data
   const { data: projectData, isLoading: isLoadingProject, refetch: refetchProject } = useProject(
@@ -183,11 +181,12 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
 
   // Handle assign team when selected from dropdown
   const handleTeamSelect = async (teamId: number) => {
-    if (!currentProject) return;
+    if (!currentProject || isAssigningTeam) return;
 
+    setIsAssigningTeam(true);
     try {
-      // Prepare update data - team assignment uses unified update endpoint
-      const updateData: UnifiedUpdateProjectDto = {
+      // Prepare request data - include deadline and difficulty if project doesn't have them
+      const assignData: any = {
         teamId
       };
 
@@ -197,57 +196,50 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
         if (!currentProject.deadline) {
           const defaultDeadline = new Date();
           defaultDeadline.setDate(defaultDeadline.getDate() + 30);
-          updateData.deadline = defaultDeadline.toISOString();
+          assignData.deadline = defaultDeadline.toISOString();
         }
 
         // Set default difficulty if missing
         if (!currentProject.difficultyLevel) {
-          updateData.difficulty = 'medium';
+          assignData.difficulty = 'medium';
         }
       }
       
-      const result = await updateProjectMutation.mutateAsync({
-        projectId: currentProject.id,
-        updateData
-      });
+      // Call the API directly - same pattern as unit head assignment
+      await apiPutJson(`/projects/${currentProject.id}/assign-team`, assignData);
       
-      // Wait a bit for query invalidation to complete, then refetch
-      setTimeout(async () => {
-        const refetchedData = await refetchProject();
-        
-        // Extract the updated project from refetched data
-        let updatedProject: Project | null = null;
-        if (refetchedData?.data) {
-          const response = refetchedData.data as any;
-          if (response?.data) {
-            updatedProject = response.data as Project;
-          } else if (response && typeof response === 'object' && 'id' in response) {
-            updatedProject = response as Project;
-          }
-        }
-        
-        // Also try to extract from mutation result
-        if (!updatedProject && result) {
-          const resultData = result as any;
-          if (resultData?.data) {
-            updatedProject = resultData.data as Project;
-          }
-        }
-        
-        // Update parent component if callback is provided
-        if (updatedProject && onProjectUpdated) {
-          onProjectUpdated(updatedProject);
-        }
-      }, 500);
-      
+      // Show success notification
       notification.show({ message: 'Team assigned successfully', type: 'success' });
+      
+      // Close dropdown
       setShowAssignTeamDropdown(false);
+      
+      // Refetch project data to refresh the drawer
+      const refetchedData = await refetchProject();
+      
+      // Extract the updated project from refetched data
+      let updatedProject: Project | null = null;
+      if (refetchedData?.data) {
+        const response = refetchedData.data as any;
+        if (response?.data) {
+          updatedProject = response.data as Project;
+        } else if (response && typeof response === 'object' && 'id' in response) {
+          updatedProject = response as Project;
+        }
+      }
+      
+      // Update parent component if callback is provided
+      if (updatedProject && onProjectUpdated) {
+        onProjectUpdated(updatedProject);
+      }
     } catch (error: any) {
       console.error('Error assigning team:', error);
       notification.show({ 
         message: error.message || 'Failed to assign team', 
         type: 'error' 
       });
+    } finally {
+      setIsAssigningTeam(false);
     }
   };
 
@@ -640,9 +632,9 @@ const ProjectDetailsDrawer: React.FC<ProjectDetailsDrawerProps> = ({
                                         {availableTeams.map((team: any) => (
                                           <div
                                             key={team.id}
-                                            onClick={() => !updateProjectMutation.isPending && handleTeamSelect(team.id)}
+                                            onClick={() => !isAssigningTeam && handleTeamSelect(team.id)}
                                             className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
-                                              updateProjectMutation.isPending
+                                              isAssigningTeam
                                                 ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
                                                 : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                                             }`}

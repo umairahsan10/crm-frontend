@@ -52,8 +52,9 @@ const ProjectsPage: React.FC = () => {
   // Role-based access control
   const canSeeAllProjects = user?.role === 'dep_manager' || user?.role === 'admin';
   const canAssignUnitHead = user?.role === 'dep_manager' || user?.role === 'admin';
-  // Only Unit Heads can assign teams (enforced by ProjectAssignmentGuard)
-  const canAssignTeam = user?.role === 'unit_head';
+  // Both dep_manager and unit_head can assign teams
+  // dep_manager: any project, unit_head: only their assigned projects
+  const canAssignTeam = user?.role === 'unit_head' || user?.role === 'dep_manager' || user?.role === 'admin';
   const showFilters = canSeeAllProjects;
 
   // Convert filters to API format

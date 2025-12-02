@@ -245,19 +245,23 @@ export const validateTeamAssignmentPermission = (
   project: Project,
   currentUserId: number | undefined
 ): ValidationResult => {
-  if (userRole !== 'unit_head') {
+  // Allow both dep_manager and unit_head
+  if (userRole !== 'unit_head' && userRole !== 'dep_manager' && userRole !== 'admin') {
     return {
       valid: false,
-      error: 'Only unit heads can assign teams'
+      error: 'Only managers and unit heads can assign teams'
     };
   }
 
-  // Must be assigned to project
-  if (!project.unitHeadId || project.unitHeadId !== currentUserId) {
-    return {
-      valid: false,
-      error: 'You can only assign teams to projects assigned to you'
-    };
+  // For unit_head: must be assigned to project
+  // For dep_manager: can assign to any project
+  if (userRole === 'unit_head') {
+    if (!project.unitHeadId || project.unitHeadId !== currentUserId) {
+      return {
+        valid: false,
+        error: 'You can only assign teams to projects assigned to you'
+      };
+    }
   }
 
   return { valid: true };

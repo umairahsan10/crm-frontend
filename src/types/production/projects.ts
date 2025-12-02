@@ -87,6 +87,8 @@ export interface AssignUnitHeadRequest {
 
 export interface AssignTeamRequest {
   teamId: number;
+  deadline?: string;  // Required if project doesn't have it
+  difficulty?: DifficultyLevel;  // Required if project doesn't have it
 }
 
 export interface UnifiedUpdateProjectDto {
