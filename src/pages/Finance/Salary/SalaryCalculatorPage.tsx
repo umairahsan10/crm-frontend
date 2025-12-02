@@ -1,25 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MetricGrid } from '../../../components/common/Dashboard/MetricGrid';
 import type { MetricData } from '../../../types/dashboard';
 import { 
   formatCurrency, 
-  formatDate,
-  getSalaryPreview
+  formatDate
 } from '../../../apis/finance/salary';
-import { getEmployeesApi, type EmployeeSummary } from '../../../apis/hr-employees';
-import type { SalaryPreview } from '../../../types/finance/salary';
+import { useEmployees } from '../../../hooks/queries/useHRQueries';
+import { useSalaryPreview } from '../../../hooks/queries/useSalaryQueries';
+import type { EmployeeSummary } from '../../../apis/hr-employees';
 import './SalaryCalculatorPage.css';
 
 const SalaryCalculatorPage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
-  const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
-  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
   const [endDate, setEndDate] = useState<string>('');
-  const [previewData, setPreviewData] = useState<SalaryPreview | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const [shouldCalculate, setShouldCalculate] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   
   // Searchable dropdown state
@@ -27,36 +23,83 @@ const SalaryCalculatorPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-  // Fetch employees on component mount
+  // Fetch employees using React Query with caching
+  const {
+    data: employeesData,
+    isLoading: isLoadingEmployees,
+    error: employeesError
+  } = useEmployees(
+    1,
+    1000, // Get all employees
+    { status: 'active' }, // Filter by active status
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes - employee list doesn't change often
+      gcTime: 10 * 60 * 1000, // 10 minutes
+    }
+  );
+
+  const employees = useMemo(() => employeesData?.employees || [], [employeesData]);
+
+  // Fetch salary preview when employee is selected
+  const employeeIdNum = useMemo(() => {
+    const id = parseInt(selectedEmployeeId);
+    return isNaN(id) ? 0 : id;
+  }, [selectedEmployeeId]);
+
+  const {
+    data: previewData,
+    isLoading: isLoadingPreview,
+    error: previewError,
+    refetch: refetchPreview
+  } = useSalaryPreview(
+    employeeIdNum,
+    endDate || undefined,
+    { 
+      enabled: employeeIdNum > 0,
+      // Only refetch when explicitly triggered or when endDate changes
+      refetchOnMount: false,
+      refetchOnWindowFocus: false
+    }
+  );
+
+  // Show error notification if employees query fails
   useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        setIsLoadingEmployees(true);
-        const response = await getEmployeesApi({ 
-          limit: 1000, // Get all employees
-          status: 'active' // Optionally filter by active status
+    if (employeesError) {
+      setNotification({ 
+        type: 'error', 
+        message: 'Failed to load employees. Please refresh the page.' 
+      });
+    }
+  }, [employeesError]);
+
+  // Show success/error notification for preview calculation
+  useEffect(() => {
+    if (shouldCalculate && !isLoadingPreview) {
+      if (previewData) {
+        setNotification({ 
+          type: 'success', 
+          message: 'Salary preview calculated successfully!' 
         });
-        setEmployees(response.employees || []);
-      } catch (error) {
-        console.error('Error fetching employees:', error);
+        setShouldCalculate(false);
+      } else if (previewError) {
+        const errorMessage = previewError instanceof Error 
+          ? previewError.message 
+          : 'Failed to calculate salary preview. Please check the employee selection and try again.';
         setNotification({ 
           type: 'error', 
-          message: 'Failed to load employees. Please refresh the page.' 
+          message: errorMessage
         });
-      } finally {
-        setIsLoadingEmployees(false);
+        setShouldCalculate(false);
       }
-    };
-
-    fetchEmployees();
-  }, []);
+    }
+  }, [previewData, previewError, shouldCalculate, isLoadingPreview]);
 
   // Filter employees based on search query
-  const filteredEmployees = React.useMemo(() => {
+  const filteredEmployees = useMemo(() => {
     if (!searchQuery.trim()) return employees;
     
     const query = searchQuery.toLowerCase();
-    return employees.filter(employee => {
+    return employees.filter((employee: EmployeeSummary) => {
       const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
       const email = employee.email.toLowerCase();
       const department = employee.department?.name?.toLowerCase() || '';
@@ -125,41 +168,23 @@ const SalaryCalculatorPage: React.FC = () => {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      setIsError(false);
-      setPreviewData(null);
-      
-      const empId = parseInt(selectedEmployeeId);
-      
-      if (isNaN(empId)) {
-        setNotification({ 
-          type: 'error', 
-          message: 'Please select a valid employee' 
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      // Call the preview API
-      const result = await getSalaryPreview(empId, endDate || undefined);
-      
-      setPreviewData(result);
-      setNotification({ 
-        type: 'success', 
-        message: 'Salary preview calculated successfully!' 
-      });
-      
-    } catch (error: any) {
-      console.error('Error calculating preview:', error);
-      setIsError(true);
-      const errorMessage = error?.message || 'Failed to calculate salary preview. Please check the employee selection and try again.';
+    const empId = parseInt(selectedEmployeeId);
+    
+    if (isNaN(empId)) {
       setNotification({ 
         type: 'error', 
-        message: errorMessage
+        message: 'Please select a valid employee' 
       });
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+    
+    // Trigger the query by setting shouldCalculate to true and refetching
+    setShouldCalculate(true);
+    try {
+      await refetchPreview();
+    } catch (error) {
+      // Error will be handled by the useEffect that watches previewError
+      console.error('Error calculating preview:', error);
     }
   };
 
@@ -170,8 +195,7 @@ const SalaryCalculatorPage: React.FC = () => {
   const handleClearForm = () => {
     setSelectedEmployeeId('');
     setEndDate('');
-    setPreviewData(null);
-    setIsError(false);
+    setShouldCalculate(false);
   };
 
   // Auto-dismiss notification after 5 seconds
@@ -186,7 +210,7 @@ const SalaryCalculatorPage: React.FC = () => {
   }, [notification]);
 
   // Get selected employee name for display
-  const selectedEmployee = employees.find(emp => emp.id.toString() === selectedEmployeeId);
+  const selectedEmployee = employees.find((emp: EmployeeSummary) => emp.id.toString() === selectedEmployeeId);
 
   const handleEmployeeSelect = (employeeId: string) => {
     setSelectedEmployeeId(employeeId);
@@ -219,7 +243,7 @@ const SalaryCalculatorPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleClearForm}
-                  disabled={isLoading}
+                  disabled={isLoadingPreview}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                 >
                   <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,7 +398,7 @@ const SalaryCalculatorPage: React.FC = () => {
                               {searchQuery ? 'No employees found' : 'No employees available'}
                             </div>
                           ) : (
-                            filteredEmployees.map((employee) => (
+                            filteredEmployees.map((employee: EmployeeSummary) => (
                               <button
                                 key={employee.id}
                                 type="button"
@@ -445,7 +469,7 @@ const SalaryCalculatorPage: React.FC = () => {
               <button 
                 className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 onClick={handleClearForm}
-                disabled={isLoading}
+                disabled={isLoadingPreview}
               >
                 <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -455,9 +479,9 @@ const SalaryCalculatorPage: React.FC = () => {
               <button 
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                 onClick={handleCalculatePreview}
-                disabled={isLoading || !selectedEmployeeId || isLoadingEmployees}
+                disabled={isLoadingPreview || !selectedEmployeeId || isLoadingEmployees}
               >
-                {isLoading ? (
+                {isLoadingPreview ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -479,7 +503,7 @@ const SalaryCalculatorPage: React.FC = () => {
         </div>
 
         {/* Loading State */}
-        {isLoading && (
+        {isLoadingPreview && (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-8">
             <div className="flex flex-col items-center justify-center">
               <svg className="animate-spin h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24">
@@ -492,7 +516,7 @@ const SalaryCalculatorPage: React.FC = () => {
         )}
 
         {/* Error State */}
-        {isError && (
+        {previewError && !previewData && (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-8">
             <div className="flex flex-col items-center justify-center text-center">
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">

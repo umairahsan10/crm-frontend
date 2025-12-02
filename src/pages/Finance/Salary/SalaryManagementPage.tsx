@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import SalaryTable from '../../../components/finance/salary/SalaryTable';
 import SalaryDetailsDrawer from '../../../components/finance/salary/SalaryDetailsDrawer';
 import GenericSalaryFilters, { type SalaryFilterValues } from '../../../components/finance/salary/GenericSalaryFilters';
 import { 
-  getAllSalaries,
-  getSalaryDetails,
-  markSalaryRecordsApi,
   type SalaryFiltersParams,
   getCurrentMonth
 } from '../../../apis/finance/salary';
-import type { SalaryDisplayAll, SalaryDisplay, SalaryBreakdown } from '../../../types/finance/salary';
+import {
+  useSalaries,
+  useSalaryDetails,
+  useMarkSalaryAsPaid
+} from '../../../hooks/queries/useSalaryQueries';
+import type { SalaryDisplay } from '../../../types/finance/salary';
 import './SalaryManagementPage.css';
 
 const SalaryManagementPage: React.FC = () => {
@@ -22,21 +24,12 @@ const SalaryManagementPage: React.FC = () => {
   const isHR = user?.role === 'admin' || user?.department === 'HR';
   
   // State management
-  const [salaryData, setSalaryData] = useState<SalaryDisplayAll | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
-  const [salaryBreakdown, setSalaryBreakdown] = useState<SalaryBreakdown | undefined>(undefined);
-  const [isLoadingBreakdown, setIsLoadingBreakdown] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  // const [isCalculating, setIsCalculating] = useState(false);
-  // const [lastCalculated, setLastCalculated] = useState<Date | null>(null);
-  // const [showLastCalculated, setShowLastCalculated] = useState(false);
-  // const [timerRef, setTimerRef] = useState<number | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
-  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
-  const [isBulkMarkingPaid, setIsBulkMarkingPaid] = useState(false);
   const [showBulkMarkModal, setShowBulkMarkModal] = useState(false);
 
   // Pagination state
@@ -58,67 +51,73 @@ const SalaryManagementPage: React.FC = () => {
     sortOrder: 'asc' as 'asc' | 'desc'
   });
 
+  // Convert filters to API parameters
+  const filtersParams: SalaryFiltersParams = useMemo(() => ({
+    search: filters.search || undefined,
+    department: filters.department || undefined,
+    status: filters.status || undefined,
+    minSalary: filters.minSalary || undefined,
+    maxSalary: filters.maxSalary || undefined,
+    sortBy: filters.sortBy || undefined,
+    sortOrder: filters.sortOrder || undefined
+  }), [filters]);
+
+  // React Query hooks
+  const {
+    data: salaryData,
+    isLoading,
+    error: salaryError
+  } = useSalaries(
+    selectedMonth,
+    pagination.currentPage,
+    pagination.itemsPerPage,
+    filtersParams
+  );
+
+  // Fetch salary details when employee is selected
+  const {
+    data: salaryBreakdown,
+    isLoading: isLoadingBreakdown
+  } = useSalaryDetails(
+    selectedEmployeeId || 0,
+    selectedMonth,
+    { enabled: selectedEmployeeId !== null && showDetailsDrawer }
+  );
+
+  // Mutations
+  const markSalaryAsPaidMutation = useMarkSalaryAsPaid();
+
+
+  // Update pagination from API response
+  useEffect(() => {
+    if (salaryData?.pagination) {
+      setPagination({
+        currentPage: salaryData.pagination.page || 1,
+        totalPages: salaryData.pagination.totalPages || 1,
+        totalItems: salaryData.pagination.total || 0,
+        itemsPerPage: salaryData.pagination.limit || 20
+      });
+    }
+  }, [salaryData]);
+
+  // Show error notification if query fails
+  useEffect(() => {
+    if (salaryError) {
+      setNotification({
+        type: 'error',
+        message: 'Failed to load salary data. Please try again.'
+      });
+    }
+  }, [salaryError]);
 
   // Handlers
   const handlePageChange = (page: number) => {
     setPagination(prev => ({ ...prev, currentPage: page }));
   };
 
-  const handleEmployeeClick = async (employee: SalaryDisplay) => {
+  const handleEmployeeClick = (employee: SalaryDisplay) => {
+    setSelectedEmployeeId(employee.employeeId);
     setShowDetailsDrawer(true);
-    setIsLoadingBreakdown(true);
-    setSalaryBreakdown(undefined); // Clear previous data while loading
-    
-    try {
-      // Fetch detailed breakdown from API to get commission breakdown and detailed deduction breakdown
-      const breakdown = await getSalaryDetails(employee.employeeId, employee.month);
-      setSalaryBreakdown(breakdown);
-    } catch (error) {
-      console.error('Error fetching salary breakdown:', error);
-      // Fallback to basic data from display-all if API fails
-      const nameParts = employee.employeeName.trim().split(/\s+/);
-      const firstName = nameParts[0] || 'Employee';
-      const lastName = nameParts.slice(1).join(' ') || '';
-      
-      const fallbackBreakdown: SalaryBreakdown = {
-      employee: {
-        id: employee.employeeId,
-          firstName: firstName,
-          lastName: lastName,
-          email: `${employee.employeeName.toLowerCase().replace(/\s+/g, '.')}@company.com`,
-        department: employee.department,
-        status: 'active',
-        startDate: '2023-01-01T00:00:00.000Z'
-      },
-      salary: {
-        baseSalary: employee.baseSalary,
-        commission: employee.commission,
-        bonus: employee.bonus,
-        netSalary: employee.netSalary,
-        attendanceDeductions: employee.attendanceDeductions,
-        chargebackDeduction: employee.chargebackDeduction,
-        refundDeduction: employee.refundDeduction,
-        deductions: employee.deductions,
-        finalSalary: employee.finalSalary
-      },
-      month: employee.month,
-      status: employee.status,
-      paidOn: employee.paidOn,
-      createdAt: employee.createdAt,
-        commissionBreakdown: [],
-      deductionBreakdown: {
-          absentDeduction: 0,
-          lateDeduction: 0,
-          halfDayDeduction: 0,
-        chargebackDeduction: employee.chargebackDeduction,
-        refundDeduction: employee.refundDeduction,
-        totalDeduction: employee.deductions
-      }
-    };
-      setSalaryBreakdown(fallbackBreakdown);
-    } finally {
-      setIsLoadingBreakdown(false);
-    }
   };
 
   const handleBulkSelect = (employeeIds: string[]) => {
@@ -130,14 +129,10 @@ const SalaryManagementPage: React.FC = () => {
     if (!isHR) return;
     
     try {
-      setIsMarkingPaid(true);
-      await markSalaryRecordsApi({
+      await markSalaryAsPaidMutation.mutateAsync({
         employeeId: employee.employeeId,
         month: employee.month
       });
-      
-      // Refresh data
-      await fetchSalaryData();
       
       setNotification({
         type: 'success',
@@ -149,8 +144,6 @@ const SalaryManagementPage: React.FC = () => {
         type: 'error',
         message: error instanceof Error ? error.message : 'Failed to mark salary as paid'
       });
-    } finally {
-      setIsMarkingPaid(false);
     }
   };
 
@@ -159,8 +152,6 @@ const SalaryManagementPage: React.FC = () => {
     if (!isHR || selectedEmployees.length === 0) return;
     
     try {
-      setIsBulkMarkingPaid(true);
-      
       // Filter to only unpaid employees
       const unpaidEmployeeIds = (salaryData?.employees || [])
         .filter(emp => selectedEmployees.includes(emp.employeeId.toString()) && emp.status !== 'paid')
@@ -176,13 +167,10 @@ const SalaryManagementPage: React.FC = () => {
         return;
       }
       
-      const response = await markSalaryRecordsApi({
+      const response = await markSalaryAsPaidMutation.mutateAsync({
         employeeIds: unpaidEmployeeIds,
         month: selectedMonth
       });
-      
-      // Refresh data
-      await fetchSalaryData();
       
       setNotification({
         type: 'success',
@@ -197,8 +185,6 @@ const SalaryManagementPage: React.FC = () => {
         type: 'error',
         message: error instanceof Error ? error.message : 'Failed to bulk mark salaries as paid'
       });
-    } finally {
-      setIsBulkMarkingPaid(false);
     }
   };
 
@@ -265,61 +251,6 @@ const SalaryManagementPage: React.FC = () => {
   // };
 
 
-  const fetchSalaryData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      
-      // Convert filters to API parameters
-      const filtersParams: SalaryFiltersParams = {
-        search: filters.search || undefined,
-        department: filters.department || undefined,
-        status: filters.status || undefined,
-        minSalary: filters.minSalary || undefined,
-        maxSalary: filters.maxSalary || undefined,
-        sortBy: filters.sortBy || undefined,
-        sortOrder: filters.sortOrder || undefined
-      };
-      
-      const data = await getAllSalaries(
-        selectedMonth,
-        pagination.currentPage,
-        pagination.itemsPerPage,
-        filtersParams
-      );
-      setSalaryData(data);
-      
-      // Always update pagination from API response if available (server-side pagination takes precedence)
-      if (data.pagination) {
-        const newPagination = {
-          currentPage: data.pagination.page,
-          totalPages: data.pagination.totalPages || 1,
-          totalItems: data.pagination.total || 0,
-          itemsPerPage: data.pagination.limit || 20
-        };
-        console.log('Setting pagination from API:', newPagination);
-        setPagination(newPagination);
-      } else {
-        // Fallback: calculate from returned data if no pagination metadata
-        const totalItems = data.employees.length;
-        const calculatedPages = Math.ceil(totalItems / pagination.itemsPerPage) || 1;
-        console.log('No pagination metadata, calculating:', { totalItems, calculatedPages, itemsPerPage: pagination.itemsPerPage });
-        setPagination(prev => ({
-          ...prev,
-          totalItems,
-          totalPages: calculatedPages
-        }));
-      }
-      
-    } catch (error) {
-      console.error('Error fetching salary data:', error);
-      setNotification({ 
-        type: 'error', 
-        message: 'Failed to load salary data. Please try again.' 
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedMonth, pagination.currentPage, pagination.itemsPerPage, filters]);
 
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month);
@@ -330,13 +261,8 @@ const SalaryManagementPage: React.FC = () => {
 
   const handleCloseDetailsDrawer = () => {
     setShowDetailsDrawer(false);
-    setSalaryBreakdown(undefined);
+    setSelectedEmployeeId(null);
   };
-
-  // Load salary data when filters, month, or page changes
-  useEffect(() => {
-    fetchSalaryData();
-  }, [fetchSalaryData]);
 
   // Auto-dismiss notification after 5 seconds
   useEffect(() => {
@@ -592,7 +518,7 @@ const SalaryManagementPage: React.FC = () => {
         {salaryData && (
           <SalaryTable
             employees={salaryData.employees}
-            isLoading={isLoading || isMarkingPaid}
+            isLoading={isLoading || markSalaryAsPaidMutation.isPending}
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
             totalItems={pagination.totalItems}
@@ -635,10 +561,10 @@ const SalaryManagementPage: React.FC = () => {
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                   <button
                     onClick={handleBulkMarkAsPaid}
-                    disabled={isBulkMarkingPaid}
+                    disabled={markSalaryAsPaidMutation.isPending}
                     className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isBulkMarkingPaid ? (
+                    {markSalaryAsPaidMutation.isPending ? (
                       <>
                         <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
