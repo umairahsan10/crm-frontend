@@ -36,25 +36,29 @@ export const chatApi = {
   },
 
   // Send message to chat
-  sendMessage: async (chatId: number, content: string): Promise<ChatMessage> => {
+  sendMessage: async (
+    chatId: number,
+    content: string,
+    attachment?: {
+      attachmentUrl?: string;
+      attachmentType?: string;
+      attachmentName?: string;
+      attachmentSize?: number;
+    }
+  ): Promise<ChatMessage> => {
     console.log('🔵 Sending message to chat:', chatId);
     console.log('📤 Message content:', content);
-    
-    // Request body matches backend specification
-    const requestBody = { 
-      chatId,
-      content
-    };
-    
+    // Build request body with attachments if present
+    const requestBody: any = { chatId, content };
+    if (attachment) {
+      Object.assign(requestBody, attachment);
+    }
     console.log('📤 Request body:', JSON.stringify(requestBody));
-
     const responseData = await apiPostJson<any>('/chat-messages', requestBody);
     console.log('📥 Raw response:', responseData);
-    
     // Extract the message data from the backend response format
     const messageData = responseData.data || responseData;
     console.log('✅ Message sent successfully:', messageData);
-    
     return messageData;
   },
 

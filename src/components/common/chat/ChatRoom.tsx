@@ -245,14 +245,25 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
               </>
             )}
           </div>
-
+            
           <div className="flex-shrink-0">
             <MessageInput
-              onSendMessage={onSendMessage}
+              onSendMessage={(msgOrAttachment: string | { attachmentUrl?: string; attachmentType?: string; attachmentName?: string; attachmentSize?: number }) => {
+                // If it's a stringified attachment, parse and send with metadata
+                try {
+                  const data = typeof msgOrAttachment === 'string' ? JSON.parse(msgOrAttachment) : msgOrAttachment;
+                  if (data && data.attachmentUrl) {
+                    onSendMessage(data);
+                    return;
+                  }
+                } catch {}
+                onSendMessage(msgOrAttachment);
+              }}
               onTypingChange={onTypingChange}
               disabled={loading}
               placeholder="Type a message..."
               maxLength={1000}
+              chatId={chat?.id}
             />
           </div>
         </div>

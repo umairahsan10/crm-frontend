@@ -46,6 +46,10 @@ export interface ChatMessage {
   createdAt: string;
   updatedAt: string;
   sender: ChatUser;
+  attachmentUrl?: string;
+  attachmentType?: string;
+  attachmentName?: string;
+  attachmentSize?: number;
 }
 
 export interface ChatListProps {
@@ -60,7 +64,9 @@ export interface ChatRoomProps {
   currentUser: ChatUser;
   messages: ChatMessage[];
   participants: ChatParticipant[];
-  onSendMessage: (message: string) => void;
+  onSendMessage: (
+    message: string | { attachmentUrl?: string; attachmentType?: string; attachmentName?: string; attachmentSize?: number }
+  ) => void;
   onRemoveParticipant?: (participantId: number) => void;
   onAddParticipant?: (employeeId: number) => Promise<void>;
   onTypingChange?: (isTyping: boolean) => void;
@@ -80,7 +86,9 @@ export interface MessageBubbleProps {
 }
 
 export interface MessageInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (
+    message: string | { attachmentUrl?: string; attachmentType?: string; attachmentName?: string; attachmentSize?: number }
+  ) => void;
   onTypingChange?: (isTyping: boolean) => void;
   disabled?: boolean;
   placeholder?: string;

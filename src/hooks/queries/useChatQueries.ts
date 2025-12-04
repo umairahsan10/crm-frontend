@@ -220,13 +220,20 @@ export const useSendMessage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ chatId, content }: { chatId: number; content: string }) => {
+    mutationFn: async (payload: {
+      chatId: number;
+      content: string;
+      attachmentUrl?: string;
+      attachmentType?: string;
+      attachmentName?: string;
+      attachmentSize?: number;
+    }) => {
       // Validate message length (backend limit: 1000 characters)
-      if (content.trim().length > 1000) {
+      if (payload.content && payload.content.trim().length > 1000) {
         throw new Error('Message too long. Maximum 1000 characters allowed.');
       }
-      
-      const message = await chatApi.sendMessage(chatId, content.trim());
+      const { chatId, content, ...attachment } = payload;
+      const message = await chatApi.sendMessage(chatId, content ? content.trim() : '', attachment);
       return { chatId, message };
     },
     onMutate: async ({ chatId }) => {

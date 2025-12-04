@@ -1,17 +1,31 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { MessageInputProps } from './types';
+import { getAuthData } from '../../../utils/cookieUtils';
 
-const MessageInput: React.FC<MessageInputProps> = ({
+
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+  'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain', 'text/csv'
+];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const MessageInput: React.FC<MessageInputProps & { chatId?: number }> = ({
   onSendMessage,
   onTypingChange,
   disabled = false,
   placeholder = 'Type a message...',
-  maxLength = 1000
+  maxLength = 1000,
+  chatId
 }) => {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [fileUploading, setFileUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
 
@@ -93,18 +107,216 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
-  // Handle paste
-  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const pastedText = e.clipboardData.getData('text');
-    
-    if (maxLength && message.length + pastedText.length > maxLength) {
-      e.preventDefault();
-      const remainingLength = maxLength - message.length;
-      const truncatedText = pastedText.substring(0, remainingLength);
-      setMessage(prev => prev + truncatedText);
+  // Handle paste (support base64 image)
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData.items;
+    let handledImage = false;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (file) {
+          console.debug('[MessageInput] Detected pasted image:', file);
+          setFileUploading(true);
+          setUploadProgress(0);
+          try {
+            const endpoint = 'http://localhost:3000/chat-messages/upload';
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('chatId', String(chatId));
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', endpoint, true);
+            const { token } = getAuthData();
+            if (token) {
+              xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            }
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                setUploadProgress(Math.round((event.loaded / event.total) * 100));
+              }
+            };
+            xhr.onreadystatechange = async () => {
+              if (xhr.readyState === 4) {
+                setFileUploading(false);
+                setUploadProgress(null);
+                if (xhr.status === 200) {
+                  const res = JSON.parse(xhr.responseText);
+                  if (res.success && res.data && res.data.url) {
+                    // Send image message to chat
+                    onSendMessage({
+                      attachmentUrl: res.data.url,
+                      attachmentType: file.type,
+                      attachmentName: file.name,
+                      attachmentSize: file.size
+                    });
+                  } else {
+                    setError(res.message || 'Image upload failed');
+                  }
+                } else {
+                  let errMsg = 'Image upload failed';
+                  try {
+                    const res = JSON.parse(xhr.responseText);
+                    errMsg = res.message || errMsg;
+                  } catch {}
+                  setError(errMsg);
+                }
+              }
+            };
+            xhr.onerror = () => {
+              setFileUploading(false);
+              setUploadProgress(null);
+              setError('Image upload failed');
+            };
+            xhr.send(formData);
+          } catch (err) {
+            setFileUploading(false);
+            setUploadProgress(null);
+            setError('Image upload failed');
+          }
+          handledImage = true;
+          e.preventDefault();
+          return;
+        }
+      }
+    }
+    if (!handledImage) {
+      // Fallback: handle text paste
+      const pastedText = e.clipboardData.getData('text');
+      if (maxLength && message.length + pastedText.length > maxLength) {
+        e.preventDefault();
+        const remainingLength = maxLength - message.length;
+        const truncatedText = pastedText.substring(0, remainingLength);
+        setMessage(prev => prev + truncatedText);
+      }
     }
   };
 
+  // File input ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle file selection
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await handleFileUpload(file, false);
+    }
+    e.target.value = '';
+  };
+
+  // File upload logic
+  const handleFileUpload = async (file: File, isBase64Paste: boolean) => {
+    setError(null);
+    setFileUploading(true);
+    setUploadProgress(0);
+    // Validate file type and size
+    if (!isBase64Paste && (!ALLOWED_FILE_TYPES.includes(file.type) || file.size > MAX_FILE_SIZE)) {
+      setError('Invalid file type or file too large (max 10MB).');
+      setFileUploading(false);
+      setUploadProgress(null);
+      return;
+    }
+    try {
+      const endpoint = 'http://localhost:3000/chat-messages/upload';
+      if (isBase64Paste) {
+        // Convert image to base64 and send as JSON
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+          const base64Data = reader.result as string;
+          try {
+            const { token } = getAuthData();
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
+              body: JSON.stringify({
+                imageData: base64Data,
+                chatId: chatId
+              })
+            });
+            setFileUploading(false);
+            setUploadProgress(null);
+            const res = await response.json();
+            if (response.status === 200 && res.success && res.data && res.data.url) {
+              // Send image message to chat
+              onSendMessage({
+                attachmentUrl: res.data.url,
+                attachmentType: file.type,
+                attachmentName: file.name,
+                attachmentSize: file.size
+              });
+            } else {
+              setError(res.message || 'File upload failed');
+            }
+          } catch (err) {
+            setFileUploading(false);
+            setUploadProgress(null);
+            setError('File upload failed');
+          }
+        };
+        reader.onerror = () => {
+          setFileUploading(false);
+          setUploadProgress(null);
+          setError('Error reading image');
+        };
+      } else {
+        // Regular file upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('chatId', String(chatId));
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', endpoint, true);
+        const { token } = getAuthData();
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setUploadProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        };
+        xhr.onreadystatechange = async () => {
+          if (xhr.readyState === 4) {
+            setFileUploading(false);
+            setUploadProgress(null);
+            if (xhr.status === 200) {
+              const res = JSON.parse(xhr.responseText);
+              if (res.success && res.data && res.data.url) {
+                // Send file message to chat
+                onSendMessage({
+                  attachmentUrl: res.data.url,
+                  attachmentType: file.type,
+                  attachmentName: file.name,
+                  attachmentSize: file.size
+                });
+              } else {
+                setError(res.message || 'File upload failed');
+              }
+            } else {
+              let errMsg = 'File upload failed';
+              try {
+                const res = JSON.parse(xhr.responseText);
+                errMsg = res.message || errMsg;
+              } catch {}
+              setError(errMsg);
+            }
+          }
+        };
+        xhr.onerror = () => {
+          setFileUploading(false);
+          setUploadProgress(null);
+          setError('File upload failed');
+        };
+        xhr.send(formData);
+      }
+    } catch (err) {
+      setFileUploading(false);
+      setUploadProgress(null);
+      setError('File upload failed');
+    }
+  };
   // Focus textarea on mount
   useEffect(() => {
     if (textareaRef.current) {
@@ -121,7 +333,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     };
   }, []);
 
-  const canSend = message.trim().length > 0 && !disabled && !isSending;
+  const canSend = message.trim().length > 0 && !disabled && !isSending && !fileUploading;
   const remainingChars = maxLength ? maxLength - message.length : null;
 
   return (
@@ -146,8 +358,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
           </div>
         </div>
       )}
-      
-      <div className="flex items-end gap-3 bg-white border border-gray-300 rounded-full px-3 py-1 transition-colors focus-within:border-blue-500 focus-within:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]">
+
+      {/* Upload progress bar */}
+      {fileUploading && uploadProgress !== null && (
+        <div className="mb-2 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="bg-blue-500 h-2 transition-all" style={{ width: `${uploadProgress}%` }}></div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-3 bg-white border border-gray-300 rounded-full px-3 py-1 transition-colors focus-within:border-blue-500 focus-within:shadow-[0_0_0_2px_rgba(59,130,246,0.1)]">
         <div className="flex-1 relative flex flex-col">
           <textarea
             ref={textareaRef}
@@ -156,20 +375,55 @@ const MessageInput: React.FC<MessageInputProps> = ({
             onKeyPress={handleKeyPress}
             onPaste={handlePaste}
             placeholder={placeholder}
-            disabled={disabled}
+            disabled={disabled || fileUploading}
             className="w-full border-none outline-none bg-transparent text-[13px] leading-tight resize-none min-h-[18px] max-h-[100px] font-inherit text-gray-900 placeholder:text-gray-400 disabled:text-gray-500 disabled:cursor-not-allowed"
             rows={1}
             maxLength={maxLength}
           />
-          
+
           {remainingChars !== null && remainingChars < 100 && (
             <div className="absolute -bottom-5 right-0 text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200">
               {remainingChars}
             </div>
           )}
         </div>
-        
-        <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+
+        {/* File upload button with larger clip icon and tooltip */}
+        <div className="flex items-center gap-2 flex-shrink-0 ml-1">
+          <button
+            type="button"
+            className="flex items-center justify-center w-10 h-10 bg-gray-100 text-blue-600 border-none rounded-full cursor-pointer shadow hover:bg-blue-100 active:scale-95 focus:outline-2 focus:outline-blue-500 focus:outline-offset-2"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || fileUploading}
+            aria-label="Attach file"
+            title="Attach file"
+          >
+            {/* Paperclip SVG icon */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16.5 13.5L8.914 21.086a5 5 0 01-7.072-7.072l10-10a5 5 0 017.072 7.072L10.5 19.5"
+              />
+            </svg>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            style={{ display: 'none' }}
+            accept={ALLOWED_FILE_TYPES.join(',')}
+            onChange={handleFileChange}
+            disabled={disabled || fileUploading}
+          />
+
           <button
             onClick={handleSend}
             disabled={!canSend}
@@ -192,7 +446,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           </button>
         </div>
       </div>
-      
+
       {disabled && (
         <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-3xl flex items-center justify-center">
           <span className="text-xs text-gray-500 font-medium">

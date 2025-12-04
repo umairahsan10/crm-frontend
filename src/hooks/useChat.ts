@@ -121,20 +121,28 @@ export const useChat = (_currentUser: ChatUser) => {
     }
   }, [currentChatId]);
 
-  // Send a message
-  const sendMessage = useCallback(async (message: string): Promise<void> => {
-    if (!currentChatId || !message.trim()) {
-      return;
+  // Send a message (supports attachment metadata and flexible payload)
+  const sendMessage = useCallback((
+    message: string | { attachmentUrl?: string; attachmentType?: string; attachmentName?: string; attachmentSize?: number }
+  ) => {
+    if (!currentChatId) return;
+
+    let payload: any = { chatId: currentChatId };
+
+    if (typeof message === 'string') {
+      if (!message.trim()) return;
+      payload.content = message;
+    } else {
+      // message is attachment metadata object
+      payload = { ...payload, ...message, content: '' };
     }
-    
+
     try {
-      await sendMessageMutation.mutateAsync({ 
-        chatId: currentChatId, 
-        content: message 
-      });
+      console.debug('[useChat] Sending chat message payload:', payload);
+      sendMessageMutation.mutate(payload);
+      console.debug('[useChat] Chat message API call completed');
     } catch (err) {
       console.error('Failed to send message:', err);
-      throw err; // Re-throw to handle in MessageInput
     }
   }, [currentChatId, sendMessageMutation]);
 
