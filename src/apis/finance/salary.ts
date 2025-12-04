@@ -545,3 +545,58 @@ export const getMockSalesBonusData = (): SalesEmployeeBonus[] => [
   }
 ];
 */
+
+// Commission Management API Functions
+export interface CommissionEmployee {
+  id: number;
+  name: string;
+  commissionAmount: string | number;
+  withholdCommission: string | number;
+  withholdFlag: boolean;
+}
+
+export interface CommissionDetailsResponse {
+  commissionEmployees: CommissionEmployee[];
+  summary: {
+    totalCommissionAmount: number;
+    totalWithheldAmount: number;
+    totalEmployees: number;
+  };
+}
+
+// Get commission details for all employees
+export const getCommissionDetails = async (): Promise<CommissionDetailsResponse> => {
+  const response = await apiGetJson<CommissionEmployee[]>('/salary/commission/details');
+  
+  // Transform the response to match our interface
+  const commissionEmployees = response || [];
+  
+  // Calculate summary from the data
+  const summary = {
+    totalCommissionAmount: commissionEmployees.reduce((sum, emp) => 
+      sum + (typeof emp.commissionAmount === 'string' ? parseFloat(emp.commissionAmount) : emp.commissionAmount), 0),
+    totalWithheldAmount: commissionEmployees.reduce((sum, emp) => 
+      sum + (typeof emp.withholdCommission === 'string' ? parseFloat(emp.withholdCommission) : emp.withholdCommission), 0),
+    totalEmployees: commissionEmployees.length
+  };
+  
+  return {
+    commissionEmployees,
+    summary
+  };
+};
+
+// Assign commission
+export const assignCommission = async (payload: { project_id: number }) => {
+  return apiPostJson('/salary/commission/assign', payload);
+};
+
+// Update withhold flag
+export const updateWithholdFlag = async (payload: { employee_id: number; flag: boolean }) => {
+  return apiPostJson('/salary/commission/withhold-flag', payload);
+};
+
+// Transfer commission
+export const transferCommission = async (payload: { employee_id: number; amount: number; direction: 'release' | 'withhold' }) => {
+  return apiPostJson('/salary/commission/transfer', payload);
+};

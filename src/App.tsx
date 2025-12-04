@@ -48,6 +48,7 @@ import RevenuePage from './pages/Finance/RevenuePage';
 import SalaryManagementPage from './pages/Finance/Salary/SalaryManagementPage';
 import SalaryCalculatorPage from './pages/Finance/Salary/SalaryCalculatorPage';
 import BonusManagementPage from './pages/Finance/Salary/BonusManagementPage';
+import CommissionManagementPage from './pages/Finance/Salary/CommissionManagementPage';
 import ProductionUnitsManagementPage from './pages/Production/ProductionUnitsManagementPage';
 import ProductionTeamsManagementPage from './pages/Production/ProductionTeamsManagementPage';
 import SalesTeamsManagementPage from './pages/Sales/SalesTeamsManagementPage';
@@ -279,6 +280,10 @@ function AppLayout() {
         <Route 
           path="/finance/salary/bonus" 
           element={canAccessPage('finance') ? <BonusManagementPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/finance/salary/commission" 
+          element={canAccessPage('finance') ? <CommissionManagementPage /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/production/units" 
