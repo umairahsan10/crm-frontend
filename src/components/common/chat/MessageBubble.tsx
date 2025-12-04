@@ -72,6 +72,33 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             {/* Message bubble */}
             <div className="relative px-3 py-1.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm bg-white text-gray-900 rounded-bl-md border border-gray-100">
               <div className="whitespace-pre-wrap break-words">
+                {/* Show attachment if present */}
+                {message.attachmentUrl ? (
+                  <div className="mb-2">
+                    {message.attachmentType === 'image' ? (
+                      <img
+                        src={message.attachmentUrl}
+                        alt={message.attachmentName || 'Attachment'}
+                        className="max-w-xs max-h-48 rounded shadow border mb-1"
+                      />
+                    ) : (
+                      <a
+                        href={message.attachmentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-2 py-1 bg-gray-100 rounded border text-blue-700 hover:bg-blue-50 hover:underline"
+                        download={message.attachmentName}
+                      >
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                          <path d="M12 16V4M12 16l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <rect x="4" y="18" width="16" height="2" rx="1" fill="currentColor" />
+                        </svg>
+                        {message.attachmentName || 'Download file'}
+                        <span className="text-xs text-gray-500 ml-2">{message.attachmentSize ? `${(message.attachmentSize/1024).toFixed(1)} KB` : ''}</span>
+                      </a>
+                    )}
+                  </div>
+                ) : null}
                 {message.message}
               </div>
               
@@ -97,13 +124,38 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 {senderName}
               </div>
             )}
-            
             {/* Message bubble */}
             <div className="relative px-3 py-1.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm bg-blue-500 text-white rounded-br-md">
               <div className="whitespace-pre-wrap break-words">
+                {/* Show attachment if present */}
+                {message.attachmentUrl ? (
+                  <div className="mb-2">
+                    {message.attachmentType === 'image' ? (
+                      <img
+                        src={message.attachmentUrl}
+                        alt={message.attachmentName || 'Attachment'}
+                        className="max-w-xs max-h-48 rounded shadow border mb-1"
+                      />
+                    ) : (
+                      <a
+                        href={message.attachmentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-2 py-1 bg-blue-600 rounded border text-white hover:bg-blue-700 hover:underline"
+                        download={message.attachmentName}
+                      >
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                          <path d="M12 16V4M12 16l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <rect x="4" y="18" width="16" height="2" rx="1" fill="currentColor" />
+                        </svg>
+                        {message.attachmentName || 'Download file'}
+                        <span className="text-xs text-blue-100 ml-2">{message.attachmentSize ? `${(message.attachmentSize/1024).toFixed(1)} KB` : ''}</span>
+                      </a>
+                    )}
+                  </div>
+                ) : null}
                 {message.message}
               </div>
-              
               {/* Timestamp */}
               {showTimestamp && (
                 <div className="text-[9px] mt-0.5 flex items-center gap-1 text-blue-50 justify-end">
@@ -116,7 +168,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               )}
             </div>
           </div>
-          
           {/* Avatar on RIGHT side */}
           {showAvatar && !isConsecutive && (
             <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500 overflow-hidden shadow-sm">
@@ -133,7 +184,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               )}
             </div>
           )}
-          
           {/* Spacer when avatar is not shown */}
           {(!showAvatar || isConsecutive) && (
             <div className="w-8 flex-shrink-0"></div>

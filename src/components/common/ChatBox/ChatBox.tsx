@@ -494,7 +494,21 @@ const ChatBox: React.FC<ChatBoxProps> = ({
               disabled={props.disabled}
               aria-label="Upload file"
             >
-              📎
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16.5 13.5L8.914 21.086a5 5 0 01-7.072-7.072l10-10a5 5 0 017.072 7.072L10.5 19.5"
+                />
+              </svg>
             </button>
           )}
           
