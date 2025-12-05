@@ -547,12 +547,21 @@ export const getMockSalesBonusData = (): SalesEmployeeBonus[] => [
 */
 
 // Commission Management API Functions
+
+// Project interface for commission assignment
+export interface CommissionProject {
+  id: number;
+  description: string;
+}
+
 export interface CommissionEmployee {
   id: number;
   name: string;
+  role: string;
   commissionAmount: string | number;
   withholdCommission: string | number;
   withholdFlag: boolean;
+  isWithheld: boolean; // Added this property
 }
 
 export interface CommissionDetailsResponse {
@@ -584,6 +593,11 @@ export const getCommissionDetails = async (): Promise<CommissionDetailsResponse>
     commissionEmployees,
     summary
   };
+};
+
+// Get projects for commission assignment
+export const getCommissionProjects = async (): Promise<CommissionProject[]> => {
+  return apiGetJson<CommissionProject[]>('/salary/commission/projects');
 };
 
 // Assign commission

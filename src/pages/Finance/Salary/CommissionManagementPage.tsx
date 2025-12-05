@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import DynamicTable from '../../../components/common/DynamicTable/DynamicTable';
 import { 
   getCommissionDetails,
+  getCommissionProjects,
   assignCommission,
   updateWithholdFlag,
   transferCommission,
   formatCurrency,
-  type CommissionEmployee,
-  type CommissionDetailsResponse
+  type CommissionEmployee
 } from '../../../apis/finance/salary';
 import './BonusManagementPage.css'; // Using same styles as bonus management
 
@@ -16,12 +17,9 @@ const CommissionManagementPage: React.FC = () => {
   const navigate = useNavigate();
   
   // State management
-  const [commissionEmployees, setCommissionEmployees] = useState<CommissionEmployee[]>([]);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({});
   const [showStatistics, setShowStatistics] = useState(false);
-  const [activeTab, setActiveTab] = useState<'assign' | 'transfer'>('assign');
   
   // Detail drawer state
   const [showDetailDrawer, setShowDetailDrawer] = useState(false);
@@ -32,6 +30,30 @@ const CommissionManagementPage: React.FC = () => {
   const [transferForm, setTransferForm] = useState({ 
     amount: '', 
     direction: 'release' as 'release' | 'withhold' 
+  });
+
+  // Fetch commission details using useQuery
+  const { data: commissionData, isLoading, refetch: refetchCommissionDetails } = useQuery({
+    queryKey: ['commission-details'],
+    queryFn: getCommissionDetails,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    retry: 2
+  });
+
+  const commissionEmployees = commissionData?.commissionEmployees || [];
+
+  // Fetch projects using useQuery
+  const { data: projects = [] } = useQuery({
+    queryKey: ['commission-projects'],
+    queryFn: getCommissionProjects,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
   // Calculate commission statistics
@@ -66,36 +88,22 @@ const CommissionManagementPage: React.FC = () => {
   };
 
   // Fetch commission employees data
-  const fetchCommissionDetails = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      
-      const response: CommissionDetailsResponse = await getCommissionDetails();
-      
-      setCommissionEmployees(response.commissionEmployees || []);
-      
-    } catch (error) {
-      console.error('Error fetching commission details:', error);
-      setNotification({ 
-        type: 'error', 
-        message: 'Failed to load commission details. Please try again.' 
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Initialize data on component mount
+  // Update selectedEmployee when commissionEmployees changes
   useEffect(() => {
-    fetchCommissionDetails();
-  }, [fetchCommissionDetails]);
+    if (selectedEmployee) {
+      const updatedEmployee = commissionEmployees.find(emp => emp.id === selectedEmployee.id);
+      if (updatedEmployee) {
+        setSelectedEmployee(updatedEmployee);
+      }
+    }
+  }, [commissionEmployees]);
 
   // Handle assign commission
   const handleAssignCommission = async () => {
     if (!assignForm.project_id) {
       setNotification({ 
         type: 'error', 
-        message: 'Please enter a project ID' 
+        message: 'Please select a project' 
       });
       return;
     }
@@ -107,7 +115,7 @@ const CommissionManagementPage: React.FC = () => {
         message: 'Commission assigned successfully!' 
       });
       setAssignForm({ project_id: '' });
-      fetchCommissionDetails(); // Refresh data
+      refetchCommissionDetails(); // Refresh data
     } catch (error) {
       setNotification({ 
         type: 'error', 
@@ -137,7 +145,7 @@ const CommissionManagementPage: React.FC = () => {
         message: `Commission ${transferForm.direction === 'release' ? 'released' : 'withheld'} successfully!` 
       });
       setTransferForm({ amount: '', direction: 'release' });
-      fetchCommissionDetails(); // Refresh data
+      refetchCommissionDetails(); // Refresh data
     } catch (error) {
       setNotification({ 
         type: 'error', 
@@ -170,7 +178,7 @@ const CommissionManagementPage: React.FC = () => {
         type: 'success', 
         message: `Withhold flag ${flag ? 'enabled' : 'disabled'} successfully!` 
       });
-      fetchCommissionDetails(); // Refresh data
+      refetchCommissionDetails(); // Refresh data
     } catch (error) {
       setNotification({ 
         type: 'error', 
@@ -181,31 +189,8 @@ const CommissionManagementPage: React.FC = () => {
     }
   };
 
-  // Toggle withhold flag
-  const toggleWithholdFlag = async (employeeId: number, flag: boolean) => {
-    try {
-      setIsLoading(true);
-      await updateWithholdFlag({ employee_id: employeeId, flag });
-      fetchCommissionDetails(); // Refresh the table data
-      setNotification({ type: 'success', message: `Withhold flag set to ${flag ? 'true' : 'false'} for employee #${employeeId}` });
-    } catch (error) {
-      setNotification({ type: 'error', message: 'Failed to update withhold flag. Please try again.' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Define table columns
   const getTableColumns = () => [
-    {
-      key: 'id',
-      label: 'Employee ID',
-      type: 'custom' as const,
-      width: '120px',
-      render: (value: number) => (
-        <span className="font-medium text-gray-900">#{value}</span>
-      )
-    },
     {
       key: 'name',
       label: 'Employee Name',
@@ -214,7 +199,7 @@ const CommissionManagementPage: React.FC = () => {
       render: (value: string, record: CommissionEmployee) => (
         <div>
           <div className="font-medium text-gray-900">{value}</div>
-          <div className="text-sm text-gray-500">ID: {record.id}</div>
+          <div className="text-sm text-gray-500">{record.role}</div>
         </div>
       )
     },
@@ -273,7 +258,10 @@ const CommissionManagementPage: React.FC = () => {
       render: (value: boolean, record: CommissionEmployee) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => handleUpdateWithholdFlag(record.id, !value)}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevents the row click event from triggering
+              handleUpdateWithholdFlag(record.id, !value);
+            }}
             disabled={isUpdating[record.id]}
             className={`inline-flex items-center justify-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white ${
               value
@@ -299,7 +287,15 @@ const CommissionManagementPage: React.FC = () => {
     }
   }, [notification]);
 
-  const statistics = getCommissionStatistics();
+  // Update selected employee when commissionEmployees changes
+  useEffect(() => {
+    if (selectedEmployee) {
+      const updatedEmployee = commissionEmployees.find(emp => emp.id === selectedEmployee.id);
+      if (updatedEmployee) {
+        setSelectedEmployee(updatedEmployee);
+      }
+    }
+  }, [commissionEmployees]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -479,7 +475,7 @@ const CommissionManagementPage: React.FC = () => {
                 Commission Details ({commissionEmployees.length} employees)
               </h3>
               <button
-                onClick={fetchCommissionDetails}
+                onClick={() => refetchCommissionDetails()}
                 disabled={isLoading}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
@@ -503,46 +499,59 @@ const CommissionManagementPage: React.FC = () => {
             onRowClick={handleRowClick}
             emptyMessage="No commission data available"
             className="commission-management-table"
-            renderRowActions={(employee) => (
-              <button
-                onClick={() => toggleWithholdFlag(employee.id, !employee.withholdFlag)}
-                className={`px-3 py-2 text-sm font-medium rounded-md shadow-sm text-white ${
-                  employee.withholdFlag ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200`}
-              >
-                {employee.withholdFlag ? 'Unwithhold' : 'Withhold'}
-              </button>
-            )}
           />
         </div>
 
         {/* Assign Commission Section */}
-        <div className="bg-gray-50 rounded-lg p-6 mt-8">
-          <h4 className="text-base font-medium text-gray-900 mb-4 flex items-center space-x-2">
-            <svg className="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
+        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg p-6 mt-8 border border-indigo-200 shadow-md">
+          <h4 className="text-lg font-semibold text-indigo-900 mb-6 flex items-center space-x-3">
+            <div className="p-2 bg-indigo-500 rounded-lg">
+              <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
             <span>Assign Commission to Project</span>
           </h4>
           <div className="space-y-4">
             <div>
-              <label htmlFor="project_id" className="block text-sm font-medium text-gray-700 mb-2">
-                Project ID *
+              <label htmlFor="project_id" className="block text-sm font-semibold text-indigo-900 mb-3">
+                Select Project <span className="text-red-500">*</span>
               </label>
-              <input
-                type="number"
+              <select
                 id="project_id"
                 value={assignForm.project_id}
                 onChange={(e) => setAssignForm({...assignForm, project_id: e.target.value})}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Enter project ID"
-              />
+                className="block w-full px-4 py-3 border-2 border-indigo-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base bg-white text-gray-900 transition-all duration-200 hover:border-indigo-400 appearance-none cursor-pointer font-medium"
+                style={{
+                  backgroundColor: '#ffffff !important',
+                  color: '#111827 !important',
+                  borderColor: '#a5b4fc !important',
+                  borderWidth: '2px !important',
+                  borderRadius: '0.5rem !important',
+                  padding: '0.75rem 1rem !important',
+                  fontSize: '1rem !important',
+                  fontWeight: '500 !important',
+                  appearance: 'none' as any,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236366f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em',
+                  paddingRight: '2.5rem !important'
+                }}
+              >
+                <option value="">-- Select a project --</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.description}
+                  </option>
+                ))}
+              </select>
             </div>
             <button
               onClick={handleAssignCommission}
-              className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+              className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-semibold rounded-lg shadow-md text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105 active:scale-95"
             >
-              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               Assign Commission
@@ -562,10 +571,10 @@ const CommissionManagementPage: React.FC = () => {
           <div 
             className="relative mx-auto h-full bg-white shadow-2xl rounded-lg border border-gray-200 transform transition-all duration-300 ease-out"
             style={{
-              marginLeft: '100px',
-              width: 'calc(100vw - 150px)',
-              maxWidth: '1200px',
-              marginRight: '50px',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              width: '50%', // Reduced the width to 80% of the viewport
+              maxWidth: '900px', // Set a maximum width of 900px
               marginTop: '20px',
               marginBottom: '20px',
               height: 'calc(100vh - 40px)'
@@ -606,7 +615,9 @@ const CommissionManagementPage: React.FC = () => {
                 <div className="px-6 py-6">
                   {/* Employee Commission Summary */}
                   <div className="mb-8">
-                    <h4 className="text-base font-medium text-gray-900 mb-4">Commission Summary</h4>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-base font-medium text-gray-900">Commission Summary</h4>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-4">
                         <div className="flex items-center justify-between mb-2">
@@ -657,10 +668,7 @@ const CommissionManagementPage: React.FC = () => {
 
                   {/* Tab Content */}
                   <div className="space-y-6">
-                    
-
-                    {activeTab === 'transfer' && (
-                      <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="bg-gray-50 rounded-lg p-6">
                         <h4 className="text-base font-medium text-gray-900 mb-4 flex items-center space-x-2">
                           <svg className="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -707,7 +715,6 @@ const CommissionManagementPage: React.FC = () => {
                           </button>
                         </div>
                       </div>
-                    )}
                   </div>
                 </div>
               </div>
