@@ -48,6 +48,7 @@ export const getPageTitle = (pathname: string): string => {
     '/finance/salary': 'Salary Management',
     '/finance/salary/calculator': 'Salary Calculator',
     '/finance/salary/bonus': 'Bonus Management',
+    '/finance/salary/commission': 'Commission Management',
     
     // Department routes
     '/production/units': 'Production Units Management',
