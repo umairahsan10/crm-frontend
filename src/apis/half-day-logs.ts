@@ -147,7 +147,7 @@ export const getHalfDayLogsApi = async (query: GetHalfDayLogsDto = {}): Promise<
     if (query.end_date) params.append('end_date', query.end_date);
     
     const queryString = params.toString();
-    const url = `${getApiBaseUrl()}/hr/attendance/half-day-logs${queryString ? `?${queryString}` : ''}`;
+    const url = `${getApiBaseUrl()}/hr/logs/half-day-logs${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiGetJson<HalfDayLog[]>(url);
     console.log('Half day logs API response:', response);
@@ -164,7 +164,7 @@ export const getHalfDayLogsApi = async (query: GetHalfDayLogsDto = {}): Promise<
 
 export const getHalfDayLogsByEmployeeApi = async (empId: number): Promise<HalfDayLog[]> => {
   try {
-    const url = `${getApiBaseUrl()}/hr/attendance/half-day-logs/employee/${empId}`;
+    const url = `${getApiBaseUrl()}/hr/logs/half-day-logs/employee/${empId}`;
     const response = await apiGetJson<HalfDayLog[]>(url);
     console.log('Half day logs by employee API response:', response);
     
@@ -190,7 +190,7 @@ export const getHalfDayLogsStatsApi = async (query: HalfDayLogsStatsDto = {}): P
     if (query.include_breakdown) params.append('include_breakdown', 'true');
     
     const queryString = params.toString();
-    const url = `${getApiBaseUrl()}/hr/attendance/half-day-logs/stats${queryString ? `?${queryString}` : ''}`;
+    const url = `${getApiBaseUrl()}/hr/logs/half-day-logs/stats${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiGetJson<HalfDayLogsStatsResponseDto>(url);
     console.log('Half day logs statistics API response:', response);
@@ -220,7 +220,7 @@ export const exportHalfDayLogsApi = async (query: ExportHalfDayLogsDto): Promise
     if (query.include_reviewer_details) params.append('include_reviewer_details', 'true');
     
     const queryString = params.toString();
-    const url = `/hr/attendance/half-day-logs/export${queryString ? `?${queryString}` : ''}`;
+    const url = `/hr/logs/half-day-logs/export${queryString ? `?${queryString}` : ''}`;
     
     // Use apiRequest for proper authentication (handles cookies)
     const response = await apiRequest(url, {
@@ -249,7 +249,7 @@ export const exportHalfDayLogsApi = async (query: ExportHalfDayLogsDto): Promise
 
 export const submitHalfDayReasonApi = async (data: SubmitHalfDayReasonDto): Promise<HalfDayLogResponseDto> => {
   try {
-    const url = `${getApiBaseUrl()}/hr/attendance/half-day-logs/submit-reason`;
+    const url = `${getApiBaseUrl()}/hr/logs/half-day-logs/submit-reason`;
     
     const response = await apiRequest(url, {
       method: 'POST',

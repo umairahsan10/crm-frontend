@@ -125,7 +125,7 @@ export interface CreateLeaveRequestDto {
 export const createLeaveRequestApi = async (leaveData: CreateLeaveRequestDto): Promise<LeaveLog> => {
   console.log('API: Creating leave request', leaveData);
   
-  const response = await apiRequest('/hr/attendance/leave-logs', {
+  const response = await apiRequest('/hr/logs/leave-logs', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ export const approveRejectLeaveRequestApi = async (
 ): Promise<LeaveLog> => {
   console.log('API: Taking action on leave request', { leaveLogId, actionData });
   
-  const response = await apiRequest(`/hr/attendance/leave-logs/${leaveLogId}/action`, {
+  const response = await apiRequest(`/hr/logs/leave-logs/${leaveLogId}/action`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ export const approveRejectLeaveRequestApi = async (
 // Get pending leave requests for HR review
 export const getPendingLeaveRequestsApi = async (): Promise<LeaveLog[]> => {
   try {
-    const url = `${getApiBaseUrl()}/hr/attendance/leave-logs?status=Pending`;
+    const url = `${getApiBaseUrl()}/hr/logs/leave-logs?status=Pending`;
     console.log('Fetching pending leave requests from:', url);
     
     const response = await apiGetJson<LeaveLog[]>(url);
@@ -216,7 +216,7 @@ export const getLeaveLogsApi = async (query: GetLeaveLogsDto = {}): Promise<Leav
     if (query.end_date) params.append('end_date', query.end_date);
     
     const queryString = params.toString();
-    const url = `${getApiBaseUrl()}/hr/attendance/leave-logs${queryString ? `?${queryString}` : ''}`;
+    const url = `${getApiBaseUrl()}/hr/logs/leave-logs${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiGetJson<LeaveLog[]>(url);
     console.log('Leave logs API response:', response);
@@ -233,7 +233,7 @@ export const getLeaveLogsApi = async (query: GetLeaveLogsDto = {}): Promise<Leav
 
 export const getLeaveLogsByEmployeeApi = async (empId: number): Promise<LeaveLog[]> => {
   try {
-    const url = `${getApiBaseUrl()}/hr/attendance/leave-logs/employee/${empId}`;
+    const url = `${getApiBaseUrl()}/hr/logs/leave-logs/employee/${empId}`;
     const response = await apiGetJson<LeaveLog[]>(url);
     console.log('Leave logs by employee API response:', response);
     
@@ -259,7 +259,7 @@ export const getLeaveLogsStatsApi = async (query: LeaveLogsStatsDto = {}): Promi
     if (query.include_breakdown) params.append('include_breakdown', 'true');
     
     const queryString = params.toString();
-    const url = `${getApiBaseUrl()}/hr/attendance/leave-logs/stats${queryString ? `?${queryString}` : ''}`;
+    const url = `${getApiBaseUrl()}/hr/logs/leave-logs/stats${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiGetJson<LeaveLogsStatsResponseDto>(url);
     console.log('Statistics API response:', response);
@@ -289,7 +289,7 @@ export const exportLeaveLogsApi = async (query: ExportLeaveLogsDto): Promise<Blo
     if (query.include_confirmation_reason) params.append('include_confirmation_reason', 'true');
     
     const queryString = params.toString();
-    const url = `/hr/attendance/leave-logs/export${queryString ? `?${queryString}` : ''}`;
+    const url = `/hr/logs/leave-logs/export${queryString ? `?${queryString}` : ''}`;
     
     // Use apiRequest for proper authentication (handles cookies)
     const response = await apiRequest(url, {
