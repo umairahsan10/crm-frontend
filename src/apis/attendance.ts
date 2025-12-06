@@ -271,7 +271,7 @@ export const getLateLogs = async (query: any): Promise<any[]> => {
     if (query.action_taken) queryParams.append('action_taken', query.action_taken);
     if (query.justified !== undefined) queryParams.append('justified', query.justified.toString());
     
-    const url = `/hr/attendance/late-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/hr/logs/late-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     return await apiGetJson<any[]>(url);
   } catch (error: any) {
     console.error('Get late logs error:', error);
@@ -281,7 +281,7 @@ export const getLateLogs = async (query: any): Promise<any[]> => {
 
 export const updateLateLogAction = async (logId: number, data: any): Promise<any> => {
   try {
-    return await apiPutJson<any>(`/hr/attendance/late-logs/${logId}/action`, data);
+    return await apiPutJson<any>(`/hr/logs/late-logs/${logId}/action`, data);
   } catch (error: any) {
     console.error('Update late log action error:', error);
     throw new Error('Failed to update late log');
@@ -295,7 +295,7 @@ export const getLateLogsStats = async (query: any): Promise<any> => {
     if (query.start_date) queryParams.append('start_date', query.start_date);
     if (query.end_date) queryParams.append('end_date', query.end_date);
     
-    const url = `/hr/attendance/late-logs/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/hr/logs/late-logs/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     return await apiGetJson<any>(url);
   } catch (error: any) {
     console.error('Get late logs stats error:', error);
@@ -313,7 +313,7 @@ export const getHalfDayLogs = async (query: any): Promise<any[]> => {
     if (query.action_taken) queryParams.append('action_taken', query.action_taken);
     if (query.justified !== undefined) queryParams.append('justified', query.justified.toString());
     
-    const url = `/hr/attendance/half-day-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/hr/logs/half-day-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     return await apiGetJson<any[]>(url);
   } catch (error: any) {
     console.error('Get half-day logs error:', error);
@@ -323,7 +323,7 @@ export const getHalfDayLogs = async (query: any): Promise<any[]> => {
 
 export const updateHalfDayLogAction = async (logId: number, data: any): Promise<any> => {
   try {
-    return await apiPutJson<any>(`/hr/attendance/half-day-logs/${logId}/action`, data);
+    return await apiPutJson<any>(`/hr/logs/half-day-logs/${logId}/action`, data);
   } catch (error: any) {
     console.error('Update half-day log action error:', error);
     throw new Error('Failed to update half-day log');
@@ -337,7 +337,7 @@ export const getHalfDayLogsStats = async (query: any): Promise<any> => {
     if (query.start_date) queryParams.append('start_date', query.start_date);
     if (query.end_date) queryParams.append('end_date', query.end_date);
     
-    const url = `/hr/attendance/half-day-logs/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/hr/logs/half-day-logs/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     return await apiGetJson<any>(url);
   } catch (error: any) {
     console.error('Get half-day logs stats error:', error);
@@ -355,7 +355,7 @@ export const getLeaveLogs = async (query: any): Promise<any[]> => {
     if (query.status) queryParams.append('status', query.status);
     if (query.leave_type) queryParams.append('leave_type', query.leave_type);
     
-    const url = `/hr/attendance/leave-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/hr/logs/leave-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     return await apiGetJson<any[]>(url);
   } catch (error: any) {
     console.error('Get leave logs error:', error);
@@ -365,7 +365,7 @@ export const getLeaveLogs = async (query: any): Promise<any[]> => {
 
 export const updateLeaveLogAction = async (logId: number, data: any): Promise<any> => {
   try {
-    return await apiPutJson<any>(`/hr/attendance/leave-logs/${logId}/action`, data);
+    return await apiPutJson<any>(`/hr/logs/leave-logs/${logId}/action`, data);
   } catch (error: any) {
     console.error('Update leave log action error:', error);
     throw new Error('Failed to update leave log');
@@ -379,7 +379,7 @@ export const getLeaveLogsStats = async (query: any): Promise<any> => {
     if (query.start_date) queryParams.append('start_date', query.start_date);
     if (query.end_date) queryParams.append('end_date', query.end_date);
     
-    const url = `/hr/attendance/leave-logs/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/hr/logs/leave-logs/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     return await apiGetJson<any>(url);
   } catch (error: any) {
     console.error('Get leave logs stats error:', error);

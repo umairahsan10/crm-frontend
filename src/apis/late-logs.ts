@@ -120,7 +120,7 @@ export const getLateLogsApi = async (query: GetLateLogsDto = {}): Promise<LateLo
     if (query.end_date) params.append('end_date', query.end_date);
     
     const queryString = params.toString();
-    const url = `${getApiBaseUrl()}/hr/attendance/late-logs${queryString ? `?${queryString}` : ''}`;
+    const url = `${getApiBaseUrl()}/hr/logs/late-logs${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiGetJson<LateLog[]>(url);
     console.log('Late logs API response:', response);
@@ -137,7 +137,7 @@ export const getLateLogsApi = async (query: GetLateLogsDto = {}): Promise<LateLo
 
 export const getLateLogsByEmployeeApi = async (empId: number): Promise<LateLog[]> => {
   try {
-    const url = `${getApiBaseUrl()}/hr/attendance/late-logs/employee/${empId}`;
+    const url = `${getApiBaseUrl()}/hr/logs/late-logs/employee/${empId}`;
     const response = await apiGetJson<LateLog[]>(url);
     console.log('Late logs by employee API response:', response);
     
@@ -163,7 +163,7 @@ export const getLateLogsStatsApi = async (query: LateLogsStatsDto = {}): Promise
     if (query.include_breakdown) params.append('include_breakdown', 'true');
     
     const queryString = params.toString();
-    const url = `${getApiBaseUrl()}/hr/attendance/late-logs/stats${queryString ? `?${queryString}` : ''}`;
+    const url = `${getApiBaseUrl()}/hr/logs/late-logs/stats${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiGetJson<LateLogsStatsResponseDto>(url);
     console.log('Late logs statistics API response:', response);
@@ -193,7 +193,7 @@ export const exportLateLogsApi = async (query: ExportLateLogsDto): Promise<Blob>
     if (query.include_reviewer_details) params.append('include_reviewer_details', 'true');
     
     const queryString = params.toString();
-    const url = `/hr/attendance/late-logs/export${queryString ? `?${queryString}` : ''}`;
+    const url = `/hr/logs/late-logs/export${queryString ? `?${queryString}` : ''}`;
     
     // Use apiRequest for proper authentication (handles cookies)
     const response = await apiRequest(url, {
