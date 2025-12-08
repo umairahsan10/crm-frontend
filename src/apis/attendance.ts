@@ -1,4 +1,4 @@
-import { apiPostJson, apiGetJson, apiPutJson, ApiError } from '../utils/apiClient';
+import { apiPostJson, apiGetJson, apiPutJson, apiRequest, ApiError } from '../utils/apiClient';
 
 // Types for attendance
 export interface CheckinDto {
@@ -262,6 +262,48 @@ export const getAttendanceListApi = async (): Promise<AttendanceListResponseDto[
 };
 
 // Late Logs APIs
+// Get late logs for a specific employee
+export const getLateLogsByEmployee = async (empId: number): Promise<any[]> => {
+  try {
+    const url = `/all-logs/late-logs/employee/${empId}`;
+    return await apiGetJson<any[]>(url);
+  } catch (error: any) {
+    console.error('Get late logs by employee error:', error);
+    throw new Error('Failed to fetch late logs for employee');
+  }
+};
+
+// Export late logs
+export const exportLateLogs = async (query: any, format: 'csv' | 'json' = 'csv'): Promise<Blob> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('format', format);
+    if (query.employee_id) queryParams.append('employee_id', query.employee_id.toString());
+    if (query.start_date) queryParams.append('start_date', query.start_date);
+    if (query.end_date) queryParams.append('end_date', query.end_date);
+    const url = `/all-logs/late-logs/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await apiRequest(url, {
+      method: 'GET',
+      headers: {
+        'Accept': format === 'csv' ? 'text/csv' : 'application/json',
+      },
+    });
+    return await response.blob();
+  } catch (error: any) {
+    console.error('Export late logs error:', error);
+    throw new Error('Failed to export late logs');
+  }
+};
+
+// Submit late log reason (PUT)
+export const submitLateLogReason = async (data: any): Promise<any> => {
+  try {
+    return await apiPutJson<any>('/all-logs/late-logs', data);
+  } catch (error: any) {
+    console.error('Submit late log reason error:', error);
+    throw new Error('Failed to submit late log reason');
+  }
+};
 export const getLateLogs = async (query: any): Promise<any[]> => {
   try {
     const queryParams = new URLSearchParams();

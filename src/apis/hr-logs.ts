@@ -66,6 +66,42 @@ export interface HrLogsStatsResponseDto {
 }
 
 // Get HR logs
+// Get project logs for a specific employee
+export const getProjectLogsByEmployee = async (empId: number): Promise<HrLogsListResponseDto> => {
+  try {
+    const url = `/all-logs/project-logs/employee/${empId}`;
+    return await apiGetJson<HrLogsListResponseDto>(url);
+  } catch (error: any) {
+    console.error('Get project logs by employee error:', error);
+    throw new Error('Failed to fetch project logs for employee');
+  }
+};
+
+// Export project logs
+export const exportProjectLogsApi = async (query: GetHrLogsDto, format: 'csv' | 'json' = 'csv'): Promise<Blob> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('format', format);
+    if (query.hr_id) queryParams.append('hr_id', query.hr_id.toString());
+    if (query.action_type) queryParams.append('action_type', query.action_type);
+    if (query.affected_employee_id) queryParams.append('affected_employee_id', query.affected_employee_id.toString());
+    if (query.created_start) queryParams.append('created_start', query.created_start);
+    if (query.created_end) queryParams.append('created_end', query.created_end);
+    if (query.updated_start) queryParams.append('updated_start', query.updated_start);
+    if (query.updated_end) queryParams.append('updated_end', query.updated_end);
+    const url = `/all-logs/project-logs/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await apiRequest(url, {
+      method: 'GET',
+      headers: {
+        'Accept': format === 'csv' ? 'text/csv' : 'application/json',
+      },
+    });
+    return await response.blob();
+  } catch (error: any) {
+    console.error('Export project logs API error:', error);
+    throw new Error(`Failed to export project logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
 export const getHrLogsApi = async (query: GetHrLogsDto): Promise<HrLogsListResponseDto> => {
   try {
     console.log('Fetching HR logs with query:', query);

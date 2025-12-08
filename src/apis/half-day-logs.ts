@@ -138,6 +138,61 @@ export interface HalfDayLogResponseDto {
 }
 
 // API Functions
+// Get half-day logs for a specific employee
+export const getHalfDayLogsByEmployeeApi = async (empId: number): Promise<HalfDayLog[]> => {
+  try {
+    const url = `${getApiBaseUrl()}/all-logs/half-day-logs/employee/${empId}`;
+    const response = await apiGetJson<HalfDayLog[]>(url);
+    return response;
+  } catch (error: any) {
+    console.error('Error fetching half day logs by employee:', error);
+    throw new Error(`Failed to fetch half day logs by employee: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+// Export half-day logs
+export const exportHalfDayLogsApi = async (query: ExportHalfDayLogsDto): Promise<Blob> => {
+  try {
+    const params = new URLSearchParams();
+    params.append('format', query.format);
+    if (query.employee_id) params.append('employee_id', query.employee_id.toString());
+    if (query.start_date) params.append('start_date', query.start_date);
+    if (query.end_date) params.append('end_date', query.end_date);
+    const queryString = params.toString();
+    const url = `${getApiBaseUrl()}/all-logs/half-day-logs/export${queryString ? `?${queryString}` : ''}`;
+    const response = await apiRequest(url, {
+      method: 'GET',
+      headers: {
+        'Accept': query.format === 'csv' ? 'text/csv' : 'application/json',
+      },
+    });
+    return await response.blob();
+  } catch (error: any) {
+    console.error('Error exporting half day logs:', error);
+    throw new Error(`Failed to export half day logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+// Submit half-day reason (PUT)
+export const submitHalfDayReasonApi = async (data: SubmitHalfDayReasonDto): Promise<HalfDayLogResponseDto> => {
+  try {
+    const url = `${getApiBaseUrl()}/all-logs/half-day-logs`;
+    const response = await apiRequest(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error(`Submit failed: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error: any) {
+    console.error('Error submitting half day reason:', error);
+    throw new Error(`Failed to submit half day reason: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
 export const getHalfDayLogsApi = async (query: GetHalfDayLogsDto = {}): Promise<HalfDayLog[]> => {
   try {
     const params = new URLSearchParams();
@@ -159,22 +214,6 @@ export const getHalfDayLogsApi = async (query: GetHalfDayLogsDto = {}): Promise<
       throw new Error(error.message);
     }
     throw new Error(`Failed to fetch half day logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
-
-export const getHalfDayLogsByEmployeeApi = async (empId: number): Promise<HalfDayLog[]> => {
-  try {
-    const url = `${getApiBaseUrl()}/all-logs/half-day-logs/employee/${empId}`;
-    const response = await apiGetJson<HalfDayLog[]>(url);
-    console.log('Half day logs by employee API response:', response);
-    
-    return response;
-  } catch (error: any) {
-    console.error('Error fetching half day logs by employee:', error);
-    if (error instanceof ApiError) {
-      throw new Error(error.message);
-    }
-    throw new Error(`Failed to fetch half day logs by employee: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -205,73 +244,3 @@ export const getHalfDayLogsStatsApi = async (query: HalfDayLogsStatsDto = {}): P
   }
 };
 
-export const exportHalfDayLogsApi = async (query: ExportHalfDayLogsDto): Promise<Blob> => {
-  try {
-    const params = new URLSearchParams();
-    
-    // Add required format parameter
-    params.append('format', query.format);
-    
-    // Add optional filters
-    if (query.employee_id) params.append('employee_id', query.employee_id.toString());
-    if (query.start_date) params.append('start_date', query.start_date);
-    if (query.end_date) params.append('end_date', query.end_date);
-    if (query.include_half_day_type) params.append('include_half_day_type', 'true');
-    if (query.include_reviewer_details) params.append('include_reviewer_details', 'true');
-    
-    const queryString = params.toString();
-    const url = `/hr/logs/half-day-logs/export${queryString ? `?${queryString}` : ''}`;
-    
-    // Use apiRequest for proper authentication (handles cookies)
-    const response = await apiRequest(url, {
-      method: 'GET',
-      headers: {
-        'Accept': query.format === 'csv' ? 'text/csv' : 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Export failed: ${response.statusText}`);
-    }
-
-    const blob = await response.blob();
-    console.log('Half day logs export API response blob:', blob);
-    
-    return blob;
-  } catch (error: any) {
-    console.error('Error exporting half day logs:', error);
-    if (error instanceof ApiError) {
-      throw new Error(error.message);
-    }
-    throw new Error(`Failed to export half day logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
-
-export const submitHalfDayReasonApi = async (data: SubmitHalfDayReasonDto): Promise<HalfDayLogResponseDto> => {
-  try {
-    const url = `${getApiBaseUrl()}/hr/logs/half-day-logs/submit-reason`;
-    
-    const response = await apiRequest(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Submit failed: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    console.log('Submit half day reason API response:', result);
-    
-    return result;
-  } catch (error: any) {
-    console.error('Error submitting half day reason:', error);
-    if (error instanceof ApiError) {
-      throw new Error(error.message);
-    }
-    throw new Error(`Failed to submit half day reason: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
