@@ -85,7 +85,7 @@ export const getHrLogsApi = async (query: GetHrLogsDto): Promise<HrLogsListRespo
     queryParams.append('orderBy', query.orderBy || 'createdAt');
     queryParams.append('orderDirection', query.orderDirection || 'desc');
 
-    const url = `/hr/logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/all-logs/project-logs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     console.log('API Request URL:', url);
     
     const response = await apiGetJson<HrLogsListResponseDto>(url);
@@ -121,7 +121,7 @@ export const getHrLogsStatsApi = async (): Promise<HrLogsStatsResponseDto> => {
   try {
     console.log('Fetching HR logs statistics');
     
-    const response = await apiGetJson<HrLogsStatsResponseDto>('/hr/logs/stats');
+    const response = await apiGetJson<HrLogsStatsResponseDto>('/all-logs/project-logs/stats');
     console.log('HR Logs Stats API response:', response);
     
     return response;
@@ -156,7 +156,7 @@ export const exportHrLogsApi = async (query: GetHrLogsDto, format: 'csv' | 'json
     // Note: page, limit, orderBy, orderDirection are not needed for export
     // as the backend gets all records without pagination
 
-    const url = `/hr/logs/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/all-logs/project-logs/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
     // Use apiRequest for proper authentication
     const response = await apiRequest(url, {
