@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useNavbar } from '../../context/NavbarContext';
 import {
   getAttendanceLogsApi,
   getLateLogs,
@@ -22,7 +20,6 @@ import {
   StatisticsTab
 } from './DrawerTabs';
 import AttendanceCalendar from './AttendanceCalendar';
-import { formatTimeToPKT } from '../../utils/helpers';
 import './EmployeeAttendanceDrawer.css';
 
 interface EmployeeAttendanceDrawerProps {
@@ -47,8 +44,7 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
   employeeId,
   employeeName
 }) => {
-  const { user } = useAuth();
-  const { isNavbarOpen } = useNavbar();
+  // ...existing code...
   const [activeTab, setActiveTab] = useState<'calendar' | 'late' | 'halfday' | 'leave' | 'monthly' | 'statistics'>('calendar');
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -117,11 +113,14 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
     }
   };
 
+  // ...existing code...
+
   const fetchAttendanceCalendar = async () => {
     const [year, month] = selectedMonth.split('-');
     const startDate = `${year}-${month}-01`;
     const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
     const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+
 
     const logs = await getAttendanceLogsApi({
       employee_id: employeeId,
@@ -139,6 +138,8 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
 
     setAttendanceEvents(events);
   };
+  // Helper to check for duplicate log for a given date
+
 
   const fetchLateLogs = async () => {
     const logs = await getLateLogs({
@@ -154,12 +155,17 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
     setHalfDayLogs(logs || []);
   };
 
+  // ...existing code...
+
   const fetchLeaveLogs = async () => {
     const logs = await getLeaveLogs({
       employee_id: employeeId
     });
     setLeaveLogs(logs || []);
   };
+  // Helper to check for duplicate leave request for a given date range
+  // Helper to check for duplicate leave request for a given date range
+
 
   const fetchMonthlyData = async () => {
     const data = await getMonthlyAttendance(employeeId, { month: selectedMonth });
@@ -184,13 +190,13 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
     try {
       await updateLateLogAction(logId, {
         action: action as any,
-        reviewer_id: user?.id ? parseInt(user.id) : undefined,
         late_type: lateType as any
       });
       showNotification('success', `Late log ${action.toLowerCase()}d`);
       fetchLateLogs();
-    } catch (error) {
-      showNotification('error', 'Failed to update late log');
+    } catch (error: any) {
+      const errorMsg = error?.message || 'Failed to update late log';
+      showNotification('error', errorMsg);
     }
   };
 
@@ -198,13 +204,13 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
     try {
       await updateHalfDayLogAction(logId, {
         action: action as any,
-        reviewer_id: user?.id ? parseInt(user.id) : undefined,
         half_day_type: halfDayType as any
       });
       showNotification('success', `Half-day log ${action.toLowerCase()}d`);
       fetchHalfDayLogs();
-    } catch (error) {
-      showNotification('error', 'Failed to update half-day log');
+    } catch (error: any) {
+      const errorMsg = error?.message || 'Failed to update half-day log';
+      showNotification('error', errorMsg);
     }
   };
 
@@ -212,13 +218,14 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
     try {
       await updateLeaveLogAction(logId, {
         action: action as any,
-        reviewer_id: user?.id ? parseInt(user.id) : undefined,
         confirmation_reason: reason
       });
       showNotification('success', `Leave ${action.toLowerCase()}d`);
       fetchLeaveLogs();
-    } catch (error) {
-      showNotification('error', 'Failed to update leave');
+    } catch (error: any) {
+      // Surface backend error message for leave actions
+      const errorMsg = error?.message || 'Failed to update leave';
+      showNotification('error', errorMsg);
     }
   };
 
@@ -237,7 +244,7 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
 
   const formatTime = (dateString: string) => {
     // Convert UTC time to PKT (Pakistan Time, UTC+5)
-    return formatTimeToPKT(dateString, 'HH:mm');
+    return new Date(dateString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
   if (!isOpen) return null;
@@ -249,8 +256,8 @@ const EmployeeAttendanceDrawer: React.FC<EmployeeAttendanceDrawerProps> = ({
       <div 
         className="relative mx-auto h-full bg-white shadow-2xl rounded-lg border border-gray-200 transform transition-all duration-300 ease-out"
         style={{
-          marginLeft: isMobile ? '0' : (isNavbarOpen ? '280px' : '100px'),
-          width: isMobile ? '100vw' : (isNavbarOpen ? 'calc(100vw - 350px)' : 'calc(100vw - 150px)'),
+          marginLeft: isMobile ? '0' : '100px',
+          width: isMobile ? '100vw' : 'calc(100vw - 150px)',
           maxWidth: isMobile ? '100vw' : '1200px',
           marginRight: isMobile ? '0' : '50px',
           marginTop: isMobile ? '0' : '20px',

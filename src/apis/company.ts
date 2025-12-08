@@ -1,6 +1,7 @@
 import { apiGetJson, apiPostJson, apiPutJson, apiDeleteJson, apiPatchJson } from '../utils/apiClient';
 
 export interface Company {
+    monthlyLeaveAccrual?: number;
   id: number;
   name: string;
   address: string;
