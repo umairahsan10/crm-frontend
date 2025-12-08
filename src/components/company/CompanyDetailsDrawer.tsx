@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
@@ -83,6 +84,7 @@ const CompanyDetailsDrawer: React.FC<CompanyDetailsDrawerProps> = ({
   
   // Edit form state
   const [editForm, setEditForm] = useState<Partial<Company>>({
+    monthlyLeaveAccrual: 2,
     name: '',
     email: '',
     phone: '',
@@ -124,6 +126,7 @@ const CompanyDetailsDrawer: React.FC<CompanyDetailsDrawerProps> = ({
   useEffect(() => {
     if (company && isOpen) {
       setEditForm({
+        monthlyLeaveAccrual: company.monthlyLeaveAccrual ?? 2,
         name: company.name || '',
         email: company.email || '',
         phone: company.phone || '',
@@ -513,10 +516,20 @@ const CompanyDetailsDrawer: React.FC<CompanyDetailsDrawerProps> = ({
                         </svg>
                         HR Configuration
                       </h4>
-                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Quarterly Leave Days</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Leave Accrual <span className="text-blue-600">(Default: 2)</span></label>
+                          <input
+                            type="number"
+                            value={editForm.monthlyLeaveAccrual || 2}
+                            onChange={(e) => handleEditFormChange('monthlyLeaveAccrual', (parseInt(e.target.value) || 2).toString())}
+                            className="block w-full px-4 py-3 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            min="1"
+                          />
+                          <span className="text-xs text-gray-500">Number of leaves accrued per month. Unused leaves are carried forward.</span>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Quarterly Leave Days (legacy)</label>
                           <input
                             type="number"
                             value={editForm.quarterlyLeavesDays}
